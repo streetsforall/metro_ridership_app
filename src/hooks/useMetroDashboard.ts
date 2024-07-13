@@ -36,15 +36,19 @@ export enum DayOfWeek
  */
 const DefaultStartDate: Date = new Date(2022, 3, 1);
 const DefaultEndDate: Date = new Date(2023, 3, 1);
-const DefaultLine: Line = "123";
+const DefaultLine: Line[] = ["123"];
 
+/**
+ * Contains selected user inputs like bus lines and starting date.
+ * @returns 
+ */
 const useMetroDashboard = (): MetroDashboardState => {
     const [startDate, setStartDate] = useState<Date>(DefaultStartDate);
     const [endDate, setEndDate] = useState<Date>(DefaultEndDate);
     const [dayOfWeek, setDayOfWeek] =
         useState<DayOfWeek>(DayOfWeek.Weekday);
 
-    const [line, setLine] = useState<Line>(DefaultLine);
+    const [line, setLine] = useState<Line[]>(DefaultLine);
 
     return {
         startDate,
