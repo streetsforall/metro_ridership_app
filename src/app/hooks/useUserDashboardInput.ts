@@ -10,16 +10,16 @@ export interface UserDashboardInputState {
   dayOfWeek: DayOfWeek;
   setDayOfWeek: React.Dispatch<React.SetStateAction<DayOfWeek>>;
 
-  line: Line[];
-  setLine: React.Dispatch<React.SetStateAction<Line[]>>;
+  lines: Line[];
+  setLines: React.Dispatch<React.SetStateAction<Line[]>>;
 }
 
 export type Line = string;
 
 export enum DayOfWeek {
-  Weekday = 1,
-  Saturday = 2,
-  Sunday = 3,
+  Weekday = 'Weekday',
+  Saturday = 'Saturday',
+  Sunday = 'Sunday',
 }
 
 /**
@@ -38,7 +38,7 @@ const useUserDashboardInput = (): UserDashboardInputState => {
   const [endDate, setEndDate] = useState<Date>(DefaultEndDate);
   const [dayOfWeek, setDayOfWeek] = useState<DayOfWeek>(DayOfWeek.Weekday);
 
-  const [line, setLine] = useState<Line[]>(DefaultLine);
+  const [lines, setLines] = useState<Line[]>(DefaultLine);
 
   return {
     startDate,
@@ -47,8 +47,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     setEndDate,
     dayOfWeek,
     setDayOfWeek,
-    line,
-    setLine,
+    lines,
+    setLines,
   };
 };
 
