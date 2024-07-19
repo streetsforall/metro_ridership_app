@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -16,6 +16,7 @@ import {
   type ChartOptions,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import LineSelector from '../components/lineSelector';
 import * as metrics from '@/app/ridership.json';
 
 interface Metric {
@@ -51,10 +52,17 @@ ChartJS.register(
 
 export default function Charts() {
   const {
+    control,
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Inputs>();
+  } = useForm<Inputs>({
+    defaultValues: {
+      year: '2024',
+      stat: 'est_wkday_ridership',
+      lines: [],
+    },
+  });
   const [data, setData] = useState<
     ChartDataset<'line', { month: number; stat: string | number | null }[]>[]
   >([]);
@@ -62,11 +70,13 @@ export default function Charts() {
   /**
    * Form options
    */
-  let lines = (metrics as Metric[]).map((metric) => metric.line_name);
-  lines = lines.filter((value, index, array) => array.indexOf(value) === index);
+  const startYear = 2009;
+  const endYear = 2024;
 
-  let years = (metrics as Metric[]).map((metric) => metric.year);
-  years = years.filter((value, index, array) => array.indexOf(value) === index);
+  let years = [];
+  for (let i = startYear; i <= endYear; i++) {
+    years.push(i);
+  }
 
   const stats = [
     {
@@ -127,7 +137,7 @@ export default function Charts() {
     interaction: {
       axis: 'x',
       includeInvisible: false,
-      intersect: false,
+      intersect: true,
       mode: 'index',
     },
     parsing: {
@@ -180,25 +190,7 @@ export default function Charts() {
         className="flex gap-8 items-start py-8"
         onSubmit={handleSubmit(onSubmit)}
       >
-        <div>
-          Line(s):
-          <ul className="max-h-48 overflow-y-scroll">
-            {lines.map((line, index) => {
-              return (
-                <li key={index} className="flex gap-2 items-center px-2">
-                  <input
-                    type="checkbox"
-                    className="border"
-                    id={line}
-                    value={line}
-                    {...register('lines')}
-                  />
-                  <label htmlFor={line}>{line}</label>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        <LineSelector control={control} name="lines" />
 
         <div>
           Year:
