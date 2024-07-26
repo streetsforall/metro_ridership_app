@@ -52,6 +52,18 @@ export default function DateRangeSelector({
     return `${month} ${date?.getFullYear()}`;
   };
 
+  const getValueDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = date
+      .getMonth()
+      .toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false });
+    const day = date
+      .getDay()
+      .toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false });
+
+    return `${year}-${month}-${day}`;
+  };
+
   const onDayOfWeekChange = (value: string): void => {
     switch (value) {
       case DayOfWeek.Saturday:
@@ -68,11 +80,22 @@ export default function DateRangeSelector({
     }
   };
 
+  const isDateRange = startDate && endDate;
+  console.log('start date value: ' + getValueDateString(startDate));
+
   return (
     <div>
       <div id="dateRangeSelector">
         <div>
           <Label>From</Label>
+          <input
+            type="date"
+            id="start"
+            name="trip-start"
+            value={getValueDateString(startDate)}
+            min="2018-01-01"
+            max="2018-12-31"
+          />
           <div>
             <Badge id="startDateValue" variant="outline">
               {getMonthYearString(startDate)}
