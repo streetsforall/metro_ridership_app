@@ -68,8 +68,8 @@ export default function Charts() {
   const [data, setData] = useState<
     ChartDataset<'line', { month: number; stat: string | number | null }[]>[]
   >([]);
-  const { startDate, setStartDate, dayOfWeek, setDayOfWeek } =
-    useUserDashboardInput();
+
+  const { startDate, setStartDate, dayOfWeek, setDayOfWeek, endDate, setEndDate} = useUserDashboardInput();
 
   /**
    * Form options
@@ -199,12 +199,14 @@ export default function Charts() {
         <DateRangeSelector
           startDate={startDate}
           setStartDate={setStartDate}
+          endDate={endDate}
+          setEndDate={setEndDate}
           dayOfWeek={dayOfWeek}
           setDayOfWeek={setDayOfWeek}
           register={register}
         ></DateRangeSelector>
 
-        <div>
+        {/* <div>
           Year:
           <ul className="max-h-48 overflow-y-scroll">
             {years.map((year, index) => {
@@ -221,7 +223,7 @@ export default function Charts() {
               );
             })}
           </ul>
-        </div>
+        </div> */}
 
         <input
           type="submit"
