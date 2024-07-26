@@ -18,6 +18,8 @@ import {
 import { Line } from 'react-chartjs-2';
 import LineSelector from '../components/lineSelector';
 import * as metrics from '@/app/ridership.json';
+import DateRangeSelector from '../inputComponents/dateRangeSelector';
+import useUserDashboardInput from '../hooks/useUserDashboardInput';
 
 interface Metric {
   year: number;
@@ -33,7 +35,7 @@ interface Aggregate {
   [key: string]: Metric[];
 }
 
-type Inputs = {
+export type Inputs = {
   lines: string[];
   year: string;
   stat: keyof Metric;
@@ -66,6 +68,8 @@ export default function Charts() {
   const [data, setData] = useState<
     ChartDataset<'line', { month: number; stat: string | number | null }[]>[]
   >([]);
+  const { startDate, setStartDate, dayOfWeek, setDayOfWeek } =
+    useUserDashboardInput();
 
   /**
    * Form options
@@ -192,6 +196,14 @@ export default function Charts() {
       >
         <LineSelector control={control} name="lines" />
 
+        <DateRangeSelector
+          startDate={startDate}
+          setStartDate={setStartDate}
+          dayOfWeek={dayOfWeek}
+          setDayOfWeek={setDayOfWeek}
+          register={register}
+        ></DateRangeSelector>
+
         <div>
           Year:
           <ul className="max-h-48 overflow-y-scroll">
@@ -205,25 +217,6 @@ export default function Charts() {
                     {...register('year')}
                   />
                   <label htmlFor={year.toString()}>{year}</label>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
-        <div>
-          Day:
-          <ul className="max-h-48 overflow-y-scroll">
-            {stats.map((stat, index) => {
-              return (
-                <li key={index} className="flex gap-2 items-center px-2">
-                  <input
-                    type="radio"
-                    id={stat.key}
-                    value={stat.key}
-                    {...register('stat')}
-                  />
-                  <label htmlFor={stat.key}>{stat.name}</label>
                 </li>
               );
             })}
