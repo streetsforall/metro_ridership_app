@@ -26,8 +26,8 @@ export enum DayOfWeek {
  * Default starting values
  */
 const DefaultStartDate: Date = new Date(2022, 1);
-const DefaultEndDate: Date = new Date(2023, 1);
-const DefaultLine: Line[] = ['123'];
+const DefaultEndDate: Date = new Date(2023, 1, 1);
+const DefaultLine: Line[] = [];
 
 /**
  * Contains selected user inputs like bus lines and starting date.
