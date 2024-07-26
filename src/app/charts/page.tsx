@@ -16,9 +16,9 @@ import {
   type ChartOptions,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import LineSelector from '../components/lineSelector';
 import * as metrics from '@/app/ridership.json';
 import DateRangeSelector from '../inputComponents/dateRangeSelector';
+import LineSelector from '../inputComponents/metroLinesSelector';
 import useUserDashboardInput from '../hooks/useUserDashboardInput';
 
 interface Metric {
@@ -69,7 +69,16 @@ export default function Charts() {
     ChartDataset<'line', { month: number; stat: string | number | null }[]>[]
   >([]);
 
-  const { startDate, setStartDate, dayOfWeek, setDayOfWeek, endDate, setEndDate} = useUserDashboardInput();
+  const {
+    lines,
+    setLines,
+    startDate,
+    setStartDate,
+    dayOfWeek,
+    setDayOfWeek,
+    endDate,
+    setEndDate,
+  } = useUserDashboardInput();
 
   /**
    * Form options
@@ -194,7 +203,7 @@ export default function Charts() {
         className="flex gap-8 items-start py-8"
         onSubmit={handleSubmit(onSubmit)}
       >
-        <LineSelector control={control} name="lines" />
+        <LineSelector selectedLines={lines} setSelectedLines={setLines} />
 
         <DateRangeSelector
           startDate={startDate}
