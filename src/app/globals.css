@@ -20,6 +20,10 @@ body {
   background-color: #e5ebea;
 }
 
+#chart {
+  width: 90%;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

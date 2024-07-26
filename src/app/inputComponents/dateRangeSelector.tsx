@@ -2,8 +2,9 @@ import { Label } from '@radix-ui/react-label';
 import { DayOfWeek } from '../hooks/useUserDashboardInput';
 import { Badge, RadioGroup } from '@radix-ui/themes';
 import * as Select from '@radix-ui/react-select';
-import { FieldValues, UseFormRegister } from 'react-hook-form';
+// import { FieldValues, UseFormRegister } from 'react-hook-form';
 import { Inputs } from '../charts/page';
+import { useEffect } from 'react';
 
 export interface DateRangeSelectorProps {
   startDate: Date;
@@ -14,8 +15,6 @@ export interface DateRangeSelectorProps {
 
   dayOfWeek: DayOfWeek;
   setDayOfWeek: React.Dispatch<React.SetStateAction<DayOfWeek>>;
-
-  register: UseFormRegister<Inputs>;
 }
 
 const DayTypes = [
@@ -40,7 +39,6 @@ export default function DateRangeSelector({
   setEndDate,
   dayOfWeek,
   setDayOfWeek,
-  register,
 }: DateRangeSelectorProps) {
 
   const getMonthYearString = (date: Date): string => {
@@ -82,75 +80,98 @@ export default function DateRangeSelector({
     }
   };
 
-  const dateForm = (range, setRange) => {
 
-    const updateMonth = (value) => {
-      const newdate = new Date (range)
-      range.setMonth(value)
+  useEffect(() => {
+    console.log(startDate)
+  }, [startDate, endDate])
+
+
+
+  const dateForm = (range, setRange, title) => {
+
+
+    const updateMonth = newMonth => {
+      // update month state
+      range.setMonth(newMonth)
       setRange(range)
+      // update form value
+      const form = document.getElementById(title + 'Month');
+      form.value = range.getMonth();
     }
 
-    const updateYear = (value) => {
-      const newdate = new Date (range)
-      range.setYear(value)
-      setRange(range)
+    const updateYear = newYear => {
+
+      // need to add filter to make sure from is not larger than the "to" date
+      if (true) {
+        // update month state
+        range.setYear(newYear)
+        setRange(range)
+        // update form value
+        const form = document.getElementById(title + 'Year');
+        const yearNum = range.getFullYear()
+        form.value = yearNum;
+      } else {
+        console.log('year not valid')
+      }
     }
+
 
     return (
-        <div>
+      <>
+        <div id={title + 'Form'}>
+          <h1>{range.toString()}</h1>
           <span>
             <label>Month:</label>
-            <select onChange={e => updateMonth(e.target.value)} id="month" name="month">
-            <option value="1" selected>January</option>
-            <option value="2" >February</option>
-            <option value="3">March</option>
-            <option value="4">April</option>
-            <option value="5">May</option>
-            <option value="6">June</option>
-            <option value="7">July</option>
-            <option value="8">August</option>
-            <option value="9">September</option>
-            <option value="10">October</option>
-            <option value="11" >November</option>
-            <option value="12">December</option>
-          </select>
-        </span>
-        <span>
-          <label>Year:</label>
-          <select onChange={e => updateYear(e.target.value)} id="year" name="year">
-            <option selected>2009</option>
-          <option>2010</option>
-          <option>2011</option>
-          <option>2012</option>
-          <option>2013</option>
-          <option>2014</option>
-          <option>2015</option>
-          <option>2016</option>
-          <option>2017</option>
-          <option>2018</option>
-          <option>2019</option>
-          <option>2020</option>
-          <option>2021</option>
-          <option>2022</option>
-          <option>2023</option>
-          <option>2024</option>
-        </select>
-      </span >
-      </div >
-      )
-}
+            <select defaultValue="1" onChange={e => updateMonth(e.target.value)} id={title + 'Month'} name="month">
+              <option value="1" >January</option>
+              <option value="2" >February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11" >November</option>
+              <option value="12">December</option>
+            </select>
+          </span>
+          <span>
+            <label>Year:</label>
+            <select defaultValue="1"  onChange={e => updateYear(Number(e.target.value))} id={title + 'Year'} name="year">
+              <option >2009</option>
+              <option>2010</option>
+              <option>2011</option>
+              <option>2012</option>
+              <option>2013</option>
+              <option>2014</option>
+              <option>2015</option>
+              <option>2016</option>
+              <option>2017</option>
+              <option>2018</option>
+              <option>2019</option>
+              <option>2020</option>
+              <option>2021</option>
+              <option>2022</option>
+              <option>2023</option>
+              <option>2024</option>
+            </select>
+          </span >
+        </div >
+      </>
+    )
+  }
 
-const isDateRange = startDate && endDate;
-// console.log('start date value: ' + getValueDateString(startDate));
-// console.log('end date value: ' + getValueDateString(endDate));
+  const isDateRange = startDate && endDate;
 
 
-return (
-  <div>
-    <div id="dateRangeSelector">
-      <div>
-        <Label>From</Label>
-        {/* <input
+  return (
+    <div>
+      <div id="dateRangeSelector">
+        <div>
+          <Label>From</Label>
+          {/* <input
             type="month"
             id="start"
             name="trip-start"
@@ -158,56 +179,55 @@ return (
             onChange={e => setStartDate(new Date(e.target.value))}
           /> */}
 
-        {dateForm(startDate, setStartDate)}
+          {dateForm(startDate, setStartDate, 'Start')}
 
 
-        {/* <div>
+          {/* <div>
           <Badge id="startDateValue" variant="outline">
             {getMonthYearString(startDate)}
           </Badge>
         </div> */}
 
-        {/* <div id="startDateValue">{GetMonthYearString(startDate)}</div> */}
-      </div>
-      <div className="arrow"></div>
-      <div>
-        <Label>To</Label>
-        {/* <input
+          {/* <div id="startDateValue">{GetMonthYearString(startDate)}</div> */}
+        </div>
+        <div className="arrow"></div>
+        <div>
+          <Label>To</Label>
+          {/* <input
             type="month"
             id="end"
             name="trip-end"
             value={getValueDateString(endDate)}
             onChange={e => setEndDate(new Date(e.target.value))}
           /> */}
-        {dateForm(endDate, setEndDate)}
-        {/* <div>
+          {dateForm(endDate, setEndDate, 'End')}
+          {/* <div>
           <Badge id="endDateValue" variant="outline">
             {getMonthYearString(endDate)}
           </Badge>
         </div> */}
+        </div>
       </div>
-    </div>
-    <div id="dayOfWeekSelector">
+      <div id="dayOfWeekSelector">
 
-      <div>
-        <Label>Day of Week</Label>
-        <ul className="max-h-48 overflow-y-scroll">
-          {DayTypes.map((dayType, index) => {
-            return (
-              <li key={dayType.key} className="flex gap-2 items-center px-2">
-                <input
-                  type="radio"
-                  id={dayType.key}
-                  value={dayType.key}
-                  {...register('stat')}
-                />
-                <label htmlFor={dayType.key}>{dayType.name}</label>
-              </li>
-            );
-          })}
-        </ul>
+        <div>
+          <Label>Day of Week</Label>
+          <ul className="max-h-48 overflow-y-scroll">
+            {DayTypes.map((dayType, index) => {
+              return (
+                <li key={dayType.key} className="flex gap-2 items-center px-2">
+                  <input
+                    type="radio"
+                    id={dayType.key}
+                    value={dayType.key}
+                  />
+                  <label htmlFor={dayType.key}>{dayType.name}</label>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 }

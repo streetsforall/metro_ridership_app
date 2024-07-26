@@ -157,30 +157,30 @@ export default function Charts() {
     scales: {
       x: {
         border: {
-          color: '#fff',
+          color: '#000',
         },
         ticks: {
-          color: '#fff',
+          color: '#000',
         },
         title: {
-          color: '#fff',
+          color: '#000',
           display: true,
           text: 'Month',
         },
       },
       y: {
         border: {
-          color: '#fff',
+          color: '#000',
         },
         grid: {
           color: '#222',
           drawTicks: false,
         },
         ticks: {
-          color: '#fff',
+          color: '#000',
         },
         title: {
-          color: '#fff',
+          color: '#000',
           display: true,
           text: 'Avg Daily Ridership',
         },
@@ -189,11 +189,7 @@ export default function Charts() {
   };
 
   return (
-    <div className="h-screen max-w-screen-lg mx-auto">
-      <form
-        className="flex gap-8 items-start py-8"
-        onSubmit={handleSubmit(onSubmit)}
-      >
+    <div id="window" className="h-screen max-w-screen-lg mx-auto">
         <LineSelector control={control} name="lines" />
 
         <DateRangeSelector
@@ -203,7 +199,6 @@ export default function Charts() {
           setEndDate={setEndDate}
           dayOfWeek={dayOfWeek}
           setDayOfWeek={setDayOfWeek}
-          register={register}
         ></DateRangeSelector>
 
         {/* <div>
@@ -225,17 +220,18 @@ export default function Charts() {
           </ul>
         </div> */}
 
-        <input
+        {/* <input
           type="submit"
           value="Chart"
           className="border cursor-pointer px-4 py-2 rounded hover:bg-white hover:text-black"
-        />
-      </form>
+        /> */}
+
 
       <Line
         options={options}
+        id="chart"
         data={{
-          labels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+          // labels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
           datasets: data,
         }}
       />
