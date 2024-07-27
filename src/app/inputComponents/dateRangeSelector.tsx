@@ -1,3 +1,6 @@
+'use client';
+
+
 import { Label } from '@radix-ui/react-label';
 import { DayOfWeek } from '../hooks/useUserDashboardInput';
 import { Badge, RadioGroup } from '@radix-ui/themes';
@@ -10,8 +13,8 @@ export interface DateRangeSelectorProps {
   startDate: Date;
   setStartDate: React.Dispatch<React.SetStateAction<Date>>;
 
-  endDate?: Date;
-  setEndDate?: React.Dispatch<React.SetStateAction<Date>>;
+  endDate: Date;
+  setEndDate: React.Dispatch<React.SetStateAction<Date>>;
 
   dayOfWeek: DayOfWeek;
   setDayOfWeek: React.Dispatch<React.SetStateAction<DayOfWeek>>;
@@ -82,33 +85,41 @@ export default function DateRangeSelector({
 
 
 
+
+
   const updateMonth = (range, title, newMonth:string) => {
     // update month state
-    range.setMonth(Number(newMonth))
+    const newMonthDate = range.setMonth(Number(newMonth))
+    const monthDate = new Date(newMonthDate)
 
-    console.log('range', range)
+    console.log('new month date', newMonthDate)
+
     if (title == 'End') {
-      setEndDate(range)
+      setEndDate(monthDate)
     } else {
-      setStartDate(range)
+      setStartDate(monthDate)
     }
+
     // update form value
     const form = document.getElementById(title + 'Month');
     form.value = range.getMonth();
   }
+
 
   const updateYear = (range, title, newYear:number) => {
 
     // need to add filter to make sure from is not larger than the "to" date
     if (true) {
       // update month state
-      range.setYear(newYear)
-      console.log(range)
+      const newYearDate = range.setYear(newYear)
+      const dateYear = new Date(newYearDate)
+
+      console.log('new year date', dateYear)
 
       if (title == 'End') {
-        setEndDate(range)
+        setEndDate(dateYear)
       } else {
-        setStartDate(range)
+        setStartDate(dateYear)
       }
       // update form value
       const form = document.getElementById(title + 'Year');
@@ -121,32 +132,30 @@ export default function DateRangeSelector({
 
 
   const dateForm = (range, title) => {
-    console.log('range', range)
-
 
     return (
       <>
         <div id={title + 'Form'}>
           <span>
             <label>Month:</label>
-            <select onChange={e => {updateMonth(range, title, Number(e.target.value))}} id={title + 'Month'} name="month">
-              <option value="1" >January</option>
-              <option value="2" >February</option>
-              <option value="3">March</option>
-              <option value="4">April</option>
-              <option value="5">May</option>
-              <option value="6">June</option>
-              <option value="7">July</option>
-              <option value="8">August</option>
-              <option value="9">September</option>
-              <option value="10">October</option>
-              <option value="11" >November</option>
-              <option value="12">December</option>
+            <select onChange={e => {updateMonth(range, title, e.target.value)}} id={title + 'Month'} name="month">
+              <option value="0" >January</option>
+              <option value="1" >February</option>
+              <option value="2">March</option>
+              <option value="3">April</option>
+              <option value="4">May</option>
+              <option value="5">June</option>
+              <option value="6">July</option>
+              <option value="7">August</option>
+              <option value="8">September</option>
+              <option value="9">October</option>
+              <option value="10" >November</option>
+              <option value="11">December</option>
             </select>
           </span>
           <span>
             <label>Year:</label>
-            <select  onChange={e  => {updateYear(range, title, Number(e.target.value))}} id={title + 'Year'} name="year">
+            <select  onChange={e  => {updateYear(range, title, e.target.value)}} id={title + 'Year'} name="year">
               <option >2009</option>
               <option>2010</option>
               <option>2011</option>
@@ -170,8 +179,6 @@ export default function DateRangeSelector({
     )
   }
 
-  const isDateRange = startDate && endDate;
-
 
   return (
     <div>
@@ -184,7 +191,6 @@ export default function DateRangeSelector({
         <div className="arrow"></div>
         <div>
           <Label>To</Label>
-
           {dateForm(endDate, 'End')}
 
         </div>

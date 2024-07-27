@@ -68,42 +68,25 @@ export default function Charts() {
     setEndDate,
   } = useUserDashboardInput();
 
-  // ew need to create the chart index of dates for the X axis
-  const dateRange = (startDate, endDate) => {
-    console.log('date range:', startDate, endDate)
-    let months = [];
-    while (startDate <= endDate) {
-      months.push(startDate.getFullYear() + ' ' + (startDate.getMonth() + 1));
-      startDate.setMonth(startDate.getMonth() + 1);
-    }
-    console.log(months)
-    setMonthList(months);
-  }
-
-  console.log('monthList', monthList)
-
-  const stat = 'est_sun_ridership'
 
   /**
    * Update params on state change
    */
-  useEffect(() => {
+useEffect(() => {
 
     if (!data) {
       return('');
     }
   
     console.log(lines)
-
-    dateRange(startDate, endDate)
-
+ 
     // Aggregate by line
     let aggregated: Aggregate = {};
 
+    console.log('date range FILTER (start / end)', startDate, endDate)
+
     for (let i = 0; i < metrics.length; i++) {
       const metric: Metric = metrics[i];
-
-      
 
       // console.log(metric)
       // Filter by year and lines
@@ -111,15 +94,18 @@ export default function Charts() {
 
       var newMetricDate = new Date(metric.year, metric.month);
 
-      const beforeDate = endDate <= newMetricDate
-      const afterDate = newMetricDate <= startDate
+      // need to filter our date to make sure it falls in our date range
+      // console.log(endDate, newMetricDate, startDate)
 
 
-      // need to filter our dat to make sure it falls in our date range
-      const dateRange = true;
+      const startCap = startDate.getTime() >= newMetricDate.getTime()
+      const endCap =  endDate.getTime() <= newMetricDate.getTime() 
+
+      // console.log(newMetricDate, startCap, endCap)
 
       // if line or year false we break
-      if (!inLines || !dateRange ) continue;
+      if (!inLines) continue;
+      if (startCap || endCap) continue;
 
       if (!aggregated[metric.line_name]) {
         aggregated[metric.line_name] = [];
@@ -143,10 +129,16 @@ export default function Charts() {
       });
     });
 
-    console.log('chart data', data)
+    // create month labels
+
+
+    const months = data[0] ? data[0].data.map(a => a.time) : '';
+    setMonthList(months);
+    console.log(months)
 
     setData(datasets);
-  }, [startDate, endDate, lines, dayOfWeek])
+    console.log('chart data', datasets)
+}, [startDate, endDate, lines, dayOfWeek])
 
   const options: ChartOptions<'line'> = {
     interaction: {
@@ -156,7 +148,7 @@ export default function Charts() {
       mode: 'index',
     },
     parsing: {
-      xAxisKey: 'month',
+      xAxisKey: 'time',
       yAxisKey: 'stat',
     },
     plugins: {
@@ -222,7 +214,7 @@ export default function Charts() {
           options={options}
           id="chart"
           data={{
-            // labels: monthList,
+            labels: monthList,
             datasets: data,
           }}
         />
