@@ -81,48 +81,55 @@ export default function DateRangeSelector({
   };
 
 
-  useEffect(() => {
-    console.log(startDate)
-  }, [startDate, endDate])
 
+  const updateMonth = (range, title, newMonth:string) => {
+    // update month state
+    range.setMonth(Number(newMonth))
 
+    console.log('range', range)
+    if (title == 'End') {
+      setEndDate(range)
+    } else {
+      setStartDate(range)
+    }
+    // update form value
+    const form = document.getElementById(title + 'Month');
+    form.value = range.getMonth();
+  }
 
-  const dateForm = (range, setRange, title) => {
+  const updateYear = (range, title, newYear:number) => {
 
-
-    const updateMonth = newMonth => {
+    // need to add filter to make sure from is not larger than the "to" date
+    if (true) {
       // update month state
-      range.setMonth(newMonth)
-      setRange(range)
-      // update form value
-      const form = document.getElementById(title + 'Month');
-      form.value = range.getMonth();
-    }
+      range.setYear(newYear)
+      console.log(range)
 
-    const updateYear = newYear => {
-
-      // need to add filter to make sure from is not larger than the "to" date
-      if (true) {
-        // update month state
-        range.setYear(newYear)
-        setRange(range)
-        // update form value
-        const form = document.getElementById(title + 'Year');
-        const yearNum = range.getFullYear()
-        form.value = yearNum;
+      if (title == 'End') {
+        setEndDate(range)
       } else {
-        console.log('year not valid')
+        setStartDate(range)
       }
+      // update form value
+      const form = document.getElementById(title + 'Year');
+      const yearNum = range.getFullYear()
+      form.value = yearNum;
+    } else {
+      console.log('year not valid')
     }
+  }
+
+
+  const dateForm = (range, title) => {
+    console.log('range', range)
 
 
     return (
       <>
         <div id={title + 'Form'}>
-          <h1>{range.toString()}</h1>
           <span>
             <label>Month:</label>
-            <select defaultValue="1" onChange={e => updateMonth(e.target.value)} id={title + 'Month'} name="month">
+            <select onChange={e => {updateMonth(range, title, Number(e.target.value))}} id={title + 'Month'} name="month">
               <option value="1" >January</option>
               <option value="2" >February</option>
               <option value="3">March</option>
@@ -139,7 +146,7 @@ export default function DateRangeSelector({
           </span>
           <span>
             <label>Year:</label>
-            <select defaultValue="1"  onChange={e => updateYear(Number(e.target.value))} id={title + 'Year'} name="year">
+            <select  onChange={e  => {updateYear(range, title, Number(e.target.value))}} id={title + 'Year'} name="year">
               <option >2009</option>
               <option>2010</option>
               <option>2011</option>
@@ -171,41 +178,15 @@ export default function DateRangeSelector({
       <div id="dateRangeSelector">
         <div>
           <Label>From</Label>
-          {/* <input
-            type="month"
-            id="start"
-            name="trip-start"
-            value={getValueDateString(startDate)}
-            onChange={e => setStartDate(new Date(e.target.value))}
-          /> */}
+          {dateForm(startDate, 'Start')}
 
-          {dateForm(startDate, setStartDate, 'Start')}
-
-
-          {/* <div>
-          <Badge id="startDateValue" variant="outline">
-            {getMonthYearString(startDate)}
-          </Badge>
-        </div> */}
-
-          {/* <div id="startDateValue">{GetMonthYearString(startDate)}</div> */}
         </div>
         <div className="arrow"></div>
         <div>
           <Label>To</Label>
-          {/* <input
-            type="month"
-            id="end"
-            name="trip-end"
-            value={getValueDateString(endDate)}
-            onChange={e => setEndDate(new Date(e.target.value))}
-          /> */}
-          {dateForm(endDate, setEndDate, 'End')}
-          {/* <div>
-          <Badge id="endDateValue" variant="outline">
-            {getMonthYearString(endDate)}
-          </Badge>
-        </div> */}
+
+          {dateForm(endDate, 'End')}
+
         </div>
       </div>
       <div id="dayOfWeekSelector">
@@ -217,6 +198,9 @@ export default function DateRangeSelector({
               return (
                 <li key={dayType.key} className="flex gap-2 items-center px-2">
                   <input
+                    
+                    onClick={e => setDayOfWeek(e.target.value)}
+                    name='day'
                     type="radio"
                     id={dayType.key}
                     value={dayType.key}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import {
   Chart as ChartJS,
@@ -53,21 +53,9 @@ ChartJS.register(
 );
 
 export default function Charts() {
-  const {
-    control,
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<Inputs>({
-    defaultValues: {
-      year: '2024',
-      stat: 'est_wkday_ridership',
-      lines: [],
-    },
-  });
-  const [data, setData] = useState<
-    ChartDataset<'line', { month: number; stat: string | number | null }[]>[]
-  >([]);
+
+  const [data, setData] = useState<ChartDataset<'line', { time: string; stat: string | number | null }[]>[]>([]);
+  const [monthList, setMonthList] = useState([])
 
   const {
     lines,
@@ -80,46 +68,58 @@ export default function Charts() {
     setEndDate,
   } = useUserDashboardInput();
 
-  /**
-   * Form options
-   */
-  const startYear = 2009;
-  const endYear = 2024;
-
-  let years = [];
-  for (let i = startYear; i <= endYear; i++) {
-    years.push(i);
+  // ew need to create the chart index of dates for the X axis
+  const dateRange = (startDate, endDate) => {
+    console.log('date range:', startDate, endDate)
+    let months = [];
+    while (startDate <= endDate) {
+      months.push(startDate.getFullYear() + ' ' + (startDate.getMonth() + 1));
+      startDate.setMonth(startDate.getMonth() + 1);
+    }
+    console.log(months)
+    setMonthList(months);
   }
 
-  const stats = [
-    {
-      name: 'Weekday',
-      key: 'est_wkday_ridership',
-    },
-    {
-      name: 'Saturday',
-      key: 'est_sat_ridership',
-    },
-    {
-      name: 'Sunday',
-      key: 'est_sun_ridership',
-    },
-  ];
+  console.log('monthList', monthList)
+
+  const stat = 'est_sun_ridership'
 
   /**
-   * Update params on submit
+   * Update params on state change
    */
-  const onSubmit: SubmitHandler<Inputs> = (formData) => {
+  useEffect(() => {
+
+    if (!data) {
+      return('');
+    }
+  
+    console.log(lines)
+
+    dateRange(startDate, endDate)
+
     // Aggregate by line
     let aggregated: Aggregate = {};
+
     for (let i = 0; i < metrics.length; i++) {
       const metric: Metric = metrics[i];
 
-      // Filter by year and lines
-      const inLines = formData.lines.includes(metric.line_name);
-      const inYear = metric.year === parseInt(formData.year);
+      
 
-      if (!inLines || !inYear) continue;
+      // console.log(metric)
+      // Filter by year and lines
+      const inLines = lines.includes(metric.line_name);
+
+      var newMetricDate = new Date(metric.year, metric.month);
+
+      const beforeDate = endDate <= newMetricDate
+      const afterDate = newMetricDate <= startDate
+
+
+      // need to filter our dat to make sure it falls in our date range
+      const dateRange = true;
+
+      // if line or year false we break
+      if (!inLines || !dateRange ) continue;
 
       if (!aggregated[metric.line_name]) {
         aggregated[metric.line_name] = [];
@@ -131,20 +131,22 @@ export default function Charts() {
     // Condense aggregated objects
     let datasets: ChartDataset<
       'line',
-      { month: number; stat: string | number | null }[]
+      { time: string; stat: string | number | null }[]
     >[] = [];
     Object.entries(aggregated).forEach(([line, metrics]) => {
       datasets.push({
         data: metrics.map((metric) => ({
-          month: metric.month,
-          stat: metric[formData.stat],
+          time: metric.year + ' ' + metric.month,
+          stat: metric[dayOfWeek],
         })),
         label: `Line ${line}`,
       });
     });
 
+    console.log('chart data', data)
+
     setData(datasets);
-  };
+  }, [startDate, endDate, lines, dayOfWeek])
 
   const options: ChartOptions<'line'> = {
     interaction: {
@@ -198,56 +200,34 @@ export default function Charts() {
   };
 
   return (
-    <div id="window"  className="h-screen max-w-screen-lg mx-auto">
-      <form
-        className="flex gap-8 items-start py-8"
-        onSubmit={handleSubmit(onSubmit)}
-      >
+    <>
+          <div>
+
+
+      <DateRangeSelector
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
+        dayOfWeek={dayOfWeek}
+        setDayOfWeek={setDayOfWeek}
+      ></DateRangeSelector>
+
+
+      <div id="window" className="h-screen max-w-screen-lg mx-auto">
+
         <LineSelector selectedLines={lines} setSelectedLines={setLines} />
 
-        <DateRangeSelector
-          startDate={startDate}
-          setStartDate={setStartDate}
-          endDate={endDate}
-          setEndDate={setEndDate}
-          dayOfWeek={dayOfWeek}
-          setDayOfWeek={setDayOfWeek}
-        ></DateRangeSelector>
-
-        {/* <div>
-          Year:
-          <ul className="max-h-48 overflow-y-scroll">
-            {years.map((year, index) => {
-              return (
-                <li key={index} className="flex gap-2 items-center px-2">
-                  <input
-                    type="radio"
-                    id={year.toString()}
-                    value={year}
-                    {...register('year')}
-                  />
-                  <label htmlFor={year.toString()}>{year}</label>
-                </li>
-              );
-            })}
-          </ul>
-        </div> */}
-
-        {/* <input
-          type="submit"
-          value="Chart"
-          className="border cursor-pointer px-4 py-2 rounded hover:bg-white hover:text-black"
-        /> */}
-
-
-      <Line
-        options={options}
-        id="chart"
-        data={{
-          // labels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-          datasets: data,
-        }}
-      />
+        <Line
+          options={options}
+          id="chart"
+          data={{
+            // labels: monthList,
+            datasets: data,
+          }}
+        />
+      </div>
     </div>
+    </>
   );
 }

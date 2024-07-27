@@ -21,7 +21,13 @@ body {
 }
 
 #chart {
-  width: 90%;
+}
+
+#window {
+  display: flex;
+}
+
+#lineSelector {
 }
 
 @layer utilities {

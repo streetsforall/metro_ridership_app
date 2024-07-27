@@ -25,8 +25,8 @@ export enum DayOfWeek {
 /**
  * Default starting values
  */
-const DefaultStartDate: Date = new Date(2022, 1);
-const DefaultEndDate: Date = new Date(2023, 1, 1);
+const DefaultStartDate: Date = new Date(2020, 1);
+const DefaultEndDate: Date = new Date(2023, 1);
 const DefaultLine: Line[] = [];
 
 /**

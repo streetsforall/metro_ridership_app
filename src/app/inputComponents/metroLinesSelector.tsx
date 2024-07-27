@@ -27,7 +27,7 @@ export default function LineSelector({
   setSelectedLines,
 }: LineSelectorProps) {
   return (
-    <div className="bg-white p-4 rounded-xl">
+    <div id="lineSelector" className="bg-white p-4 rounded-xl">
       <div className="flex gap-4 items-center mb-8">
         <span className="text-sm uppercase">Line Selector</span>
         <button className="text-neutral-400 text-sm">Expand</button>
