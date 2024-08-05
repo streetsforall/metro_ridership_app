@@ -130,11 +130,18 @@ export default function Charts() {
 
     const months = data[0] ? data[0].data.map((a) => a.time) : '';
     setMonthList(months);
-    console.log(months);
+    console.log('months', months);
 
     setData(datasets);
     console.log('chart data', datasets);
-  }, [startDate, endDate, lines, dayOfWeek]);
+
+    /*  
+    Need to add data as dependency. 
+    Since data is an array, we need to stringify due to current React system.
+    https://github.com/facebook/react/issues/14476 
+    */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startDate, endDate, lines, dayOfWeek, JSON.stringify(data)]);
 
   const options: ChartOptions<'line'> = {
     interaction: {
