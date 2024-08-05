@@ -14,6 +14,8 @@ export interface DateRangeSelectorProps {
   setDayOfWeek: React.Dispatch<React.SetStateAction<DayOfWeek>>;
 }
 
+type IntervalEndpoint = 'Start' | 'End';
+
 const DayTypes = [
   {
     name: DayOfWeek.Weekday,
@@ -76,53 +78,79 @@ export default function DateRangeSelector({
     }
   };
 
-  const updateMonth = (range, title, newMonth: string) => {
-    // update month state
-    const newMonthDate = range.setMonth(Number(newMonth));
-    const monthDate = new Date(newMonthDate);
-
-    console.log('new month date', newMonthDate);
-
-    if (title == 'End') {
-      setEndDate(monthDate);
+  const getDateSetter = (
+    intervalEndpoint: IntervalEndpoint,
+  ): React.Dispatch<React.SetStateAction<Date>> => {
+    if (intervalEndpoint === 'End') {
+      return setEndDate;
+    } else if (intervalEndpoint === 'Start') {
+      return setStartDate;
     } else {
-      setStartDate(monthDate);
+      const errorMessage =
+        'Cannot support interval endpoint type: ' + intervalEndpoint;
+      console.error(errorMessage);
+      throw new Error(errorMessage);
     }
-
-    // update form value
-    const form = document.getElementById(title + 'Month');
-    form.value = range.getMonth();
   };
 
-  const updateYear = (range, title, newYear: number) => {
+  const updateMonth = (
+    range: Date,
+    title: IntervalEndpoint,
+    newMonth: string,
+  ) => {
+    // update month state
+    const setDate = getDateSetter(title);
+
+    // Requires updater function.
+    setDate((prevDate: Date) => {
+      const newDate: Date = new Date(prevDate);
+      newDate.setMonth(Number(newMonth));
+
+      console.log('new month date', title, newDate);
+
+      // Update form value (should be side effect)
+      const form = document.getElementById(title + 'Month');
+      form.value = newDate.getMonth();
+
+      return newDate;
+    });
+  };
+
+  const updateYear = (
+    range: Date,
+    title: IntervalEndpoint,
+    newYear: number,
+  ) => {
     // need to add filter to make sure from is not larger than the "to" date
     if (true) {
-      // update month state
-      const newYearDate = range.setYear(newYear);
-      const dateYear = new Date(newYearDate);
+      // update year state
+      const setDate = getDateSetter(title);
 
-      console.log('new year date', dateYear);
+      // Requires updater function.
+      setDate((prevDate: Date) => {
+        const newDate: Date = new Date(prevDate);
+        newDate.setFullYear(newYear);
 
-      if (title == 'End') {
-        setEndDate(dateYear);
-      } else {
-        setStartDate(dateYear);
-      }
-      // update form value
-      const form = document.getElementById(title + 'Year');
-      const yearNum = range.getFullYear();
-      form.value = yearNum;
+        console.log('new year date', title, newDate);
+
+        // update form value (should be side effect)
+        const form = document.getElementById(title + 'Year');
+        const yearNum = newDate.getFullYear();
+        form.value = yearNum;
+
+        return newDate;
+      });
     } else {
       console.log('year not valid');
     }
   };
 
-  const dateForm = (range, title) => {
+  const dateForm = (range: Date, title: IntervalEndpoint) => {
     return (
       <>
         <div id={title + 'Form'}>
           <span>
-            <label>Month:</label>
+            <label>Month: </label>
             <select
               onChange={(e) => {
                 updateMonth(range, title, e.target.value);
@@ -145,7 +173,7 @@ export default function DateRangeSelector({
             </select>
           </span>
           <span>
-            <label>Year:</label>
+            <label>Year: </label>
             <select
               onChange={(e) => {
                 updateYear(range, title, e.target.value);
