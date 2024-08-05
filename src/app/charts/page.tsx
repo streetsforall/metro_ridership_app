@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -53,9 +52,10 @@ ChartJS.register(
 );
 
 export default function Charts() {
-
-  const [data, setData] = useState<ChartDataset<'line', { time: string; stat: string | number | null }[]>[]>([]);
-  const [monthList, setMonthList] = useState([])
+  const [data, setData] = useState<
+    ChartDataset<'line', { time: string; stat: string | number | null }[]>[]
+  >([]);
+  const [monthList, setMonthList] = useState([]);
 
   const {
     lines,
@@ -68,22 +68,20 @@ export default function Charts() {
     setEndDate,
   } = useUserDashboardInput();
 
-
   /**
    * Update params on state change
    */
-useEffect(() => {
-
+  useEffect(() => {
     if (!data) {
-      return('');
+      return '';
     }
-  
-    console.log(lines)
- 
+
+    console.log(lines);
+
     // Aggregate by line
     let aggregated: Aggregate = {};
 
-    console.log('date range FILTER (start / end)', startDate, endDate)
+    console.log('date range FILTER (start / end)', startDate, endDate);
 
     for (let i = 0; i < metrics.length; i++) {
       const metric: Metric = metrics[i];
@@ -97,9 +95,8 @@ useEffect(() => {
       // need to filter our date to make sure it falls in our date range
       // console.log(endDate, newMetricDate, startDate)
 
-
-      const startCap = startDate.getTime() >= newMetricDate.getTime()
-      const endCap =  endDate.getTime() <= newMetricDate.getTime() 
+      const startCap = startDate.getTime() >= newMetricDate.getTime();
+      const endCap = endDate.getTime() <= newMetricDate.getTime();
 
       // console.log(newMetricDate, startCap, endCap)
 
@@ -131,14 +128,13 @@ useEffect(() => {
 
     // create month labels
 
-
-    const months = data[0] ? data[0].data.map(a => a.time) : '';
+    const months = data[0] ? data[0].data.map((a) => a.time) : '';
     setMonthList(months);
-    console.log(months)
+    console.log(months);
 
     setData(datasets);
-    console.log('chart data', datasets)
-}, [startDate, endDate, lines, dayOfWeek])
+    console.log('chart data', datasets);
+  }, [startDate, endDate, lines, dayOfWeek]);
 
   const options: ChartOptions<'line'> = {
     interaction: {
@@ -193,33 +189,29 @@ useEffect(() => {
 
   return (
     <>
-          <div>
+      <div>
+        <DateRangeSelector
+          startDate={startDate}
+          setStartDate={setStartDate}
+          endDate={endDate}
+          setEndDate={setEndDate}
+          dayOfWeek={dayOfWeek}
+          setDayOfWeek={setDayOfWeek}
+        ></DateRangeSelector>
 
+        <div id="window" className="h-screen max-w-screen-lg mx-auto">
+          <LineSelector selectedLines={lines} setSelectedLines={setLines} />
 
-      <DateRangeSelector
-        startDate={startDate}
-        setStartDate={setStartDate}
-        endDate={endDate}
-        setEndDate={setEndDate}
-        dayOfWeek={dayOfWeek}
-        setDayOfWeek={setDayOfWeek}
-      ></DateRangeSelector>
-
-
-      <div id="window" className="h-screen max-w-screen-lg mx-auto">
-
-        <LineSelector selectedLines={lines} setSelectedLines={setLines} />
-
-        <Line
-          options={options}
-          id="chart"
-          data={{
-            labels: monthList,
-            datasets: data,
-          }}
-        />
+          <Line
+            options={options}
+            id="chart"
+            data={{
+              labels: monthList,
+              datasets: data,
+            }}
+          />
+        </div>
       </div>
-    </div>
     </>
   );
 }

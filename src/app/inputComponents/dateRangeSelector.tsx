@@ -1,13 +1,7 @@
 'use client';
 
-
 import { Label } from '@radix-ui/react-label';
 import { DayOfWeek } from '../hooks/useUserDashboardInput';
-import { Badge, RadioGroup } from '@radix-ui/themes';
-import * as Select from '@radix-ui/react-select';
-// import { FieldValues, UseFormRegister } from 'react-hook-form';
-import { Inputs } from '../charts/page';
-import { useEffect } from 'react';
 
 export interface DateRangeSelectorProps {
   startDate: Date;
@@ -43,7 +37,6 @@ export default function DateRangeSelector({
   dayOfWeek,
   setDayOfWeek,
 }: DateRangeSelectorProps) {
-
   const getMonthYearString = (date: Date): string => {
     const monthName: (date?: number | Date | undefined) => string =
       new Intl.DateTimeFormat('en-US', {
@@ -55,7 +48,7 @@ export default function DateRangeSelector({
   };
 
   const getValueDateString = (date: Date): string => {
-    console.log(date)
+    console.log(date);
     const year = date.getFullYear();
     const month = date
       .getMonth()
@@ -83,64 +76,62 @@ export default function DateRangeSelector({
     }
   };
 
-
-
-
-
-  const updateMonth = (range, title, newMonth:string) => {
+  const updateMonth = (range, title, newMonth: string) => {
     // update month state
-    const newMonthDate = range.setMonth(Number(newMonth))
-    const monthDate = new Date(newMonthDate)
+    const newMonthDate = range.setMonth(Number(newMonth));
+    const monthDate = new Date(newMonthDate);
 
-    console.log('new month date', newMonthDate)
+    console.log('new month date', newMonthDate);
 
     if (title == 'End') {
-      setEndDate(monthDate)
+      setEndDate(monthDate);
     } else {
-      setStartDate(monthDate)
+      setStartDate(monthDate);
     }
 
     // update form value
     const form = document.getElementById(title + 'Month');
     form.value = range.getMonth();
-  }
+  };
 
-
-  const updateYear = (range, title, newYear:number) => {
-
+  const updateYear = (range, title, newYear: number) => {
     // need to add filter to make sure from is not larger than the "to" date
     if (true) {
       // update month state
-      const newYearDate = range.setYear(newYear)
-      const dateYear = new Date(newYearDate)
+      const newYearDate = range.setYear(newYear);
+      const dateYear = new Date(newYearDate);
 
-      console.log('new year date', dateYear)
+      console.log('new year date', dateYear);
 
       if (title == 'End') {
-        setEndDate(dateYear)
+        setEndDate(dateYear);
       } else {
-        setStartDate(dateYear)
+        setStartDate(dateYear);
       }
       // update form value
       const form = document.getElementById(title + 'Year');
-      const yearNum = range.getFullYear()
+      const yearNum = range.getFullYear();
       form.value = yearNum;
     } else {
-      console.log('year not valid')
+      console.log('year not valid');
     }
-  }
-
+  };
 
   const dateForm = (range, title) => {
-
     return (
       <>
         <div id={title + 'Form'}>
           <span>
             <label>Month:</label>
-            <select onChange={e => {updateMonth(range, title, e.target.value)}} id={title + 'Month'} name="month">
-              <option value="0" >January</option>
-              <option value="1" >February</option>
+            <select
+              onChange={(e) => {
+                updateMonth(range, title, e.target.value);
+              }}
+              id={title + 'Month'}
+              name="month"
+            >
+              <option value="0">January</option>
+              <option value="1">February</option>
               <option value="2">March</option>
               <option value="3">April</option>
               <option value="4">May</option>
@@ -149,14 +140,20 @@ export default function DateRangeSelector({
               <option value="7">August</option>
               <option value="8">September</option>
               <option value="9">October</option>
-              <option value="10" >November</option>
+              <option value="10">November</option>
               <option value="11">December</option>
             </select>
           </span>
           <span>
             <label>Year:</label>
-            <select  onChange={e  => {updateYear(range, title, e.target.value)}} id={title + 'Year'} name="year">
-              <option >2009</option>
+            <select
+              onChange={(e) => {
+                updateYear(range, title, e.target.value);
+              }}
+              id={title + 'Year'}
+              name="year"
+            >
+              <option>2009</option>
               <option>2010</option>
               <option>2011</option>
               <option>2012</option>
@@ -173,12 +170,11 @@ export default function DateRangeSelector({
               <option>2023</option>
               <option>2024</option>
             </select>
-          </span >
-        </div >
+          </span>
+        </div>
       </>
-    )
-  }
-
+    );
+  };
 
   return (
     <div>
@@ -186,17 +182,14 @@ export default function DateRangeSelector({
         <div>
           <Label>From</Label>
           {dateForm(startDate, 'Start')}
-
         </div>
         <div className="arrow"></div>
         <div>
           <Label>To</Label>
           {dateForm(endDate, 'End')}
-
         </div>
       </div>
       <div id="dayOfWeekSelector">
-
         <div>
           <Label>Day of Week</Label>
           <ul className="max-h-48 overflow-y-scroll">
@@ -204,9 +197,8 @@ export default function DateRangeSelector({
               return (
                 <li key={dayType.key} className="flex gap-2 items-center px-2">
                   <input
-                    
-                    onClick={e => setDayOfWeek(e.target.value)}
-                    name='day'
+                    onClick={(e) => setDayOfWeek(e.target.value)}
+                    name="day"
                     type="radio"
                     id={dayType.key}
                     value={dayType.key}
