@@ -16,21 +16,6 @@ export interface DateRangeSelectorProps {
 
 type IntervalEndpoint = 'Start' | 'End';
 
-const DayTypes = [
-  {
-    name: DayOfWeek.Weekday,
-    key: 'est_wkday_ridership',
-  },
-  {
-    name: DayOfWeek.Saturday,
-    key: 'est_sat_ridership',
-  },
-  {
-    name: DayOfWeek.Sunday,
-    key: 'est_sun_ridership',
-  },
-];
-
 export default function DateRangeSelector({
   startDate,
   setStartDate,
@@ -221,17 +206,17 @@ export default function DateRangeSelector({
         <div>
           <Label>Day of Week</Label>
           <ul className="max-h-48 overflow-y-scroll">
-            {DayTypes.map((dayType, index) => {
+            {Object.entries(DayOfWeek).map(([name, key]) => {
               return (
-                <li key={dayType.key} className="flex gap-2 items-center px-2">
+                <li key={key} className="flex gap-2 items-center px-2">
                   <input
                     onClick={(e) => setDayOfWeek(e.target.value)}
                     name="day"
                     type="radio"
-                    id={dayType.key}
-                    value={dayType.key}
+                    id={key}
+                    value={key}
                   />
-                  <label htmlFor={dayType.key}>{dayType.name}</label>
+                  <label htmlFor={key}>{name}</label>
                 </li>
               );
             })}

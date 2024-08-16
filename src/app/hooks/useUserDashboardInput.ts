@@ -17,9 +17,9 @@ export interface UserDashboardInputState {
 export type Line = string;
 
 export enum DayOfWeek {
-  Weekday = 'Weekday',
-  Saturday = 'Saturday',
-  Sunday = 'Sunday',
+  Weekday = 'est_wkday_ridership',
+  Saturday = 'est_sat_ridership',
+  Sunday = 'est_sun_ridership',
 }
 
 /**
