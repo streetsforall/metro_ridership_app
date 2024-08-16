@@ -20,7 +20,7 @@ import DateRangeSelector from '../inputComponents/dateRangeSelector';
 import LineSelector from '../inputComponents/metroLinesSelector';
 import useUserDashboardInput from '../hooks/useUserDashboardInput';
 
-interface Metric {
+export interface Metric {
   year: number;
   month: number;
   line_name: string;
