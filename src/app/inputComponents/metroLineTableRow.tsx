@@ -51,9 +51,12 @@ export default function MetroLineTableRow({
   const changeInRidership: number = 1203;
   const division: number = 3;
 
+  const collapsedSelectorWrapperClasses =
+    'flex gap-2 items-center px-2 odd:bg-neutral-50 text-sm';
+
   return (
     <>
-      <tr className="flex gap-2 items-center px-2 odd:bg-neutral-50 text-sm">
+      <tr className={expanded ? '' : collapsedSelectorWrapperClasses}>
         {/* Is Selected */}
         <td className="line-selected-checkbox">
           <Checkbox.Root
