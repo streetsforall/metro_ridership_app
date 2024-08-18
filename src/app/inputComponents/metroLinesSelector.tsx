@@ -28,6 +28,7 @@ export default function LineSelector({
   };
 
   const subtitleClass = 'text-neutral-400';
+  const headerStyle = { textAlign: 'left' };
 
   return (
     /* Styled as flexbox so overflow scroll container stretches full height */
@@ -48,24 +49,24 @@ export default function LineSelector({
           {expanded && (
             <thead>
               <tr>
-                <th className={subtitleClass}>Selected</th>
-              </tr>
-              <tr>
-                <th className={subtitleClass}>Line</th>
-              </tr>
-              <tr>
-                <th className={subtitleClass}>Avg. Ridership</th>
-              </tr>
-              <tr>
-                <th className={subtitleClass}>Change</th>
-              </tr>
-              <tr>
-                <th className={subtitleClass}>Division</th>
-              </tr>
-              <tr>
-                <th className={subtitleClass}>Ridership over time</th>
-              </tr>
-              <tr>
+                <th style={{ textAlign: 'left' }} className={subtitleClass}>
+                  Selected
+                </th>
+                <th style={{ textAlign: 'left' }} className={subtitleClass}>
+                  Line
+                </th>
+                <th style={{ textAlign: 'left' }} className={subtitleClass}>
+                  Avg. Ridership
+                </th>
+                <th style={{ textAlign: 'left' }} className={subtitleClass}>
+                  Change
+                </th>
+                <th style={{ textAlign: 'left' }} className={subtitleClass}>
+                  Division
+                </th>
+                <th style={{ textAlign: 'left' }} className={subtitleClass}>
+                  Ridership over time
+                </th>
                 {/* Empty for View Map */}
                 <th></th>
               </tr>
