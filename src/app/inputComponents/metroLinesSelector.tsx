@@ -19,22 +19,13 @@ export default function LineSelector({
 }: LineSelectorProps) {
   const [expanded, setExpanded] = useState<boolean>(false);
 
-  const onClickForSelectedCheckbox = (line: Line): void => {
-    setSelectedLines((prevSelectedLine) => {
-      const selectedLinesCopy = [...prevSelectedLine];
-
-      // Update checkbox value
-      if (selectedLinesCopy.includes(line.line.toString())) {
-        const pos = selectedLinesCopy.indexOf(line.line.toString());
-
-        selectedLinesCopy.splice(pos, 1);
-      } else {
-        selectedLinesCopy.push(line.line.toString());
-      }
-
-      return selectedLinesCopy;
+  const onExpandClick = (): void => {
+    setExpanded((prevExpanded: boolean) => {
+      return !prevExpanded;
     });
   };
+
+  const subtitleClass = 'text-neutral-400';
 
   return (
     /* Styled as flexbox so overflow scroll container stretches full height */
@@ -43,12 +34,42 @@ export default function LineSelector({
         <span className="text-sm uppercase whitespace-nowrap">
           Line Selector
         </span>
-        <button className="text-neutral-400 text-sm">Expand</button>
+        <button className={`${subtitleClass} text-sm`} onClick={onExpandClick}>
+          {expanded ? 'Collapse' : 'Expand'}
+        </button>
       </div>
 
       {/* Overflow scroll container */}
       <div className="overflow-y-auto">
         <table className="w-full">
+          {/* Only show table header when line selector is expanded */}
+          {expanded && (
+            <thead>
+              <tr>
+                <th className={subtitleClass}>Selected</th>
+              </tr>
+              <tr>
+                <th className={subtitleClass}>Line</th>
+              </tr>
+              <tr>
+                <th className={subtitleClass}>Avg. Ridership</th>
+              </tr>
+              <tr>
+                <th className={subtitleClass}>Change</th>
+              </tr>
+              <tr>
+                <th className={subtitleClass}>Division</th>
+              </tr>
+              <tr>
+                <th className={subtitleClass}>Ridership over time</th>
+              </tr>
+              <tr>
+                {/* Empty for View Map */}
+                <th></th>
+              </tr>
+            </thead>
+          )}
+
           <tbody>
             {(lines as Line[]).map((line, index) => {
               return (
@@ -57,6 +78,7 @@ export default function LineSelector({
                   key={index}
                   setSelectedLines={setSelectedLines}
                   line={line}
+                  expanded={expanded}
                 ></MetroLineTableRow>
               );
             })}

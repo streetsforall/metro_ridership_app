@@ -9,7 +9,7 @@ interface Line {
 interface MetroLineTableRowProps {
   selectedLines: string[];
   setSelectedLines: React.Dispatch<React.SetStateAction<Array<string>>>;
-  isExpanded?: boolean;
+  expanded?: boolean;
   line: Line;
 }
 
@@ -27,6 +27,7 @@ export default function MetroLineTableRow({
   selectedLines,
   setSelectedLines,
   line,
+  expanded,
 }: MetroLineTableRowProps) {
   const onClickForSelectedCheckbox = (line: Line): void => {
     setSelectedLines((prevSelectedLine) => {
@@ -45,9 +46,15 @@ export default function MetroLineTableRow({
     });
   };
 
+  /* Stub line data */
+  const avgRidership: number = 18002;
+  const changeInRidership: number = 1203;
+  const division: number = 3;
+
   return (
     <>
       <tr className="flex gap-2 items-center px-2 odd:bg-neutral-50 text-sm">
+        {/* Is Selected */}
         <td className="line-selected-checkbox">
           <Checkbox.Root
             id={line.line.toString()}
@@ -59,6 +66,7 @@ export default function MetroLineTableRow({
           </Checkbox.Root>
         </td>
 
+        {/* Line name (ex: Line 2, B Line) */}
         <td className="w-full line-name">
           <label
             htmlFor={String(line.line)}
@@ -71,6 +79,21 @@ export default function MetroLineTableRow({
                 : ''}
           </label>
         </td>
+
+        {/* Average ridership over a duration (ex: 3 months) */}
+        {expanded && <td>{avgRidership}</td>}
+
+        {/* Change in ridership (ex: +1000, -200) */}
+        {expanded && <td>{changeInRidership}</td>}
+
+        {/* Division (ex: 3, 5) */}
+        {expanded && <td>{division}</td>}
+
+        {/* Ridership over time. Line graph showing ridership trend */}
+        {expanded && <td></td>}
+
+        {/* View Map hyperlink */}
+        {expanded && <td>View Map</td>}
       </tr>
     </>
   );
