@@ -1,6 +1,4 @@
 import * as Checkbox from '@radix-ui/react-checkbox';
-import * as lines from '../data/metro_line_metadata_current.json';
-import { useState } from 'react';
 
 interface Line {
   line: number;

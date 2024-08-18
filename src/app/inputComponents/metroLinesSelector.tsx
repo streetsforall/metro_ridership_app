@@ -1,6 +1,5 @@
-import * as Checkbox from '@radix-ui/react-checkbox';
 import * as lines from '../data/metro_line_metadata_current.json';
-import { SetStateAction, useState } from 'react';
+import { useState } from 'react';
 import MetroLineTableRow from './metroLineTableRow';
 
 interface Line {
@@ -13,16 +12,6 @@ interface LineSelectorProps {
   selectedLines: string[];
   setSelectedLines: React.Dispatch<React.SetStateAction<Array<string>>>;
 }
-
-const railLetters = new Map([
-  [801, 'A'],
-  [802, 'B'],
-  [803, 'C'],
-  [804, 'E'],
-  [805, 'D'],
-  [806, 'L'],
-  [807, 'K'],
-]);
 
 export default function LineSelector({
   selectedLines,
