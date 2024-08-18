@@ -1,5 +1,6 @@
-import * as Checkbox from '@radix-ui/react-checkbox';
 import * as lines from '../data/metro_line_metadata_current.json';
+import { useState } from 'react';
+import MetroLineTableRow from './metroLineTableRow';
 
 interface Line {
   line: number;
@@ -10,22 +11,24 @@ interface Line {
 interface LineSelectorProps {
   selectedLines: string[];
   setSelectedLines: React.Dispatch<React.SetStateAction<Array<string>>>;
+  expanded: boolean;
+  setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
 }
-
-const railLetters = new Map([
-  [801, 'A'],
-  [802, 'B'],
-  [803, 'C'],
-  [804, 'E'],
-  [805, 'D'],
-  [806, 'L'],
-  [807, 'K'],
-]);
 
 export default function LineSelector({
   selectedLines,
   setSelectedLines,
+  expanded,
+  setExpanded,
 }: LineSelectorProps) {
+  const onExpandClick = (): void => {
+    setExpanded((prevExpanded: boolean) => {
+      return !prevExpanded;
+    });
+  };
+
+  const subtitleClass = 'text-neutral-400';
+
   return (
     /* Styled as flexbox so overflow scroll container stretches full height */
     <div className="flex flex-col gap-8 bg-white p-4 rounded-xl">
@@ -33,59 +36,52 @@ export default function LineSelector({
         <span className="text-sm uppercase whitespace-nowrap">
           Line Selector
         </span>
-        <button className="text-neutral-400 text-sm">Expand</button>
+        <button className={`${subtitleClass} text-sm`} onClick={onExpandClick}>
+          {expanded ? 'Hide' : 'Expand'}
+        </button>
       </div>
 
       {/* Overflow scroll container */}
       <div className="overflow-y-auto">
         <table className="w-full">
+          {/* Only show table header when line selector is expanded */}
+          {expanded && (
+            <thead>
+              <tr>
+                <th className={subtitleClass}>Selected</th>
+              </tr>
+              <tr>
+                <th className={subtitleClass}>Line</th>
+              </tr>
+              <tr>
+                <th className={subtitleClass}>Avg. Ridership</th>
+              </tr>
+              <tr>
+                <th className={subtitleClass}>Change</th>
+              </tr>
+              <tr>
+                <th className={subtitleClass}>Division</th>
+              </tr>
+              <tr>
+                <th className={subtitleClass}>Ridership over time</th>
+              </tr>
+              <tr>
+                {/* Empty for View Map */}
+                <th></th>
+              </tr>
+            </thead>
+          )}
+
           <tbody>
             {(lines as Line[]).map((line, index) => {
               return (
-                <tr
+                <MetroLineTableRow
+                  selectedLines={selectedLines}
                   key={index}
-                  className="flex gap-2 items-center px-2 odd:bg-neutral-50 text-sm"
-                >
-                  <td>
-                    <Checkbox.Root
-                      id={line.line.toString()}
-                      onClick={() => {
-                        const selectedLinesCopy = [...selectedLines];
-
-                        // Update checkbox value
-                        if (selectedLinesCopy.includes(line.line.toString())) {
-                          const pos = selectedLinesCopy.indexOf(
-                            line.line.toString(),
-                          );
-
-                          selectedLinesCopy.splice(pos, 1);
-                        } else {
-                          selectedLinesCopy.push(line.line.toString());
-                        }
-
-                        // Update local state
-                        setSelectedLines(selectedLinesCopy);
-                      }}
-                      checked={selectedLines.includes(line.line.toString())}
-                      className="flex items-center justify-center bg-white data-[state=checked]:bg-neutral-500 border border-neutral-500 rounded-lg h-5 w-5 overflow-hidden"
-                    >
-                      <Checkbox.Indicator className="bg-neutral-500 rounded-lg h-full w-full" />
-                    </Checkbox.Root>
-                  </td>
-
-                  <td className="w-full">
-                    <label
-                      htmlFor={String(line.line)}
-                      className="flex-1 block cursor-pointer py-2"
-                    >
-                      {line.mode === 'Bus'
-                        ? `Line ${line.line}`
-                        : line.mode === 'Rail'
-                          ? `${railLetters.get(line.line)} Line`
-                          : ''}
-                    </label>
-                  </td>
-                </tr>
+                  setSelectedLines={setSelectedLines}
+                  line={line}
+                  expanded={expanded}
+                ></MetroLineTableRow>
               );
             })}
           </tbody>
