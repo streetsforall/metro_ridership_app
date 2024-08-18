@@ -1,6 +1,7 @@
 import * as Checkbox from '@radix-ui/react-checkbox';
 import * as lines from '../data/metro_line_metadata_current.json';
-import { useState } from 'react';
+import { SetStateAction, useState } from 'react';
+import MetroLineTableRow from './metroLineTableRow';
 
 interface Line {
   line: number;
@@ -62,34 +63,12 @@ export default function LineSelector({
           <tbody>
             {(lines as Line[]).map((line, index) => {
               return (
-                <tr
+                <MetroLineTableRow
+                  selectedLines={selectedLines}
                   key={index}
-                  className="flex gap-2 items-center px-2 odd:bg-neutral-50 text-sm"
-                >
-                  <td className="line-selected-checkbox">
-                    <Checkbox.Root
-                      id={line.line.toString()}
-                      onClick={() => onClickForSelectedCheckbox(line)}
-                      checked={selectedLines.includes(line.line.toString())}
-                      className="flex items-center justify-center bg-white data-[state=checked]:bg-neutral-500 border border-neutral-500 rounded-lg h-5 w-5 overflow-hidden"
-                    >
-                      <Checkbox.Indicator className="bg-neutral-500 rounded-lg h-full w-full" />
-                    </Checkbox.Root>
-                  </td>
-
-                  <td className="w-full line-name">
-                    <label
-                      htmlFor={String(line.line)}
-                      className="flex-1 block cursor-pointer py-2"
-                    >
-                      {line.mode === 'Bus'
-                        ? `Line ${line.line}`
-                        : line.mode === 'Rail'
-                          ? `${railLetters.get(line.line)} Line`
-                          : ''}
-                    </label>
-                  </td>
-                </tr>
+                  setSelectedLines={setSelectedLines}
+                  line={line}
+                ></MetroLineTableRow>
               );
             })}
           </tbody>
