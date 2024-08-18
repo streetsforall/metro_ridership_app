@@ -11,14 +11,16 @@ interface Line {
 interface LineSelectorProps {
   selectedLines: string[];
   setSelectedLines: React.Dispatch<React.SetStateAction<Array<string>>>;
+  expanded: boolean;
+  setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function LineSelector({
   selectedLines,
   setSelectedLines,
+  expanded,
+  setExpanded,
 }: LineSelectorProps) {
-  const [expanded, setExpanded] = useState<boolean>(false);
-
   const onExpandClick = (): void => {
     setExpanded((prevExpanded: boolean) => {
       return !prevExpanded;
@@ -35,7 +37,7 @@ export default function LineSelector({
           Line Selector
         </span>
         <button className={`${subtitleClass} text-sm`} onClick={onExpandClick}>
-          {expanded ? 'Collapse' : 'Expand'}
+          {expanded ? 'Hide' : 'Expand'}
         </button>
       </div>
 

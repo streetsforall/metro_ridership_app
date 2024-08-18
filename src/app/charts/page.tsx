@@ -56,6 +56,8 @@ export default function Charts() {
     ChartDataset<'line', { time: string; stat: string | number | null }[]>[]
   >([]);
   const [monthList, setMonthList] = useState([]);
+  const [expandedLineSelector, setExpandedLineSelector] =
+    useState<boolean>(false);
 
   const {
     lines,
@@ -207,16 +209,23 @@ export default function Charts() {
         ></DateRangeSelector>
 
         <div id="window" className="h-screen max-w-screen-lg mx-auto">
-          <LineSelector selectedLines={lines} setSelectedLines={setLines} />
-
-          <Line
-            options={options}
-            id="chart"
-            data={{
-              labels: monthList,
-              datasets: data,
-            }}
+          <LineSelector
+            selectedLines={lines}
+            setSelectedLines={setLines}
+            expanded={expandedLineSelector}
+            setExpanded={setExpandedLineSelector}
           />
+
+          {!expandedLineSelector && (
+            <Line
+              options={options}
+              id="chart"
+              data={{
+                labels: monthList,
+                datasets: data,
+              }}
+            />
+          )}
         </div>
       </div>
     </>
