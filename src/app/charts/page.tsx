@@ -14,11 +14,12 @@ import {
   type ChartDataset,
   type ChartOptions,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Line as LineChart } from 'react-chartjs-2';
 import * as metrics from '@/app/ridership.json';
 import DateRangeSelector from '../inputComponents/dateRangeSelector';
 import LineSelector from '../inputComponents/metroLinesSelector';
 import useUserDashboardInput from '../hooks/useUserDashboardInput';
+import { Line } from '../common/types';
 
 export interface Metric {
   year: number;
@@ -78,7 +79,7 @@ export default function Charts() {
       return '';
     }
 
-    console.log(lines);
+    console.log('lines', lines);
 
     // Aggregate by line
     let aggregated: Aggregate = {};
@@ -90,7 +91,9 @@ export default function Charts() {
 
       // console.log(metric)
       // Filter by year and lines
-      const inLines = lines.includes(metric.line_name);
+      const inLines = lines.find(
+        (line: Line) => line.id === Number(metric.line_name),
+      )?.selected;
 
       var newMetricDate = new Date(metric.year, metric.month);
 
@@ -210,14 +213,14 @@ export default function Charts() {
 
         <div id="window" className="h-screen max-w-screen-lg mx-auto">
           <LineSelector
-            selectedLines={lines}
-            setSelectedLines={setLines}
+            lines={lines}
+            setLines={setLines}
             expanded={expandedLineSelector}
             setExpanded={setExpandedLineSelector}
           />
 
           {!expandedLineSelector && (
-            <Line
+            <LineChart
               options={options}
               id="chart"
               data={{

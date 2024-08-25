@@ -1,5 +1,6 @@
 export interface Line {
-  line: number;
+  id: number;
   mode: 'Bus' | 'Rail';
   provider: 'DO' | 'PT';
+  selected?: boolean;
 }

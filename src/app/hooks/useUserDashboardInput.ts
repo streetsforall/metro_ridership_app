@@ -1,4 +1,12 @@
 import { useState } from 'react';
+import { Line } from '../common/types';
+import * as LineJsonData from '../data/metro_line_metadata_current.json';
+
+interface LineJson {
+  line: number;
+  mode: string;
+  provider: string;
+}
 
 export interface UserDashboardInputState {
   startDate: Date;
@@ -14,8 +22,6 @@ export interface UserDashboardInputState {
   setLines: React.Dispatch<React.SetStateAction<Line[]>>;
 }
 
-export type Line = string;
-
 export enum DayOfWeek {
   Weekday = 'est_wkday_ridership',
   Saturday = 'est_sat_ridership',
@@ -29,6 +35,16 @@ const DefaultStartDate: Date = new Date(2020, 1);
 const DefaultEndDate: Date = new Date(2023, 1);
 const DefaultLine: Line[] = [];
 
+const createLinesData = (): Line[] => {
+  return (LineJsonData as LineJson[]).map((line: LineJson) => {
+    return {
+      ...line,
+      id: line.line,
+      selected: false,
+    } as Line;
+  });
+};
+
 /**
  * Contains selected user inputs like bus lines and starting date.
  * @returns
@@ -38,7 +54,7 @@ const useUserDashboardInput = (): UserDashboardInputState => {
   const [endDate, setEndDate] = useState<Date>(DefaultEndDate);
   const [dayOfWeek, setDayOfWeek] = useState<DayOfWeek>(DayOfWeek.Weekday);
 
-  const [lines, setLines] = useState<Line[]>(DefaultLine);
+  const [lines, setLines] = useState<Line[]>(createLinesData);
 
   return {
     startDate,

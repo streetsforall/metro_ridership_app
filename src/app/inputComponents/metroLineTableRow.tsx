@@ -2,8 +2,7 @@ import * as Checkbox from '@radix-ui/react-checkbox';
 import { Line } from '../common/types';
 
 interface MetroLineTableRowProps {
-  selectedLines: string[];
-  setSelectedLines: React.Dispatch<React.SetStateAction<Array<string>>>;
+  setSelectedLines: React.Dispatch<React.SetStateAction<Line[]>>;
   expanded?: boolean;
   line: Line;
 }
@@ -19,25 +18,23 @@ const railLetters = new Map([
 ]);
 
 export default function MetroLineTableRow({
-  selectedLines,
   setSelectedLines,
   line,
   expanded,
 }: MetroLineTableRowProps) {
   const onClickForSelectedCheckbox = (line: Line): void => {
-    setSelectedLines((prevSelectedLine) => {
-      const selectedLinesCopy = [...prevSelectedLine];
+    setSelectedLines((prevLines: Line[]) => {
+      const updatedLines = [...prevLines];
 
       // Update checkbox value
-      if (selectedLinesCopy.includes(line.line.toString())) {
-        const pos = selectedLinesCopy.indexOf(line.line.toString());
+      const updateIndex = updatedLines.findIndex(
+        (updatedLine: Line) => updatedLine.id === line.id,
+      );
+      const updatedLine: Line = { ...prevLines[updateIndex] };
+      updatedLine.selected = !updatedLine.selected;
+      updatedLines[updateIndex] = updatedLine;
 
-        selectedLinesCopy.splice(pos, 1);
-      } else {
-        selectedLinesCopy.push(line.line.toString());
-      }
-
-      return selectedLinesCopy;
+      return updatedLines;
     });
   };
 
@@ -55,9 +52,9 @@ export default function MetroLineTableRow({
         {/* Is Selected */}
         <td className="line-selected-checkbox">
           <Checkbox.Root
-            id={line.line.toString()}
+            id={line.id.toString()}
             onClick={() => onClickForSelectedCheckbox(line)}
-            checked={selectedLines.includes(line.line.toString())}
+            checked={line.selected}
             className="flex items-center justify-center bg-white data-[state=checked]:bg-neutral-500 border border-neutral-500 rounded-lg h-5 w-5 overflow-hidden"
           >
             <Checkbox.Indicator className="bg-neutral-500 rounded-lg h-full w-full" />
@@ -67,13 +64,13 @@ export default function MetroLineTableRow({
         {/* Line name (ex: Line 2, B Line) */}
         <td className="w-full line-name">
           <label
-            htmlFor={String(line.line)}
+            htmlFor={String(line.id)}
             className="flex-1 block cursor-pointer py-2"
           >
             {line.mode === 'Bus'
-              ? `Line ${line.line}`
+              ? `Line ${line.id}`
               : line.mode === 'Rail'
-                ? `${railLetters.get(line.line)} Line`
+                ? `${railLetters.get(line.id)} Line`
                 : ''}
           </label>
         </td>

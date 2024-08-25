@@ -1,17 +1,24 @@
+import { useState } from 'react';
 import { Line } from '../common/types';
 import * as lines from '../data/metro_line_metadata_current.json';
 import MetroLineTableRow from './metroLineTableRow';
 
+interface LineJson {
+  line: number;
+  mode: string;
+  provider: string;
+}
+
 interface LineSelectorProps {
-  selectedLines: string[];
-  setSelectedLines: React.Dispatch<React.SetStateAction<Array<string>>>;
+  lines: Line[];
+  setLines: React.Dispatch<React.SetStateAction<Line[]>>;
   expanded: boolean;
   setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function LineSelector({
-  selectedLines,
-  setSelectedLines,
+  lines: selectedLines,
+  setLines,
   expanded,
   setExpanded,
 }: LineSelectorProps) {
@@ -22,7 +29,6 @@ export default function LineSelector({
   };
 
   const subtitleClass = 'text-neutral-400';
-  const headerStyle = { textAlign: 'left' };
 
   return (
     /* Styled as flexbox so overflow scroll container stretches full height */
@@ -68,12 +74,11 @@ export default function LineSelector({
           )}
 
           <tbody>
-            {(lines as Line[]).map((line, index) => {
+            {selectedLines.map((line) => {
               return (
                 <MetroLineTableRow
-                  selectedLines={selectedLines}
-                  key={index}
-                  setSelectedLines={setSelectedLines}
+                  key={line.id}
+                  setSelectedLines={setLines}
                   line={line}
                   expanded={expanded}
                 ></MetroLineTableRow>
