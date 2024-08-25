@@ -2,7 +2,7 @@ import * as Checkbox from '@radix-ui/react-checkbox';
 import { Line } from '../common/types';
 
 interface MetroLineTableRowProps {
-  setSelectedLines: React.Dispatch<React.SetStateAction<Line[]>>;
+  onToggleSelectLine: (line: Line) => void;
   expanded?: boolean;
   line: Line;
 }
@@ -18,26 +18,10 @@ const railLetters = new Map([
 ]);
 
 export default function MetroLineTableRow({
-  setSelectedLines,
+  onToggleSelectLine,
   line,
   expanded,
 }: MetroLineTableRowProps) {
-  const onClickForSelectedCheckbox = (line: Line): void => {
-    setSelectedLines((prevLines: Line[]) => {
-      const updatedLines = [...prevLines];
-
-      // Update checkbox value
-      const updateIndex = updatedLines.findIndex(
-        (updatedLine: Line) => updatedLine.id === line.id,
-      );
-      const updatedLine: Line = { ...prevLines[updateIndex] };
-      updatedLine.selected = !updatedLine.selected;
-      updatedLines[updateIndex] = updatedLine;
-
-      return updatedLines;
-    });
-  };
-
   /* Stub line data */
   const avgRidership: number = 18002;
   const changeInRidership: number = 1203;
@@ -53,7 +37,7 @@ export default function MetroLineTableRow({
         <td className="line-selected-checkbox">
           <Checkbox.Root
             id={line.id.toString()}
-            onClick={() => onClickForSelectedCheckbox(line)}
+            onClick={() => onToggleSelectLine(line)}
             checked={line.selected}
             className="flex items-center justify-center bg-white data-[state=checked]:bg-neutral-500 border border-neutral-500 rounded-lg h-5 w-5 overflow-hidden"
           >

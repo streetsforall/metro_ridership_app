@@ -19,7 +19,7 @@ export interface UserDashboardInputState {
   setDayOfWeek: React.Dispatch<React.SetStateAction<DayOfWeek>>;
 
   lines: Line[];
-  setLines: React.Dispatch<React.SetStateAction<Line[]>>;
+  onToggleSelectLine: (line: Line) => void;
 }
 
 export enum DayOfWeek {
@@ -56,6 +56,22 @@ const useUserDashboardInput = (): UserDashboardInputState => {
 
   const [lines, setLines] = useState<Line[]>(createLinesData);
 
+  const onToggleSelectLine = (line: Line): void => {
+    setLines((prevLines: Line[]) => {
+      const updatedLines = [...prevLines];
+
+      // Update checkbox value
+      const updateIndex = updatedLines.findIndex(
+        (updatedLine: Line) => updatedLine.id === line.id,
+      );
+      const updatedLine: Line = { ...prevLines[updateIndex] };
+      updatedLine.selected = !updatedLine.selected;
+      updatedLines[updateIndex] = updatedLine;
+
+      return updatedLines;
+    });
+  };
+
   return {
     startDate,
     setStartDate,
@@ -64,7 +80,7 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     dayOfWeek,
     setDayOfWeek,
     lines,
-    setLines,
+    onToggleSelectLine,
   };
 };
 

@@ -62,7 +62,7 @@ export default function Charts() {
 
   const {
     lines,
-    setLines,
+    onToggleSelectLine,
     startDate,
     setStartDate,
     dayOfWeek,
@@ -214,7 +214,7 @@ export default function Charts() {
         <div id="window" className="h-screen max-w-screen-lg mx-auto">
           <LineSelector
             lines={lines}
-            setLines={setLines}
+            onToggleSelectLine={onToggleSelectLine}
             expanded={expandedLineSelector}
             setExpanded={setExpandedLineSelector}
           />

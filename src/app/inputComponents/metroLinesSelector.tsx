@@ -1,24 +1,16 @@
-import { useState } from 'react';
 import { Line } from '../common/types';
-import * as lines from '../data/metro_line_metadata_current.json';
 import MetroLineTableRow from './metroLineTableRow';
-
-interface LineJson {
-  line: number;
-  mode: string;
-  provider: string;
-}
 
 interface LineSelectorProps {
   lines: Line[];
-  setLines: React.Dispatch<React.SetStateAction<Line[]>>;
+  onToggleSelectLine: (line: Line) => void;
   expanded: boolean;
   setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function LineSelector({
-  lines: selectedLines,
-  setLines,
+  lines,
+  onToggleSelectLine,
   expanded,
   setExpanded,
 }: LineSelectorProps) {
@@ -74,11 +66,11 @@ export default function LineSelector({
           )}
 
           <tbody>
-            {selectedLines.map((line) => {
+            {lines.map((line) => {
               return (
                 <MetroLineTableRow
                   key={line.id}
-                  setSelectedLines={setLines}
+                  onToggleSelectLine={onToggleSelectLine}
                   line={line}
                   expanded={expanded}
                 ></MetroLineTableRow>
