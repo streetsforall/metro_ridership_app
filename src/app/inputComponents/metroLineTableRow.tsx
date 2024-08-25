@@ -1,10 +1,5 @@
 import * as Checkbox from '@radix-ui/react-checkbox';
-
-interface Line {
-  line: number;
-  mode: 'Bus' | 'Rail';
-  provider: 'DO' | 'PT';
-}
+import { Line } from '../common/types';
 
 interface MetroLineTableRowProps {
   selectedLines: string[];

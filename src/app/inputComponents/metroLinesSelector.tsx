@@ -1,12 +1,6 @@
+import { Line } from '../common/types';
 import * as lines from '../data/metro_line_metadata_current.json';
-import { useState } from 'react';
 import MetroLineTableRow from './metroLineTableRow';
-
-interface Line {
-  line: number;
-  mode: 'Bus' | 'Rail';
-  provider: 'DO' | 'PT';
-}
 
 interface LineSelectorProps {
   selectedLines: string[];
