@@ -1,10 +1,12 @@
 import * as Checkbox from '@radix-ui/react-checkbox';
 import { Line } from '../common/types';
+import { Metric } from '../charts/page';
 
 interface MetroLineTableRowProps {
   onToggleSelectLine: (line: Line) => void;
   expanded?: boolean;
   line: Line;
+  lineMetrics: Metric[];
 }
 
 const railLetters = new Map([
@@ -23,9 +25,9 @@ export default function MetroLineTableRow({
   expanded,
 }: MetroLineTableRowProps) {
   /* Stub line data */
-  const avgRidership: number = 18002;
-  const changeInRidership: number = 1203;
-  const division: number = 3;
+  const avgRidership: number = -1;
+  const changeInRidership: number = -1;
+  const division: number = -1;
 
   const collapsedSelectorWrapperClasses =
     'flex gap-2 items-center px-2 odd:bg-neutral-50 text-sm';
@@ -60,13 +62,15 @@ export default function MetroLineTableRow({
         </td>
 
         {/* Average ridership over a duration (ex: 3 months) */}
-        {expanded && <td>{avgRidership}</td>}
+        {expanded && (
+          <td>{Math.round(line.averageRidership ?? avgRidership)}</td>
+        )}
 
         {/* Change in ridership (ex: +1000, -200) */}
-        {expanded && <td>{changeInRidership}</td>}
+        {expanded && <td>{line.changeInRidership ?? changeInRidership}</td>}
 
         {/* Division (ex: 3, 5) */}
-        {expanded && <td>{division}</td>}
+        {expanded && <td>{line.division ?? division}</td>}
 
         {/* Ridership over time. Line graph showing ridership trend */}
         {expanded && <td></td>}

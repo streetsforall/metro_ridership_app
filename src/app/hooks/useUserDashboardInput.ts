@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Line } from '../common/types';
 import * as LineJsonData from '../data/metro_line_metadata_current.json';
+import { LineMetricDataset, Metric } from '../charts/page';
+import { calcAbsChange, calcAvg } from '../inputComponents/calc';
 
 interface LineJson {
   line: number;
@@ -19,7 +21,9 @@ export interface UserDashboardInputState {
   setDayOfWeek: React.Dispatch<React.SetStateAction<DayOfWeek>>;
 
   lines: Line[];
+
   onToggleSelectLine: (line: Line) => void;
+  updateLinesWithLineMetrics: (lineMetricDataset: LineMetricDataset) => void;
 }
 
 export enum DayOfWeek {
@@ -33,7 +37,6 @@ export enum DayOfWeek {
  */
 const DefaultStartDate: Date = new Date(2020, 1);
 const DefaultEndDate: Date = new Date(2023, 1);
-const DefaultLine: Line[] = [];
 
 const createLinesData = (): Line[] => {
   return (LineJsonData as LineJson[]).map((line: LineJson) => {
@@ -72,6 +75,32 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     });
   };
 
+  const updateLinesWithLineMetrics = (
+    lineMetricDataset: LineMetricDataset,
+  ): void => {
+    setLines((prevLines: Line[]): Line[] => {
+      return prevLines.map((prevLine: Line) => {
+        const updatedLine: Line = { ...prevLine };
+
+        // Check if metrics exist for line.
+        const lineMetrics: Metric[] | undefined =
+          lineMetricDataset[updatedLine.id];
+        if (!lineMetrics) {
+          updatedLine.averageRidership = undefined;
+          updatedLine.changeInRidership = undefined;
+
+          return updatedLine;
+        }
+
+        // Calculate metric data for each line.
+        updatedLine.averageRidership = calcAvg(lineMetrics, dayOfWeek);
+        updatedLine.changeInRidership = calcAbsChange(lineMetrics, dayOfWeek);
+
+        return updatedLine;
+      });
+    });
+  };
+
   return {
     startDate,
     setStartDate,
@@ -81,6 +110,7 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     setDayOfWeek,
     lines,
     onToggleSelectLine,
+    updateLinesWithLineMetrics,
   };
 };
 

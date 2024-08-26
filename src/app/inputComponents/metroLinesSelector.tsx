@@ -1,7 +1,9 @@
+import { LineMetricDataset, Metric } from '../charts/page';
 import { Line } from '../common/types';
 import MetroLineTableRow from './metroLineTableRow';
 
 interface LineSelectorProps {
+  lineMetricDataset: LineMetricDataset;
   lines: Line[];
   onToggleSelectLine: (line: Line) => void;
   expanded: boolean;
@@ -9,6 +11,7 @@ interface LineSelectorProps {
 }
 
 export default function LineSelector({
+  lineMetricDataset,
   lines,
   onToggleSelectLine,
   expanded,
@@ -67,8 +70,11 @@ export default function LineSelector({
 
           <tbody>
             {lines.map((line) => {
+              const lineMetrics: Metric[] = lineMetricDataset[line.id];
+
               return (
                 <MetroLineTableRow
+                  lineMetrics={lineMetrics}
                   key={line.id}
                   onToggleSelectLine={onToggleSelectLine}
                   line={line}
