@@ -1,23 +1,19 @@
-import * as lines from '../data/metro_line_metadata_current.json';
-import { useState } from 'react';
+import { LineMetricDataset, Metric } from '../charts/page';
+import { Line } from '../common/types';
 import MetroLineTableRow from './metroLineTableRow';
 
-interface Line {
-  line: number;
-  mode: 'Bus' | 'Rail';
-  provider: 'DO' | 'PT';
-}
-
 interface LineSelectorProps {
-  selectedLines: string[];
-  setSelectedLines: React.Dispatch<React.SetStateAction<Array<string>>>;
+  lineMetricDataset: LineMetricDataset;
+  lines: Line[];
+  onToggleSelectLine: (line: Line) => void;
   expanded: boolean;
   setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function LineSelector({
-  selectedLines,
-  setSelectedLines,
+  lineMetricDataset,
+  lines,
+  onToggleSelectLine,
   expanded,
   setExpanded,
 }: LineSelectorProps) {
@@ -28,7 +24,6 @@ export default function LineSelector({
   };
 
   const subtitleClass = 'text-neutral-400';
-  const headerStyle = { textAlign: 'left' };
 
   return (
     /* Styled as flexbox so overflow scroll container stretches full height */
@@ -74,12 +69,14 @@ export default function LineSelector({
           )}
 
           <tbody>
-            {(lines as Line[]).map((line, index) => {
+            {lines.map((line) => {
+              const lineMetrics: Metric[] = lineMetricDataset[line.id];
+
               return (
                 <MetroLineTableRow
-                  selectedLines={selectedLines}
-                  key={index}
-                  setSelectedLines={setSelectedLines}
+                  lineMetrics={lineMetrics}
+                  key={line.id}
+                  onToggleSelectLine={onToggleSelectLine}
                   line={line}
                   expanded={expanded}
                 ></MetroLineTableRow>

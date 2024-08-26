@@ -14,11 +14,12 @@ import {
   type ChartDataset,
   type ChartOptions,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Line as LineChart } from 'react-chartjs-2';
 import * as metrics from '@/app/ridership.json';
 import DateRangeSelector from '../inputComponents/dateRangeSelector';
 import LineSelector from '../inputComponents/metroLinesSelector';
 import useUserDashboardInput from '../hooks/useUserDashboardInput';
+import { Line } from '../common/types';
 
 export interface Metric {
   year: number;
@@ -30,9 +31,16 @@ export interface Metric {
 }
 
 // Associative array with line name as key
-interface Aggregate {
+export interface LineMetricDataset {
   [key: string]: Metric[];
 }
+
+interface ChartLineData {
+  time: string;
+  stat: string | number | null;
+}
+
+type ChartData = ChartDataset<'line', ChartLineData[]> & { id: number };
 
 export type Inputs = {
   lines: string[];
@@ -52,22 +60,24 @@ ChartJS.register(
 );
 
 export default function Charts() {
-  const [data, setData] = useState<
-    ChartDataset<'line', { time: string; stat: string | number | null }[]>[]
-  >([]);
+  const [data, setData] = useState<ChartData[]>([]);
   const [monthList, setMonthList] = useState([]);
   const [expandedLineSelector, setExpandedLineSelector] =
     useState<boolean>(false);
+  const [lineMetricDataset, setLineMetricDataset] = useState<LineMetricDataset>(
+    {},
+  );
 
   const {
     lines,
-    setLines,
+    onToggleSelectLine,
     startDate,
     setStartDate,
     dayOfWeek,
     setDayOfWeek,
     endDate,
     setEndDate,
+    updateLinesWithLineMetrics,
   } = useUserDashboardInput();
 
   /**
@@ -78,10 +88,10 @@ export default function Charts() {
       return '';
     }
 
-    console.log(lines);
+    console.log('lines', lines);
 
     // Aggregate by line
-    let aggregated: Aggregate = {};
+    let aggregated: LineMetricDataset = {};
 
     console.log('date range FILTER (start / end)', startDate, endDate);
 
@@ -90,7 +100,9 @@ export default function Charts() {
 
       // console.log(metric)
       // Filter by year and lines
-      const inLines = lines.includes(metric.line_name);
+      const inLines: boolean = !!lines.find(
+        (line: Line) => line.id === Number(metric.line_name),
+      )?.selected;
 
       var newMetricDate = new Date(metric.year, metric.month);
 
@@ -114,10 +126,7 @@ export default function Charts() {
     }
 
     // Condense aggregated objects
-    let datasets: ChartDataset<
-      'line',
-      { time: string; stat: string | number | null }[]
-    >[] = [];
+    let datasets: ChartData[] = [];
     Object.entries(aggregated).forEach(([line, metrics]) => {
       datasets.push({
         data: metrics.map((metric) => ({
@@ -125,11 +134,11 @@ export default function Charts() {
           stat: metric[dayOfWeek],
         })),
         label: `Line ${line}`,
+        id: Number(line),
       });
     });
 
     // create month labels
-
     const months = data[0] ? data[0].data.map((a) => a.time) : '';
     setMonthList(months);
     console.log('months', months);
@@ -137,13 +146,34 @@ export default function Charts() {
     setData(datasets);
     console.log('chart data', datasets);
 
-    /*  
-    Need to add data as dependency. 
-    Since data is an array, we need to stringify due to current React system.
-    https://github.com/facebook/react/issues/14476 
-    */
+    setLineMetricDataset(aggregated);
+
+    /**
+     * Need to add data as dependency.
+     * Since data is an array, we need to stringify due to current React system.
+     * https://github.com/facebook/react/issues/14476
+     */
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate, lines, dayOfWeek, JSON.stringify(data)]);
+  }, [
+    startDate,
+    endDate,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(lines),
+    dayOfWeek,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(data),
+  ]);
+
+  /**
+   * Calculate metric data for each line.
+   */
+  useEffect(
+    () => {
+      updateLinesWithLineMetrics(lineMetricDataset);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(lineMetricDataset)],
+  );
 
   const options: ChartOptions<'line'> = {
     interaction: {
@@ -210,14 +240,15 @@ export default function Charts() {
 
         <div id="window" className="h-screen max-w-screen-lg mx-auto">
           <LineSelector
-            selectedLines={lines}
-            setSelectedLines={setLines}
+            lineMetricDataset={lineMetricDataset}
+            lines={lines}
+            onToggleSelectLine={onToggleSelectLine}
             expanded={expandedLineSelector}
             setExpanded={setExpandedLineSelector}
           />
 
           {!expandedLineSelector && (
-            <Line
+            <LineChart
               options={options}
               id="chart"
               data={{

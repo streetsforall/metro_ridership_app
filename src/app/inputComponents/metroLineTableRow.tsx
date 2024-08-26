@@ -1,16 +1,12 @@
 import * as Checkbox from '@radix-ui/react-checkbox';
-
-interface Line {
-  line: number;
-  mode: 'Bus' | 'Rail';
-  provider: 'DO' | 'PT';
-}
+import { Line } from '../common/types';
+import { Metric } from '../charts/page';
 
 interface MetroLineTableRowProps {
-  selectedLines: string[];
-  setSelectedLines: React.Dispatch<React.SetStateAction<Array<string>>>;
+  onToggleSelectLine: (line: Line) => void;
   expanded?: boolean;
   line: Line;
+  lineMetrics: Metric[];
 }
 
 const railLetters = new Map([
@@ -24,32 +20,14 @@ const railLetters = new Map([
 ]);
 
 export default function MetroLineTableRow({
-  selectedLines,
-  setSelectedLines,
+  onToggleSelectLine,
   line,
   expanded,
 }: MetroLineTableRowProps) {
-  const onClickForSelectedCheckbox = (line: Line): void => {
-    setSelectedLines((prevSelectedLine) => {
-      const selectedLinesCopy = [...prevSelectedLine];
-
-      // Update checkbox value
-      if (selectedLinesCopy.includes(line.line.toString())) {
-        const pos = selectedLinesCopy.indexOf(line.line.toString());
-
-        selectedLinesCopy.splice(pos, 1);
-      } else {
-        selectedLinesCopy.push(line.line.toString());
-      }
-
-      return selectedLinesCopy;
-    });
-  };
-
   /* Stub line data */
-  const avgRidership: number = 18002;
-  const changeInRidership: number = 1203;
-  const division: number = 3;
+  const avgRidership: number = -1;
+  const changeInRidership: number = -1;
+  const division: number = -1;
 
   const collapsedSelectorWrapperClasses =
     'flex gap-2 items-center px-2 odd:bg-neutral-50 text-sm';
@@ -60,9 +38,9 @@ export default function MetroLineTableRow({
         {/* Is Selected */}
         <td className="line-selected-checkbox">
           <Checkbox.Root
-            id={line.line.toString()}
-            onClick={() => onClickForSelectedCheckbox(line)}
-            checked={selectedLines.includes(line.line.toString())}
+            id={line.id.toString()}
+            onClick={() => onToggleSelectLine(line)}
+            checked={line.selected}
             className="flex items-center justify-center bg-white data-[state=checked]:bg-neutral-500 border border-neutral-500 rounded-lg h-5 w-5 overflow-hidden"
           >
             <Checkbox.Indicator className="bg-neutral-500 rounded-lg h-full w-full" />
@@ -72,25 +50,27 @@ export default function MetroLineTableRow({
         {/* Line name (ex: Line 2, B Line) */}
         <td className="w-full line-name">
           <label
-            htmlFor={String(line.line)}
+            htmlFor={String(line.id)}
             className="flex-1 block cursor-pointer py-2"
           >
             {line.mode === 'Bus'
-              ? `Line ${line.line}`
+              ? `Line ${line.id}`
               : line.mode === 'Rail'
-                ? `${railLetters.get(line.line)} Line`
+                ? `${railLetters.get(line.id)} Line`
                 : ''}
           </label>
         </td>
 
         {/* Average ridership over a duration (ex: 3 months) */}
-        {expanded && <td>{avgRidership}</td>}
+        {expanded && (
+          <td>{Math.round(line.averageRidership ?? avgRidership)}</td>
+        )}
 
         {/* Change in ridership (ex: +1000, -200) */}
-        {expanded && <td>{changeInRidership}</td>}
+        {expanded && <td>{line.changeInRidership ?? changeInRidership}</td>}
 
         {/* Division (ex: 3, 5) */}
-        {expanded && <td>{division}</td>}
+        {expanded && <td>{line.division ?? division}</td>}
 
         {/* Ridership over time. Line graph showing ridership trend */}
         {expanded && <td></td>}
