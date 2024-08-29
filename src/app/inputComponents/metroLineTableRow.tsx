@@ -1,5 +1,6 @@
 import * as Checkbox from '@radix-ui/react-checkbox';
-import { Line } from '../common/types';
+import { getLineName } from '../common/lines';
+import { type Line } from '../common/types';
 import { Metric } from '../charts/page';
 
 interface MetroLineTableRowProps {
@@ -8,16 +9,6 @@ interface MetroLineTableRowProps {
   line: Line;
   lineMetrics: Metric[];
 }
-
-const railLetters = new Map([
-  [801, 'A'],
-  [802, 'B'],
-  [803, 'C'],
-  [804, 'E'],
-  [805, 'D'],
-  [806, 'L'],
-  [807, 'K'],
-]);
 
 export default function MetroLineTableRow({
   onToggleSelectLine,
@@ -53,11 +44,7 @@ export default function MetroLineTableRow({
             htmlFor={String(line.id)}
             className="flex-1 block cursor-pointer py-2"
           >
-            {line.mode === 'Bus'
-              ? `Line ${line.id}`
-              : line.mode === 'Rail'
-                ? `${railLetters.get(line.id)} Line`
-                : ''}
+            {getLineName(line.id)}
           </label>
         </td>
 
