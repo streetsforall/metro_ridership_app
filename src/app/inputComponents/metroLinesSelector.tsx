@@ -1,5 +1,6 @@
 import { LineMetricDataset, Metric } from '../charts/page';
-import { Line } from '../common/types';
+import { getLineName } from '../common/lines';
+import { type Line } from '../common/types';
 import MetroLineTableRow from './metroLineTableRow';
 
 interface LineSelectorProps {
@@ -69,19 +70,48 @@ export default function LineSelector({
           )}
 
           <tbody>
-            {lines.map((line) => {
-              const lineMetrics: Metric[] = lineMetricDataset[line.id];
+            {lines
+              .sort((a, b) => {
+                const nameA = getLineName(a.id);
+                const nameB = getLineName(b.id);
 
-              return (
-                <MetroLineTableRow
-                  lineMetrics={lineMetrics}
-                  key={line.id}
-                  onToggleSelectLine={onToggleSelectLine}
-                  line={line}
-                  expanded={expanded}
-                ></MetroLineTableRow>
-              );
-            })}
+                // Lettered lines should come first
+                if (nameA.startsWith('Line') && !nameB.startsWith('Line')) {
+                  return 1;
+                }
+                if (!nameA.startsWith('Line') && nameB.startsWith('Line')) {
+                  return -1;
+                }
+
+                // Numbered lines should be in numerical order (e.g., 2 before 10)
+                if (nameA.startsWith('Line') && nameB.startsWith('Line')) {
+                  return a.id - b.id;
+                }
+
+                // Lettered lines should be in alphabetical order
+                if (nameA < nameB) {
+                  return -1;
+                }
+                if (nameA > nameB) {
+                  return 1;
+                }
+
+                // Names must be equal
+                return 0;
+              })
+              .map((line) => {
+                const lineMetrics: Metric[] = lineMetricDataset[line.id];
+
+                return (
+                  <MetroLineTableRow
+                    lineMetrics={lineMetrics}
+                    key={line.id}
+                    onToggleSelectLine={onToggleSelectLine}
+                    line={line}
+                    expanded={expanded}
+                  ></MetroLineTableRow>
+                );
+              })}
           </tbody>
         </table>
       </div>

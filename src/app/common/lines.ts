@@ -62,3 +62,9 @@ export function getLineColor(number: number) {
 
   return line?.color;
 }
+
+export function getLineName(number: number) {
+  const line = definedLines.find((line) => line.number === number);
+
+  return line ? `${line.letter} Line` : `Line ${number}`;
+}

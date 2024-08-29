@@ -14,12 +14,12 @@ import {
   type ChartOptions,
 } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
-import * as metrics from '@/app/ridership.json';
 import DateRangeSelector from '../inputComponents/dateRangeSelector';
 import LineSelector from '../inputComponents/metroLinesSelector';
 import useUserDashboardInput from '../hooks/useUserDashboardInput';
-import { Line } from '../common/types';
-import { getLineColor } from '../inputComponents/lines';
+import { getLineColor, getLineName } from '../common/lines';
+import { type Line } from '../common/types';
+import * as metrics from '@/app/ridership.json';
 
 export interface Metric {
   year: number;
@@ -132,7 +132,7 @@ export default function Charts() {
           time: metric.year + ' ' + metric.month,
           stat: metric[dayOfWeek],
         })),
-        label: `Line ${line}`,
+        label: getLineName(Number(line)),
         id: Number(line),
         backgroundColor: getLineColor(Number(line)),
         borderColor: getLineColor(Number(line)),
