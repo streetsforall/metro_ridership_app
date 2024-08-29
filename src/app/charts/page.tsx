@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
-  Colors,
   LinearScale,
   PointElement,
   LineElement,
@@ -20,6 +19,7 @@ import DateRangeSelector from '../inputComponents/dateRangeSelector';
 import LineSelector from '../inputComponents/metroLinesSelector';
 import useUserDashboardInput from '../hooks/useUserDashboardInput';
 import { Line } from '../common/types';
+import { getLineColor } from '../inputComponents/lines';
 
 export interface Metric {
   year: number;
@@ -50,7 +50,6 @@ export type Inputs = {
 
 ChartJS.register(
   CategoryScale,
-  Colors,
   LinearScale,
   PointElement,
   LineElement,
@@ -135,6 +134,8 @@ export default function Charts() {
         })),
         label: `Line ${line}`,
         id: Number(line),
+        backgroundColor: getLineColor(Number(line)),
+        borderColor: getLineColor(Number(line)),
       });
     });
 
@@ -185,11 +186,6 @@ export default function Charts() {
     parsing: {
       xAxisKey: 'time',
       yAxisKey: 'stat',
-    },
-    plugins: {
-      colors: {
-        forceOverride: true,
-      },
     },
     responsive: true,
     scales: {
