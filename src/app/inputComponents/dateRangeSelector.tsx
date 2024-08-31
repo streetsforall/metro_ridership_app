@@ -2,6 +2,8 @@
 
 import { Label } from '@radix-ui/react-label';
 import { DayOfWeek } from '../hooks/useUserDashboardInput';
+import { useEffect, useState } from 'react';
+import "./input_components.css"
 
 export interface DateRangeSelectorProps {
   startDate: Date;
@@ -15,6 +17,7 @@ export interface DateRangeSelectorProps {
 }
 
 type IntervalEndpoint = 'Start' | 'End';
+
 
 export default function DateRangeSelector({
   startDate,
@@ -34,38 +37,60 @@ export default function DateRangeSelector({
     return `${month} ${date?.getFullYear()}`;
   };
 
-  const getValueDateString = (date: Date): string => {
-    console.log(date);
-    const year = date.getFullYear();
-    const month = date
-      .getMonth()
-      .toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false });
-    const day = date
-      .getDay()
-      .toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false });
 
-    return `${year}-${month}-${day}`;
-  };
+useEffect (() => {
+  // this sets year and month values on load
 
-  const onDayOfWeekChange = (value: string): void => {
-    switch (value) {
-      case DayOfWeek.Saturday:
-        setDayOfWeek(DayOfWeek.Saturday);
-        break;
-      case DayOfWeek.Sunday:
-        setDayOfWeek(DayOfWeek.Sunday);
-        break;
-      case DayOfWeek.Weekday:
-        setDayOfWeek(DayOfWeek.Weekday);
-        break;
-      default:
-        console.error('Cannot support day of week:' + dayOfWeek);
-    }
-  };
+  const start_month = document.getElementById('StartMonth');
+  const start_year = document.getElementById('StartYear');
+  const end_month = document.getElementById('EndMonth');
+  const end_year = document.getElementById('EndYear');
+
+  start_month.value = startDate.getMonth();
+  start_year.value = startDate.getYear() + 1900;
+  end_month.value = endDate.getMonth();
+  end_year.value = endDate.getYear() + 1900;
+
+  var radiobtn = document.getElementById("est_wkday_ridership");
+  radiobtn.checked = true;
+
+}, [])
+
+  // const getValueDateString = (date: Date): string => {
+  //   console.log(date);
+  //   const year = date.getFullYear();
+  //   const month = date
+  //     .getMonth()
+  //     .toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false });
+  //   const day = date
+  //     .getDay()
+  //     .toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false });
+
+  //   return `${year}-${month}-${day}`;
+  // };
+
+  // const onDayOfWeekChange = (value: string): void => {
+  //   switch (value) {
+  //     case DayOfWeek.Saturday:
+  //       setDayOfWeek(DayOfWeek.Saturday);
+  //       break;
+  //     case DayOfWeek.Sunday:
+  //       setDayOfWeek(DayOfWeek.Sunday);
+  //       break;
+  //     case DayOfWeek.Weekday:
+  //       setDayOfWeek(DayOfWeek.Weekday);
+  //       break;
+  //     default:
+  //       console.error('Cannot support day of week:' + dayOfWeek);
+  //   }
+  // };
+
 
   const getDateSetter = (
     intervalEndpoint: IntervalEndpoint,
   ): React.Dispatch<React.SetStateAction<Date>> => {
+
+    console.log('dates', endDate, startDate)
     if (intervalEndpoint === 'End') {
       return setEndDate;
     } else if (intervalEndpoint === 'Start') {
@@ -94,8 +119,10 @@ export default function DateRangeSelector({
       console.log('new month date', title, newDate);
 
       // Update form value (should be side effect)
-      const form = document.getElementById(title + 'Month');
-      form.value = newDate.getMonth();
+      
+
+      const form = (document.getElementById(title + 'Month') as HTMLInputElement);
+      form.value = newDate.getMonth() 
 
       return newDate;
     });
@@ -104,7 +131,7 @@ export default function DateRangeSelector({
   const updateYear = (
     range: Date,
     title: IntervalEndpoint,
-    newYear: number,
+    newYear: string,
   ) => {
     // need to add filter to make sure from is not larger than the "to" date
     if (true) {
@@ -190,14 +217,14 @@ export default function DateRangeSelector({
   };
 
   return (
-    <div>
+    <div id="dateSelector">
       <div id="dateRangeSelector">
-        <div>
+        <div className="dateRange">
           <Label>From</Label>
-          {dateForm(startDate, 'Start')}
+          {dateForm(startDate,  'Start')}
         </div>
         <div className="arrow"></div>
-        <div>
+        <div className="dateRange">
           <Label>To</Label>
           {dateForm(endDate, 'End')}
         </div>

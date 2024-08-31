@@ -25,7 +25,7 @@ export default function MetroLineTableRow({
 
   return (
     <>
-      <tr className={expanded ? '' : collapsedSelectorWrapperClasses}>
+      <tr className={expanded ? 'odd:bg-neutral-50' : collapsedSelectorWrapperClasses}>
         {/* Is Selected */}
         <td className="line-selected-checkbox">
           <Checkbox.Root
@@ -50,14 +50,14 @@ export default function MetroLineTableRow({
 
         {/* Average ridership over a duration (ex: 3 months) */}
         {expanded && (
-          <td>{Math.round(line.averageRidership ?? avgRidership)}</td>
+          <td>{Math.round(line.averageRidership ?? avgRidership).toLocaleString()}</td>
         )}
 
         {/* Change in ridership (ex: +1000, -200) */}
         {expanded && <td>{line.changeInRidership ?? changeInRidership}</td>}
 
         {/* Division (ex: 3, 5) */}
-        {expanded && <td>{line.division ?? division}</td>}
+        {/* {expanded && <td>{line.division ?? division}</td>} */}
 
         {/* Ridership over time. Line graph showing ridership trend */}
         {expanded && <td></td>}

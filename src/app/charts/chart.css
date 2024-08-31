@@ -1,0 +1,50 @@
+#window {
+    max-width: 100%;
+    max-height: 100%;
+    margin: 1rem;
+}
+
+#chart {
+    width: 100%;
+}
+
+#chart_container {
+    width: 80%;
+}
+
+#line_selector {
+    width: 20%;
+    max-height: 70vh;
+}
+
+#line_selector.expanded {
+    width: 100%;
+}
+
+#line_selector table {
+    table-layout: fixed;
+}
+
+#line_selector th {
+    position: sticky;
+    top: 0;
+    background-color: white;
+}
+
+#invalidData {
+    border-radius: 1rem;
+    width: calc(100% - 2rem);
+    height: 70vh;
+    border: 1px solid grey;
+    margin: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#invalidData p {
+    margin: auto;
+    width: max-content;
+    text-align: center;
+    
+}

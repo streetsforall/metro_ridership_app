@@ -18,6 +18,7 @@
 */
 body {
   background-color: #e5ebea;
+  overflow: hidden;
 }
 
 #chart {

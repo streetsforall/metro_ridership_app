@@ -21,6 +21,8 @@ import { getLineColor, getLineName } from '../common/lines';
 import { type Line } from '../common/types';
 import * as metrics from '@/app/ridership.json';
 
+import './chart.css'
+
 export interface Metric {
   year: number;
   month: number;
@@ -234,7 +236,7 @@ export default function Charts() {
           setDayOfWeek={setDayOfWeek}
         ></DateRangeSelector>
 
-        <div id="window" className="h-screen max-w-screen-lg mx-auto">
+        <div id="window" className="h-screen mx-auto">
           <LineSelector
             lineMetricDataset={lineMetricDataset}
             lines={lines}
@@ -244,14 +246,23 @@ export default function Charts() {
           />
 
           {!expandedLineSelector && (
-            <LineChart
-              options={options}
-              id="chart"
-              data={{
-                labels: monthList,
-                datasets: data,
-              }}
-            />
+            <div id="chart_container">
+
+              {data.length > 0 ?
+                <LineChart
+                  options={options}
+                  id="chart"
+                  data={{
+                    labels: monthList,
+                    datasets: data,
+                  }}
+                />
+                : <div id="invalidData">
+                  <p>
+                  Please select data
+                  </p>
+                  </div>}
+            </div>
           )}
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Line } from '../common/types';
 import * as LineJsonData from '../data/metro_line_metadata_current.json';
 import { LineMetricDataset, Metric } from '../charts/page';
@@ -35,8 +35,8 @@ export enum DayOfWeek {
 /**
  * Default starting values
  */
-const DefaultStartDate: Date = new Date(2020, 1);
-const DefaultEndDate: Date = new Date(2023, 1);
+const DefaultStartDate: Date = new Date(2019, 1);
+const DefaultEndDate: Date = new Date(2024, 1);
 
 const createLinesData = (): Line[] => {
   return (LineJsonData as LineJson[]).map((line: LineJson) => {

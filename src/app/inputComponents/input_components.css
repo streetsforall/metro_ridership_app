@@ -1,0 +1,33 @@
+
+#dateSelector {
+    display: flex;
+}
+
+#dateSelector select{
+    border: .5px solid grey;
+    margin-left: .5rem;
+    margin-right: 1rem;
+    border-radius: .5rem;
+
+}
+
+#dateRangeSelector, #dayOfWeekSelector {
+    max-width: max-content;
+    display: flex;
+    margin: 1rem;
+}
+
+#dayOfWeekSelector ul {
+    display: flex;
+}
+
+.dateRange, #dayOfWeekSelector {
+    background-color: white;
+    padding: 1rem;
+    border-radius: 1rem;
+}
+
+
+.dateRange {
+    margin: 0 1rem;
+}
