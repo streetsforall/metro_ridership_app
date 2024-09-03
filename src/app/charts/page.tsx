@@ -104,27 +104,22 @@ export default function Charts() {
     for (let i = 0; i < metrics.length; i++) {
       const metric: Metric = metrics[i];
 
-      // console.log(metric)
-      // Filter by year and lines
-      const selectedLine: boolean = !!lines.find(
-        (line: Line) => line.id === Number(metric.line_name),
-      )?.selected;
-
+      // Filter by year
       var newMetricDate = new Date(metric.year, metric.month);
 
       // need to filter our date to make sure it falls in our date range
-      // console.log(endDate, newMetricDate, startDate)
 
       const startCap = startDate.getTime() >= newMetricDate.getTime();
       const endCap = endDate.getTime() <= newMetricDate.getTime();
 
-      // console.log(newMetricDate, startCap, endCap)
-
-      // if line or year false we break
-      if (!selectedLine) continue;
+      // if year false we break
       if (startCap || endCap) continue;
 
       if (!aggregated[metric.line_name]?.metrics) {
+        const selectedLine: boolean = !!lines.find(
+          (line: Line) => line.id === Number(metric.line_name),
+        )?.selected;
+
         aggregated[metric.line_name] = {
           selected: selectedLine,
           metrics: [],
@@ -136,9 +131,13 @@ export default function Charts() {
     }
 
     // Condense aggregated objects
-    let datasets: ChartData[] = [];
+    let chartDataset: ChartData[] = [];
     Object.entries(aggregated).forEach(([line, metricWrapper]) => {
-      datasets.push({
+      if (!metricWrapper.selected) {
+        return;
+      }
+
+      chartDataset.push({
         data: metricWrapper.metrics.map((metric) => ({
           time: metric.year + ' ' + metric.month,
           stat: metric[dayOfWeek],
@@ -155,8 +154,8 @@ export default function Charts() {
     setMonthList(months);
     console.log('months', months);
 
-    setChartData(datasets);
-    console.log('chart data', datasets);
+    setChartData(chartDataset);
+    console.log('chart data', chartDataset);
 
     setLineMetricDataset(aggregated);
 
