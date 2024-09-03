@@ -1,5 +1,4 @@
 import * as Checkbox from '@radix-ui/react-checkbox';
-import { getLineName } from '../common/lines';
 import { type Line } from '../common/types';
 import { Metric } from '../charts/page';
 
@@ -45,7 +44,7 @@ export default function MetroLineTableRow({
             htmlFor={String(line.id)}
             className="flex-1 block cursor-pointer py-2"
           >
-            {getLineName(line.id)}
+            {line.name}
           </label>
         </td>
 
