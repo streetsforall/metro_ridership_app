@@ -36,8 +36,8 @@ export enum DayOfWeek {
 /**
  * Default starting values
  */
-const DefaultStartDate: Date = new Date(2019, 1);
-const DefaultEndDate: Date = new Date(2024, 1);
+const DefaultStartDate: Date = new Date(2020, 4);
+const DefaultEndDate: Date = new Date(2024, 4);
 
 const createLinesData = (): Line[] => {
   return (LineJsonData as LineJson[])

@@ -38,7 +38,7 @@ export default function DateRangeSelector({
 
   useEffect(() => {
     // this sets year and month values on load
-
+    // needs to be in useEffect so 'document' exists first
     const start_month = document.getElementById('StartMonth');
     const start_year = document.getElementById('StartYear');
     const end_month = document.getElementById('EndMonth');
@@ -52,35 +52,6 @@ export default function DateRangeSelector({
     var radiobtn = document.getElementById('est_wkday_ridership');
     radiobtn.checked = true;
   }, []);
-
-  // const getValueDateString = (date: Date): string => {
-  //   console.log(date);
-  //   const year = date.getFullYear();
-  //   const month = date
-  //     .getMonth()
-  //     .toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false });
-  //   const day = date
-  //     .getDay()
-  //     .toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false });
-
-  //   return `${year}-${month}-${day}`;
-  // };
-
-  // const onDayOfWeekChange = (value: string): void => {
-  //   switch (value) {
-  //     case DayOfWeek.Saturday:
-  //       setDayOfWeek(DayOfWeek.Saturday);
-  //       break;
-  //     case DayOfWeek.Sunday:
-  //       setDayOfWeek(DayOfWeek.Sunday);
-  //       break;
-  //     case DayOfWeek.Weekday:
-  //       setDayOfWeek(DayOfWeek.Weekday);
-  //       break;
-  //     default:
-  //       console.error('Cannot support day of week:' + dayOfWeek);
-  //   }
-  // };
 
   const getDateSetter = (
     intervalEndpoint: IntervalEndpoint,

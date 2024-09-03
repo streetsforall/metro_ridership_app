@@ -52,7 +52,7 @@ const definedLines = [
 // Random colors need to be fixed so that lines colors are constant as state changes
 const randomColors = lineMeta.map((line) => ({
   number: line.line,
-  color: randomColor({ luminosity: 'light' }),
+  color: randomColor({ luminosity: 'vivid' }),
 }));
 
 export function getLineColor(number: number) {

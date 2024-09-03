@@ -36,7 +36,7 @@ const columnStates: ColumnHeaderState[] = [
     sortDirection: false,
   },
   {
-    label: 'Avg. Ridership',
+    label: 'Avg. Daily Ridership',
     key: 'averageRidership',
     sortDirection: false,
   },
@@ -102,11 +102,14 @@ export default function LineSelector({
         ...prevColumnHeaderStates,
       ];
 
+
       // Find column header to update.
       let targetColumnHeaderIndex: number = -1;
+
       let targetColumnHeader: ColumnHeaderState | undefined =
         prevColumnHeaderStates.find(
           (columnState: ColumnHeaderState, index: number) => {
+            
             if (columnState.key === key) {
               targetColumnHeaderIndex = index;
               return true;

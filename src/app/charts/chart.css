@@ -10,11 +10,18 @@
 
 #chart_container {
     width: 80%;
+    border: 1px solid grey;
+    max-height: 70vh;
+    border-radius: 1rem;
+    margin-left: 1rem;
+    padding: 1rem;
+    background-color: white;
 }
 
 #line_selector {
     width: 20%;
     max-height: 70vh;
+    border: 1px solid grey;
 }
 
 #line_selector.expanded {
@@ -35,7 +42,6 @@
     border-radius: 1rem;
     width: calc(100% - 2rem);
     height: 70vh;
-    border: 1px solid grey;
     margin: 0 1rem;
     display: flex;
     align-items: center;

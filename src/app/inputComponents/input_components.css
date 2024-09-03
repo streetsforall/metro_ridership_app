@@ -1,5 +1,6 @@
 #dateSelector {
   display: flex;
+  margin: 1rem;
 }
 
 #dateSelector select {
@@ -7,13 +8,13 @@
   margin-left: 0.5rem;
   margin-right: 1rem;
   border-radius: 0.5rem;
+  padding: .25rem;
 }
 
 #dateRangeSelector,
 #dayOfWeekSelector {
   max-width: max-content;
   display: flex;
-  margin: 1rem;
 }
 
 #dayOfWeekSelector ul {
@@ -23,12 +24,13 @@
 .dateRange,
 #dayOfWeekSelector {
   background-color: white;
+  border: 1px solid grey;
   padding: 1rem;
   border-radius: 1rem;
 }
 
 .dateRange {
-  margin: 0 1rem;
+  margin-right: 1rem;
 }
 
 /*
