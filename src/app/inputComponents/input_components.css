@@ -1,33 +1,56 @@
-
 #dateSelector {
-    display: flex;
+  display: flex;
 }
 
-#dateSelector select{
-    border: .5px solid grey;
-    margin-left: .5rem;
-    margin-right: 1rem;
-    border-radius: .5rem;
-
+#dateSelector select {
+  border: 0.5px solid grey;
+  margin-left: 0.5rem;
+  margin-right: 1rem;
+  border-radius: 0.5rem;
 }
 
-#dateRangeSelector, #dayOfWeekSelector {
-    max-width: max-content;
-    display: flex;
-    margin: 1rem;
+#dateRangeSelector,
+#dayOfWeekSelector {
+  max-width: max-content;
+  display: flex;
+  margin: 1rem;
 }
 
 #dayOfWeekSelector ul {
-    display: flex;
+  display: flex;
 }
 
-.dateRange, #dayOfWeekSelector {
-    background-color: white;
-    padding: 1rem;
-    border-radius: 1rem;
+.dateRange,
+#dayOfWeekSelector {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 1rem;
 }
-
 
 .dateRange {
-    margin: 0 1rem;
+  margin: 0 1rem;
+}
+
+/*
+    Used to add sort arrows.
+    Source: https://stackoverflow.com/questions/17639562/add-sorting-arrows-to-th-like-table-sorter
+ */
+.headerSortDown:after,
+.headerSortUp:after {
+  content: ' ';
+  position: relative;
+  left: 10px;
+  border: 7px solid transparent;
+}
+.headerSortDown:after {
+  top: 10px;
+  border-top-color: silver;
+}
+.headerSortUp:after {
+  bottom: 15px;
+  border-bottom-color: silver;
+}
+.headerSortDown,
+.headerSortUp {
+  padding-left: 20px;
 }

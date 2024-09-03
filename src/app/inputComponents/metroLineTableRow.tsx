@@ -1,5 +1,4 @@
 import * as Checkbox from '@radix-ui/react-checkbox';
-import { getLineName } from '../common/lines';
 import { type Line } from '../common/types';
 import { Metric } from '../charts/page';
 
@@ -10,22 +9,23 @@ interface MetroLineTableRowProps {
   lineMetrics: Metric[];
 }
 
+const NotDefined = 'Not Defined';
+
 export default function MetroLineTableRow({
   onToggleSelectLine,
   line,
   expanded,
 }: MetroLineTableRowProps) {
-  /* Stub line data */
-  const avgRidership: number = -1;
-  const changeInRidership: number = -1;
-  const division: number = -1;
-
   const collapsedSelectorWrapperClasses =
     'flex gap-2 items-center px-2 odd:bg-neutral-50 text-sm';
 
   return (
     <>
-      <tr className={expanded ? 'odd:bg-neutral-50' : collapsedSelectorWrapperClasses}>
+      <tr
+        className={
+          expanded ? 'odd:bg-neutral-50' : collapsedSelectorWrapperClasses
+        }
+      >
         {/* Is Selected */}
         <td className="line-selected-checkbox">
           <Checkbox.Root
@@ -44,17 +44,21 @@ export default function MetroLineTableRow({
             htmlFor={String(line.id)}
             className="flex-1 block cursor-pointer py-2"
           >
-            {getLineName(line.id)}
+            {line.name}
           </label>
         </td>
 
         {/* Average ridership over a duration (ex: 3 months) */}
         {expanded && (
-          <td>{Math.round(line.averageRidership ?? avgRidership).toLocaleString()}</td>
+          <td>
+            {!!line.averageRidership
+              ? Math.round(line.averageRidership).toLocaleString()
+              : NotDefined}
+          </td>
         )}
 
         {/* Change in ridership (ex: +1000, -200) */}
-        {expanded && <td>{line.changeInRidership ?? changeInRidership}</td>}
+        {expanded && <td>{line.changeInRidership ?? NotDefined}</td>}
 
         {/* Division (ex: 3, 5) */}
         {/* {expanded && <td>{line.division ?? division}</td>} */}

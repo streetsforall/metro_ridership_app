@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
-import { Line } from '../common/types';
+import { useState } from 'react';
+import { Line, lineNameSortFunction } from '../common/types';
 import * as LineJsonData from '../data/metro_line_metadata_current.json';
-import { LineMetricDataset, Metric } from '../charts/page';
+import { LineMetricDataset, MetricWrapper } from '../charts/page';
 import { calcAbsChange, calcAvg } from '../inputComponents/calc';
+import { getLineName } from '../common/lines';
 
 interface LineJson {
   line: number;
@@ -39,13 +40,16 @@ const DefaultStartDate: Date = new Date(2019, 1);
 const DefaultEndDate: Date = new Date(2024, 1);
 
 const createLinesData = (): Line[] => {
-  return (LineJsonData as LineJson[]).map((line: LineJson) => {
-    return {
-      ...line,
-      id: line.line,
-      selected: false,
-    } as Line;
-  });
+  return (LineJsonData as LineJson[])
+    .map((line: LineJson) => {
+      return {
+        ...line,
+        id: line.line,
+        name: getLineName(line.line),
+        selected: false,
+      } as Line;
+    })
+    .sort(lineNameSortFunction);
 };
 
 /**
@@ -83,9 +87,9 @@ const useUserDashboardInput = (): UserDashboardInputState => {
         const updatedLine: Line = { ...prevLine };
 
         // Check if metrics exist for line.
-        const lineMetrics: Metric[] | undefined =
+        const lineMetricWrapper: MetricWrapper | undefined =
           lineMetricDataset[updatedLine.id];
-        if (!lineMetrics) {
+        if (!lineMetricWrapper) {
           updatedLine.averageRidership = undefined;
           updatedLine.changeInRidership = undefined;
 
@@ -93,8 +97,14 @@ const useUserDashboardInput = (): UserDashboardInputState => {
         }
 
         // Calculate metric data for each line.
-        updatedLine.averageRidership = calcAvg(lineMetrics, dayOfWeek);
-        updatedLine.changeInRidership = calcAbsChange(lineMetrics, dayOfWeek);
+        updatedLine.averageRidership = calcAvg(
+          lineMetricWrapper.metrics,
+          dayOfWeek,
+        );
+        updatedLine.changeInRidership = calcAbsChange(
+          lineMetricWrapper.metrics,
+          dayOfWeek,
+        );
 
         return updatedLine;
       });

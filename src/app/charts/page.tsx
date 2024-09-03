@@ -21,7 +21,12 @@ import { getLineColor, getLineName } from '../common/lines';
 import { type Line } from '../common/types';
 import * as metrics from '@/app/ridership.json';
 
-import './chart.css'
+import './chart.css';
+
+export interface MetricWrapper {
+  selected: boolean;
+  metrics: Metric[];
+}
 
 export interface Metric {
   year: number;
@@ -34,7 +39,7 @@ export interface Metric {
 
 // Associative array with line name as key
 export interface LineMetricDataset {
-  [key: string]: Metric[];
+  [key: string]: MetricWrapper;
 }
 
 interface ChartLineData {
@@ -61,7 +66,7 @@ ChartJS.register(
 );
 
 export default function Charts() {
-  const [data, setData] = useState<ChartData[]>([]);
+  const [chartData, setChartData] = useState<ChartData[]>([]);
   const [monthList, setMonthList] = useState([]);
   const [expandedLineSelector, setExpandedLineSelector] =
     useState<boolean>(false);
@@ -85,7 +90,7 @@ export default function Charts() {
    * Update params on state change
    */
   useEffect(() => {
-    if (!data) {
+    if (!chartData) {
       return '';
     }
 
@@ -99,38 +104,41 @@ export default function Charts() {
     for (let i = 0; i < metrics.length; i++) {
       const metric: Metric = metrics[i];
 
-      // console.log(metric)
-      // Filter by year and lines
-      const inLines: boolean = !!lines.find(
-        (line: Line) => line.id === Number(metric.line_name),
-      )?.selected;
-
+      // Filter by year
       var newMetricDate = new Date(metric.year, metric.month);
 
       // need to filter our date to make sure it falls in our date range
-      // console.log(endDate, newMetricDate, startDate)
 
       const startCap = startDate.getTime() >= newMetricDate.getTime();
       const endCap = endDate.getTime() <= newMetricDate.getTime();
 
-      // console.log(newMetricDate, startCap, endCap)
-
-      // if line or year false we break
-      if (!inLines) continue;
+      // if year false we break
       if (startCap || endCap) continue;
 
-      if (!aggregated[metric.line_name]) {
-        aggregated[metric.line_name] = [];
+      if (!aggregated[metric.line_name]?.metrics) {
+        const selectedLine: boolean = !!lines.find(
+          (line: Line) => line.id === Number(metric.line_name),
+        )?.selected;
+
+        aggregated[metric.line_name] = {
+          selected: selectedLine,
+          metrics: [],
+        } as MetricWrapper;
       }
 
-      aggregated[metric.line_name].push(metric);
+      const metricWrapper = aggregated[metric.line_name];
+      metricWrapper.metrics.push(metric);
     }
 
     // Condense aggregated objects
-    let datasets: ChartData[] = [];
-    Object.entries(aggregated).forEach(([line, metrics]) => {
-      datasets.push({
-        data: metrics.map((metric) => ({
+    let chartDataset: ChartData[] = [];
+    Object.entries(aggregated).forEach(([line, metricWrapper]) => {
+      if (!metricWrapper.selected) {
+        return;
+      }
+
+      chartDataset.push({
+        data: metricWrapper.metrics.map((metric) => ({
           time: metric.year + ' ' + metric.month,
           stat: metric[dayOfWeek],
         })),
@@ -142,12 +150,12 @@ export default function Charts() {
     });
 
     // create month labels
-    const months = data[0] ? data[0].data.map((a) => a.time) : '';
+    const months = chartData[0] ? chartData[0].data.map((a) => a.time) : '';
     setMonthList(months);
     console.log('months', months);
 
-    setData(datasets);
-    console.log('chart data', datasets);
+    setChartData(chartDataset);
+    console.log('chart data', chartDataset);
 
     setLineMetricDataset(aggregated);
 
@@ -164,7 +172,7 @@ export default function Charts() {
     JSON.stringify(lines),
     dayOfWeek,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    JSON.stringify(data),
+    JSON.stringify(chartData),
   ]);
 
   /**
@@ -247,21 +255,20 @@ export default function Charts() {
 
           {!expandedLineSelector && (
             <div id="chart_container">
-
-              {data.length > 0 ?
+              {chartData.length > 0 ? (
                 <LineChart
                   options={options}
                   id="chart"
                   data={{
                     labels: monthList,
-                    datasets: data,
+                    datasets: chartData,
                   }}
                 />
-                : <div id="invalidData">
-                  <p>
-                  Please select data
-                  </p>
-                  </div>}
+              ) : (
+                <div id="invalidData">
+                  <p>Please select data</p>
+                </div>
+              )}
             </div>
           )}
         </div>
