@@ -3,7 +3,7 @@
 import { Label } from '@radix-ui/react-label';
 import { DayOfWeek } from '../hooks/useUserDashboardInput';
 import { useEffect, useState } from 'react';
-import "./input_components.css"
+import './input_components.css';
 
 export interface DateRangeSelectorProps {
   startDate: Date;
@@ -17,7 +17,6 @@ export interface DateRangeSelectorProps {
 }
 
 type IntervalEndpoint = 'Start' | 'End';
-
 
 export default function DateRangeSelector({
   startDate,
@@ -37,24 +36,22 @@ export default function DateRangeSelector({
     return `${month} ${date?.getFullYear()}`;
   };
 
+  useEffect(() => {
+    // this sets year and month values on load
 
-useEffect (() => {
-  // this sets year and month values on load
+    const start_month = document.getElementById('StartMonth');
+    const start_year = document.getElementById('StartYear');
+    const end_month = document.getElementById('EndMonth');
+    const end_year = document.getElementById('EndYear');
 
-  const start_month = document.getElementById('StartMonth');
-  const start_year = document.getElementById('StartYear');
-  const end_month = document.getElementById('EndMonth');
-  const end_year = document.getElementById('EndYear');
+    start_month.value = startDate.getMonth();
+    start_year.value = startDate.getYear() + 1900;
+    end_month.value = endDate.getMonth();
+    end_year.value = endDate.getYear() + 1900;
 
-  start_month.value = startDate.getMonth();
-  start_year.value = startDate.getYear() + 1900;
-  end_month.value = endDate.getMonth();
-  end_year.value = endDate.getYear() + 1900;
-
-  var radiobtn = document.getElementById("est_wkday_ridership");
-  radiobtn.checked = true;
-
-}, [])
+    var radiobtn = document.getElementById('est_wkday_ridership');
+    radiobtn.checked = true;
+  }, []);
 
   // const getValueDateString = (date: Date): string => {
   //   console.log(date);
@@ -85,12 +82,10 @@ useEffect (() => {
   //   }
   // };
 
-
   const getDateSetter = (
     intervalEndpoint: IntervalEndpoint,
   ): React.Dispatch<React.SetStateAction<Date>> => {
-
-    console.log('dates', endDate, startDate)
+    console.log('dates', endDate, startDate);
     if (intervalEndpoint === 'End') {
       return setEndDate;
     } else if (intervalEndpoint === 'Start') {
@@ -119,10 +114,9 @@ useEffect (() => {
       console.log('new month date', title, newDate);
 
       // Update form value (should be side effect)
-      
 
-      const form = (document.getElementById(title + 'Month') as HTMLInputElement);
-      form.value = newDate.getMonth() 
+      const form = document.getElementById(title + 'Month') as HTMLInputElement;
+      form.value = newDate.getMonth();
 
       return newDate;
     });
@@ -221,7 +215,7 @@ useEffect (() => {
       <div id="dateRangeSelector">
         <div className="dateRange">
           <Label>From</Label>
-          {dateForm(startDate,  'Start')}
+          {dateForm(startDate, 'Start')}
         </div>
         <div className="arrow"></div>
         <div className="dateRange">
