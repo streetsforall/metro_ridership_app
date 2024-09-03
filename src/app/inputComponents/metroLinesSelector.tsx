@@ -1,4 +1,4 @@
-import { LineMetricDataset, Metric } from '../charts/page';
+import { LineMetricDataset, Metric, MetricWrapper } from '../charts/page';
 import { getLineName } from '../common/lines';
 import { type Line } from '../common/types';
 import MetroLineTableRow from './metroLineTableRow';
@@ -28,7 +28,13 @@ export default function LineSelector({
 
   return (
     /* Styled as flexbox so overflow scroll container stretches full height */
-    <div id='line_selector' className={'flex flex-col gap-8 bg-white p-4 rounded-xl ' + (expanded ? 'expanded' : '')}>
+    <div
+      id="line_selector"
+      className={
+        'flex flex-col gap-8 bg-white p-4 rounded-xl ' +
+        (expanded ? 'expanded' : '')
+      }
+    >
       <div className="flex gap-4 items-center">
         <span className="text-sm uppercase whitespace-nowrap">
           Line Selector
@@ -101,11 +107,11 @@ export default function LineSelector({
                 return 0;
               })
               .map((line) => {
-                const lineMetrics: Metric[] = lineMetricDataset[line.id];
+                const lineMetrics: MetricWrapper = lineMetricDataset[line.id];
 
                 return (
                   <MetroLineTableRow
-                    lineMetrics={lineMetrics}
+                    lineMetrics={lineMetrics?.metrics}
                     key={line.id}
                     onToggleSelectLine={onToggleSelectLine}
                     line={line}

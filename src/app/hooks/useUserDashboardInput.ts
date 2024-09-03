@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Line } from '../common/types';
 import * as LineJsonData from '../data/metro_line_metadata_current.json';
-import { LineMetricDataset, Metric } from '../charts/page';
+import { LineMetricDataset, MetricWrapper } from '../charts/page';
 import { calcAbsChange, calcAvg } from '../inputComponents/calc';
 
 interface LineJson {
@@ -83,9 +83,9 @@ const useUserDashboardInput = (): UserDashboardInputState => {
         const updatedLine: Line = { ...prevLine };
 
         // Check if metrics exist for line.
-        const lineMetrics: Metric[] | undefined =
+        const lineMetricWrapper: MetricWrapper | undefined =
           lineMetricDataset[updatedLine.id];
-        if (!lineMetrics) {
+        if (!lineMetricWrapper) {
           updatedLine.averageRidership = undefined;
           updatedLine.changeInRidership = undefined;
 
@@ -93,8 +93,14 @@ const useUserDashboardInput = (): UserDashboardInputState => {
         }
 
         // Calculate metric data for each line.
-        updatedLine.averageRidership = calcAvg(lineMetrics, dayOfWeek);
-        updatedLine.changeInRidership = calcAbsChange(lineMetrics, dayOfWeek);
+        updatedLine.averageRidership = calcAvg(
+          lineMetricWrapper.metrics,
+          dayOfWeek,
+        );
+        updatedLine.changeInRidership = calcAbsChange(
+          lineMetricWrapper.metrics,
+          dayOfWeek,
+        );
 
         return updatedLine;
       });
