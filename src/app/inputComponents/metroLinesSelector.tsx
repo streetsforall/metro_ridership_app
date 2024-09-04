@@ -78,6 +78,7 @@ const toggleSortDirection = (sortDirection: sortDirection): sortDirection => {
 export default function LineSelector({
   lineMetricDataset,
   lines,
+  dayOfWeek,
   onToggleSelectLine,
   expanded,
   setExpanded,
@@ -101,6 +102,7 @@ export default function LineSelector({
       const latestColumnHeaderStates: ColumnHeaderState[] = [
         ...prevColumnHeaderStates,
       ];
+
 
 
       // Find column header to update.
@@ -152,6 +154,7 @@ export default function LineSelector({
       return lines;
     }
 
+
     // Get values needed to sort legislators via lodash.
     const sortKeys: LineKey[] = sortableColumnHeaders.map(
       (columnHeaderState: ColumnHeaderState) => columnHeaderState.key,
@@ -159,6 +162,8 @@ export default function LineSelector({
     const sortDirections: sortDirection[] = sortableColumnHeaders.map(
       (columnHeaderState: ColumnHeaderState) => columnHeaderState.sortDirection,
     );
+
+    console.log(sortableColumnHeaders)
 
     // Sort lines.
     return lodash.orderBy(lines, sortKeys, sortDirections);
@@ -231,6 +236,7 @@ export default function LineSelector({
                   key={line.id}
                   onToggleSelectLine={onToggleSelectLine}
                   line={line}
+                  dayOfWeek={dayOfWeek}
                   expanded={expanded}
                 ></MetroLineTableRow>
               );

@@ -1,11 +1,27 @@
 import * as Checkbox from '@radix-ui/react-checkbox';
+import { useState, useEffect } from 'react';
 import { type Line } from '../common/types';
 import { Metric } from '../charts/page';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  type ChartDataset,
+  type ChartOptions,
+} from 'chart.js';
+import { Line as LineChart } from 'react-chartjs-2';
+
 
 interface MetroLineTableRowProps {
   onToggleSelectLine: (line: Line) => void;
   expanded?: boolean;
   line: Line;
+  dayOfWeek: string;
   lineMetrics: Metric[];
 }
 
@@ -15,9 +31,71 @@ export default function MetroLineTableRow({
   onToggleSelectLine,
   line,
   expanded,
+  dayOfWeek,
+  lineMetrics
 }: MetroLineTableRowProps) {
   const collapsedSelectorWrapperClasses =
     'flex gap-2 items-center px-2 odd:bg-neutral-50 text-sm';
+
+
+  const [isMounted, setIsMounted] = useState(false);
+  const [data, setData] = useState([]);
+
+
+  const options: ChartOptions<'line'> = {
+    plugins: {
+      legend: {
+        display: false
+      }
+    },
+    scales: {
+      beginAtZero: true,
+      clip : false,
+      x: {
+        display: false,
+      },
+      y: {
+        display: false,
+      }
+    },
+    elements: {
+      point:{
+          radius: 0
+      }
+  },
+      maintainAspectRatio: false,
+
+    responsive: true,
+    parsing: {
+      xAxisKey: 'time',
+      yAxisKey: 'stat',
+    },
+  }
+
+  console.log(dayOfWeek)
+
+  let chartDataset: ChartData[] = [];
+
+  useEffect(() => {
+
+    console.log(lineMetrics)
+
+    lineMetrics ? chartDataset.push({
+      data: lineMetrics.map((metric) => ({
+        backgroundColor: "#ed840e",
+        borderColor: "#ed840e",
+        time: metric.year + ' ' + metric.month,
+        stat: metric[dayOfWeek],
+      })),
+      id: Number(line)
+    }) : ''
+
+
+
+    console.log(chartDataset)
+
+    setData(chartDataset);
+  }, [lineMetrics])
 
   return (
     <>
@@ -53,18 +131,35 @@ export default function MetroLineTableRow({
           <td>
             {!!line.averageRidership
               ? Math.round(line.averageRidership).toLocaleString()
-              : NotDefined}
+              : 0}
           </td>
         )}
 
         {/* Change in ridership (ex: +1000, -200) */}
-        {expanded && <td>{line.changeInRidership ?? NotDefined}</td>}
+        {expanded && <td>{line.changeInRidership ?? 0}</td>}
 
         {/* Division (ex: 3, 5) */}
         {/* {expanded && <td>{line.division ?? division}</td>} */}
 
         {/* Ridership over time. Line graph showing ridership trend */}
-        {expanded && <td></td>}
+
+        {expanded &&
+
+          data ?
+
+          <div id="table_chart_container">
+          <LineChart
+            options={options}
+            id="chart"
+            data={{
+              datasets: data,
+            }}
+          />
+          </div>
+          : ''
+        }
+
+
 
         {/* View Map hyperlink */}
         {expanded && <td>View Map</td>}

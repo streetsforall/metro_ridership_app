@@ -246,6 +246,7 @@ export default function Charts() {
 
         <div id="window" className="h-screen mx-auto">
           <LineSelector
+          dayOfWeek={dayOfWeek}
             lineMetricDataset={lineMetricDataset}
             lines={lines}
             onToggleSelectLine={onToggleSelectLine}

@@ -18,6 +18,11 @@
     background-color: white;
 }
 
+#table_chart_container {
+    max-height: 50px;
+    max-width: 200px;
+}
+
 #line_selector {
     width: 20%;
     max-height: 70vh;
