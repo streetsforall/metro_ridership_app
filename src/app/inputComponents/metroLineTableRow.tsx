@@ -32,6 +32,9 @@ export default function MetroLineTableRow({
   line,
   expanded,
   dayOfWeek,
+  startDate,
+  endDate,
+  months,
   lineMetrics
 }: MetroLineTableRowProps) {
   const collapsedSelectorWrapperClasses =
@@ -42,15 +45,17 @@ export default function MetroLineTableRow({
   const [data, setData] = useState([]);
 
 
+
+
+
   const options: ChartOptions<'line'> = {
     plugins: {
       legend: {
         display: false
       }
     },
+    events: [],
     scales: {
-      beginAtZero: true,
-      clip : false,
       x: {
         display: false,
       },
@@ -72,33 +77,33 @@ export default function MetroLineTableRow({
     },
   }
 
-  console.log(dayOfWeek)
 
   let chartDataset: ChartData[] = [];
 
   useEffect(() => {
 
-    console.log(lineMetrics)
 
+    console.log(lineMetrics)
     lineMetrics ? chartDataset.push({
+      borderColor: "#ed840e",
       data: lineMetrics.map((metric) => ({
-        backgroundColor: "#ed840e",
-        borderColor: "#ed840e",
         time: metric.year + ' ' + metric.month,
         stat: metric[dayOfWeek],
       })),
       id: Number(line)
     }) : ''
 
-
-
-    console.log(chartDataset)
+    console.log('data', chartDataset)
+    console.log(months)
+    
 
     setData(chartDataset);
-  }, [lineMetrics])
+
+  }, [line.changeInRidership])
 
   return (
     <>
+
       <tr
         className={
           expanded ? 'odd:bg-neutral-50' : collapsedSelectorWrapperClasses
@@ -145,9 +150,9 @@ export default function MetroLineTableRow({
 
         {expanded &&
 
-          data ?
-
-          <div id="table_chart_container">
+          <div className={
+            expanded ? 'expanded' : 'collapsed'
+          } id="table_chart_container">
           <LineChart
             options={options}
             id="chart"
@@ -156,14 +161,13 @@ export default function MetroLineTableRow({
             }}
           />
           </div>
-          : ''
         }
 
 
 
         {/* View Map hyperlink */}
         {expanded && <td>View Map</td>}
-      </tr>
+      </tr> 
     </>
   );
 }

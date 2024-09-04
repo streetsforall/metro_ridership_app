@@ -11,7 +11,7 @@
 #chart_container {
     width: 80%;
     border: 1px solid grey;
-    max-height: 70vh;
+    max-height: 80vh;
     border-radius: 1rem;
     margin-left: 1rem;
     padding: 1rem;
@@ -19,13 +19,13 @@
 }
 
 #table_chart_container {
-    max-height: 50px;
+    max-height: 40px;
     max-width: 200px;
 }
 
 #line_selector {
     width: 20%;
-    max-height: 70vh;
+    max-height: 80vh;
     border: 1px solid grey;
 }
 

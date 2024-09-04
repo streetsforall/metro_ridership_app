@@ -10,6 +10,7 @@ interface LineSelectorProps {
   lines: Line[];
   onToggleSelectLine: (line: Line) => void;
   expanded: boolean;
+  dayOfWeek: string
   setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
@@ -79,6 +80,9 @@ export default function LineSelector({
   lineMetricDataset,
   lines,
   dayOfWeek,
+  months,
+  startDate,
+  endDate,
   onToggleSelectLine,
   expanded,
   setExpanded,
@@ -163,7 +167,6 @@ export default function LineSelector({
       (columnHeaderState: ColumnHeaderState) => columnHeaderState.sortDirection,
     );
 
-    console.log(sortableColumnHeaders)
 
     // Sort lines.
     return lodash.orderBy(lines, sortKeys, sortDirections);
@@ -236,6 +239,9 @@ export default function LineSelector({
                   key={line.id}
                   onToggleSelectLine={onToggleSelectLine}
                   line={line}
+                  months={months}
+                  startDate={startDate}
+                  endDate={endDate}
                   dayOfWeek={dayOfWeek}
                   expanded={expanded}
                 ></MetroLineTableRow>

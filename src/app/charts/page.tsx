@@ -149,6 +149,8 @@ export default function Charts() {
       });
     });
 
+    // console.log(chartData)
+
     // create month labels
     const months = chartData[0] ? chartData[0].data.map((a) => a.time) : '';
     setMonthList(months);
@@ -246,9 +248,12 @@ export default function Charts() {
 
         <div id="window" className="h-screen mx-auto">
           <LineSelector
-          dayOfWeek={dayOfWeek}
+            dayOfWeek={dayOfWeek}
             lineMetricDataset={lineMetricDataset}
             lines={lines}
+            months={monthList}
+            startDate={startDate}
+            endDate={endDate}
             onToggleSelectLine={onToggleSelectLine}
             expanded={expandedLineSelector}
             setExpanded={setExpandedLineSelector}
