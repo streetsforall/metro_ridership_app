@@ -82,8 +82,6 @@ export default function MetroLineTableRow({
 
   useEffect(() => {
 
-
-    console.log(lineMetrics)
     lineMetrics ? chartDataset.push({
       borderColor: "#ed840e",
       data: lineMetrics.map((metric) => ({
@@ -92,9 +90,6 @@ export default function MetroLineTableRow({
       })),
       id: Number(line)
     }) : ''
-
-    console.log('data', chartDataset)
-    console.log(months)
     
 
     setData(chartDataset);
@@ -103,7 +98,7 @@ export default function MetroLineTableRow({
 
   return (
     <>
-
+{lineMetrics ?
       <tr
         className={
           expanded ? 'odd:bg-neutral-50' : collapsedSelectorWrapperClasses
@@ -148,10 +143,10 @@ export default function MetroLineTableRow({
 
         {/* Ridership over time. Line graph showing ridership trend */}
 
-        {expanded &&
+        {
 
           <div className={
-            expanded ? 'expanded' : 'collapsed'
+            expanded ? 'column_expanded' : 'column_collapsed'
           } id="table_chart_container">
           <LineChart
             options={options}
@@ -168,6 +163,7 @@ export default function MetroLineTableRow({
         {/* View Map hyperlink */}
         {expanded && <td>View Map</td>}
       </tr> 
+      : ''}
     </>
   );
 }

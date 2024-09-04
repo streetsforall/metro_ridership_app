@@ -23,6 +23,14 @@
     max-width: 200px;
 }
 
+.column_expanded {
+    display: block
+}
+
+.column_collapsed {
+    display: none
+}
+
 #line_selector {
     width: 20%;
     max-height: 80vh;
