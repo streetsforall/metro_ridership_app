@@ -1,6 +1,9 @@
+'use client';
+
 import { useMemo, useState } from 'react';
 import { LineMetricDataset, Metric, MetricWrapper } from '../charts/page';
 import { getLineName } from '../common/lines';
+import dynamic from 'next/dynamic'
 import { type Line } from '../common/types';
 import MetroLineTableRow from './metroLineTableRow';
 import lodash from 'lodash';
@@ -13,6 +16,10 @@ interface LineSelectorProps {
   dayOfWeek: string
   setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
 }
+
+// lazy load data rows
+// const MetroLineTableRow = dynamic(() => import('./metroLineTableRow'), 
+// { ssr: false})
 
 type sortDirection = 'asc' | 'desc' | false;
 
@@ -230,7 +237,7 @@ export default function LineSelector({
           )}
 
           <tbody>
-            {sortedLines.map((line) => {
+            {sortedLines.map( (line) => {
               const lineMetrics: MetricWrapper = lineMetricDataset[line.id];
 
               return (
