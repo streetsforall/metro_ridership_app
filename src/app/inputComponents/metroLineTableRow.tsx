@@ -133,7 +133,7 @@ export default function MetroLineTableRow({
         )}
 
         {/* Change in ridership (ex: +1000, -200) */}
-        {expanded && <td>{line.changeInRidership ?? 0}</td>}
+        {expanded && <td>{line.changeInRidership?.toLocaleString() ?? 0}</td>}
 
         {/* Division (ex: 3, 5) */}
         {/* {expanded && <td>{line.division ?? division}</td>} */}
