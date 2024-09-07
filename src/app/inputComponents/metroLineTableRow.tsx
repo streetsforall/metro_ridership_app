@@ -3,22 +3,9 @@
 import * as Checkbox from '@radix-ui/react-checkbox';
 import { useState, useEffect } from 'react';
 import { type Line } from '../common/types';
-import randomColor from 'randomcolor';
 import { getLineColor } from '../common/lines';
 import { Metric } from '../charts/page';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  type ChartDataset,
-  type ChartOptions,
-  ChartData,
-} from 'chart.js';
+import { Chart as ChartJS, type ChartOptions, ChartData } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
 
 interface MetroLineTableRowProps {
@@ -29,16 +16,11 @@ interface MetroLineTableRowProps {
   lineMetrics: Metric[];
 }
 
-const NotDefined = 'Not Defined';
-
 export default function MetroLineTableRow({
   onToggleSelectLine,
   line,
   expanded,
   dayOfWeek,
-  startDate,
-  endDate,
-  months,
   lineMetrics,
 }: MetroLineTableRowProps) {
   const collapsedSelectorWrapperClasses =

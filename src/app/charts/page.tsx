@@ -251,9 +251,6 @@ export default function Charts() {
             dayOfWeek={dayOfWeek}
             lineMetricDataset={lineMetricDataset}
             lines={lines}
-            months={monthList}
-            startDate={startDate}
-            endDate={endDate}
             onToggleSelectLine={onToggleSelectLine}
             expanded={expandedLineSelector}
             setExpanded={setExpandedLineSelector}
