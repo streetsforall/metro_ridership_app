@@ -105,7 +105,7 @@ export default function LineSelector({
    */
   const onSortLabelClick = (key: LineKey): void => {
     setColumnHeaderStates((prevColumnHeaderStates: ColumnHeaderState[]) => {
-      const latestColumnHeaderStates: ColumnHeaderState[] = [
+      let latestColumnHeaderStates: ColumnHeaderState[] = [
         ...prevColumnHeaderStates,
       ];
 
@@ -139,6 +139,17 @@ export default function LineSelector({
 
       // Update column header states.
       latestColumnHeaderStates[targetColumnHeaderIndex] = targetColumnHeader;
+
+      // Clear sort direction for other columns not being updated.
+      latestColumnHeaderStates = latestColumnHeaderStates.map(
+        (columnHeaderState: ColumnHeaderState, index: number) => {
+          if (index !== targetColumnHeaderIndex) {
+            columnHeaderState.sortDirection = false;
+          }
+
+          return columnHeaderState;
+        },
+      );
 
       return latestColumnHeaderStates;
     });
