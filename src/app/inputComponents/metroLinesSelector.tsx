@@ -1,9 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { LineMetricDataset, Metric, MetricWrapper } from '../charts/page';
-import { getLineName } from '../common/lines';
-import dynamic from 'next/dynamic'
+import { LineMetricDataset, MetricWrapper } from '../charts/page';
 import { type Line } from '../common/types';
 import MetroLineTableRow from './metroLineTableRow';
 import lodash from 'lodash';
@@ -13,12 +11,12 @@ interface LineSelectorProps {
   lines: Line[];
   onToggleSelectLine: (line: Line) => void;
   expanded: boolean;
-  dayOfWeek: string
+  dayOfWeek: string;
   setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // lazy load data rows
-// const MetroLineTableRow = dynamic(() => import('./metroLineTableRow'), 
+// const MetroLineTableRow = dynamic(() => import('./metroLineTableRow'),
 // { ssr: false})
 
 type sortDirection = 'asc' | 'desc' | false;
@@ -87,9 +85,6 @@ export default function LineSelector({
   lineMetricDataset,
   lines,
   dayOfWeek,
-  months,
-  startDate,
-  endDate,
   onToggleSelectLine,
   expanded,
   setExpanded,
@@ -110,11 +105,9 @@ export default function LineSelector({
    */
   const onSortLabelClick = (key: LineKey): void => {
     setColumnHeaderStates((prevColumnHeaderStates: ColumnHeaderState[]) => {
-      const latestColumnHeaderStates: ColumnHeaderState[] = [
+      let latestColumnHeaderStates: ColumnHeaderState[] = [
         ...prevColumnHeaderStates,
       ];
-
-
 
       // Find column header to update.
       let targetColumnHeaderIndex: number = -1;
@@ -122,7 +115,6 @@ export default function LineSelector({
       let targetColumnHeader: ColumnHeaderState | undefined =
         prevColumnHeaderStates.find(
           (columnState: ColumnHeaderState, index: number) => {
-            
             if (columnState.key === key) {
               targetColumnHeaderIndex = index;
               return true;
@@ -148,6 +140,17 @@ export default function LineSelector({
       // Update column header states.
       latestColumnHeaderStates[targetColumnHeaderIndex] = targetColumnHeader;
 
+      // Clear sort direction for other columns not being updated.
+      latestColumnHeaderStates = latestColumnHeaderStates.map(
+        (columnHeaderState: ColumnHeaderState, index: number) => {
+          if (index !== targetColumnHeaderIndex) {
+            columnHeaderState.sortDirection = false;
+          }
+
+          return columnHeaderState;
+        },
+      );
+
       return latestColumnHeaderStates;
     });
   };
@@ -165,7 +168,6 @@ export default function LineSelector({
       return lines;
     }
 
-
     // Get values needed to sort legislators via lodash.
     const sortKeys: LineKey[] = sortableColumnHeaders.map(
       (columnHeaderState: ColumnHeaderState) => columnHeaderState.key,
@@ -173,7 +175,6 @@ export default function LineSelector({
     const sortDirections: sortDirection[] = sortableColumnHeaders.map(
       (columnHeaderState: ColumnHeaderState) => columnHeaderState.sortDirection,
     );
-
 
     // Sort lines.
     return lodash.orderBy(lines, sortKeys, sortDirections);
@@ -237,7 +238,7 @@ export default function LineSelector({
           )}
 
           <tbody>
-            {sortedLines.map( (line) => {
+            {sortedLines.map((line) => {
               const lineMetrics: MetricWrapper = lineMetricDataset[line.id];
 
               return (
@@ -246,9 +247,6 @@ export default function LineSelector({
                   key={line.id}
                   onToggleSelectLine={onToggleSelectLine}
                   line={line}
-                  months={months}
-                  startDate={startDate}
-                  endDate={endDate}
                   dayOfWeek={dayOfWeek}
                   expanded={expanded}
                 ></MetroLineTableRow>
