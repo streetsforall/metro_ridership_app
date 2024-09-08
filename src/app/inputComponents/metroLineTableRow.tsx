@@ -1,7 +1,7 @@
 'use client';
 
 import * as Checkbox from '@radix-ui/react-checkbox';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { type Line } from '../common/types';
 import { getLineColor } from '../common/lines';
 import { Metric } from '../charts/page';
@@ -38,7 +38,11 @@ export default function MetroLineTableRow({
     },
 
     events: [],
-    animation: false,
+    animation: {
+      onComplete: function () {
+        setIsMounted(true);
+      },
+    },
     spanGaps: true,
     normalized: true,
     scales: {
@@ -65,34 +69,75 @@ export default function MetroLineTableRow({
     },
   };
 
-  let chartDataset: ChartData[] = [];
+  // let chartDataset: ChartData[] = [];
+
+  const chartData: ChartData[] = useMemo(
+    () =>
+      lineMetrics
+        ? [
+            {
+              borderColor: getLineColor(Number(line.id)),
+              data: lineMetrics.map((metric) => ({
+                time: metric.year + ' ' + metric.month,
+                stat: metric[dayOfWeek],
+              })),
+              id: Number(line),
+            },
+          ]
+        : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(lineMetrics)],
+  );
 
   useEffect(() => {
+    if (!expanded) {
+      return;
+    }
+
     setIsMounted(false);
 
-    lineMetrics
-      ? chartDataset.push({
-          borderColor: getLineColor(Number(line.id)),
-          data: lineMetrics.map((metric) => ({
-            time: metric.year + ' ' + metric.month,
-            stat: metric[dayOfWeek],
-          })),
-          id: Number(line),
-        })
-      : '';
+    const chartDataset: ChartData[] = lineMetrics
+      ? [
+          {
+            borderColor: getLineColor(Number(line.id)),
+            data: lineMetrics.map((metric) => ({
+              time: metric.year + ' ' + metric.month,
+              stat: metric[dayOfWeek],
+            })),
+            id: Number(line),
+          },
+        ]
+      : [];
 
     setData(chartDataset);
-
-    setIsMounted(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     line,
     dayOfWeek,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(lineMetrics),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    JSON.stringify(chartDataset),
   ]);
+
+  const hashCode = function (s) {
+    var h = 0,
+      l = s.length,
+      i = 0;
+    if (l > 0) while (i < l) h = ((h << 5) - h + s.charCodeAt(i++)) | 0;
+    return h;
+  };
+
+  if (line.name === 'Line 2') {
+    console.log('Render Row -----------------------');
+    console.log('Render Row - Line ' + line.name);
+    console.log('Render Row - Metrics Length ' + lineMetrics?.length);
+    console.log('Render Row - Mounted ' + isMounted);
+    console.log('Render Row - Expanded ' + expanded);
+    console.log('Render Row - Line ' + JSON.stringify(line));
+    console.log('Render Row - Day of Week ' + dayOfWeek);
+    console.log(
+      'Render Row - Chart Data Hash' + hashCode(JSON.stringify(data)),
+    );
+  }
 
   return (
     <>
@@ -142,6 +187,9 @@ export default function MetroLineTableRow({
 
         {expanded && (
           <td id="table_chart_container" key={line.id}>
+            {/* It seems the rendering takes time. We can't use loading because the data itself is already loaded. 
+            Either make more efficient (ex: don't draw points/lines) or use another chart library. 
+            Possible options include web worker, less data points */}
             {isMounted ? (
               <LineChart
                 options={options}

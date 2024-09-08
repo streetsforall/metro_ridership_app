@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { LineMetricDataset, MetricWrapper } from '../charts/page';
+import { Profiler, useMemo, useState } from 'react';
+import { LineMetricDataset, MetricWrapper, onRender } from '../charts/page';
 import { type Line } from '../common/types';
 import MetroLineTableRow from './metroLineTableRow';
 import lodash from 'lodash';
@@ -156,6 +156,7 @@ export default function LineSelector({
   };
 
   const sortedLines: Line[] = useMemo(() => {
+    console.log('Get sorted lines');
     // Get column headers that have a sort direction (ex: asc, desc).
     const sortableColumnHeaders: ColumnHeaderState[] =
       columnHeaderStates.filter(
@@ -184,77 +185,84 @@ export default function LineSelector({
 
   const subtitleClass = 'text-neutral-400';
 
+  console.log('render line selector');
+
   return (
     /* Styled as flexbox so overflow scroll container stretches full height */
-    <div
-      id="line_selector"
-      className={
-        'flex flex-col gap-8 bg-white p-4 rounded-xl ' +
-        (expanded ? 'expanded' : '')
-      }
-    >
-      <div className="flex gap-4 items-center">
-        <span className="text-sm uppercase whitespace-nowrap">
-          Line Selector
-        </span>
+    <Profiler id="Metro Line Selector" onRender={onRender}>
+      <div
+        id="line_selector"
+        className={
+          'flex flex-col gap-8 bg-white p-4 rounded-xl ' +
+          (expanded ? 'expanded' : '')
+        }
+      >
+        <div className="flex gap-4 items-center">
+          <span className="text-sm uppercase whitespace-nowrap">
+            Line Selector
+          </span>
 
-        <button className={`${subtitleClass} text-sm`} onClick={onExpandClick}>
-          {expanded ? 'Hide' : 'Expand'}
-        </button>
+          <button
+            className={`${subtitleClass} text-sm`}
+            onClick={onExpandClick}
+          >
+            {expanded ? 'Hide' : 'Expand'}
+          </button>
+        </div>
+
+        {/* Overflow scroll container */}
+        <div className="overflow-y-auto">
+          <table className="w-full">
+            {/* Only show table header when line selector is expanded */}
+            {expanded && (
+              <thead>
+                <tr>
+                  {columnHeaderStates.map(
+                    (columnHeaderState: ColumnHeaderState, index: number) => {
+                      let classNames: string = subtitleClass;
+                      if (columnHeaderState.sortDirection === 'asc') {
+                        classNames = `${classNames} headerSortUp`;
+                      } else if (columnHeaderState.sortDirection === 'desc') {
+                        classNames = `${classNames} headerSortDown`;
+                      }
+
+                      return (
+                        <th
+                          key={index}
+                          style={{ textAlign: 'left' }}
+                          className={classNames}
+                          onClick={(): void =>
+                            onSortLabelClick(columnHeaderState.key)
+                          }
+                        >
+                          {columnHeaderState.label}
+                        </th>
+                      );
+                    },
+                  )}
+                </tr>
+              </thead>
+            )}
+
+            <tbody>
+              {sortedLines.map((line) => {
+                const lineMetrics: MetricWrapper = lineMetricDataset[line.id];
+
+                return (
+                  <MetroLineTableRow
+                    lineMetrics={lineMetrics?.metrics}
+                    key={line.id}
+                    onToggleSelectLine={onToggleSelectLine}
+                    line={line}
+                    dayOfWeek={dayOfWeek}
+                    expanded={expanded}
+                  ></MetroLineTableRow>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      {/* Overflow scroll container */}
-      <div className="overflow-y-auto">
-        <table className="w-full">
-          {/* Only show table header when line selector is expanded */}
-          {expanded && (
-            <thead>
-              <tr>
-                {columnHeaderStates.map(
-                  (columnHeaderState: ColumnHeaderState, index: number) => {
-                    let classNames: string = subtitleClass;
-                    if (columnHeaderState.sortDirection === 'asc') {
-                      classNames = `${classNames} headerSortUp`;
-                    } else if (columnHeaderState.sortDirection === 'desc') {
-                      classNames = `${classNames} headerSortDown`;
-                    }
-
-                    return (
-                      <th
-                        key={index}
-                        style={{ textAlign: 'left' }}
-                        className={classNames}
-                        onClick={(): void =>
-                          onSortLabelClick(columnHeaderState.key)
-                        }
-                      >
-                        {columnHeaderState.label}
-                      </th>
-                    );
-                  },
-                )}
-              </tr>
-            </thead>
-          )}
-
-          <tbody>
-            {sortedLines.map((line) => {
-              const lineMetrics: MetricWrapper = lineMetricDataset[line.id];
-
-              return (
-                <MetroLineTableRow
-                  lineMetrics={lineMetrics?.metrics}
-                  key={line.id}
-                  onToggleSelectLine={onToggleSelectLine}
-                  line={line}
-                  dayOfWeek={dayOfWeek}
-                  expanded={expanded}
-                ></MetroLineTableRow>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </Profiler>
   );
 }
