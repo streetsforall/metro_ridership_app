@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Profiler } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -64,6 +64,17 @@ ChartJS.register(
   Tooltip,
   Legend,
 );
+
+export function onRender(
+  id: string,
+  phase: 'mount' | 'update' | 'nested-update',
+  actualDuration: number,
+  baseDuration: number,
+  startTime: number,
+  commitTime: number,
+): void {
+  // console.log(`Profiler [${id}] - ${phase} - ${actualDuration} ms`);
+}
 
 export default function Charts() {
   const [chartData, setChartData] = useState<ChartData[]>([]);
@@ -242,48 +253,52 @@ export default function Charts() {
     },
   };
 
+  console.log('render chart page');
+
   return (
     <>
-      <div>
-        <DateRangeSelector
-          startDate={startDate}
-          setStartDate={setStartDate}
-          endDate={endDate}
-          setEndDate={setEndDate}
-          dayOfWeek={dayOfWeek}
-          setDayOfWeek={setDayOfWeek}
-        ></DateRangeSelector>
-
-        <div id="window" className="h-screen mx-auto">
-          <LineSelector
+      <Profiler id="MetroChart" onRender={onRender}>
+        <div>
+          <DateRangeSelector
+            startDate={startDate}
+            setStartDate={setStartDate}
+            endDate={endDate}
+            setEndDate={setEndDate}
             dayOfWeek={dayOfWeek}
-            lineMetricDataset={lineMetricDataset}
-            lines={linesWithValidMetricData}
-            onToggleSelectLine={onToggleSelectLine}
-            expanded={expandedLineSelector}
-            setExpanded={setExpandedLineSelector}
-          />
+            setDayOfWeek={setDayOfWeek}
+          ></DateRangeSelector>
 
-          {!expandedLineSelector && (
-            <div id="chart_container">
-              {chartData.length > 0 ? (
-                <LineChart
-                  options={options}
-                  id="chart"
-                  data={{
-                    labels: monthList,
-                    datasets: chartData,
-                  }}
-                />
-              ) : (
-                <div id="invalidData">
-                  <p>Please select data</p>
-                </div>
-              )}
-            </div>
-          )}
+          <div id="window" className="h-screen mx-auto">
+            <LineSelector
+              dayOfWeek={dayOfWeek}
+              lineMetricDataset={lineMetricDataset}
+              lines={linesWithValidMetricData}
+              onToggleSelectLine={onToggleSelectLine}
+              expanded={expandedLineSelector}
+              setExpanded={setExpandedLineSelector}
+            />
+
+            {!expandedLineSelector && (
+              <div id="chart_container">
+                {chartData.length > 0 ? (
+                  <LineChart
+                    options={options}
+                    id="chart"
+                    data={{
+                      labels: monthList,
+                      datasets: chartData,
+                    }}
+                  />
+                ) : (
+                  <div id="invalidData">
+                    <p>Please select data</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </Profiler>
     </>
   );
 }
