@@ -67,6 +67,13 @@ export default function MetroLineTableRow({
 
   let chartDataset: ChartData[] = [];
 
+  // fires on load
+  useEffect(() => {
+    setIsMounted(true)
+
+  })
+
+  // fires on change
   useEffect(() => {
     setIsMounted(false);
 
@@ -82,8 +89,6 @@ export default function MetroLineTableRow({
       : '';
 
     setData(chartDataset);
-
-    setIsMounted(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     line,
@@ -96,6 +101,7 @@ export default function MetroLineTableRow({
 
   return (
     <>
+    {lineMetrics &&
       <tr
         className={
           expanded ? 'odd:bg-neutral-50' : collapsedSelectorWrapperClasses
@@ -113,27 +119,31 @@ export default function MetroLineTableRow({
           </Checkbox.Root>
         </td>
 
-        {/* Line name (ex: Line 2, B Line) */}
-        <td className="w-full line-name">
-          <label
-            htmlFor={String(line.id)}
-            className="flex-1 block cursor-pointer py-2"
-          >
-            {line.name}
-          </label>
-        </td>
-
-        {/* Average ridership over a duration (ex: 3 months) */}
-        {expanded && (
-          <td>
-            {!!line.averageRidership
-              ? Math.round(line.averageRidership).toLocaleString()
-              : 0}
+          {/* Line name (ex: Line 2, B Line) */}
+          <td className="w-full line-name">
+            <label
+              htmlFor={String(line.id)}
+              className="flex-1 block cursor-pointer py-2"
+            >
+              {line.name}
+            </label>
           </td>
-        )}
 
-        {/* Change in ridership (ex: +1000, -200) */}
-        {expanded && <td>{line.changeInRidership?.toLocaleString() ?? 0}</td>}
+          {/* Average ridership over a duration (ex: 3 months) */}
+          {expanded && line.averageRidership &&  (
+            <td>
+              {!!line.averageRidership
+                ? Math.round(line.averageRidership).toLocaleString()
+                : 0}
+            </td>
+          )}
+
+          {/* Change in ridership (ex: +1000, -200) */}
+          {expanded &&  line.changeInRidership &&
+          (line.changeInRidership < 0 ? 
+          <td className='changeDown'>{line.changeInRidership.toLocaleString()}</td> :
+          <td className='changeUp'>{"+" + line.changeInRidership.toLocaleString()}</td>
+          )}
 
         {/* Division (ex: 3, 5) */}
         {/* {expanded && <td>{line.division ?? division}</td>} */}
@@ -156,9 +166,9 @@ export default function MetroLineTableRow({
           </td>
         )}
 
-        {/* View Map hyperlink */}
-        {expanded && <td>View Map</td>}
-      </tr>
-    </>
-  );
+          {/* View Map hyperlink */}
+          {expanded && <td>View Map</td>}
+        </tr>
+    }    </>
+    );
 }

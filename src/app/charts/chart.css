@@ -67,3 +67,12 @@
     text-align: center;
     
 }
+
+
+.changeDown {
+    color: red
+}
+
+.changeUp {
+    color: green
+} 
