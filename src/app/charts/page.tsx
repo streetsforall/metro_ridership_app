@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -85,6 +85,14 @@ export default function Charts() {
     setEndDate,
     updateLinesWithLineMetrics,
   } = useUserDashboardInput();
+
+  const linesWithValidMetricData = useMemo(
+    () =>
+      lines.filter(
+        (line: Line) => !!line.averageRidership && !!line.changeInRidership,
+      ),
+    [lines],
+  );
 
   /**
    * Update params on state change
@@ -250,10 +258,7 @@ export default function Charts() {
           <LineSelector
             dayOfWeek={dayOfWeek}
             lineMetricDataset={lineMetricDataset}
-            lines={lines}
-            months={monthList}
-            startDate={startDate}
-            endDate={endDate}
+            lines={linesWithValidMetricData}
             onToggleSelectLine={onToggleSelectLine}
             expanded={expandedLineSelector}
             setExpanded={setExpandedLineSelector}

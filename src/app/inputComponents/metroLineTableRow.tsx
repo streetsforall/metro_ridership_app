@@ -3,23 +3,10 @@
 import * as Checkbox from '@radix-ui/react-checkbox';
 import { useState, useEffect } from 'react';
 import { type Line } from '../common/types';
-import randomColor from 'randomcolor';
-import {getLineColor} from "../common/lines"
+import { getLineColor } from '../common/lines';
 import { Metric } from '../charts/page';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  type ChartDataset,
-  type ChartOptions,
-} from 'chart.js';
+import { Chart as ChartJS, type ChartOptions, ChartData } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
-
 
 interface MetroLineTableRowProps {
   onToggleSelectLine: (line: Line) => void;
@@ -29,34 +16,25 @@ interface MetroLineTableRowProps {
   lineMetrics: Metric[];
 }
 
-const NotDefined = 'Not Defined';
-
 export default function MetroLineTableRow({
   onToggleSelectLine,
   line,
   expanded,
   dayOfWeek,
-  startDate,
-  endDate,
-  months,
-  lineMetrics
+  lineMetrics,
 }: MetroLineTableRowProps) {
   const collapsedSelectorWrapperClasses =
     'flex gap-2 items-center px-2 odd:bg-neutral-50 text-sm';
 
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [data, setData] = useState<ChartData[]>([]);
 
-  const [isMounted, setIsMounted] = useState(false);
-  const [data, setData] = useState([]);
-
-
-
-
-// most of these are suggested chartjs optomizations
+  // most of these are suggested chartjs optomizations
   const options: ChartOptions<'line'> = {
     plugins: {
       legend: {
-        display: false
-      }
+        display: false,
+      },
     },
 
     events: [],
@@ -69,12 +47,12 @@ export default function MetroLineTableRow({
       },
       y: {
         display: false,
-      }
+      },
     },
     elements: {
       point: {
-        radius: 0
-      }
+        radius: 0,
+      },
     },
     maintainAspectRatio: false,
     stepped: 0,
@@ -85,8 +63,7 @@ export default function MetroLineTableRow({
       xAxisKey: 'time',
       yAxisKey: 'stat',
     },
-  }
-
+  };
 
   let chartDataset: ChartData[] = [];
 
@@ -98,42 +75,49 @@ export default function MetroLineTableRow({
 
   // fires on change
   useEffect(() => {
+    setIsMounted(false);
 
-
-    setIsMounted(false)
-
-    lineMetrics ? chartDataset.push({
-      borderColor: getLineColor(Number(line.id)),
-      data: lineMetrics.map((metric) => ({
-        time: metric.year + ' ' + metric.month,
-        stat: metric[dayOfWeek],
-      })),
-      id: Number(line)
-    }) : ''
+    lineMetrics
+      ? chartDataset.push({
+          borderColor: getLineColor(Number(line.id)),
+          data: lineMetrics.map((metric) => ({
+            time: metric.year + ' ' + metric.month,
+            stat: metric[dayOfWeek],
+          })),
+          id: Number(line),
+        })
+      : '';
 
     setData(chartDataset);
-
-  }, [line.averageRidership, dayOfWeek])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    line,
+    dayOfWeek,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(lineMetrics),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(chartDataset),
+  ]);
 
   return (
     <>
     {lineMetrics &&
-        <tr
-          className={
-            expanded ? 'odd:bg-neutral-50' : collapsedSelectorWrapperClasses
-          }
-        >
-          {/* Is Selected */}
-          <td className="line-selected-checkbox">
-            <Checkbox.Root
-              id={line.id.toString()}
-              onClick={() => onToggleSelectLine(line)}
-              checked={line.selected}
-              className="flex items-center justify-center bg-white data-[state=checked]:bg-neutral-500 border border-neutral-500 rounded-lg h-5 w-5 overflow-hidden"
-            >
-              <Checkbox.Indicator className="bg-neutral-500 rounded-lg h-full w-full" />
-            </Checkbox.Root>
-          </td>
+      <tr
+        className={
+          expanded ? 'odd:bg-neutral-50' : collapsedSelectorWrapperClasses
+        }
+      >
+        {/* Is Selected */}
+        <td className="line-selected-checkbox">
+          <Checkbox.Root
+            id={line.id.toString()}
+            onClick={() => onToggleSelectLine(line)}
+            checked={line.selected}
+            className="flex items-center justify-center bg-white data-[state=checked]:bg-neutral-500 border border-neutral-500 rounded-lg h-5 w-5 overflow-hidden"
+          >
+            <Checkbox.Indicator className="bg-neutral-500 rounded-lg h-full w-full" />
+          </Checkbox.Root>
+        </td>
 
           {/* Line name (ex: Line 2, B Line) */}
           <td className="w-full line-name">
@@ -161,28 +145,26 @@ export default function MetroLineTableRow({
           <td className='changeUp'>{"+" + line.changeInRidership.toLocaleString()}</td>
           )}
 
-          {/* Division (ex: 3, 5) */}
-          {/* {expanded && <td>{line.division ?? division}</td>} */}
+        {/* Division (ex: 3, 5) */}
+        {/* {expanded && <td>{line.division ?? division}</td>} */}
 
-          {/* Ridership over time. Line graph showing ridership trend */}
+        {/* Ridership over time. Line graph showing ridership trend */}
 
-          {expanded &&
-
-            <td
-              id="table_chart_container" key={line.id}>
-             
-             { isMounted ? <LineChart
+        {expanded && (
+          <td id="table_chart_container" key={line.id}>
+            {isMounted ? (
+              <LineChart
                 options={options}
                 id="chart"
                 data={{
                   datasets: data,
                 }}
-              /> : 'Loading'}
-
-            </td>
-          }
-
-
+              />
+            ) : (
+              'Loading'
+            )}
+          </td>
+        )}
 
           {/* View Map hyperlink */}
           {expanded && <td>View Map</td>}
