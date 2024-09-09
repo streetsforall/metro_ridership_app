@@ -91,7 +91,7 @@ export default function MetroLineTableRow({
     setData(chartDataset);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    line,
+    line.averageRidership,
     dayOfWeek,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(lineMetrics),
