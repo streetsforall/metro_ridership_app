@@ -90,6 +90,13 @@ export default function MetroLineTableRow({
 
   let chartDataset: ChartData[] = [];
 
+  // fires on load
+  useEffect(() => {
+    setIsMounted(true)
+
+  })
+
+  // fires on change
   useEffect(() => {
 
 
@@ -106,12 +113,11 @@ export default function MetroLineTableRow({
 
     setData(chartDataset);
 
-    setIsMounted(true)
-
-  }, [line, dayOfWeek])
+  }, [line.averageRidership, dayOfWeek])
 
   return (
     <>
+    {lineMetrics &&
         <tr
           className={
             expanded ? 'odd:bg-neutral-50' : collapsedSelectorWrapperClasses
@@ -140,7 +146,7 @@ export default function MetroLineTableRow({
           </td>
 
           {/* Average ridership over a duration (ex: 3 months) */}
-          {expanded && (
+          {expanded && line.averageRidership &&  (
             <td>
               {!!line.averageRidership
                 ? Math.round(line.averageRidership).toLocaleString()
@@ -149,7 +155,11 @@ export default function MetroLineTableRow({
           )}
 
           {/* Change in ridership (ex: +1000, -200) */}
-          {expanded && <td>{line.changeInRidership ?? 0}</td>}
+          {expanded &&  line.changeInRidership &&
+          (line.changeInRidership < 0 ? 
+          <td className='changeDown'>{line.changeInRidership.toLocaleString()}</td> :
+          <td className='changeUp'>{"+" + line.changeInRidership.toLocaleString()}</td>
+          )}
 
           {/* Division (ex: 3, 5) */}
           {/* {expanded && <td>{line.division ?? division}</td>} */}
@@ -177,6 +187,6 @@ export default function MetroLineTableRow({
           {/* View Map hyperlink */}
           {expanded && <td>View Map</td>}
         </tr>
-    </>
-  );
+    }    </>
+    );
 }
