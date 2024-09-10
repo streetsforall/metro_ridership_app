@@ -97,9 +97,9 @@ export default function Charts() {
   /**
    * Update params on state change
    */
-  useEffect(() => {
+  useEffect((): void => {
     if (!chartData) {
-      return '';
+      return;
     }
 
     console.log('lines', lines);
