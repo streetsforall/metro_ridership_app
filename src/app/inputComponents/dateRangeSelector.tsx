@@ -51,6 +51,7 @@ export default function DateRangeSelector({
 
     var radiobtn = document.getElementById('est_wkday_ridership');
     radiobtn.checked = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getDateSetter = (

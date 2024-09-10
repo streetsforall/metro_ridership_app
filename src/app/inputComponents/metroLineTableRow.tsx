@@ -70,7 +70,7 @@ export default function MetroLineTableRow({
   // fires on load
   useEffect(() => {
     setIsMounted(true);
-  });
+  }, []);
 
   // fires on change
   useEffect(() => {
