@@ -55,6 +55,7 @@ export default function MetroLineTableRow({
       },
     },
     maintainAspectRatio: false,
+    // @ts-ignore
     stepped: 0,
     borderDash: [],
     tension: false,
@@ -78,9 +79,11 @@ export default function MetroLineTableRow({
 
     lineMetrics
       ? chartDataset.push({
+          // @ts-ignore
           borderColor: getLineColor(Number(line.id)),
           data: lineMetrics.map((metric) => ({
             time: metric.year + ' ' + metric.month,
+            // @ts-ignore
             stat: metric[dayOfWeek],
           })),
           id: Number(line),
@@ -162,6 +165,7 @@ export default function MetroLineTableRow({
                   options={options}
                   id="chart"
                   data={{
+                    // @ts-ignore
                     datasets: data,
                   }}
                 />
