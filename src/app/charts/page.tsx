@@ -67,7 +67,7 @@ ChartJS.register(
 
 export default function Charts() {
   const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [monthList, setMonthList] = useState([]);
+  const [monthList, setMonthList] = useState<string[]>([]);
   const [expandedLineSelector, setExpandedLineSelector] =
     useState<boolean>(false);
   const [lineMetricDataset, setLineMetricDataset] = useState<LineMetricDataset>(
@@ -97,9 +97,9 @@ export default function Charts() {
   /**
    * Update params on state change
    */
-  useEffect(() => {
+  useEffect((): void => {
     if (!chartData) {
-      return '';
+      return;
     }
 
     console.log('lines', lines);
@@ -160,7 +160,7 @@ export default function Charts() {
     // console.log(chartData)
 
     // create month labels
-    const months = chartData[0] ? chartData[0].data.map((a) => a.time) : '';
+    const months = chartData[0] ? chartData[0].data.map((a) => a.time) : [];
     setMonthList(months);
     console.log('months', months);
 

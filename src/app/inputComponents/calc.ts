@@ -7,10 +7,10 @@ import { DayOfWeek } from '../hooks/useUserDashboardInput';
  * @param dayOfWeek Day of week enum in question
  * @returns Calculated average daily ridership
  */
-function calcAvg(metrics: Metric[], dayOfWeek: DayOfWeek) {
+function calcAvg(metrics: Metric[], dayOfWeek: DayOfWeek): number {
   const count = metrics.length;
   const sum = metrics.reduce((prev, curr) => {
-    return prev + curr[dayOfWeek];
+    return prev + (curr[dayOfWeek] ?? 0);
   }, 0);
 
   return sum / count;
@@ -22,7 +22,7 @@ function calcAvg(metrics: Metric[], dayOfWeek: DayOfWeek) {
  * @param dayOfWeek Day of week enum in question
  * @returns Calculated difference in daily ridership
  */
-function calcAbsChange(metrics: Metric[], dayOfWeek: DayOfWeek) {
+function calcAbsChange(metrics: Metric[], dayOfWeek: DayOfWeek): number {
   const sorted = metrics.sort((a, b) => {
     if (a.year === b.year) {
       return a.month - b.month;
@@ -34,7 +34,7 @@ function calcAbsChange(metrics: Metric[], dayOfWeek: DayOfWeek) {
   const first = sorted[0];
   const last = sorted[sorted.length - 1];
 
-  return last[dayOfWeek] - first[dayOfWeek];
+  return (last[dayOfWeek] ?? 0) - (first[dayOfWeek] ?? 0);
 }
 
 export { calcAbsChange, calcAvg };

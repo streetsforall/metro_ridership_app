@@ -55,6 +55,7 @@ export default function MetroLineTableRow({
       },
     },
     maintainAspectRatio: false,
+    // @ts-ignore
     stepped: 0,
     borderDash: [],
     tension: false,
@@ -69,9 +70,8 @@ export default function MetroLineTableRow({
 
   // fires on load
   useEffect(() => {
-    setIsMounted(true)
-
-  })
+    setIsMounted(true);
+  }, []);
 
   // fires on change
   useEffect(() => {
@@ -79,9 +79,11 @@ export default function MetroLineTableRow({
 
     lineMetrics
       ? chartDataset.push({
+          // @ts-ignore
           borderColor: getLineColor(Number(line.id)),
           data: lineMetrics.map((metric) => ({
             time: metric.year + ' ' + metric.month,
+            // @ts-ignore
             stat: metric[dayOfWeek],
           })),
           id: Number(line),
@@ -101,23 +103,23 @@ export default function MetroLineTableRow({
 
   return (
     <>
-    {lineMetrics &&
-      <tr
-        className={
-          expanded ? 'odd:bg-neutral-50' : collapsedSelectorWrapperClasses
-        }
-      >
-        {/* Is Selected */}
-        <td className="line-selected-checkbox">
-          <Checkbox.Root
-            id={line.id.toString()}
-            onClick={() => onToggleSelectLine(line)}
-            checked={line.selected}
-            className="flex items-center justify-center bg-white data-[state=checked]:bg-neutral-500 border border-neutral-500 rounded-lg h-5 w-5 overflow-hidden"
-          >
-            <Checkbox.Indicator className="bg-neutral-500 rounded-lg h-full w-full" />
-          </Checkbox.Root>
-        </td>
+      {lineMetrics && (
+        <tr
+          className={
+            expanded ? 'odd:bg-neutral-50' : collapsedSelectorWrapperClasses
+          }
+        >
+          {/* Is Selected */}
+          <td className="line-selected-checkbox">
+            <Checkbox.Root
+              id={line.id.toString()}
+              onClick={() => onToggleSelectLine(line)}
+              checked={line.selected}
+              className="flex items-center justify-center bg-white data-[state=checked]:bg-neutral-500 border border-neutral-500 rounded-lg h-5 w-5 overflow-hidden"
+            >
+              <Checkbox.Indicator className="bg-neutral-500 rounded-lg h-full w-full" />
+            </Checkbox.Root>
+          </td>
 
           {/* Line name (ex: Line 2, B Line) */}
           <td className="w-full line-name">
@@ -130,7 +132,7 @@ export default function MetroLineTableRow({
           </td>
 
           {/* Average ridership over a duration (ex: 3 months) */}
-          {expanded && line.averageRidership &&  (
+          {expanded && line.averageRidership && (
             <td>
               {!!line.averageRidership
                 ? Math.round(line.averageRidership).toLocaleString()
@@ -139,36 +141,44 @@ export default function MetroLineTableRow({
           )}
 
           {/* Change in ridership (ex: +1000, -200) */}
-          {expanded &&  line.changeInRidership &&
-          (line.changeInRidership < 0 ? 
-          <td className='changeDown'>{line.changeInRidership.toLocaleString()}</td> :
-          <td className='changeUp'>{"+" + line.changeInRidership.toLocaleString()}</td>
-          )}
-
-        {/* Division (ex: 3, 5) */}
-        {/* {expanded && <td>{line.division ?? division}</td>} */}
-
-        {/* Ridership over time. Line graph showing ridership trend */}
-
-        {expanded && (
-          <td id="table_chart_container" key={line.id}>
-            {isMounted ? (
-              <LineChart
-                options={options}
-                id="chart"
-                data={{
-                  datasets: data,
-                }}
-              />
+          {expanded &&
+            line.changeInRidership &&
+            (line.changeInRidership < 0 ? (
+              <td className="changeDown">
+                {line.changeInRidership.toLocaleString()}
+              </td>
             ) : (
-              'Loading'
-            )}
-          </td>
-        )}
+              <td className="changeUp">
+                {'+' + line.changeInRidership.toLocaleString()}
+              </td>
+            ))}
+
+          {/* Division (ex: 3, 5) */}
+          {/* {expanded && <td>{line.division ?? division}</td>} */}
+
+          {/* Ridership over time. Line graph showing ridership trend */}
+
+          {expanded && (
+            <td id="table_chart_container" key={line.id}>
+              {isMounted ? (
+                <LineChart
+                  options={options}
+                  id="chart"
+                  data={{
+                    // @ts-ignore
+                    datasets: data,
+                  }}
+                />
+              ) : (
+                'Loading'
+              )}
+            </td>
+          )}
 
           {/* View Map hyperlink */}
           {expanded && <td>View Map</td>}
         </tr>
-    }    </>
-    );
+      )}{' '}
+    </>
+  );
 }

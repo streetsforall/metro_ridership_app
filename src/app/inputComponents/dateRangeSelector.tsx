@@ -2,7 +2,6 @@
 
 import { Label } from '@radix-ui/react-label';
 import { DayOfWeek } from '../hooks/useUserDashboardInput';
-import { useEffect, useState } from 'react';
 import './input_components.css';
 
 export interface DateRangeSelectorProps {
@@ -36,23 +35,6 @@ export default function DateRangeSelector({
     return `${month} ${date?.getFullYear()}`;
   };
 
-  useEffect(() => {
-    // this sets year and month values on load
-    // needs to be in useEffect so 'document' exists first
-    const start_month = document.getElementById('StartMonth');
-    const start_year = document.getElementById('StartYear');
-    const end_month = document.getElementById('EndMonth');
-    const end_year = document.getElementById('EndYear');
-
-    start_month.value = startDate.getMonth();
-    start_year.value = startDate.getYear() + 1900;
-    end_month.value = endDate.getMonth();
-    end_year.value = endDate.getYear() + 1900;
-
-    var radiobtn = document.getElementById('est_wkday_ridership');
-    radiobtn.checked = true;
-  }, []);
-
   const getDateSetter = (
     intervalEndpoint: IntervalEndpoint,
   ): React.Dispatch<React.SetStateAction<Date>> => {
@@ -69,11 +51,7 @@ export default function DateRangeSelector({
     }
   };
 
-  const updateMonth = (
-    range: Date,
-    title: IntervalEndpoint,
-    newMonth: string,
-  ) => {
+  const updateMonth = (title: IntervalEndpoint, newMonth: string) => {
     // update month state
     const setDate = getDateSetter(title);
 
@@ -84,20 +62,11 @@ export default function DateRangeSelector({
 
       console.log('new month date', title, newDate);
 
-      // Update form value (should be side effect)
-
-      const form = document.getElementById(title + 'Month') as HTMLInputElement;
-      form.value = newDate.getMonth();
-
       return newDate;
     });
   };
 
-  const updateYear = (
-    range: Date,
-    title: IntervalEndpoint,
-    newYear: string,
-  ) => {
+  const updateYear = (title: IntervalEndpoint, newYear: string) => {
     // need to add filter to make sure from is not larger than the "to" date
     if (true) {
       // update year state
@@ -106,19 +75,12 @@ export default function DateRangeSelector({
       // Requires updater function.
       setDate((prevDate: Date) => {
         const newDate: Date = new Date(prevDate);
-        newDate.setFullYear(newYear);
+        newDate.setFullYear(Number(newYear));
 
         console.log('new year date', title, newDate);
 
-        // update form value (should be side effect)
-        const form = document.getElementById(title + 'Year');
-        const yearNum = newDate.getFullYear();
-        form.value = yearNum;
-
         return newDate;
       });
-    } else {
-      console.log('year not valid');
     }
   };
 
@@ -130,10 +92,11 @@ export default function DateRangeSelector({
             <label>Month: </label>
             <select
               onChange={(e) => {
-                updateMonth(range, title, e.target.value);
+                updateMonth(title, e.target.value);
               }}
               id={title + 'Month'}
               name="month"
+              value={range.getMonth()}
             >
               <option value="0">January</option>
               <option value="1">February</option>
@@ -153,10 +116,11 @@ export default function DateRangeSelector({
             <label>Year: </label>
             <select
               onChange={(e) => {
-                updateYear(range, title, e.target.value);
+                updateYear(title, e.target.value);
               }}
               id={title + 'Year'}
               name="year"
+              value={range.getFullYear()}
             >
               <option>2009</option>
               <option>2010</option>
@@ -202,7 +166,11 @@ export default function DateRangeSelector({
               return (
                 <li key={key} className="flex gap-2 items-center px-2">
                   <input
-                    onClick={(e) => setDayOfWeek(e.target.value)}
+                    onClick={(e) =>
+                      setDayOfWeek(
+                        (e.target as HTMLInputElement).value as DayOfWeek,
+                      )
+                    }
                     name="day"
                     type="radio"
                     id={key}

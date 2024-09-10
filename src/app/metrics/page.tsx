@@ -37,6 +37,7 @@ export default function Metrics() {
     });
 
     const total = filtered.reduce((prev: number, curr: Metric) => {
+      // @ts-ignore
       return prev + curr[data.stat];
     }, 0);
 
