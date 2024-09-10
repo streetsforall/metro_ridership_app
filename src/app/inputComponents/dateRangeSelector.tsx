@@ -2,7 +2,6 @@
 
 import { Label } from '@radix-ui/react-label';
 import { DayOfWeek } from '../hooks/useUserDashboardInput';
-import { useEffect, useState } from 'react';
 import './input_components.css';
 
 export interface DateRangeSelectorProps {
@@ -35,24 +34,6 @@ export default function DateRangeSelector({
 
     return `${month} ${date?.getFullYear()}`;
   };
-
-  useEffect(() => {
-    // this sets year and month values on load
-    // needs to be in useEffect so 'document' exists first
-    const start_month = document.getElementById('StartMonth');
-    const start_year = document.getElementById('StartYear');
-    const end_month = document.getElementById('EndMonth');
-    const end_year = document.getElementById('EndYear');
-
-    start_month.value = startDate.getMonth();
-    start_year.value = startDate.getYear() + 1900;
-    end_month.value = endDate.getMonth();
-    end_year.value = endDate.getYear() + 1900;
-
-    var radiobtn = document.getElementById('est_wkday_ridership');
-    radiobtn.checked = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const getDateSetter = (
     intervalEndpoint: IntervalEndpoint,
@@ -135,6 +116,7 @@ export default function DateRangeSelector({
               }}
               id={title + 'Month'}
               name="month"
+              value={range.getMonth()}
             >
               <option value="0">January</option>
               <option value="1">February</option>
@@ -158,6 +140,7 @@ export default function DateRangeSelector({
               }}
               id={title + 'Year'}
               name="year"
+              value={range.getFullYear()}
             >
               <option>2009</option>
               <option>2010</option>
