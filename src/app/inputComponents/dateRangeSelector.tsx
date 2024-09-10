@@ -166,7 +166,11 @@ export default function DateRangeSelector({
               return (
                 <li key={key} className="flex gap-2 items-center px-2">
                   <input
-                    onClick={(e) => setDayOfWeek(e.target.value)}
+                    onClick={(e) =>
+                      setDayOfWeek(
+                        (e.target as HTMLInputElement).value as DayOfWeek,
+                      )
+                    }
                     name="day"
                     type="radio"
                     id={key}
