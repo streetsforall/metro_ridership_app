@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { LineMetricDataset, MetricWrapper } from '../charts/page';
+import { LineMetricDataset, MetricWrapper } from '../page';
 import { type Line } from '../common/types';
 import MetroLineTableRow from './metroLineTableRow';
 import lodash from 'lodash';
@@ -180,7 +180,7 @@ export default function LineSelector({
     return lodash.orderBy(lines, sortKeys, sortDirections);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(columnHeaderStates), JSON.stringify(lines)]);
+  }, [JSON.stringify(columnHeaderStates), JSON.stringify(lines), dayOfWeek]);
 
   const subtitleClass = 'text-neutral-400';
 

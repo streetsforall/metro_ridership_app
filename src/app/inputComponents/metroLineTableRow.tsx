@@ -4,7 +4,7 @@ import * as Checkbox from '@radix-ui/react-checkbox';
 import { useState, useEffect } from 'react';
 import { type Line } from '../common/types';
 import { getLineColor } from '../common/lines';
-import { Metric } from '../charts/page';
+import { Metric } from '../page';
 import { Chart as ChartJS, type ChartOptions, ChartData } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
 
@@ -75,7 +75,6 @@ export default function MetroLineTableRow({
 
   // fires on change
   useEffect(() => {
-    setIsMounted(false);
 
     lineMetrics
       ? chartDataset.push({
