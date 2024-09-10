@@ -51,11 +51,7 @@ export default function DateRangeSelector({
     }
   };
 
-  const updateMonth = (
-    range: Date,
-    title: IntervalEndpoint,
-    newMonth: string,
-  ) => {
+  const updateMonth = (title: IntervalEndpoint, newMonth: string) => {
     // update month state
     const setDate = getDateSetter(title);
 
@@ -66,20 +62,11 @@ export default function DateRangeSelector({
 
       console.log('new month date', title, newDate);
 
-      // Update form value (should be side effect)
-
-      const form = document.getElementById(title + 'Month') as HTMLInputElement;
-      form.value = newDate.getMonth();
-
       return newDate;
     });
   };
 
-  const updateYear = (
-    range: Date,
-    title: IntervalEndpoint,
-    newYear: string,
-  ) => {
+  const updateYear = (title: IntervalEndpoint, newYear: string) => {
     // need to add filter to make sure from is not larger than the "to" date
     if (true) {
       // update year state
@@ -92,15 +79,8 @@ export default function DateRangeSelector({
 
         console.log('new year date', title, newDate);
 
-        // update form value (should be side effect)
-        const form = document.getElementById(title + 'Year');
-        const yearNum = newDate.getFullYear();
-        form.value = yearNum;
-
         return newDate;
       });
-    } else {
-      console.log('year not valid');
     }
   };
 
@@ -112,7 +92,7 @@ export default function DateRangeSelector({
             <label>Month: </label>
             <select
               onChange={(e) => {
-                updateMonth(range, title, e.target.value);
+                updateMonth(title, e.target.value);
               }}
               id={title + 'Month'}
               name="month"
@@ -136,7 +116,7 @@ export default function DateRangeSelector({
             <label>Year: </label>
             <select
               onChange={(e) => {
-                updateYear(range, title, e.target.value);
+                updateYear(title, e.target.value);
               }}
               id={title + 'Year'}
               name="year"
