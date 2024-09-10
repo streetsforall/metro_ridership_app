@@ -3,6 +3,7 @@
 import { Label } from '@radix-ui/react-label';
 import { DayOfWeek } from '../hooks/useUserDashboardInput';
 import './input_components.css';
+import { useEffect } from 'react';
 
 export interface DateRangeSelectorProps {
   startDate: Date;
@@ -25,6 +26,13 @@ export default function DateRangeSelector({
   dayOfWeek,
   setDayOfWeek,
 }: DateRangeSelectorProps) {
+
+
+  useEffect(() => {
+    var radiobtn = document.getElementById('est_wkday_ridership') as HTMLInputElement;
+    radiobtn.checked = true;
+  }, [])
+
   const getMonthYearString = (date: Date): string => {
     const monthName: (date?: number | Date | undefined) => string =
       new Intl.DateTimeFormat('en-US', {
