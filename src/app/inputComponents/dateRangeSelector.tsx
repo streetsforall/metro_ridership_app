@@ -75,7 +75,7 @@ export default function DateRangeSelector({
       // Requires updater function.
       setDate((prevDate: Date) => {
         const newDate: Date = new Date(prevDate);
-        newDate.setFullYear(newYear);
+        newDate.setFullYear(Number(newYear));
 
         console.log('new year date', title, newDate);
 
