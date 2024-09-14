@@ -1,15 +1,21 @@
 export interface Line {
   id: number;
   name: string;
-  mode: 'Bus' | 'Rail';
+  mode: Mode;
   provider: 'DO' | 'PT';
-  selected?: boolean;
+  selected: boolean;
+  visible: boolean;
   averageRidership?: number;
   changeInRidership?: number;
   ridershipOverTime?: number;
   division?: number;
   viewMap?: string;
 }
+
+/**
+ * Refers to mode of transit like bus, rail, etc.
+ */
+export type Mode = 'Bus' | 'Rail';
 
 export const lineNameSortFunction = (a: Line, b: Line) => {
   const nameA = a.name;

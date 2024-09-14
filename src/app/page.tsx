@@ -76,6 +76,7 @@ export default function Charts() {
 
   const {
     lines,
+    setLines,
     onToggleSelectLine,
     startDate,
     setStartDate,
@@ -86,12 +87,14 @@ export default function Charts() {
     updateLinesWithLineMetrics,
   } = useUserDashboardInput();
 
-  const linesWithValidMetricData = useMemo(
+  const visibleLines = useMemo(
     () =>
       lines.filter(
-        (line: Line) => !!line.averageRidership && !!line.changeInRidership,
+        (line: Line) =>
+          !!line.averageRidership && !!line.changeInRidership && line.visible,
       ),
-    [lines],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(lines)],
   );
 
   /**
@@ -258,7 +261,8 @@ export default function Charts() {
           <LineSelector
             dayOfWeek={dayOfWeek}
             lineMetricDataset={lineMetricDataset}
-            lines={linesWithValidMetricData}
+            lines={visibleLines}
+            setLines={setLines}
             onToggleSelectLine={onToggleSelectLine}
             expanded={expandedLineSelector}
             setExpanded={setExpandedLineSelector}
