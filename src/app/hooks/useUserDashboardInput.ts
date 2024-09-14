@@ -22,6 +22,10 @@ export interface UserDashboardInputState {
   setDayOfWeek: React.Dispatch<React.SetStateAction<DayOfWeek>>;
 
   lines: Line[];
+  setLines: React.Dispatch<React.SetStateAction<Line[]>>;
+
+  searchText: string;
+  setSearchText: React.Dispatch<React.SetStateAction<string>>;
 
   onToggleSelectLine: (line: Line) => void;
   updateLinesWithLineMetrics: (lineMetricDataset: LineMetricDataset) => void;
@@ -47,6 +51,7 @@ const createLinesData = (): Line[] => {
         id: line.line,
         name: getLineName(line.line),
         selected: false,
+        visible: true,
       } as Line;
     })
     .sort(lineNameSortFunction);
@@ -62,6 +67,7 @@ const useUserDashboardInput = (): UserDashboardInputState => {
   const [dayOfWeek, setDayOfWeek] = useState<DayOfWeek>(DayOfWeek.Weekday);
 
   const [lines, setLines] = useState<Line[]>(createLinesData);
+  const [searchText, setSearchText] = useState<string>('');
 
   const onToggleSelectLine = (line: Line): void => {
     setLines((prevLines: Line[]) => {
@@ -119,6 +125,9 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     dayOfWeek,
     setDayOfWeek,
     lines,
+    setLines,
+    searchText,
+    setSearchText,
     onToggleSelectLine,
     updateLinesWithLineMetrics,
   };

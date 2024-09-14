@@ -5,14 +5,18 @@ import { LineMetricDataset, MetricWrapper } from '../page';
 import { type Line } from '../common/types';
 import MetroLineTableRow from './metroLineTableRow';
 import lodash from 'lodash';
+import Filters from './filters';
 
 interface LineSelectorProps {
   lineMetricDataset: LineMetricDataset;
   lines: Line[];
+  setLines: React.Dispatch<React.SetStateAction<Line[]>>;
   onToggleSelectLine: (line: Line) => void;
   expanded: boolean;
   dayOfWeek: string;
   setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
+  searchText: string;
+  setSearchText: React.Dispatch<React.SetStateAction<string>>;
 }
 
 // lazy load data rows
@@ -70,7 +74,7 @@ const columnStates: ColumnHeaderState[] = [
 ];
 
 const toggleSortDirection = (sortDirection: sortDirection): sortDirection => {
-  if (sortDirection === false) {
+  if (!sortDirection) {
     return 'asc';
   } else if (sortDirection === 'asc') {
     return 'desc';
@@ -84,10 +88,13 @@ const toggleSortDirection = (sortDirection: sortDirection): sortDirection => {
 export default function LineSelector({
   lineMetricDataset,
   lines,
+  setLines,
   dayOfWeek,
   onToggleSelectLine,
   expanded,
   setExpanded,
+  searchText,
+  setSearchText,
 }: LineSelectorProps) {
   const [columnHeaderStates, setColumnHeaderStates] =
     useState<ColumnHeaderState[]>(columnStates);
@@ -100,7 +107,6 @@ export default function LineSelector({
 
   /**
    * Only changes header column states.
-   * Does not sort legislators yet.
    * @param key
    */
   const onSortLabelClick = (key: LineKey): void => {
@@ -137,7 +143,7 @@ export default function LineSelector({
         targetColumnHeader.sortDirection,
       );
 
-      // Update column header states.
+      // Update column header states with updated column header.
       latestColumnHeaderStates[targetColumnHeaderIndex] = targetColumnHeader;
 
       // Clear sort direction for other columns not being updated.
@@ -201,6 +207,13 @@ export default function LineSelector({
         <button className={`${subtitleClass} text-sm`} onClick={onExpandClick}>
           {expanded ? 'Hide' : 'Expand'}
         </button>
+      </div>
+      <div id="filters-wrapper">
+        <Filters
+          setLines={setLines}
+          searchText={searchText}
+          setSearchText={setSearchText}
+        ></Filters>
       </div>
 
       {/* Overflow scroll container */}

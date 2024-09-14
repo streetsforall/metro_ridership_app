@@ -76,6 +76,7 @@ export default function Charts() {
 
   const {
     lines,
+    setLines,
     onToggleSelectLine,
     startDate,
     setStartDate,
@@ -83,15 +84,31 @@ export default function Charts() {
     setDayOfWeek,
     endDate,
     setEndDate,
+    searchText,
+    setSearchText,
     updateLinesWithLineMetrics,
   } = useUserDashboardInput();
 
-  const linesWithValidMetricData = useMemo(
+  const visibleLines = useMemo(
     () =>
-      lines.filter(
-        (line: Line) => !!line.averageRidership && !!line.changeInRidership,
-      ),
-    [lines],
+      lines.filter((line: Line) => {
+        if (searchText) {
+          const searchTextLower = searchText.toLocaleLowerCase();
+          const visible: boolean = line.name
+            .toLocaleLowerCase()
+            .includes(searchTextLower);
+
+          if (!visible) {
+            return false;
+          }
+        }
+
+        return (
+          !!line.averageRidership && !!line.changeInRidership && line.visible
+        );
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(lines), searchText],
   );
 
   /**
@@ -258,7 +275,10 @@ export default function Charts() {
           <LineSelector
             dayOfWeek={dayOfWeek}
             lineMetricDataset={lineMetricDataset}
-            lines={linesWithValidMetricData}
+            lines={visibleLines}
+            setLines={setLines}
+            searchText={searchText}
+            setSearchText={setSearchText}
             onToggleSelectLine={onToggleSelectLine}
             expanded={expandedLineSelector}
             setExpanded={setExpandedLineSelector}
