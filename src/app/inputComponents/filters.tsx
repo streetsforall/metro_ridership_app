@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { type Line } from '../common/types';
-
-import { Button, Flex } from '@radix-ui/themes';
+import { Button, Flex, Separator } from '@radix-ui/themes';
 
 interface FiltersProps {
   setLines: React.Dispatch<React.SetStateAction<Line[]>>;
@@ -18,6 +17,16 @@ const getButtonColor = (visible: boolean): ButtonColor => {
 export default function Filters({ setLines }: FiltersProps) {
   const [trainsVisible, setTrainsVisible] = useState<boolean>(true);
   const [busesVisible, setBusesVisible] = useState<boolean>(true);
+
+  const clearVisibility = (): void => {
+    setTrainsVisible(false);
+    setBusesVisible(false);
+  };
+
+  const resetVisibility = (): void => {
+    setTrainsVisible(true);
+    setBusesVisible(true);
+  };
 
   useEffect(() => {
     setLines((prevLines) => {
@@ -65,6 +74,13 @@ export default function Filters({ setLines }: FiltersProps) {
           }}
         >
           Buses
+        </Button>
+        <Separator orientation="vertical"></Separator>
+        <Button onClick={resetVisibility} size="3" variant="solid">
+          Reset
+        </Button>
+        <Button onClick={clearVisibility} size="3" variant="solid">
+          Clear
         </Button>
       </Flex>
     </div>
