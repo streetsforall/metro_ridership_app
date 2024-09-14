@@ -15,6 +15,8 @@ interface LineSelectorProps {
   expanded: boolean;
   dayOfWeek: string;
   setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
+  searchText: string;
+  setSearchText: React.Dispatch<React.SetStateAction<string>>;
 }
 
 // lazy load data rows
@@ -91,6 +93,8 @@ export default function LineSelector({
   onToggleSelectLine,
   expanded,
   setExpanded,
+  searchText,
+  setSearchText,
 }: LineSelectorProps) {
   const [columnHeaderStates, setColumnHeaderStates] =
     useState<ColumnHeaderState[]>(columnStates);
@@ -205,7 +209,11 @@ export default function LineSelector({
         </button>
       </div>
       <div id="filters-wrapper">
-        <Filters setLines={setLines}></Filters>
+        <Filters
+          setLines={setLines}
+          searchText={searchText}
+          setSearchText={setSearchText}
+        ></Filters>
       </div>
 
       {/* Overflow scroll container */}

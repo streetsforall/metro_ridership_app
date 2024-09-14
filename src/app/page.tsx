@@ -84,17 +84,31 @@ export default function Charts() {
     setDayOfWeek,
     endDate,
     setEndDate,
+    searchText,
+    setSearchText,
     updateLinesWithLineMetrics,
   } = useUserDashboardInput();
 
   const visibleLines = useMemo(
     () =>
-      lines.filter(
-        (line: Line) =>
-          !!line.averageRidership && !!line.changeInRidership && line.visible,
-      ),
+      lines.filter((line: Line) => {
+        if (searchText) {
+          const searchTextLower = searchText.toLocaleLowerCase();
+          const visible: boolean = line.name
+            .toLocaleLowerCase()
+            .includes(searchTextLower);
+
+          if (!visible) {
+            return false;
+          }
+        }
+
+        return (
+          !!line.averageRidership && !!line.changeInRidership && line.visible
+        );
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(lines)],
+    [JSON.stringify(lines), searchText],
   );
 
   /**
@@ -263,6 +277,8 @@ export default function Charts() {
             lineMetricDataset={lineMetricDataset}
             lines={visibleLines}
             setLines={setLines}
+            searchText={searchText}
+            setSearchText={setSearchText}
             onToggleSelectLine={onToggleSelectLine}
             expanded={expandedLineSelector}
             setExpanded={setExpandedLineSelector}
