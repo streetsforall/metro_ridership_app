@@ -75,7 +75,6 @@ export default function MetroLineTableRow({
 
   // fires on change
   useEffect(() => {
-
     lineMetrics
       ? chartDataset.push({
           // @ts-ignore
@@ -177,7 +176,7 @@ export default function MetroLineTableRow({
           {/* View Map hyperlink */}
           {expanded && <td>View Map</td>}
         </tr>
-      )}{' '}
+      )}
     </>
   );
 }
