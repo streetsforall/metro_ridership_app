@@ -133,8 +133,8 @@ export default function Charts() {
       return;
     }
 
-    console.log('metrics', metrics)
-    console.log('lineMetricDataset', lineMetricDataset)
+    // console.log('metrics', metrics)
+    // console.log('lineMetricDataset', lineMetricDataset)
 
     console.log('lines', lines);
 
@@ -145,7 +145,7 @@ export default function Charts() {
 
     for (let i = 0; i < metrics.length; i++) {
       const metric: Metric = metrics[i];
-      console.log(metrics[i])
+      // console.log(metrics[i])
 
       // Filter by year
       var newMetricDate = new Date(metric.year, metric.month);
@@ -171,15 +171,23 @@ export default function Charts() {
 
       const metricWrapper = aggregated[metric.line_name];
       metricWrapper.metrics.push(metric);
+
+      console.log(metricWrapper)
     }
+
+
 
     // Condense aggregated objects
     let chartDataset: ChartData[] = [];
+
     
     Object.entries(aggregated).forEach(([line, metricWrapper]) => {
+      
       if (!metricWrapper.selected) {
         return;
       }
+
+      console.log()
 
       chartDataset.push({
         data: metricWrapper.metrics.map((metric) => ({
@@ -192,6 +200,11 @@ export default function Charts() {
         borderColor: getLineColor(Number(line)),
       });
     });
+
+    console.log('chartDataset', chartDataset)
+    console.log('aggregated', aggregated)
+
+
 
 
     // create month labels
