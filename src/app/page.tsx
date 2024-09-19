@@ -214,6 +214,8 @@ export default function Charts() {
     endDate,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(lines),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(lineMetricDataset),
     dayOfWeek,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(chartData),
