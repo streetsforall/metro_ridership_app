@@ -12,6 +12,7 @@ interface MetroLineTableRowProps {
   onToggleSelectLine: (line: Line) => void;
   expanded?: boolean;
   line: Line;
+  id: number;
   dayOfWeek: string;
   lineMetrics: Metric[];
 }
@@ -21,6 +22,7 @@ export default function MetroLineTableRow({
   line,
   expanded,
   dayOfWeek,
+  id,
   lineMetrics,
 }: MetroLineTableRowProps) {
   const collapsedSelectorWrapperClasses =
@@ -107,8 +109,9 @@ export default function MetroLineTableRow({
             expanded ? 'odd:bg-neutral-50' : collapsedSelectorWrapperClasses
           }
         >
+          <td className="w-7 text-sm text-gray-300" >{id}</td>
           {/* Is Selected */}
-          <td className="line-selected-checkbox">
+          <td className="line-selected-checkbox max-w-max">
             <Checkbox.Root
               id={line.id.toString()}
               onClick={() => onToggleSelectLine(line)}
@@ -120,7 +123,7 @@ export default function MetroLineTableRow({
           </td>
 
           {/* Line name (ex: Line 2, B Line) */}
-          <td className="w-full line-name">
+          <td className="line-name flex-1">
             <label
               htmlFor={String(line.id)}
               className="flex-1 block cursor-pointer py-2"
@@ -174,7 +177,7 @@ export default function MetroLineTableRow({
           )}
 
           {/* View Map hyperlink */}
-          {expanded && <td>View Map</td>}
+          {/* {expanded && <td>View Map</td>} */}
         </tr>
       )}
     </>

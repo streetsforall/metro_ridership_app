@@ -28,7 +28,18 @@ body {
   display: flex;
 }
 
-#lineSelector {
+button {
+  border: 1px solid rgb(225, 225, 225);
+  background-color: #f8fcfb;
+  border-radius: .5rem;
+  padding: 0 .3rem;
+  color: black;
+  height: max-content;
+}
+
+button:hover {
+  border-color: rgb(142, 142, 142);
+  background-color: #92bfff;
 }
 
 @layer utilities {

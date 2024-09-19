@@ -36,6 +36,11 @@ interface ColumnHeaderState {
 
 const columnStates: ColumnHeaderState[] = [
   {
+    label: '',
+    key: 'id',
+    sortDirection: false,
+  },
+  {
     label: 'Selected',
     key: 'selected',
     sortDirection: false,
@@ -66,11 +71,11 @@ const columnStates: ColumnHeaderState[] = [
     key: 'ridershipOverTime',
   },
   // Empty for view map
-  {
-    label: '',
-    sortDirection: false,
-    key: 'viewMap',
-  },
+  // {
+  //   label: '',
+  //   sortDirection: false,
+  //   key: 'viewMap',
+  // },
 ];
 
 const toggleSortDirection = (sortDirection: sortDirection): sortDirection => {
@@ -195,18 +200,19 @@ export default function LineSelector({
     <div
       id="line_selector"
       className={
-        'flex flex-col gap-8 bg-white p-4 rounded-xl ' +
+        'flex flex-col bg-white p-4 rounded-xl ' +
         (expanded ? 'expanded' : '')
       }
     >
-      <div className="flex gap-4 items-center">
+      <div className="flex gap-4 items-center justify-between">
         <span className="text-sm uppercase whitespace-nowrap">
           Line Selector
         </span>
 
-        <button className={`${subtitleClass} text-sm`} onClick={onExpandClick}>
+        <button id="expandButton"  onClick={onExpandClick}>
           {expanded ? 'Hide' : 'Expand'}
         </button>
+
       </div>
       <div id="filters-wrapper">
         <Filters
@@ -251,13 +257,14 @@ export default function LineSelector({
           )}
 
           <tbody>
-            {sortedLines.map((line) => {
+            {sortedLines.map((line, id) => {
               const lineMetrics: MetricWrapper = lineMetricDataset[line.id];
 
               return (
                 <MetroLineTableRow
                   lineMetrics={lineMetrics?.metrics}
                   key={line.id}
+                  id={id}
                   onToggleSelectLine={onToggleSelectLine}
                   line={line}
                   dayOfWeek={dayOfWeek}

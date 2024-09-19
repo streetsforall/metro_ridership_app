@@ -42,7 +42,7 @@
 }
 
 #line_selector table {
-    table-layout: fixed;
+    /* table-layout: fixed; */
 }
 
 #line_selector th {

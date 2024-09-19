@@ -119,6 +119,8 @@ export default function Charts() {
       return;
     }
 
+    console.log('chartData', chartData)
+
     console.log('lines', lines);
 
     // Aggregate by line
@@ -157,6 +159,7 @@ export default function Charts() {
 
     // Condense aggregated objects
     let chartDataset: ChartData[] = [];
+    
     Object.entries(aggregated).forEach(([line, metricWrapper]) => {
       if (!metricWrapper.selected) {
         return;
@@ -174,7 +177,6 @@ export default function Charts() {
       });
     });
 
-    // console.log(chartData)
 
     // create month labels
     const months = chartData[0] ? chartData[0].data.map((a) => a.time) : [];
