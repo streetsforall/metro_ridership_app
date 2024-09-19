@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect, useMemo } from 'react';
 import {
   Chart as ChartJS,
@@ -117,7 +119,7 @@ export default function Charts() {
   // testing loads for build
   useEffect(() => {
     console.log('metrics', metrics)
-    console.log('metrics', lineMetricDataset)
+    console.log('lineMetricDataset', lineMetricDataset)
    }, [])
 
 
@@ -132,6 +134,7 @@ export default function Charts() {
     }
 
     console.log('chartData', chartData)
+    console.log('lineMetricDataset', lineMetricDataset)
 
     console.log('lines', lines);
 
@@ -222,7 +225,7 @@ export default function Charts() {
   useEffect(
     
     () => {
-      console.log('lineMetricDataset', lineMetricDataset)
+      console.log('lineMetricDataset effect', lineMetricDataset)
       updateLinesWithLineMetrics(lineMetricDataset);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
