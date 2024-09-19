@@ -116,7 +116,9 @@ export default function Charts() {
    * Update params on state change
    */
   useEffect((): void => {
+
     if (!chartData) {
+      console.log('no chart data')
       return;
     }
 
