@@ -89,6 +89,8 @@ export default function Charts() {
     updateLinesWithLineMetrics,
   } = useUserDashboardInput();
 
+
+  
   const visibleLines = useMemo(
     () =>
       lines.filter((line: Line) => {
