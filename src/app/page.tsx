@@ -145,6 +145,7 @@ export default function Charts() {
 
     for (let i = 0; i < metrics.length; i++) {
       const metric: Metric = metrics[i];
+      console.log(metrics[i])
 
       // Filter by year
       var newMetricDate = new Date(metric.year, metric.month);
