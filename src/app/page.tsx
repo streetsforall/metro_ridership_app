@@ -111,6 +111,7 @@ export default function Charts() {
     [JSON.stringify(lines), searchText],
   );
 
+
   /**
    * Update params on state change
    */
@@ -208,6 +209,7 @@ export default function Charts() {
    * Calculate metric data for each line.
    */
   useEffect(
+    
     () => {
       updateLinesWithLineMetrics(lineMetricDataset);
     },
