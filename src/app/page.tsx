@@ -126,14 +126,14 @@ export default function Charts() {
   /**
    * Update params on state change
    */
-  useEffect((): void => {
+  useEffect(() : void => {
 
     if (!chartData) {
       console.log('no chart data')
       return;
     }
 
-    console.log('chartData', chartData)
+    console.log('metrics', metrics)
     console.log('lineMetricDataset', lineMetricDataset)
 
     console.log('lines', lines);
