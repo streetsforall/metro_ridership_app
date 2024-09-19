@@ -114,6 +114,13 @@ export default function Charts() {
   );
 
 
+  // testing loads for build
+  useEffect(() => {
+    console.log('metrics', metrics)
+    console.log('metrics', lineMetricDataset)
+   }, [])
+
+
   /**
    * Update params on state change
    */
@@ -221,10 +228,6 @@ export default function Charts() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [JSON.stringify(lineMetricDataset)],
   );
-
-  useEffect(() => {
-   console.log('metrics', metrics)
-  }, [])
 
   const options: ChartOptions<'line'> = {
     interaction: {
