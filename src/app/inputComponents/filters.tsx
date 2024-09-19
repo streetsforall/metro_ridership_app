@@ -71,7 +71,7 @@ export default function Filters({
 
       <div id="line_filters">
       <div id="line_search">
-          <MagnifyingGlassIcon height="20" width="20" />
+          <MagnifyingGlassIcon height="20" className="mr-2" width="20" />
 
           <TextField.Root
             placeholder="Search lines"

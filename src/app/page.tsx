@@ -211,11 +211,16 @@ export default function Charts() {
   useEffect(
     
     () => {
+      console.log('lineMetricDataset', lineMetricDataset)
       updateLinesWithLineMetrics(lineMetricDataset);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [JSON.stringify(lineMetricDataset)],
   );
+
+  useEffect(() => {
+   console.log('metrics', metrics)
+  }, [])
 
   const options: ChartOptions<'line'> = {
     interaction: {
