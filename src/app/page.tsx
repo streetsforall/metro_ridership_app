@@ -115,6 +115,8 @@ export default function Charts() {
     [JSON.stringify(lines), searchText],
   );
 
+  console.log('visibleLines', visibleLines)
+
 
   // testing loads for build
   useEffect( () => {
