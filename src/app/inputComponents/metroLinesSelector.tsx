@@ -167,6 +167,8 @@ export default function LineSelector({
   };
 
   const sortedLines: Line[] = useMemo(() => {
+
+
     // Get column headers that have a sort direction (ex: asc, desc).
     const sortableColumnHeaders: ColumnHeaderState[] =
       columnHeaderStates.filter(
@@ -186,6 +188,8 @@ export default function LineSelector({
     const sortDirections: sortDirection[] = sortableColumnHeaders.map(
       (columnHeaderState: ColumnHeaderState) => columnHeaderState.sortDirection,
     );
+
+    console.log('soreted lines, lines', lines)
 
     // Sort lines.
     return lodash.orderBy(lines, sortKeys, sortDirections);
