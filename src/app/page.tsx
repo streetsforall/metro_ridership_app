@@ -21,7 +21,7 @@ import LineSelector from './inputComponents/metroLinesSelector';
 import useUserDashboardInput from './hooks/useUserDashboardInput';
 import { getLineColor, getLineName } from './common/lines';
 import { type Line } from './common/types';
-import * as metrics from '@/app/ridership.json';
+import * as metrics from '../app/ridership.json';
 
 import './chart.css';
 
@@ -117,8 +117,8 @@ export default function Charts() {
 
 
   // testing loads for build
-  useEffect(() => {
-    console.log('metrics', metrics)
+  useEffect( () => {
+     console.log('metrics', metrics)
     console.log('lineMetricDataset', lineMetricDataset)
    }, [])
 
@@ -195,6 +195,7 @@ export default function Charts() {
         backgroundColor: getLineColor(Number(line)),
         borderColor: getLineColor(Number(line)),
       });
+
     });
 
 
@@ -202,9 +203,9 @@ export default function Charts() {
     const months = chartData[0] ? chartData[0].data.map((a) => a.time) : [];
     setMonthList(months);
     console.log('months', months);
+    console.log('aggregated', aggregated);
 
     setChartData(chartDataset);
-    console.log('chart data', chartDataset);
 
     setLineMetricDataset(aggregated);
 
