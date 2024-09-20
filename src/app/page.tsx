@@ -136,8 +136,6 @@ export default function Charts() {
     // console.log('metrics', metrics)
     // console.log('lineMetricDataset', lineMetricDataset)
 
-    console.log('lines', lines);
-
     // Aggregate by line
     let aggregated: LineMetricDataset = {};
 
@@ -172,7 +170,7 @@ export default function Charts() {
       const metricWrapper = aggregated[metric.line_name];
       metricWrapper.metrics.push(metric);
 
-      console.log(metricWrapper)
+      // console.log(metricWrapper)
     }
 
 
@@ -187,8 +185,6 @@ export default function Charts() {
         return;
       }
 
-      console.log()
-
       chartDataset.push({
         data: metricWrapper.metrics.map((metric) => ({
           time: metric.year + ' ' + metric.month,
@@ -200,11 +196,6 @@ export default function Charts() {
         borderColor: getLineColor(Number(line)),
       });
     });
-
-    console.log('chartDataset', chartDataset)
-    console.log('aggregated', aggregated)
-
-
 
 
     // create month labels
@@ -228,8 +219,6 @@ export default function Charts() {
     endDate,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(lines),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    JSON.stringify(lineMetricDataset),
     dayOfWeek,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(chartData),
