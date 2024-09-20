@@ -28,6 +28,7 @@ export interface UserDashboardInputState {
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
 
   onToggleSelectLine: (line: Line) => void;
+  clearSelections: () => void;
   updateLinesWithLineMetrics: (lineMetricDataset: LineMetricDataset) => void;
 }
 
@@ -46,8 +47,7 @@ const DefaultEndDate: Date = new Date(2024, 4);
 const createLinesData = (): Line[] => {
   return (LineJsonData as LineJson[])
     .map((line: LineJson) => {
-
-      console.log(line)
+      console.log(line);
       return {
         ...line,
         id: line.line,
@@ -87,6 +87,14 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     });
   };
 
+  const clearSelections = (): void => {
+    setLines((prevLines: Line[]): Line[] => {
+      return prevLines.map((prevLine) => {
+        return { ...prevLine, selected: false } as Line;
+      });
+    });
+  };
+
   const updateLinesWithLineMetrics = (
     lineMetricDataset: LineMetricDataset,
   ): void => {
@@ -119,7 +127,7 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     });
   };
 
-  console.log('dashboard lines', lines)
+  console.log('dashboard lines', lines);
 
   return {
     startDate,
@@ -133,6 +141,7 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     searchText,
     setSearchText,
     onToggleSelectLine,
+    clearSelections,
     updateLinesWithLineMetrics,
   };
 };

@@ -10,6 +10,7 @@ interface FiltersProps {
   setLines: React.Dispatch<React.SetStateAction<Line[]>>;
   searchText: string;
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
+  clearSelections: () => void;
 }
 
 type ButtonColor = 'indigo' | undefined;
@@ -22,18 +23,10 @@ export default function Filters({
   setLines,
   searchText,
   setSearchText,
+  clearSelections,
 }: FiltersProps) {
   const [trainsVisible, setTrainsVisible] = useState<boolean>(true);
   const [busesVisible, setBusesVisible] = useState<boolean>(true);
-
-
-
-  const clearVisibility = (): void => {
-    // need to add function to unselect all lines
-  };
-
-
-
 
   const resetVisibility = (): void => {
     setTrainsVisible(true);
@@ -66,28 +59,23 @@ export default function Filters({
 
   return (
     <div id="filters">
-
-      <p className="text-gray-500	 text-sm" >Filters</p>
+      <p className="text-gray-500	 text-sm">Filters</p>
 
       <div id="line_filters">
-      <div id="line_search">
+        <div id="line_search">
           <MagnifyingGlassIcon height="20" className="mr-2" width="20" />
 
           <TextField.Root
             placeholder="Search lines"
-            className='search_bar'
+            className="search_bar"
             value={searchText}
             onChange={(event): void => {
               setSearchText(event.target.value);
             }}
-          >
-
-          </TextField.Root>
-
+          ></TextField.Root>
         </div>
 
-        <div className='flex'>
-
+        <div className="flex">
           <Checkbox.Root
             id="trainsVisible"
             className="CheckboxRoot"
@@ -99,8 +87,6 @@ export default function Filters({
             <Checkbox.Indicator className="CheckboxIndicator">
               <CheckIcon />
             </Checkbox.Indicator>
-
-
           </Checkbox.Root>
           <label className="Label text-sm" htmlFor="trainsVisible">
             Train
@@ -117,48 +103,20 @@ export default function Filters({
             <Checkbox.Indicator className="CheckboxIndicator">
               <CheckIcon />
             </Checkbox.Indicator>
-
           </Checkbox.Root>
           <label className="Label text-sm" htmlFor="busesVisible">
             Buses
           </label>
-          {/* 
-
-        <label>
-          <input checked={trainsVisible}
-            color={getButtonColor(trainsVisible)}
-            size="3"
-            variant="solid"
-            onClick={(): void => {
-              setTrainsVisible((visible) => !visible);
-            }} type="checkbox" />
-          Trains
-        </label>
-
-        <label>
-          <input checked={busesVisible}
-            color={getButtonColor(busesVisible)}
-            size="3"
-            variant="solid"
-            onClick={(): void => {
-              setBusesVisible((visible) => !visible);
-            }} type="checkbox" />
-          Buses
-        </label> */}
 
           {/* <Separator orientation="vertical"></Separator> */}
-
 
           <button className="text-sm" onClick={resetVisibility}>
             Reset
           </button>
         </div>
-
-    
-
       </div>
 
-      <button className="clearButton text-sm" onClick={clearVisibility}>
+      <button className="clearButton text-sm" onClick={clearSelections}>
         Clear Selections
       </button>
     </div>

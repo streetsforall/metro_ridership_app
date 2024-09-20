@@ -1,6 +1,6 @@
 'use client';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useMemo } from 'react';
 import {
@@ -89,10 +89,9 @@ export default function Charts() {
     searchText,
     setSearchText,
     updateLinesWithLineMetrics,
+    clearSelections,
   } = useUserDashboardInput();
 
-
-  
   const visibleLines = useMemo(
     () =>
       lines.filter((line: Line) => {
@@ -115,25 +114,22 @@ export default function Charts() {
     [JSON.stringify(lines), searchText],
   );
 
-  console.log('visibleLines', visibleLines)
-
+  console.log('visibleLines', visibleLines);
 
   // testing loads for build
-  useEffect( () => {
-    console.log('lines', lines)
+  useEffect(() => {
+    console.log('lines', lines);
 
-     console.log('metrics', metrics)
-    console.log('lineMetricDataset', lineMetricDataset)
-   }, [])
-
+    console.log('metrics', metrics);
+    console.log('lineMetricDataset', lineMetricDataset);
+  }, []);
 
   /**
    * Update params on state change
    */
-  useEffect(() : void => {
-
+  useEffect((): void => {
     if (!chartData) {
-      console.log('no chart data')
+      console.log('no chart data');
       return;
     }
 
@@ -173,18 +169,16 @@ export default function Charts() {
       // console.log(metricWrapper)
     }
 
-
     // Condense aggregated objects
     // add selected lines to the chart
     let chartDataset: ChartData[] = [];
-  
+
     Object.entries(aggregated).forEach(([line, metricWrapper]) => {
-      
       if (!metricWrapper.selected) {
         return;
       }
 
-      console.log('metricWrapper', metricWrapper)
+      console.log('metricWrapper', metricWrapper);
 
       chartDataset.push({
         data: metricWrapper.metrics.map((metric) => ({
@@ -196,12 +190,7 @@ export default function Charts() {
         backgroundColor: getLineColor(Number(line)),
         borderColor: getLineColor(Number(line)),
       });
-
-
     });
-
-
-
 
     // create month labels
     const months = chartData[0] ? chartData[0].data.map((a) => a.time) : [];
@@ -233,9 +222,8 @@ export default function Charts() {
    * Calculate metric data for each line.
    */
   useEffect(
-    
     () => {
-      console.log('lineMetricDataset effect', lineMetricDataset)
+      console.log('lineMetricDataset effect', lineMetricDataset);
       updateLinesWithLineMetrics(lineMetricDataset);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -311,6 +299,7 @@ export default function Charts() {
             onToggleSelectLine={onToggleSelectLine}
             expanded={expandedLineSelector}
             setExpanded={setExpandedLineSelector}
+            clearSelections={clearSelections}
           />
 
           {!expandedLineSelector && (

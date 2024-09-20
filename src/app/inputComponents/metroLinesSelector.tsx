@@ -17,6 +17,7 @@ interface LineSelectorProps {
   setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
   searchText: string;
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
+  clearSelections: () => void;
 }
 
 // lazy load data rows
@@ -100,6 +101,7 @@ export default function LineSelector({
   setExpanded,
   searchText,
   setSearchText,
+  clearSelections,
 }: LineSelectorProps) {
   const [columnHeaderStates, setColumnHeaderStates] =
     useState<ColumnHeaderState[]>(columnStates);
@@ -110,7 +112,7 @@ export default function LineSelector({
     });
   };
 
-  console.log(lines)
+  console.log(lines);
 
   /**
    * Only changes header column states.
@@ -169,8 +171,6 @@ export default function LineSelector({
   };
 
   const sortedLines: Line[] = useMemo(() => {
-
-
     // Get column headers that have a sort direction (ex: asc, desc).
     const sortableColumnHeaders: ColumnHeaderState[] =
       columnHeaderStates.filter(
@@ -197,8 +197,8 @@ export default function LineSelector({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(columnHeaderStates), JSON.stringify(lines), dayOfWeek]);
 
-  console.log('lines', lines)
-  console.log('sortedLines', sortedLines)
+  console.log('lines', lines);
+  console.log('sortedLines', sortedLines);
 
   const subtitleClass = 'text-neutral-400';
 
@@ -207,8 +207,7 @@ export default function LineSelector({
     <div
       id="line_selector"
       className={
-        'flex flex-col bg-white p-4 rounded-xl ' +
-        (expanded ? 'expanded' : '')
+        'flex flex-col bg-white p-4 rounded-xl ' + (expanded ? 'expanded' : '')
       }
     >
       <div className="flex gap-4 items-center justify-between">
@@ -216,16 +215,16 @@ export default function LineSelector({
           Line Selector
         </span>
 
-        <button id="expandButton"  onClick={onExpandClick}>
+        <button id="expandButton" onClick={onExpandClick}>
           {expanded ? 'Hide' : 'Expand'}
         </button>
-
       </div>
       <div id="filters-wrapper">
         <Filters
           setLines={setLines}
           searchText={searchText}
           setSearchText={setSearchText}
+          clearSelections={clearSelections}
         ></Filters>
       </div>
 
