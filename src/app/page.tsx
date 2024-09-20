@@ -107,8 +107,6 @@ export default function Charts() {
           }
         }
 
-        console.log(line)
-
         return (
           !!line.averageRidership && !!line.changeInRidership && line.visible
         );
@@ -120,6 +118,8 @@ export default function Charts() {
 
   // testing loads for build
   useEffect( () => {
+    console.log('lines', lines)
+
      console.log('metrics', metrics)
     console.log('lineMetricDataset', lineMetricDataset)
    }, [])
