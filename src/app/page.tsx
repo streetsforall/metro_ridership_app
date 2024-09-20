@@ -174,16 +174,17 @@ export default function Charts() {
     }
 
 
-
     // Condense aggregated objects
+    // add selected lines to the chart
     let chartDataset: ChartData[] = [];
-
-    
+  
     Object.entries(aggregated).forEach(([line, metricWrapper]) => {
       
       if (!metricWrapper.selected) {
         return;
       }
+
+      console.log('metricWrapper', metricWrapper)
 
       chartDataset.push({
         data: metricWrapper.metrics.map((metric) => ({
@@ -196,13 +197,16 @@ export default function Charts() {
         borderColor: getLineColor(Number(line)),
       });
 
+
     });
+
+
 
 
     // create month labels
     const months = chartData[0] ? chartData[0].data.map((a) => a.time) : [];
     setMonthList(months);
-    console.log('months', months);
+
     console.log('aggregated', aggregated);
 
     setChartData(chartDataset);

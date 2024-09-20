@@ -189,13 +189,13 @@ export default function LineSelector({
       (columnHeaderState: ColumnHeaderState) => columnHeaderState.sortDirection,
     );
 
-    console.log('soreted lines, lines', lines)
-
     // Sort lines.
     return lodash.orderBy(lines, sortKeys, sortDirections);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(columnHeaderStates), JSON.stringify(lines), dayOfWeek]);
+
+  console.log('sortedLines', sortedLines)
 
   const subtitleClass = 'text-neutral-400';
 
