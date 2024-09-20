@@ -110,6 +110,8 @@ export default function LineSelector({
     });
   };
 
+  console.log(lines)
+
   /**
    * Only changes header column states.
    * @param key
