@@ -107,6 +107,8 @@ export default function Charts() {
           }
         }
 
+        console.log(line)
+
         return (
           !!line.averageRidership && !!line.changeInRidership && line.visible
         );

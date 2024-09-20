@@ -195,6 +195,7 @@ export default function LineSelector({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(columnHeaderStates), JSON.stringify(lines), dayOfWeek]);
 
+  console.log('lines', lines)
   console.log('sortedLines', sortedLines)
 
   const subtitleClass = 'text-neutral-400';
