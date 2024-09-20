@@ -46,6 +46,8 @@ const DefaultEndDate: Date = new Date(2024, 4);
 const createLinesData = (): Line[] => {
   return (LineJsonData as LineJson[])
     .map((line: LineJson) => {
+
+      console.log(line)
       return {
         ...line,
         id: line.line,
@@ -116,6 +118,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
       });
     });
   };
+
+  console.log('dashboard lines', lines)
 
   return {
     startDate,
