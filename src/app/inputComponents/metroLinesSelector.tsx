@@ -202,6 +202,43 @@ export default function LineSelector({
 
   const subtitleClass = 'text-neutral-400';
 
+  /**
+   * From https://stackoverflow.com/a/14966131.
+   *
+   * Warning: Looks like it doesn't work for large dataset.
+   * May return a NETWORK_INVALID_REQUEST.
+   * Will need to have CSV export logic in a backend when that happens.
+   */
+  const csvDownload = (): string => {
+    let csvContent = 'data:text/csv;charset=utf-8,';
+
+    // Add headers to CSV.
+    const headers =
+      'id,name,mode,provider,averageRidership,changeInRidership\r\n';
+    csvContent += headers;
+
+    // Add selected lines data to CSV.
+    lines
+      .filter((line: Line) => line.selected)
+      .forEach((line: Line) => {
+        const {
+          id,
+          name,
+          mode,
+          provider,
+          averageRidership,
+          changeInRidership,
+        } = line;
+
+        let row = `${id},${name},${mode},${provider},${averageRidership},${changeInRidership}`;
+
+        csvContent += row + '\r\n';
+      });
+
+    const encodedUri: string = encodeURI(csvContent);
+    return encodedUri;
+  };
+
   return (
     /* Styled as flexbox so overflow scroll container stretches full height */
     <div
@@ -218,6 +255,13 @@ export default function LineSelector({
         <button id="expandButton" onClick={onExpandClick}>
           {expanded ? 'Hide' : 'Expand'}
         </button>
+      </div>
+      <div className="flex gap-4 items-center justify-between">
+        <a href={csvDownload()} download="metro_ridership.csv">
+          <button id="expandButton" onClick={csvDownload}>
+            CSV Download
+          </button>
+        </a>
       </div>
       <div id="filters-wrapper">
         <Filters
