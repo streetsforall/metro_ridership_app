@@ -1,11 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { LineMetricDataset, MetricWrapper } from '../page';
+import { LineMetricDataset, Metric, MetricWrapper } from '../page';
 import { type Line } from '../common/types';
 import MetroLineTableRow from './metroLineTableRow';
 import lodash from 'lodash';
 import Filters from './filters';
+import { getLineName } from '../common/lines';
 
 interface LineSelectorProps {
   lineMetricDataset: LineMetricDataset;
@@ -214,26 +215,38 @@ export default function LineSelector({
 
     // Add headers to CSV.
     const headers =
-      'id,name,mode,provider,averageRidership,changeInRidership\r\n';
+      'line_name,year,month,est_wkday_ridership,est_sat_ridership,est_sun_ridership\r\n';
     csvContent += headers;
 
-    // Add selected lines data to CSV.
-    lines
-      .filter((line: Line) => line.selected)
-      .forEach((line: Line) => {
+    // Add line data: get selected lines.
+    const linesData: MetricWrapper[] = lines
+      .filter((line: Line) => line.selected && lineMetricDataset[line.id])
+      .map((line: Line) => {
+        const lineMetricWrapper: MetricWrapper = lineMetricDataset[
+          line.id
+        ] as MetricWrapper;
+
+        return lineMetricWrapper;
+      });
+
+    // Add line data: for each line, get all line metric and add to CSV.
+    linesData.forEach((lineMetricWrapper: MetricWrapper) => {
+      lineMetricWrapper.metrics.forEach((metric: Metric) => {
         const {
-          id,
-          name,
-          mode,
-          provider,
-          averageRidership,
-          changeInRidership,
-        } = line;
+          year,
+          month,
+          line_name,
+          est_wkday_ridership,
+          est_sat_ridership,
+          est_sun_ridership,
+        } = metric;
 
-        let row = `${id},${name},${mode},${provider},${averageRidership},${changeInRidership}`;
+        const friendly_line_name = getLineName(Number(line_name));
 
+        const row: string = `${friendly_line_name},${year},${month},${est_wkday_ridership},${est_sat_ridership},${est_sun_ridership}`;
         csvContent += row + '\r\n';
       });
+    });
 
     const encodedUri: string = encodeURI(csvContent);
     return encodedUri;
