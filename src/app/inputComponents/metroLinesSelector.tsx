@@ -19,6 +19,7 @@ interface LineSelectorProps {
   searchText: string;
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
   clearSelections: () => void;
+  selectAllVisibleLines: () => void;
 }
 
 // lazy load data rows
@@ -103,6 +104,7 @@ export default function LineSelector({
   searchText,
   setSearchText,
   clearSelections,
+  selectAllVisibleLines,
 }: LineSelectorProps) {
   const [columnHeaderStates, setColumnHeaderStates] =
     useState<ColumnHeaderState[]>(columnStates);
@@ -282,6 +284,7 @@ export default function LineSelector({
           searchText={searchText}
           setSearchText={setSearchText}
           clearSelections={clearSelections}
+          selectAllVisibleLines={selectAllVisibleLines}
         ></Filters>
       </div>
 

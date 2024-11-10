@@ -18,12 +18,15 @@ import {
 import { Line as LineChart } from 'react-chartjs-2';
 import DateRangeSelector from './inputComponents/dateRangeSelector';
 import LineSelector from './inputComponents/metroLinesSelector';
-import useUserDashboardInput from './hooks/useUserDashboardInput';
+import useUserDashboardInput, {
+  UserDashboardInputState,
+} from './hooks/useUserDashboardInput';
 import { getLineColor, getLineName } from './common/lines';
 import { type Line } from './common/types';
 import * as metrics from '../app/ridership.json';
 
 import './chart.css';
+import SummaryData from './pureDisplayComponents/summaryData';
 
 export interface MetricWrapper {
   selected: boolean;
@@ -76,43 +79,20 @@ export default function Charts() {
     {},
   );
 
+  const userDashboardInputState: UserDashboardInputState =
+    useUserDashboardInput();
+
   const {
     lines,
-    setLines,
-    onToggleSelectLine,
     startDate,
     setStartDate,
     dayOfWeek,
     setDayOfWeek,
     endDate,
     setEndDate,
-    searchText,
-    setSearchText,
     updateLinesWithLineMetrics,
-    clearSelections,
-  } = useUserDashboardInput();
-
-  const visibleLines = useMemo(
-    () =>
-      lines.filter((line: Line) => {
-        if (searchText) {
-          const searchTextLower = searchText.toLocaleLowerCase();
-          const visible: boolean = line.name
-            .toLocaleLowerCase()
-            .includes(searchTextLower);
-
-          if (!visible) {
-            return false;
-          }
-        }
-
-        return (
-          !!line.averageRidership && !!line.changeInRidership && line.visible
-        );
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(lines), searchText],
-  );
+    visibleLines,
+  } = userDashboardInputState;
 
   console.log('visibleLines', visibleLines);
 
@@ -278,7 +258,7 @@ export default function Charts() {
 
   return (
     <>
-      <div>
+      <div className="flex flex-col" style={{ maxHeight: '100vh' }}>
         <DateRangeSelector
           startDate={startDate}
           setStartDate={setStartDate}
@@ -288,18 +268,13 @@ export default function Charts() {
           setDayOfWeek={setDayOfWeek}
         ></DateRangeSelector>
 
-        <div id="window" className="h-screen mx-auto">
+        <div id="window" className="h-screen" style={{ maxHeight: '60vh' }}>
           <LineSelector
-            dayOfWeek={dayOfWeek}
+            {...userDashboardInputState}
             lineMetricDataset={lineMetricDataset}
-            lines={visibleLines}
-            setLines={setLines}
-            searchText={searchText}
-            setSearchText={setSearchText}
-            onToggleSelectLine={onToggleSelectLine}
             expanded={expandedLineSelector}
             setExpanded={setExpandedLineSelector}
-            clearSelections={clearSelections}
+            lines={visibleLines}
           />
 
           {!expandedLineSelector && (
@@ -320,6 +295,9 @@ export default function Charts() {
               )}
             </div>
           )}
+        </div>
+        <div id="summary-data-wrapper" className="h-screen page_row">
+          <SummaryData visibleLines={visibleLines}></SummaryData>
         </div>
       </div>
     </>

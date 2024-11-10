@@ -5,12 +5,14 @@ import { type Line } from '../common/types';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import { Button, Flex, Separator, TextField } from '@radix-ui/themes';
 import { MagnifyingGlassIcon, CheckIcon } from '@radix-ui/react-icons';
+import { Spacing } from '../common/spacing';
 
 interface FiltersProps {
   setLines: React.Dispatch<React.SetStateAction<Line[]>>;
   searchText: string;
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
   clearSelections: () => void;
+  selectAllVisibleLines: () => void;
 }
 
 type ButtonColor = 'indigo' | undefined;
@@ -24,6 +26,7 @@ export default function Filters({
   searchText,
   setSearchText,
   clearSelections,
+  selectAllVisibleLines,
 }: FiltersProps) {
   const [trainsVisible, setTrainsVisible] = useState<boolean>(true);
   const [busesVisible, setBusesVisible] = useState<boolean>(true);
@@ -110,14 +113,22 @@ export default function Filters({
 
           {/* <Separator orientation="vertical"></Separator> */}
 
-          <button className="text-sm" onClick={resetVisibility}>
-            Reset
+          <button
+            className="text-sm"
+            onClick={selectAllVisibleLines}
+            style={{ marginRight: Spacing.Small }}
+          >
+            Select All
+          </button>
+
+          <button className="clearButton text-sm" onClick={clearSelections}>
+            Clear Selections
           </button>
         </div>
       </div>
 
-      <button className="clearButton text-sm" onClick={clearSelections}>
-        Clear Selections
+      <button className="text-sm" onClick={resetVisibility}>
+        Reset Filters
       </button>
     </div>
   );
