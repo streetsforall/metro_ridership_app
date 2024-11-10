@@ -26,6 +26,7 @@ import { type Line } from './common/types';
 import * as metrics from '../app/ridership.json';
 
 import './chart.css';
+import SummaryData from './pureDisplayComponents/summaryData';
 
 export interface MetricWrapper {
   selected: boolean;
@@ -296,14 +297,7 @@ export default function Charts() {
           )}
         </div>
         <div id="summary-data-wrapper" className="h-screen page_row">
-          <div
-            id="summary-data"
-            className="container_card bg-white p-4 rounded-xl"
-          >
-            <span className="text-sm uppercase whitespace-nowrap">
-              Summary Data
-            </span>
-          </div>
+          <SummaryData visibleLines={visibleLines}></SummaryData>
         </div>
       </div>
     </>

@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import '@radix-ui/colors/violet.css';
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
@@ -31,8 +33,8 @@ body {
 button {
   border: 1px solid rgb(225, 225, 225);
   background-color: #f8fcfb;
-  border-radius: .5rem;
-  padding: 0 .3rem;
+  border-radius: 0.5rem;
+  padding: 0 0.3rem;
   color: black;
   height: max-content;
 }
@@ -46,4 +48,16 @@ button:hover {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+.SeparatorRoot {
+  background-color: var(--violet-6);
+}
+.SeparatorRoot[data-orientation='horizontal'] {
+  height: 1px;
+  width: 100%;
+}
+.SeparatorRoot[data-orientation='vertical'] {
+  height: 100%;
+  width: 1px;
 }
