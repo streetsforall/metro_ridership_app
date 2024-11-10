@@ -121,14 +121,14 @@ export default function Filters({
             Select All
           </button>
 
-          <button className="text-sm" onClick={resetVisibility}>
-            Reset
+          <button className="clearButton text-sm" onClick={clearSelections}>
+            Clear Selections
           </button>
         </div>
       </div>
 
-      <button className="clearButton text-sm" onClick={clearSelections}>
-        Clear Selections
+      <button className="text-sm" onClick={resetVisibility}>
+        Reset Filters
       </button>
     </div>
   );
