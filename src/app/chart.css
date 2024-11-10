@@ -1,78 +1,84 @@
 #window {
-    max-width: 100%;
-    max-height: 100%;
-    margin: 1rem;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 1rem;
 }
 
 #chart {
-    width: 100%;
+  width: 100%;
 }
 
 #chart_container {
-    width: 80%;
-    border: 1px solid grey;
-    max-height: 80vh;
-    border-radius: 1rem;
-    margin-left: 1rem;
-    padding: 1rem;
-    background-color: white;
+  width: 80%;
+  border: 1px solid grey;
+  max-height: 80vh;
+  border-radius: 1rem;
+  margin-left: 1rem;
+  padding: 1rem;
+  background-color: white;
 }
 
 #table_chart_container {
-    max-height: 40px;
-    max-width: 200px;
+  max-height: 40px;
+  max-width: 200px;
 }
 
 .column_expanded {
-    display: block
+  display: block;
 }
 
 .column_collapsed {
-    display: none
+  display: none;
 }
 
 #line_selector {
-    width: 20%;
-    max-height: 80vh;
-    border: 1px solid grey;
+  width: 20%;
+  max-height: 80vh;
+  border: 1px solid grey;
 }
 
 #line_selector.expanded {
-    width: 100%;
+  width: 100%;
 }
 
 #line_selector table {
-    /* table-layout: fixed; */
+  /* table-layout: fixed; */
 }
 
 #line_selector th {
-    position: sticky;
-    top: 0;
-    background-color: white;
+  position: sticky;
+  top: 0;
+  background-color: white;
+}
+
+.page_row {
+  margin: 1rem;
+}
+
+.container_card {
+  border: 1px solid grey;
 }
 
 #invalidData {
-    border-radius: 1rem;
-    width: calc(100% - 2rem);
-    height: 70vh;
-    margin: 0 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  border-radius: 1rem;
+  width: calc(100% - 2rem);
+  height: 70vh;
+  margin: 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #invalidData p {
-    margin: auto;
-    width: max-content;
-    text-align: center;
-    
+  margin: auto;
+  width: max-content;
+  text-align: center;
 }
 
-
 .changeDown {
-    color: red
+  color: red;
 }
 
 .changeUp {
-    color: green
-} 
+  color: green;
+}

@@ -257,7 +257,7 @@ export default function Charts() {
 
   return (
     <>
-      <div>
+      <div className="flex flex-col" style={{ maxHeight: '100vh' }}>
         <DateRangeSelector
           startDate={startDate}
           setStartDate={setStartDate}
@@ -267,7 +267,7 @@ export default function Charts() {
           setDayOfWeek={setDayOfWeek}
         ></DateRangeSelector>
 
-        <div id="window" className="h-screen mx-auto">
+        <div id="window" className="h-screen" style={{ maxHeight: '60vh' }}>
           <LineSelector
             {...userDashboardInputState}
             lineMetricDataset={lineMetricDataset}
@@ -294,6 +294,16 @@ export default function Charts() {
               )}
             </div>
           )}
+        </div>
+        <div id="summary-data-wrapper" className="h-screen page_row">
+          <div
+            id="summary-data"
+            className="container_card bg-white p-4 rounded-xl"
+          >
+            <span className="text-sm uppercase whitespace-nowrap">
+              Summary Data
+            </span>
+          </div>
         </div>
       </div>
     </>
