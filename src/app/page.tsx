@@ -18,7 +18,9 @@ import {
 import { Line as LineChart } from 'react-chartjs-2';
 import DateRangeSelector from './inputComponents/dateRangeSelector';
 import LineSelector from './inputComponents/metroLinesSelector';
-import useUserDashboardInput from './hooks/useUserDashboardInput';
+import useUserDashboardInput, {
+  UserDashboardInputState,
+} from './hooks/useUserDashboardInput';
 import { getLineColor, getLineName } from './common/lines';
 import { type Line } from './common/types';
 import * as metrics from '../app/ridership.json';
@@ -76,22 +78,20 @@ export default function Charts() {
     {},
   );
 
+  const userDashboardInputState: UserDashboardInputState =
+    useUserDashboardInput();
+
   const {
     lines,
-    setLines,
-    onToggleSelectLine,
     startDate,
     setStartDate,
     dayOfWeek,
     setDayOfWeek,
     endDate,
     setEndDate,
-    searchText,
-    setSearchText,
     updateLinesWithLineMetrics,
-    clearSelections,
     visibleLines,
-  } = useUserDashboardInput();
+  } = userDashboardInputState;
 
   console.log('visibleLines', visibleLines);
 
@@ -269,16 +269,11 @@ export default function Charts() {
 
         <div id="window" className="h-screen mx-auto">
           <LineSelector
-            dayOfWeek={dayOfWeek}
+            {...userDashboardInputState}
             lineMetricDataset={lineMetricDataset}
-            lines={visibleLines}
-            setLines={setLines}
-            searchText={searchText}
-            setSearchText={setSearchText}
-            onToggleSelectLine={onToggleSelectLine}
             expanded={expandedLineSelector}
             setExpanded={setExpandedLineSelector}
-            clearSelections={clearSelections}
+            lines={visibleLines}
           />
 
           {!expandedLineSelector && (
