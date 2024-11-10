@@ -1,10 +1,8 @@
 'use client';
 
-import * as Accordion from '@radix-ui/react-accordion';
 import { type Line } from '../common/types';
 import { Label } from '@radix-ui/react-label';
 import React from 'react';
-import { ChevronDownIcon } from '@radix-ui/themes';
 
 interface SummaryDataProps {
   visibleLines: Line[];
