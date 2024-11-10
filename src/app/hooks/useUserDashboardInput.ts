@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Line, lineNameSortFunction } from '../common/types';
 import LineJsonData from '../data/metro_line_metadata_current.json';
 import { LineMetricDataset, MetricWrapper } from '../page';
@@ -27,9 +27,12 @@ export interface UserDashboardInputState {
   searchText: string;
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
 
+  visibleLines: Line[];
+
   onToggleSelectLine: (line: Line) => void;
   clearSelections: () => void;
   updateLinesWithLineMetrics: (lineMetricDataset: LineMetricDataset) => void;
+  selectAllVisibleLines: () => void;
 }
 
 export enum DayOfWeek {
@@ -70,6 +73,37 @@ const useUserDashboardInput = (): UserDashboardInputState => {
 
   const [lines, setLines] = useState<Line[]>(createLinesData);
   const [searchText, setSearchText] = useState<string>('');
+
+  const isVisibleLine = (line: Line): boolean => {
+    if (searchText) {
+      const searchTextLower = searchText.toLocaleLowerCase();
+      const visible: boolean = line.name
+        .toLocaleLowerCase()
+        .includes(searchTextLower);
+
+      if (!visible) {
+        return false;
+      }
+    }
+
+    return !!line.averageRidership && !!line.changeInRidership && line.visible;
+  };
+
+  const visibleLines = useMemo(
+    () => lines.filter(isVisibleLine),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(lines), searchText],
+  );
+
+  const selectAllVisibleLines = (): void => {
+    setLines((prevLines: Line[]) => {
+      return prevLines.map((prevLine: Line) => {
+        const isLineVisible: boolean = isVisibleLine(prevLine);
+
+        return { ...prevLine, selected: isLineVisible || prevLine.selected };
+      });
+    });
+  };
 
   const onToggleSelectLine = (line: Line): void => {
     setLines((prevLines: Line[]) => {
@@ -138,11 +172,13 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     setDayOfWeek,
     lines,
     setLines,
+    visibleLines,
     searchText,
     setSearchText,
     onToggleSelectLine,
     clearSelections,
     updateLinesWithLineMetrics,
+    selectAllVisibleLines,
   };
 };
 

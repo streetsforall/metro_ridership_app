@@ -90,29 +90,8 @@ export default function Charts() {
     setSearchText,
     updateLinesWithLineMetrics,
     clearSelections,
+    visibleLines,
   } = useUserDashboardInput();
-
-  const visibleLines = useMemo(
-    () =>
-      lines.filter((line: Line) => {
-        if (searchText) {
-          const searchTextLower = searchText.toLocaleLowerCase();
-          const visible: boolean = line.name
-            .toLocaleLowerCase()
-            .includes(searchTextLower);
-
-          if (!visible) {
-            return false;
-          }
-        }
-
-        return (
-          !!line.averageRidership && !!line.changeInRidership && line.visible
-        );
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(lines), searchText],
-  );
 
   console.log('visibleLines', visibleLines);
 
