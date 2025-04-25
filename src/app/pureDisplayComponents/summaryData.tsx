@@ -34,16 +34,41 @@ export default function SummaryData(props: SummaryDataProps) {
   return (
     <div
       id="summary-data"
-      className="container_card bg-white p-4 rounded-xl flex flex-col"
     >
       <div id="summary-data-title">
-        <span className="text-sm uppercase whitespace-nowrap">
+        <span className="date_header">
           Summary Data
         </span>
       </div>
 
-      <div id="selected-and-visible-lines" style={{ margin: '8px 0' }}>
-        <Label>Selected and Visible Lines: </Label>
+
+      {visibleAndSelectedLines.length > 0 && (
+        <div id="aggregate-data">
+          <div>
+            <Label>Average Ridership: </Label>
+            <span>{Math.round(averageDailyRidership).toLocaleString()}</span>
+          </div>
+          <div>
+          <Label>Change in Ridership: </Label>
+          <span>
+            {
+            (changeInRidership < 0 ? (
+              <td className="changeDown">
+                {changeInRidership.toLocaleString()}
+              </td>
+            ) : (
+              <td className="changeUp">
+                {'+' + changeInRidership.toLocaleString()}
+              </td>
+            ))}
+            </span>
+          </div>
+        </div>
+      )}
+
+
+<div id="selected-and-visible-lines" style={{ margin: '8px 0' }}>
+        <Label>Selected: </Label>
         {visibleAndSelectedLines.length > 0 && (
           <span>
             {visibleAndSelectedLines.map((visibleLine: Line, index: number) => {
@@ -61,19 +86,6 @@ export default function SummaryData(props: SummaryDataProps) {
           </span>
         )}
       </div>
-
-      {visibleAndSelectedLines.length > 0 && (
-        <div id="aggregate-data">
-          <div>
-            <Label>Average Ridership: </Label>
-            <span>{Math.round(averageDailyRidership).toLocaleString()}</span>
-          </div>
-          <div>
-            <Label>Change in Ridership: </Label>
-            <span>{Math.round(changeInRidership).toLocaleString()}</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

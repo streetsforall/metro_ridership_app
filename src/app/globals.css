@@ -6,8 +6,13 @@
 
 :root {
   --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --bg: #dadada;
+  --highlight: rgb(118, 165, 197);
+  --button: rgb(230, 234, 236);
+  --border: rgb(156, 156, 144);
+  --modal: rgb(244, 247, 247);
+  --light: rgb(247, 247, 242);
+  --text: rgb(47, 47, 47);
 }
 /*
 @media (prefers-color-scheme: dark) {
@@ -19,29 +24,67 @@
 }
 */
 body {
-  background-color: #f8fcfb;
-  overflow: hidden;
+  background-color: var(--bg);
+  font-size: .7rem;
+  color: var(--text);
 }
+
+
+#footer, #header {
+  margin: 1rem;
+  font-size: .8rem;
+  font-family: monospace;
+}
+
+#header {
+  margin-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+#sfa_logo {
+  max-height: 3rem;
+}
+
+a {
+  color: var(--highlight)
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
 
 #chart {
+
 }
 
+#container {
+  display: flex;
+  flex-direction: column;
+}
+
+
 #window {
+  max-width: 100%;
+  max-height: 100%;
+  margin: 1rem;
   display: flex;
 }
 
 button {
-  border: 1px solid rgb(225, 225, 225);
-  background-color: #f8fcfb;
+  background-color: var(--button);
+  border: .5px solid var(--border);
   border-radius: 0.5rem;
   padding: 0 0.3rem;
-  color: black;
+  color: var(--text);
   height: max-content;
+
 }
 
 button:hover {
   border-color: rgb(142, 142, 142);
-  background-color: #92bfff;
+  background-color: var(--highlight);
 }
 
 @layer utilities {

@@ -17,7 +17,7 @@ import {
 } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
 import DateRangeSelector from './inputComponents/dateRangeSelector';
-import LineSelector from './inputComponents/metroLinesSelector';
+import LineSelector from './inputComponents/linesSelector';
 import useUserDashboardInput, {
   UserDashboardInputState,
 } from './hooks/useUserDashboardInput';
@@ -258,7 +258,12 @@ export default function Charts() {
 
   return (
     <>
-      <div className="flex flex-col" style={{ maxHeight: '100vh' }}>
+
+    <div id="header">
+LA Metro Ridership App
+<a href="https://www.streetsforall.org/"><img id="sfa_logo"src="SFA_logo_.png" /> </a>
+    </div>
+      <div id="container">
         <DateRangeSelector
           startDate={startDate}
           setStartDate={setStartDate}
@@ -266,9 +271,10 @@ export default function Charts() {
           setEndDate={setEndDate}
           dayOfWeek={dayOfWeek}
           setDayOfWeek={setDayOfWeek}
+          visibleLines={visibleLines}
         ></DateRangeSelector>
 
-        <div id="window" className="h-screen" style={{ maxHeight: '60vh' }}>
+        <div id="window">
           <LineSelector
             {...userDashboardInputState}
             lineMetricDataset={lineMetricDataset}
@@ -290,15 +296,17 @@ export default function Charts() {
                 />
               ) : (
                 <div id="invalidData">
-                  <p>Please select data</p>
+                  <p>Please select a Metro line</p>
                 </div>
               )}
+                <SummaryData visibleLines={visibleLines}></SummaryData>
             </div>
           )}
         </div>
-        <div id="summary-data-wrapper" className="h-screen page_row">
-          <SummaryData visibleLines={visibleLines}></SummaryData>
-        </div>
+      </div>
+      <div id="footer">
+       <p>Built with care by the <a href="https://data.streetsforall.org/">Streets for All Data/Dev team</a></p> 
+       <p> © 2025 Streets for All </p>
       </div>
     </>
   );

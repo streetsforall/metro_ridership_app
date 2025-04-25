@@ -26,7 +26,7 @@ export default function MetroLineTableRow({
   lineMetrics,
 }: MetroLineTableRowProps) {
   const collapsedSelectorWrapperClasses =
-    'flex gap-2 items-center px-2 odd:bg-neutral-50 text-sm';
+    'flex gap-2 items-center px-2  lineRow';
 
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [data, setData] = useState<ChartData[]>([]);
@@ -106,10 +106,10 @@ export default function MetroLineTableRow({
       {lineMetrics && (
         <tr
           className={
-            expanded ? 'odd:bg-neutral-50' : collapsedSelectorWrapperClasses
+            expanded ? 'lineRow' : collapsedSelectorWrapperClasses
           }
         >
-          <td className="w-7 text-sm text-gray-300" >{id}</td>
+          <td className="w-7 text-gray-300" >{id}</td>
           {/* Is Selected */}
           <td className="line-selected-checkbox max-w-max">
             <Checkbox.Root
@@ -164,7 +164,7 @@ export default function MetroLineTableRow({
               {isMounted ? (
                 <LineChart
                   options={options}
-                  id="chart"
+                  id="row_chart"
                   data={{
                     // @ts-ignore
                     datasets: data,

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { LineMetricDataset, Metric, MetricWrapper } from '../page';
 import { type Line } from '../common/types';
-import MetroLineTableRow from './metroLineTableRow';
+import MetroLineTableRow from './lineTableRow';
 import lodash from 'lodash';
 import Filters from './filters';
 import { getLineName } from '../common/lines';
@@ -203,7 +203,7 @@ export default function LineSelector({
   console.log('lines', lines);
   console.log('sortedLines', sortedLines);
 
-  const subtitleClass = 'text-neutral-400';
+  const subtitleClass = 'text-neutral-400 tableHeader';
 
   /**
    * From https://stackoverflow.com/a/14966131.
@@ -263,7 +263,7 @@ export default function LineSelector({
       }
     >
       <div className="flex gap-4 items-center justify-between">
-        <span className="text-sm uppercase whitespace-nowrap">
+        <span className="uppercase whitespace-nowrap">
           Line Selector
         </span>
 
@@ -271,13 +271,7 @@ export default function LineSelector({
           {expanded ? 'Hide' : 'Expand'}
         </button>
       </div>
-      <div className="flex gap-4 items-center justify-between">
-        <a href={csvDownload()} download="metro_ridership.csv">
-          <button id="expandButton" onClick={csvDownload}>
-            CSV Download
-          </button>
-        </a>
-      </div>
+    
       <div id="filters-wrapper">
         <Filters
           setLines={setLines}
@@ -322,7 +316,7 @@ export default function LineSelector({
             </thead>
           )}
 
-          <tbody>
+          <tbody id="line_table">
             {sortedLines.map((line, id) => {
               const lineMetrics: MetricWrapper = lineMetricDataset[line.id];
 
@@ -340,6 +334,13 @@ export default function LineSelector({
             })}
           </tbody>
         </table>
+      </div>
+      <div >
+        <a href={csvDownload()} download="metro_ridership.csv">
+          <button id="downloadButton" onClick={csvDownload}>
+            Download Selected Data as CSV
+          </button>
+        </a>
       </div>
     </div>
   );

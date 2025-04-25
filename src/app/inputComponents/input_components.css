@@ -1,14 +1,30 @@
+
+
 #dateSelector {
   display: flex;
-  margin: 1rem;
+  margin: 1rem 1rem 0 1rem;
+  justify-content: space-between;
+  gap: .25rem;
+}
+
+#dateSelector label {
+  font-family: monospace;
+}
+
+#dateSelector>div{
+  background-color: var(--modal);
+  border-radius: .5rem;
+  padding: 1rem;
+  width: max-content;
+  flex-grow: 1;
 }
 
 #dateSelector select {
-  border: 0.5px solid grey;
-  margin-left: 0.5rem;
-  margin-right: 1rem;
-  border-radius: 0.5rem;
+  border: 0.5px solid var(  --border);
+  border-radius: .25rem;
+  background-color: var(--modal);
   padding: .25rem;
+  margin-bottom: .25rem;
 }
 
 #dateRangeSelector,
@@ -17,21 +33,18 @@
   display: flex;
 }
 
-#dayOfWeekSelector ul {
-  display: flex;
+
+#dayOfWeekSelector li {
+  width: 100%;
 }
 
-.dateRange,
-#dayOfWeekSelector {
-  background-color: white;
-  border: 1px solid grey;
-  padding: 1rem;
-  border-radius: 1rem;
+.date_header {
+  border-bottom: 1px solid var(--border);
+  width: 100%;
+  display:flex;
+  margin-bottom: .25rem;
 }
 
-.dateRange {
-  margin-right: 1rem;
-}
 
 /*
     Used to add sort arrows.
@@ -46,20 +59,24 @@
 }
 .headerSortDown:after {
   top: 10px;
-  border-top-color: silver;
+  border-top-color: var(--border);
 }
 .headerSortUp:after {
   bottom: 15px;
-  border-bottom-color: silver;
+  border-bottom-color: var(--border);
 }
 .headerSortDown,
 .headerSortUp {
   padding-left: 20px;
 }
 
+.tableHeader {
+  padding: .5rem;
+  color: var(--text);
+}
 
-#line_selector {
-  gap: .5rem
+#summary-data {
+  margin-top: 1.5rem;
 }
 
 
@@ -69,9 +86,19 @@
   display: flex;
   flex-wrap: wrap;
   width: 100%;
-  background-color: rgb(236, 241, 245);
-  padding: .5rem;
-  border-radius: .5rem;
+  font-family: monospace;
+  padding-bottom: .5rem;
+  margin-bottom: .25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.filter_controls button, .filter_controls div{
+  margin-bottom: .25rem;
+
+}
+
+.filter_controls div {
+display: flex;
 }
 
 #line_search {
@@ -87,7 +114,7 @@
 }
 
 #line_search input {
-  border: .5px solid grey;
+  border: .5px solid var(--border);
   border-radius: .5rem;
   padding: .25rem;
   width: 100%;
@@ -101,7 +128,7 @@
 
 
 .CheckboxRoot {
-  background-color: white;
+  background-color: var(--bg);
   width: 18px;
   height: 18px;
   border-radius: 3px;
@@ -109,7 +136,7 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 10px var(--black-a7);
-  border: .5px solid grey;
+  border: .5px solid var(--border);
 }
 
 .CheckboxRoot:hover {
@@ -117,7 +144,11 @@
 }
 
 .CheckboxRoot:focus {
-  box-shadow: 0 0 0 1px black;
+  box-shadow: 0 0 0 1px var(--text);
+}
+
+#downloadButton {
+  width: 100%;
 }
 
 

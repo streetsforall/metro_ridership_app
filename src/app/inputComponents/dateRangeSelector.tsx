@@ -3,6 +3,7 @@
 import { Label } from '@radix-ui/react-label';
 import { DayOfWeek } from '../hooks/useUserDashboardInput';
 import './input_components.css';
+import SummaryData from '../pureDisplayComponents/summaryData';
 import { useEffect } from 'react';
 
 export interface DateRangeSelectorProps {
@@ -14,6 +15,8 @@ export interface DateRangeSelectorProps {
 
   dayOfWeek: DayOfWeek;
   setDayOfWeek: React.Dispatch<React.SetStateAction<DayOfWeek>>;
+
+  visibleLines: Array<any>;
 }
 
 type IntervalEndpoint = 'Start' | 'End';
@@ -26,12 +29,12 @@ export default function DateRangeSelector({
   dayOfWeek,
   setDayOfWeek,
 }: DateRangeSelectorProps) {
-
-
   useEffect(() => {
-    var radiobtn = document.getElementById('est_wkday_ridership') as HTMLInputElement;
+    var radiobtn = document.getElementById(
+      'est_wkday_ridership',
+    ) as HTMLInputElement;
     radiobtn.checked = true;
-  }, [])
+  }, []);
 
   const getMonthYearString = (date: Date): string => {
     const monthName: (date?: number | Date | undefined) => string =
@@ -96,7 +99,7 @@ export default function DateRangeSelector({
     return (
       <>
         <div id={title + 'Form'}>
-          <span>
+          <div>
             <label>Month: </label>
             <select
               onChange={(e) => {
@@ -119,8 +122,8 @@ export default function DateRangeSelector({
               <option value="10">November</option>
               <option value="11">December</option>
             </select>
-          </span>
-          <span>
+          </div>
+          <div>
             <label>Year: </label>
             <select
               onChange={(e) => {
@@ -147,7 +150,7 @@ export default function DateRangeSelector({
               <option>2023</option>
               <option>2024</option>
             </select>
-          </span>
+          </div>
         </div>
       </>
     );
@@ -155,24 +158,21 @@ export default function DateRangeSelector({
 
   return (
     <div id="dateSelector">
-      <div id="dateRangeSelector">
-        <div className="dateRange">
-          <Label>From</Label>
-          {dateForm(startDate, 'Start')}
-        </div>
-        <div className="arrow"></div>
-        <div className="dateRange">
-          <Label>To</Label>
-          {dateForm(endDate, 'End')}
-        </div>
+      <div className="dateRange">
+        <Label className="date_header">From</Label>
+        {dateForm(startDate, 'Start')}
+      </div>
+      <div className="dateRange">
+        <Label className="date_header">To</Label>
+        {dateForm(endDate, 'End')}
       </div>
       <div id="dayOfWeekSelector">
         <div>
-          <Label>Day of Week</Label>
-          <ul className="max-h-48 overflow-y-scroll">
+          <Label className="date_header">Day of Week</Label>
+          <ul className="">
             {Object.entries(DayOfWeek).map(([name, key]) => {
               return (
-                <li key={key} className="flex gap-2 items-center px-2">
+                <li key={key} >
                   <input
                     onClick={(e) =>
                       setDayOfWeek(
@@ -184,7 +184,7 @@ export default function DateRangeSelector({
                     id={key}
                     value={key}
                   />
-                  <label htmlFor={key}>{name}</label>
+                  <label style={{marginLeft: '.5rem'}} htmlFor={key}>{name}</label>
                 </li>
               );
             })}

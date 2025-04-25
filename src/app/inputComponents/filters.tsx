@@ -62,8 +62,6 @@ export default function Filters({
 
   return (
     <div id="filters">
-      <p className="text-gray-500	 text-sm">Filters</p>
-
       <div id="line_filters">
         <div id="line_search">
           <MagnifyingGlassIcon height="20" className="mr-2" width="20" />
@@ -78,57 +76,63 @@ export default function Filters({
           ></TextField.Root>
         </div>
 
-        <div className="flex">
-          <Checkbox.Root
-            id="trainsVisible"
-            className="CheckboxRoot"
-            onCheckedChange={(): void => {
-              setTrainsVisible((visible) => !visible);
-            }}
-            checked={trainsVisible}
-          >
-            <Checkbox.Indicator className="CheckboxIndicator">
-              <CheckIcon />
-            </Checkbox.Indicator>
-          </Checkbox.Root>
-          <label className="Label text-sm" htmlFor="trainsVisible">
-            Train
-          </label>
+        <div className="filter_controls">
+          <div>
+          <div>
+            <Checkbox.Root
+              id="trainsVisible"
+              className="CheckboxRoot"
+              onCheckedChange={(): void => {
+                setTrainsVisible((visible) => !visible);
+              }}
+              checked={trainsVisible}
+            >
+              <Checkbox.Indicator className="CheckboxIndicator">
+                <CheckIcon />
+              </Checkbox.Indicator>
+            </Checkbox.Root>
+            <label className="Label" htmlFor="trainsVisible">
+              Train
+            </label>
+          </div>
 
-          <Checkbox.Root
-            id="busesVisible"
-            className="CheckboxRoot"
-            checked={busesVisible}
-            onCheckedChange={(): void => {
-              setBusesVisible((visible) => !visible);
-            }}
-          >
-            <Checkbox.Indicator className="CheckboxIndicator">
-              <CheckIcon />
-            </Checkbox.Indicator>
-          </Checkbox.Root>
-          <label className="Label text-sm" htmlFor="busesVisible">
-            Buses
-          </label>
+          <div>
+            <Checkbox.Root
+              id="busesVisible"
+              className="CheckboxRoot"
+              checked={busesVisible}
+              onCheckedChange={(): void => {
+                setBusesVisible((visible) => !visible);
+              }}
+            >
+              <Checkbox.Indicator className="CheckboxIndicator">
+                <CheckIcon />
+              </Checkbox.Indicator>
+            </Checkbox.Root>
+            <label className="Label" htmlFor="busesVisible">
+              Buses
+            </label>
+          </div>
+          </div>
 
           {/* <Separator orientation="vertical"></Separator> */}
 
           <button
-            className="text-sm"
+            className=""
             onClick={selectAllVisibleLines}
             style={{ marginRight: Spacing.Small }}
           >
             Select All
           </button>
 
-          <button className="clearButton text-sm" onClick={clearSelections}>
-            Clear Selections
+          <button className="clearButton" onClick={clearSelections}>
+            Clear All
           </button>
         </div>
       </div>
 
-      <button className="text-sm" onClick={resetVisibility}>
-        Reset Filters
+      <button className="" onClick={resetVisibility}>
+        Reset
       </button>
     </div>
   );
