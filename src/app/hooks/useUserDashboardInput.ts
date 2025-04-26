@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Line, lineNameSortFunction } from '../common/types';
 import LineJsonData from '../data/metro_line_metadata_current.json';
 import { LineMetricDataset, MetricWrapper } from '../page';
-import { calcAbsChange, calcAvg } from '../inputComponents/calc';
+import { calcAbsChange, calcAvg, calcStart, calcEnd } from '../inputComponents/calc';
 import { getLineName } from '../common/lines';
 
 interface LineJson {
@@ -142,7 +142,6 @@ const useUserDashboardInput = (): UserDashboardInputState => {
         if (!lineMetricWrapper) {
           updatedLine.averageRidership = undefined;
           updatedLine.changeInRidership = undefined;
-
           return updatedLine;
         }
 
@@ -152,6 +151,16 @@ const useUserDashboardInput = (): UserDashboardInputState => {
           dayOfWeek,
         );
         updatedLine.changeInRidership = calcAbsChange(
+          lineMetricWrapper.metrics,
+          dayOfWeek,
+        );
+
+        updatedLine.startingRidership = calcStart(
+          lineMetricWrapper.metrics,
+          dayOfWeek,
+        );
+
+        updatedLine.endingRidership = calcEnd(
           lineMetricWrapper.metrics,
           dayOfWeek,
         );

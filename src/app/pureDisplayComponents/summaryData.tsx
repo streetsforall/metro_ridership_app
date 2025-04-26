@@ -31,6 +31,16 @@ export default function SummaryData(props: SummaryDataProps) {
       0,
     );
 
+
+    const recentRidership = visibleAndSelectedLines
+    .map((line) => line.endingRidership ?? 0)
+    .reduce(
+      (totalRecentRidership, currRecentRidership) =>
+        totalRecentRidership + currRecentRidership,
+      0,
+    );
+
+
   return (
     <div
       id="summary-data"
@@ -41,33 +51,7 @@ export default function SummaryData(props: SummaryDataProps) {
         </span>
       </div>
 
-
-      {visibleAndSelectedLines.length > 0 && (
-        <div id="aggregate-data">
-          <div>
-            <Label>Average Ridership: </Label>
-            <span>{Math.round(averageDailyRidership).toLocaleString()}</span>
-          </div>
-          <div>
-          <Label>Change in Ridership: </Label>
-          <span>
-            {
-            (changeInRidership < 0 ? (
-              <td className="changeDown">
-                {changeInRidership.toLocaleString()}
-              </td>
-            ) : (
-              <td className="changeUp">
-                {'+' + changeInRidership.toLocaleString()}
-              </td>
-            ))}
-            </span>
-          </div>
-        </div>
-      )}
-
-
-<div id="selected-and-visible-lines" style={{ margin: '8px 0' }}>
+      <div id="selected-and-visible-lines" style={{ margin: '8px 0' }}>
         <Label>Selected: </Label>
         {visibleAndSelectedLines.length > 0 && (
           <span>
@@ -86,6 +70,35 @@ export default function SummaryData(props: SummaryDataProps) {
           </span>
         )}
       </div>
+
+      {visibleAndSelectedLines.length > 0 && (
+        <div id="aggregate-data">
+          <div>
+            <Label>Average Ridership: </Label>
+            <span>{Math.round(averageDailyRidership).toLocaleString()}</span>
+          </div>
+
+          <div>
+            <Label>Current Ridership: </Label>
+            <span>{Math.round(recentRidership).toLocaleString()}</span>
+          </div>
+          <div>
+          <Label>Change in Ridership: </Label>
+          <span>
+            {
+            (changeInRidership < 0 ? (
+              <td className="changeDown">
+                {changeInRidership.toLocaleString()}
+              </td>
+            ) : (
+              <td className="changeUp">
+                {'+' + changeInRidership.toLocaleString()}
+              </td>
+            ))}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

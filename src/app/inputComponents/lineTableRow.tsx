@@ -90,6 +90,8 @@ export default function MetroLineTableRow({
         })
       : '';
 
+    console.log(line);
+
     setData(chartDataset);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -104,12 +106,8 @@ export default function MetroLineTableRow({
   return (
     <>
       {lineMetrics && (
-        <tr
-          className={
-            expanded ? 'lineRow' : collapsedSelectorWrapperClasses
-          }
-        >
-          <td className="w-7 text-gray-300" >{id}</td>
+        <tr className={expanded ? 'lineRow' : collapsedSelectorWrapperClasses}>
+          <td className="w-7 text-gray-300">{id}</td>
           {/* Is Selected */}
           <td className="line-selected-checkbox max-w-max">
             <Checkbox.Root
@@ -153,6 +151,24 @@ export default function MetroLineTableRow({
                 {'+' + line.changeInRidership.toLocaleString()}
               </td>
             ))}
+
+          {/* Starting ridership  */}
+          {expanded && line.startingRidership && (
+            <td>
+              {!!line.id
+                ? Math.round(line.startingRidership).toLocaleString()
+                : 0}
+            </td>
+          )}
+
+          {/* Recent ridership  */}
+          {expanded && line.endingRidership && (
+            <td>
+              {!!line.id
+                ? Math.round(line.endingRidership).toLocaleString()
+                : 0}
+            </td>
+          )}
 
           {/* Division (ex: 3, 5) */}
           {/* {expanded && <td>{line.division ?? division}</td>} */}

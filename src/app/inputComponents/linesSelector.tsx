@@ -54,13 +54,23 @@ const columnStates: ColumnHeaderState[] = [
     sortDirection: false,
   },
   {
-    label: 'Avg. Daily Ridership',
+    label: 'Avg. Ridership',
     key: 'averageRidership',
     sortDirection: false,
   },
   {
     label: 'Change',
     key: 'changeInRidership',
+    sortDirection: false,
+  },
+  {
+    label: 'Starting Ridership',
+    key: 'startingRidership',
+    sortDirection: false,
+  },
+  {
+    label: 'Current Ridership',
+    key: 'endingRidership',
     sortDirection: false,
   },
   // {

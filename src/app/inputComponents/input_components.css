@@ -4,7 +4,8 @@
   display: flex;
   margin: 1rem 1rem 0 1rem;
   justify-content: space-between;
-  gap: .25rem;
+  background-color: var(--modal);
+  border-radius: .5rem;
 }
 
 #dateSelector label {
@@ -12,11 +13,10 @@
 }
 
 #dateSelector>div{
-  background-color: var(--modal);
-  border-radius: .5rem;
   padding: 1rem;
   width: max-content;
   flex-grow: 1;
+  border: 1px solid var(--bg);
 }
 
 #dateSelector select {
@@ -33,9 +33,27 @@
   display: flex;
 }
 
+.dateform {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.dateform span{
+  white-space: nowrap;
+  margin-right: 1.5rem;
+}
+
+
+.descriptor {
+  font-family: monospace;
+  color: var(--border);
+  max-width: 33%;
+}
 
 #dayOfWeekSelector li {
   width: 100%;
+  white-space: nowrap;
+  display: block;
 }
 
 .date_header {
@@ -77,6 +95,7 @@
 
 #summary-data {
   margin-top: 1.5rem;
+  font-size: .8rem;
 }
 
 
@@ -87,15 +106,8 @@
   flex-wrap: wrap;
   width: 100%;
   font-family: monospace;
-  padding-bottom: .5rem;
-  margin-bottom: .25rem;
-  border-bottom: 1px solid var(--border);
 }
 
-.filter_controls button, .filter_controls div{
-  margin-bottom: .25rem;
-
-}
 
 .filter_controls div {
 display: flex;
@@ -118,6 +130,7 @@ display: flex;
   border-radius: .5rem;
   padding: .25rem;
   width: 100%;
+  font-size: .8rem;
   margin-bottom: .5rem;
   }
   
@@ -159,6 +172,8 @@ display: flex;
   width: 100%;
   flex-wrap: wrap;
   justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: .5rem;
 }
 
 #line_filters label{

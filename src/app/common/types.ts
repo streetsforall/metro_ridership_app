@@ -8,6 +8,8 @@ export interface Line {
   averageRidership?: number;
   changeInRidership?: number;
   ridershipOverTime?: number;
+  startingRidership?: number;
+  endingRidership?: number;
   division?: number;
   viewMap?: string;
 }

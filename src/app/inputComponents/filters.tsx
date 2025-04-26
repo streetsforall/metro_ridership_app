@@ -117,7 +117,10 @@ export default function Filters({
 
           {/* <Separator orientation="vertical"></Separator> */}
 
-          <button
+        </div>
+        
+      </div>
+      <button
             className=""
             onClick={selectAllVisibleLines}
             style={{ marginRight: Spacing.Small }}
@@ -128,12 +131,11 @@ export default function Filters({
           <button className="clearButton" onClick={clearSelections}>
             Clear All
           </button>
-        </div>
-      </div>
 
-      <button className="" onClick={resetVisibility}>
+{/* not needed untill we have more toggles */}
+      {/* <button className="" onClick={resetVisibility}>
         Reset
-      </button>
+      </button> */}
     </div>
   );
 }

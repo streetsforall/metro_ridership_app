@@ -37,4 +37,31 @@ function calcAbsChange(metrics: Metric[], dayOfWeek: DayOfWeek): number {
   return (last[dayOfWeek] ?? 0) - (first[dayOfWeek] ?? 0);
 }
 
-export { calcAbsChange, calcAvg };
+function calcEnd(metrics: Metric[], dayOfWeek: DayOfWeek): number {
+  const sorted = metrics.sort((a, b) => {
+    if (a.year === b.year) {
+      return a.month - b.month;
+    } else {
+      return a.year - b.year;
+    }
+  });
+
+  const last = sorted[sorted.length - 1];
+
+  return (last[dayOfWeek] ?? 0);
+}
+
+function calcStart(metrics: Metric[], dayOfWeek: DayOfWeek): number {
+  const sorted = metrics.sort((a, b) => {
+    if (a.year === b.year) {
+      return a.month - b.month;
+    } else {
+      return a.year - b.year;
+    }
+  });
+
+  const first = sorted[0];
+  return (first[dayOfWeek] ?? 0);
+}
+
+export { calcAbsChange, calcAvg, calcEnd, calcStart };

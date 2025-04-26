@@ -98,8 +98,8 @@ export default function DateRangeSelector({
   const dateForm = (range: Date, title: IntervalEndpoint) => {
     return (
       <>
-        <div id={title + 'Form'}>
-          <div>
+        <div id={title + 'Form'} className="dateform">
+          <span>
             <label>Month: </label>
             <select
               onChange={(e) => {
@@ -122,8 +122,8 @@ export default function DateRangeSelector({
               <option value="10">November</option>
               <option value="11">December</option>
             </select>
-          </div>
-          <div>
+          </span>
+          <span>
             <label>Year: </label>
             <select
               onChange={(e) => {
@@ -150,7 +150,7 @@ export default function DateRangeSelector({
               <option>2023</option>
               <option>2024</option>
             </select>
-          </div>
+          </span>
         </div>
       </>
     );
@@ -172,7 +172,7 @@ export default function DateRangeSelector({
           <ul className="">
             {Object.entries(DayOfWeek).map(([name, key]) => {
               return (
-                <li key={key} >
+                <li key={key}>
                   <input
                     onClick={(e) =>
                       setDayOfWeek(
@@ -184,12 +184,17 @@ export default function DateRangeSelector({
                     id={key}
                     value={key}
                   />
-                  <label style={{marginLeft: '.5rem'}} htmlFor={key}>{name}</label>
+                  <label style={{ marginLeft: '.5rem' }} htmlFor={key}>
+                    {name}
+                  </label>
                 </li>
               );
             })}
           </ul>
         </div>
+      </div>
+      <div className="descriptor">
+        <p>Ridership numbers represent daily rider counts averaged over a given month. Averages and changes represent calculations across the current selected time period.</p>
       </div>
     </div>
   );

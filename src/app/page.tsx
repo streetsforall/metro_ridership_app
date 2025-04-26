@@ -258,11 +258,14 @@ export default function Charts() {
 
   return (
     <>
-
-    <div id="header">
-LA Metro Ridership App
-<a href="https://www.streetsforall.org/"><img id="sfa_logo"src="SFA_logo_.png" /> </a>
-    </div>
+      <div id="header">
+        <div>
+          <p>LA Metro Ridership App</p>
+        </div>
+        <a href="https://www.streetsforall.org/">
+          <img id="sfa_logo" src="SFA_logo_.png" />{' '}
+        </a>
+      </div>
       <div id="container">
         <DateRangeSelector
           startDate={startDate}
@@ -299,14 +302,20 @@ LA Metro Ridership App
                   <p>Please select a Metro line</p>
                 </div>
               )}
-                <SummaryData visibleLines={visibleLines}></SummaryData>
+              <SummaryData visibleLines={visibleLines}></SummaryData>
             </div>
           )}
         </div>
       </div>
       <div id="footer">
-       <p>Built with care by the <a href="https://data.streetsforall.org/">Streets for All Data/Dev team</a></p> 
-       <p> © 2025 Streets for All </p>
+        <p>
+          Built with care by the{' '}
+          <a href="https://data.streetsforall.org/">
+            Streets for All Data/Dev team
+          </a>
+        </p>
+        <p>Data sourced from LA Metro</p>
+        <p> © 2025 Streets for All </p>
       </div>
     </>
   );
