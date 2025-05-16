@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import * as RadioGroup from '@radix-ui/react-radio-group';
 import { DayOfWeek } from '../hooks/useUserDashboardInput';
 
 export interface DateRangeSelectorProps {
@@ -26,13 +26,6 @@ export default function DateRangeSelector({
   dayOfWeek,
   setDayOfWeek,
 }: DateRangeSelectorProps) {
-  useEffect(() => {
-    var radiobtn = document.getElementById(
-      'est_wkday_ridership',
-    ) as HTMLInputElement;
-    radiobtn.checked = true;
-  }, []);
-
   const getMonthYearString = (date: Date): string => {
     const monthName: (date?: number | Date | undefined) => string =
       new Intl.DateTimeFormat('en-US', {
@@ -166,28 +159,32 @@ export default function DateRangeSelector({
       <fieldset>
         <legend>Day of Week</legend>
 
-        <ul className="flex gap-4">
+        <RadioGroup.Root
+          className="flex gap-4"
+          aria-label="View density"
+          value={dayOfWeek}
+          onValueChange={(v) => {
+            setDayOfWeek(v as DayOfWeek);
+          }}
+        >
           {Object.entries(DayOfWeek).map(([name, key]) => {
             return (
-              <li key={key}>
-                <input
-                  type="radio"
-                  onClick={(e) =>
-                    setDayOfWeek(
-                      (e.target as HTMLInputElement).value as DayOfWeek,
-                    )
-                  }
-                  name="day"
+              <div key={key} className="flex items-center">
+                <RadioGroup.Item
                   value={key}
+                  className="bg-white cursor-default p-0 rounded-full size-[20px]"
                   id={key}
-                />
-                <label htmlFor={key} className="ml-2">
+                >
+                  <RadioGroup.Indicator className="relative flex items-center justify-center size-full after:block after:size-[12px] after:rounded-full after:bg-[#033056]" />
+                </RadioGroup.Item>
+
+                <label className="pl-2" htmlFor={key}>
                   {name}
                 </label>
-              </li>
+              </div>
             );
           })}
-        </ul>
+        </RadioGroup.Root>
       </fieldset>
     </div>
   );
