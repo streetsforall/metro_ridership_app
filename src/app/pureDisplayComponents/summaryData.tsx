@@ -1,9 +1,8 @@
 'use client';
 
-import { type Line } from '../common/types';
-import { Label } from '@radix-ui/react-label';
-import Image from 'next/image';
 import React, { Fragment } from 'react';
+import Image from 'next/image';
+import { type Line } from '../common/types';
 
 interface SummaryDataProps {
   visibleLines: Line[];

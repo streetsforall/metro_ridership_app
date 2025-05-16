@@ -124,3 +124,33 @@ td {
 .toggle-group-item[data-state='on'] img {
   @apply recolor-white;
 }
+
+/*
+ * Used to add sort arrows.
+ * Source: https://stackoverflow.com/questions/17639562/add-sorting-arrows-to-th-like-table-sorter
+ */
+.headerSortDown:after,
+.headerSortUp:after {
+  content: ' ';
+  position: relative;
+  left: 10px;
+  border: 7px solid transparent;
+}
+
+.headerSortDown:after {
+  top: 10px;
+  border-top-color: var(--border);
+}
+
+.headerSortUp:after {
+  bottom: 15px;
+  border-bottom-color: var(--border);
+}
+
+.changeDown {
+  color: red;
+}
+
+.changeUp {
+  color: green;
+}

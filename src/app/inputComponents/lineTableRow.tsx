@@ -1,13 +1,13 @@
 'use client';
 
-import * as Checkbox from '@radix-ui/react-checkbox';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { type ChartOptions, ChartData } from 'chart.js';
+import { Line as LineChart } from 'react-chartjs-2';
+import * as Checkbox from '@radix-ui/react-checkbox';
 import { type Line } from '../common/types';
 import { getLineColor } from '../common/lines';
 import { Metric } from '../page';
-import { Chart as ChartJS, type ChartOptions, ChartData } from 'chart.js';
-import { Line as LineChart } from 'react-chartjs-2';
-import Image from 'next/image';
 
 interface MetroLineTableRowProps {
   onToggleSelectLine: (line: Line) => void;
@@ -188,9 +188,8 @@ export default function MetroLineTableRow({
           {/* {expanded && <td>{line.division ?? division}</td>} */}
 
           {/* Ridership over time. Line graph showing ridership trend */}
-
           {expanded && (
-            <td id="table_chart_container" key={line.id}>
+            <td key={line.id} className="max-h-10 max-w-52">
               {isMounted ? (
                 <LineChart
                   options={options}

@@ -1,13 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { type Line } from '../common/types';
-import * as Checkbox from '@radix-ui/react-checkbox';
-import * as ToggleGroup from '@radix-ui/react-toggle-group';
-import { Button, Flex, Separator, TextField } from '@radix-ui/themes';
-import { MagnifyingGlassIcon, CheckIcon } from '@radix-ui/react-icons';
-import { Spacing } from '../common/spacing';
 import Image from 'next/image';
+import * as ToggleGroup from '@radix-ui/react-toggle-group';
+import { type Line } from '../common/types';
 
 interface FiltersProps {
   setLines: React.Dispatch<React.SetStateAction<Line[]>>;
@@ -17,12 +13,6 @@ interface FiltersProps {
   selectAllVisibleLines: () => void;
 }
 
-type ButtonColor = 'indigo' | undefined;
-
-const getButtonColor = (visible: boolean): ButtonColor => {
-  return visible ? 'indigo' : undefined;
-};
-
 export default function Filters({
   setLines,
   searchText,
@@ -31,8 +21,6 @@ export default function Filters({
   selectAllVisibleLines,
 }: FiltersProps) {
   const [modes, setModes] = useState<string[]>(['bus', 'train']);
-  const [trainsVisible, setTrainsVisible] = useState<boolean>(true);
-  const [busesVisible, setBusesVisible] = useState<boolean>(true);
 
   const resetVisibility = (): void => {
     setModes(['bus', 'train']);

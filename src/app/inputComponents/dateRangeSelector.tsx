@@ -1,10 +1,7 @@
 'use client';
 
-import { Label } from '@radix-ui/react-label';
-import { DayOfWeek } from '../hooks/useUserDashboardInput';
-import './input_components.css';
-import SummaryData from '../pureDisplayComponents/summaryData';
 import { useEffect } from 'react';
+import { DayOfWeek } from '../hooks/useUserDashboardInput';
 
 export interface DateRangeSelectorProps {
   startDate: Date;

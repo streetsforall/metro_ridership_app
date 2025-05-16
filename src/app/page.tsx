@@ -2,7 +2,8 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -18,16 +19,13 @@ import {
 import { Line as LineChart } from 'react-chartjs-2';
 import DateRangeSelector from './inputComponents/dateRangeSelector';
 import LineSelector from './inputComponents/linesSelector';
+import SummaryData from './pureDisplayComponents/summaryData';
 import useUserDashboardInput, {
   UserDashboardInputState,
 } from './hooks/useUserDashboardInput';
 import { getLineColor, getLineName } from './common/lines';
 import { type Line } from './common/types';
 import * as metrics from '../app/ridership.json';
-
-import './chart.css';
-import SummaryData from './pureDisplayComponents/summaryData';
-import Image from 'next/image';
 
 export interface MetricWrapper {
   selected: boolean;

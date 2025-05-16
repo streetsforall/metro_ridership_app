@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { LineMetricDataset, Metric, MetricWrapper } from '../page';
-import { type Line } from '../common/types';
-import MetroLineTableRow from './lineTableRow';
-import lodash from 'lodash';
-import Filters from './filters';
-import { getLineName } from '../common/lines';
 import Image from 'next/image';
+import lodash from 'lodash';
+import { type Line } from '../common/types';
+import { getLineName } from '../common/lines';
+import Filters from './filters';
+import MetroLineTableRow from './lineTableRow';
+import { LineMetricDataset, Metric, MetricWrapper } from '../page';
 
 interface LineSelectorProps {
   lineMetricDataset: LineMetricDataset;
@@ -214,8 +214,6 @@ export default function LineSelector({
   console.log('lines', lines);
   console.log('sortedLines', sortedLines);
 
-  const subtitleClass = 'text-neutral-400 tableHeader';
-
   /**
    * From https://stackoverflow.com/a/14966131.
    *
@@ -314,7 +312,7 @@ export default function LineSelector({
               <tr>
                 {columnHeaderStates.map(
                   (columnHeaderState: ColumnHeaderState, index: number) => {
-                    let classNames: string = subtitleClass;
+                    let classNames: string = 'cursor-pointer p-2';
 
                     if (columnHeaderState.sortDirection === 'asc') {
                       classNames = `${classNames} headerSortUp`;
