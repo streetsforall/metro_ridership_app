@@ -2,7 +2,8 @@
 
 import { type Line } from '../common/types';
 import { Label } from '@radix-ui/react-label';
-import React from 'react';
+import Image from 'next/image';
+import React, { Fragment } from 'react';
 
 interface SummaryDataProps {
   visibleLines: Line[];
@@ -31,8 +32,7 @@ export default function SummaryData(props: SummaryDataProps) {
       0,
     );
 
-
-    const recentRidership = visibleAndSelectedLines
+  const recentRidership = visibleAndSelectedLines
     .map((line) => line.endingRidership ?? 0)
     .reduce(
       (totalRecentRidership, currRecentRidership) =>
@@ -40,62 +40,76 @@ export default function SummaryData(props: SummaryDataProps) {
       0,
     );
 
-
   return (
-    <div
-      id="summary-data"
-    >
-      <div id="summary-data-title">
-        <span className="date_header">
-          Summary Data
-        </span>
-      </div>
-
-      <div id="selected-and-visible-lines" style={{ margin: '8px 0' }}>
-        <Label>Selected: </Label>
-        {visibleAndSelectedLines.length > 0 && (
-          <span>
-            {visibleAndSelectedLines.map((visibleLine: Line, index: number) => {
-              const { name, id } = visibleLine;
-              return (
-                <span key={id}>
-                  <span>{name}</span>
-
-                  {index !== visibleAndSelectedLines.length - 1 && (
-                    <span>{', '}</span>
-                  )}
-                </span>
-              );
-            })}
-          </span>
-        )}
-      </div>
-
+    <div>
       {visibleAndSelectedLines.length > 0 && (
-        <div id="aggregate-data">
-          <div>
-            <Label>Average Ridership: </Label>
-            <span>{Math.round(averageDailyRidership).toLocaleString()}</span>
+        <div className="flex gap-4 items-center">
+          {/* Stats */}
+          {/* TODO: Refactor into component */}
+          <div className="pane">
+            <div className="flex justify-between mb-2 min-w-48 text-sm">
+              <span className="text-stone-500">Average Ridership</span>
+            </div>
+            <span aria-labelledby="avg-ridership" className="text-5xl">
+              {Math.round(averageDailyRidership).toLocaleString()}
+            </span>
           </div>
 
-          <div>
-            <Label>Current Ridership: </Label>
-            <span>{Math.round(recentRidership).toLocaleString()}</span>
-          </div>
-          <div>
-          <Label>Change in Ridership: </Label>
-          <span>
-            {
-            (changeInRidership < 0 ? (
-              <td className="changeDown">
+          <div className="pane">
+            <div className="flex justify-between mb-2 min-w-48 text-sm">
+              <span className="text-stone-500">Current Ridership</span>
+
+              <span
+                aria-label="Change"
+                className={
+                  changeInRidership < 0 ? 'text-red-600' : 'text-green-600'
+                }
+              >
+                {changeInRidership > 0 && '+'}
                 {changeInRidership.toLocaleString()}
-              </td>
-            ) : (
-              <td className="changeUp">
-                {'+' + changeInRidership.toLocaleString()}
-              </td>
-            ))}
+              </span>
+            </div>
+            <span aria-labelledby="cur-ridership" className="text-5xl">
+              {Math.round(recentRidership).toLocaleString()}
             </span>
+          </div>
+
+          {/* Text */}
+          <div className="flex flex-col gap-4 p-4 text-sm">
+            <p>
+              <span className="font-bold mr-1">Selected:</span>
+
+              {visibleAndSelectedLines.length > 0 &&
+                visibleAndSelectedLines.map(
+                  (visibleLine: Line, index: number) => {
+                    const { name, id } = visibleLine;
+
+                    return (
+                      <Fragment key={id}>
+                        {name}
+
+                        {index !== visibleAndSelectedLines.length - 1 && ', '}
+                      </Fragment>
+                    );
+                  },
+                )}
+            </p>
+
+            <div className="flex gap-2 items-start">
+              <Image
+                src="/info.svg"
+                height={20}
+                width={20}
+                alt=""
+                unoptimized
+                className="mt-1"
+              />
+              <p>
+                Ridership numbers represent daily rider counts averaged over a
+                given month. Averages and changes represent calculations across
+                the current selected time period.
+              </p>
+            </div>
           </div>
         </div>
       )}

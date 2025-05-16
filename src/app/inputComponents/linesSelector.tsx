@@ -7,6 +7,7 @@ import MetroLineTableRow from './lineTableRow';
 import lodash from 'lodash';
 import Filters from './filters';
 import { getLineName } from '../common/lines';
+import Image from 'next/image';
 
 interface LineSelectorProps {
   lineMetricDataset: LineMetricDataset;
@@ -267,34 +268,46 @@ export default function LineSelector({
   return (
     /* Styled as flexbox so overflow scroll container stretches full height */
     <div
-      id="line_selector"
       className={
-        'flex flex-col bg-white p-4 rounded-xl ' + (expanded ? 'expanded' : '')
+        'flex flex-col gap-4 w-full ' +
+        (expanded ? 'max-h-full' : 'max-h-[75vh]')
       }
     >
-      <div className="flex gap-4 items-center justify-between">
-        <span className="uppercase whitespace-nowrap">
-          Line Selector
-        </span>
+      {/* Expand button */}
+      <button
+        onClick={onExpandClick}
+        className="self-end bg-transparent border-none hover:opacity-80 p-0"
+      >
+        {expanded ? (
+          <Image
+            src="/pin-left.svg"
+            alt="Hide"
+            height={16}
+            width={16}
+            unoptimized
+          />
+        ) : (
+          <Image
+            src="/pin-right.svg"
+            alt="Expand"
+            height={16}
+            width={16}
+            unoptimized
+          />
+        )}
+      </button>
 
-        <button id="expandButton" onClick={onExpandClick}>
-          {expanded ? 'Hide' : 'Expand'}
-        </button>
-      </div>
-    
-      <div id="filters-wrapper">
-        <Filters
-          setLines={setLines}
-          searchText={searchText}
-          setSearchText={setSearchText}
-          clearSelections={clearSelections}
-          selectAllVisibleLines={selectAllVisibleLines}
-        ></Filters>
-      </div>
+      <Filters
+        setLines={setLines}
+        searchText={searchText}
+        setSearchText={setSearchText}
+        clearSelections={clearSelections}
+        selectAllVisibleLines={selectAllVisibleLines}
+      ></Filters>
 
       {/* Overflow scroll container */}
       <div className="overflow-y-auto">
-        <table className="w-full">
+        <table className="text-sm w-full">
           {/* Only show table header when line selector is expanded */}
           {expanded && (
             <thead>
@@ -302,6 +315,7 @@ export default function LineSelector({
                 {columnHeaderStates.map(
                   (columnHeaderState: ColumnHeaderState, index: number) => {
                     let classNames: string = subtitleClass;
+
                     if (columnHeaderState.sortDirection === 'asc') {
                       classNames = `${classNames} headerSortUp`;
                     } else if (columnHeaderState.sortDirection === 'desc') {
@@ -311,8 +325,10 @@ export default function LineSelector({
                     return (
                       <th
                         key={index}
-                        style={{ textAlign: 'left' }}
-                        className={classNames}
+                        className={
+                          'sticky top-0 bg-[rgba(0,0,0,0.1)] max-w-24 text-left ' +
+                          classNames
+                        }
                         onClick={(): void =>
                           onSortLabelClick(columnHeaderState.key)
                         }
@@ -326,7 +342,7 @@ export default function LineSelector({
             </thead>
           )}
 
-          <tbody id="line_table">
+          <tbody>
             {sortedLines.map((line, id) => {
               const lineMetrics: MetricWrapper = lineMetricDataset[line.id];
 
@@ -345,13 +361,22 @@ export default function LineSelector({
           </tbody>
         </table>
       </div>
-      <div >
-        <a href={csvDownload()} download="metro_ridership.csv">
-          <button id="downloadButton" onClick={csvDownload}>
-            Download Selected Data as CSV
-          </button>
-        </a>
-      </div>
+
+      <a
+        href={csvDownload()}
+        download="metro_ridership.csv"
+        className="button flex gap-2 items-center justify-center"
+      >
+        Download selected data as CSV
+        <Image
+          src="/download.svg"
+          height={16}
+          width={16}
+          alt=""
+          unoptimized
+          className="recolor-white"
+        />
+      </a>
     </div>
   );
 }

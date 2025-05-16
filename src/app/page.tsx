@@ -27,6 +27,7 @@ import * as metrics from '../app/ridership.json';
 
 import './chart.css';
 import SummaryData from './pureDisplayComponents/summaryData';
+import Image from 'next/image';
 
 export interface MetricWrapper {
   selected: boolean;
@@ -257,16 +258,21 @@ export default function Charts() {
   };
 
   return (
-    <>
-      <div id="header">
-        <div>
-          <p>LA Metro Ridership App</p>
-        </div>
-        <a href="https://www.streetsforall.org/">
-          <img id="sfa_logo" src="SFA_logo_.png" />{' '}
+    <div className="mx-4">
+      <div className="flex items-center justify-between font-bold py-4 uppercase">
+        <span>LA Metro Ridership App</span>
+
+        <a href="https://www.streetsforall.org">
+          <Image
+            src="/sfa-logo.png"
+            height={48}
+            width={48}
+            alt="Streets for All logo"
+          />
         </a>
       </div>
-      <div id="container">
+
+      <div className="pane mb-4">
         <DateRangeSelector
           startDate={startDate}
           setStartDate={setStartDate}
@@ -276,8 +282,14 @@ export default function Charts() {
           setDayOfWeek={setDayOfWeek}
           visibleLines={visibleLines}
         ></DateRangeSelector>
+      </div>
 
-        <div id="window">
+      <div className="flex gap-4">
+        <div
+          className={
+            'pane w-1/4 ' + (expandedLineSelector ? 'w-full' : 'w-1/4')
+          }
+        >
           <LineSelector
             {...userDashboardInputState}
             lineMetricDataset={lineMetricDataset}
@@ -285,38 +297,45 @@ export default function Charts() {
             setExpanded={setExpandedLineSelector}
             lines={visibleLines}
           />
+        </div>
 
-          {!expandedLineSelector && (
-            <div id="chart_container">
+        {/* TODO: Change this from conditional rendering to conditional visibility; that way it doesn't rerender every time */}
+        {!expandedLineSelector && (
+          <div className="flex flex-col gap-4 w-4/5">
+            <div className="pane flex flex-col min-h-[50vh]">
               {chartData.length > 0 ? (
                 <LineChart
                   options={options}
-                  id="chart"
                   data={{
                     labels: monthList,
                     datasets: chartData,
                   }}
                 />
               ) : (
-                <div id="invalidData">
-                  <p>Please select a Metro line</p>
+                <div className="flex-1 flex items-center justify-center">
+                  <p>Please select a Metro line.</p>
                 </div>
               )}
-              <SummaryData visibleLines={visibleLines}></SummaryData>
             </div>
-          )}
-        </div>
+
+            <SummaryData visibleLines={visibleLines}></SummaryData>
+          </div>
+        )}
       </div>
-      <div id="footer">
+
+      <div className="py-8 leading-relaxed text-sm">
         <p>
           Built with care by the{' '}
-          <a href="https://data.streetsforall.org/">
-            Streets for All Data/Dev team
-          </a>
+          <a href="https://data.streetsforall.org">
+            Streets for All Data/Dev Team
+          </a>{' '}
+          with data sourced from <a href="https://metro.net">LA Metro.</a>
         </p>
-        <p>Data sourced from LA Metro</p>
-        <p> © 2025 Streets for All </p>
+        <p>
+          © 2025 <a href="https://streetsforall.org">Streets for All</a>
+        </p>
+        <p>🚌 🚲👩🏻‍🦽🚶🏾🌳</p>
       </div>
-    </>
+    </div>
   );
 }
