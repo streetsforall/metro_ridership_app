@@ -40,36 +40,43 @@ interface ColumnHeaderState {
 
 const columnStates: ColumnHeaderState[] = [
   {
+    align: 'right',
     label: '',
     key: 'id',
     sortDirection: false,
   },
   {
+    align: 'center',
     label: 'Selected',
     key: 'selected',
     sortDirection: false,
   },
   {
+    align: 'left',
     label: 'Line',
     key: 'name',
     sortDirection: false,
   },
   {
+    align: 'right',
     label: 'Avg. Ridership',
     key: 'averageRidership',
     sortDirection: false,
   },
   {
+    align: 'right',
     label: 'Change',
     key: 'changeInRidership',
     sortDirection: false,
   },
   {
+    align: 'right',
     label: 'Starting Ridership',
     key: 'startingRidership',
     sortDirection: false,
   },
   {
+    align: 'right',
     label: 'Current Ridership',
     key: 'endingRidership',
     sortDirection: false,
@@ -80,6 +87,7 @@ const columnStates: ColumnHeaderState[] = [
   //   align: 'right',
   // },
   {
+    align: 'left',
     label: 'Ridership over time',
     sortDirection: false,
     key: 'ridershipOverTime',
@@ -312,21 +320,18 @@ export default function LineSelector({
               <tr>
                 {columnHeaderStates.map(
                   (columnHeaderState: ColumnHeaderState, index: number) => {
-                    let classNames: string = 'cursor-pointer p-2';
+                    let sortClass: string;
 
                     if (columnHeaderState.sortDirection === 'asc') {
-                      classNames = `${classNames} headerSortUp`;
+                      sortClass = 'headerSortUp';
                     } else if (columnHeaderState.sortDirection === 'desc') {
-                      classNames = `${classNames} headerSortDown`;
+                      sortClass = 'headerSortDown';
                     }
 
                     return (
                       <th
                         key={index}
-                        className={
-                          'sticky top-0 bg-[rgba(0,0,0,0.1)] max-w-24 text-left ' +
-                          classNames
-                        }
+                        className={`sticky top-0 bg-[rgba(0,0,0,0.1)] cursor-pointer p-2 max-w-24 text-${columnHeaderState.align} ${sortClass}`}
                         onClick={(): void =>
                           onSortLabelClick(columnHeaderState.key)
                         }

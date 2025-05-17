@@ -111,7 +111,7 @@ export default function MetroLineTableRow({
           }
         >
           {/* Line rank */}
-          <td className="opacity-50 w-6">{id}</td>
+          <td className="opacity-50 text-right w-6">{id}</td>
 
           {/* Is Selected */}
           <td>
@@ -119,7 +119,7 @@ export default function MetroLineTableRow({
               id={line.id.toString()}
               onClick={() => onToggleSelectLine(line)}
               checked={line.selected}
-              className="flex items-center justify-center bg-white data-[state=checked]:bg-[#033056] rounded p-0 h-5 w-5"
+              className="flex items-center justify-center bg-white data-[state=checked]:bg-[#033056] mx-auto rounded p-0 h-5 w-5"
             >
               <Checkbox.Indicator>
                 <Image
@@ -146,7 +146,7 @@ export default function MetroLineTableRow({
 
           {/* Average ridership over a duration (ex: 3 months) */}
           {expanded && line.averageRidership && (
-            <td>
+            <td className="text-right">
               {!!line.averageRidership
                 ? Math.round(line.averageRidership).toLocaleString()
                 : 0}
@@ -157,18 +157,18 @@ export default function MetroLineTableRow({
           {expanded &&
             line.changeInRidership &&
             (line.changeInRidership < 0 ? (
-              <td className="changeDown">
+              <td className="changeDown text-right">
                 {line.changeInRidership.toLocaleString()}
               </td>
             ) : (
-              <td className="changeUp">
+              <td className="changeUp text-right">
                 {'+' + line.changeInRidership.toLocaleString()}
               </td>
             ))}
 
           {/* Starting ridership  */}
           {expanded && line.startingRidership && (
-            <td>
+            <td className="text-right">
               {!!line.id
                 ? Math.round(line.startingRidership).toLocaleString()
                 : 0}
@@ -177,7 +177,7 @@ export default function MetroLineTableRow({
 
           {/* Recent ridership  */}
           {expanded && line.endingRidership && (
-            <td>
+            <td className="text-right">
               {!!line.id
                 ? Math.round(line.endingRidership).toLocaleString()
                 : 0}
