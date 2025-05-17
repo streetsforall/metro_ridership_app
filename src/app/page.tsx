@@ -256,7 +256,7 @@ export default function Charts() {
   return (
     <div className="mx-4">
       <div className="flex items-center justify-between font-bold py-4 uppercase">
-        <span>LA Metro Ridership App</span>
+        <span className="ml-2">LA Metro Ridership App</span>
 
         <a href="https://www.streetsforall.org">
           <Image
