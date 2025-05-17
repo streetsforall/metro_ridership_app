@@ -111,7 +111,7 @@ export default function MetroLineTableRow({
           }
         >
           {/* Line rank */}
-          <td className="opacity-50 text-right w-6">{id}</td>
+          <td className="text-right text-stone-400 w-6">{id}</td>
 
           {/* Is Selected */}
           <td>
@@ -157,11 +157,11 @@ export default function MetroLineTableRow({
           {expanded &&
             line.changeInRidership &&
             (line.changeInRidership < 0 ? (
-              <td className="changeDown text-right">
+              <td className="text-right text-red-600">
                 {line.changeInRidership.toLocaleString()}
               </td>
             ) : (
-              <td className="changeUp text-right">
+              <td className="text-right text-green-600">
                 {'+' + line.changeInRidership.toLocaleString()}
               </td>
             ))}

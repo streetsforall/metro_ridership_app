@@ -17,6 +17,7 @@ import {
   type ChartOptions,
 } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
+import colors from 'tailwindcss/colors';
 import DateRangeSelector from './inputComponents/dateRangeSelector';
 import LineSelector from './inputComponents/linesSelector';
 import SummaryData from './pureDisplayComponents/summaryData';
@@ -210,6 +211,7 @@ export default function Charts() {
   );
 
   ChartJS.defaults.font.family = 'Overpass Mono Variable';
+  ChartJS.defaults.color = colors.stone['700'];
   const options: ChartOptions<'line'> = {
     interaction: {
       axis: 'x',
@@ -225,30 +227,25 @@ export default function Charts() {
     scales: {
       x: {
         border: {
-          color: '#000',
+          color: colors.stone['700'],
         },
-        ticks: {
-          color: '#000',
+        grid: {
+          color: colors.stone['300'],
         },
         title: {
-          color: '#000',
           display: true,
           text: 'MONTH',
         },
       },
       y: {
         border: {
-          color: '#000',
+          color: colors.stone['700'],
         },
         grid: {
-          color: '#222',
+          color: colors.stone['300'],
           drawTicks: false,
         },
-        ticks: {
-          color: '#000',
-        },
         title: {
-          color: '#000',
           display: true,
           text: 'AVG DAILY RIDERSHIP',
         },

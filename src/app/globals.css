@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
 :root {
   --foreground-rgb: 0, 0, 0;
   --bg: #f3eee2;
@@ -13,7 +14,6 @@
   --text: rgb(47, 47, 47);
 }
 
-/*
 @media (prefers-color-scheme: dark) {
   :root {
     --foreground-rgb: 255, 255, 255;
@@ -24,16 +24,9 @@
 */
 
 body {
-  background-color: var(--bg);
-  color: var(--text);
+  background-color: #f3eee2;
   font-family: 'Overpass Mono Variable', sans-serif;
-}
-
-.pane {
-  background-color: var(--modal);
-  border-radius: 0.5rem;
-  padding: 2rem;
-  position: relative;
+  @apply text-stone-700;
 }
 
 a {
@@ -83,11 +76,6 @@ button:hover,
 
 td {
   padding: 0 0.5rem;
-}
-
-.recolor-white {
-  filter: invert(100%) sepia(0%) saturate(226%) hue-rotate(229deg)
-    brightness(118%) contrast(100%);
 }
 
 .toggle-group {
@@ -145,18 +133,22 @@ td {
 
 .headerSortDown:after {
   top: 10px;
-  border-top-color: var(--border);
+  border-top-color: rgba(0, 0, 0, 0.25);
 }
 
 .headerSortUp:after {
   bottom: 15px;
-  border-bottom-color: var(--border);
+  border-bottom-color: rgba(0, 0, 0, 0.25);
 }
 
-.changeDown {
-  color: red;
+.pane {
+  background-color: #f8f6f1;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  position: relative;
 }
 
-.changeUp {
-  color: green;
+.recolor-white {
+  filter: invert(100%) sepia(0%) saturate(226%) hue-rotate(229deg)
+    brightness(118%) contrast(100%);
 }
