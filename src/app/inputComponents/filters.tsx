@@ -81,6 +81,7 @@ export default function Filters({
               height={16}
               width={16}
               alt="Bus"
+              title="Bus"
               unoptimized
             />
           </ToggleGroup.Item>
@@ -94,6 +95,7 @@ export default function Filters({
               height={16}
               width={16}
               alt="Train"
+              title="Train"
               unoptimized
             />
           </ToggleGroup.Item>
