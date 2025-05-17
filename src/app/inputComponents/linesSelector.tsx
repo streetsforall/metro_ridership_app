@@ -320,7 +320,7 @@ export default function LineSelector({
               <tr>
                 {columnHeaderStates.map(
                   (columnHeaderState: ColumnHeaderState, index: number) => {
-                    let sortClass: string;
+                    let sortClass = '';
 
                     if (columnHeaderState.sortDirection === 'asc') {
                       sortClass = 'headerSortUp';

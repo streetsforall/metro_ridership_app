@@ -40,6 +40,8 @@ export default function Filters({
           visible = busVis;
         } else if (prevLine.mode === 'Rail') {
           visible = trainVis;
+        } else {
+          visible = false;
         }
 
         return { ...prevLine, visible };
