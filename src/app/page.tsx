@@ -209,6 +209,7 @@ export default function Charts() {
     [JSON.stringify(lineMetricDataset)],
   );
 
+  ChartJS.defaults.font.family = 'Overpass Mono Variable';
   const options: ChartOptions<'line'> = {
     interaction: {
       axis: 'x',
@@ -232,7 +233,7 @@ export default function Charts() {
         title: {
           color: '#000',
           display: true,
-          text: 'Month',
+          text: 'MONTH',
         },
       },
       y: {
@@ -249,7 +250,7 @@ export default function Charts() {
         title: {
           color: '#000',
           display: true,
-          text: 'Avg Daily Ridership',
+          text: 'AVG DAILY RIDERSHIP',
         },
       },
     },
@@ -321,7 +322,7 @@ export default function Charts() {
         )}
       </div>
 
-      <div className="py-8 leading-relaxed text-sm">
+      <div className="py-8 leading-relaxed text-xs">
         <p>
           Built with care by the{' '}
           <a href="https://data.streetsforall.org">

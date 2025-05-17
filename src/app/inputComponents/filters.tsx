@@ -78,8 +78,8 @@ export default function Filters({
           >
             <Image
               src="/bus.svg"
-              height={20}
-              width={20}
+              height={16}
+              width={16}
               alt="Bus"
               unoptimized
             />
@@ -91,8 +91,8 @@ export default function Filters({
           >
             <Image
               src="/train.svg"
-              height={20}
-              width={20}
+              height={16}
+              width={16}
               alt="Train"
               unoptimized
             />

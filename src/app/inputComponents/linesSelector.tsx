@@ -331,7 +331,7 @@ export default function LineSelector({
                     return (
                       <th
                         key={index}
-                        className={`sticky top-0 bg-[rgba(0,0,0,0.1)] cursor-pointer p-2 max-w-24 text-${columnHeaderState.align} ${sortClass}`}
+                        className={`sticky top-0 bg-[rgba(0,0,0,0.1)] cursor-pointer p-2 max-w-24 uppercase text-${columnHeaderState.align} ${sortClass}`}
                         onClick={(): void =>
                           onSortLabelClick(columnHeaderState.key)
                         }

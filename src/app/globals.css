@@ -26,6 +26,7 @@
 body {
   background-color: var(--bg);
   color: var(--text);
+  font-family: 'Overpass Mono Variable', sans-serif;
 }
 
 .pane {
@@ -47,6 +48,7 @@ legend {
   font-size: 0.875rem;
   font-weight: bold;
   margin-bottom: 0.5rem;
+  text-transform: uppercase;
 }
 
 label {
@@ -68,7 +70,8 @@ button,
   border: none;
   border-radius: 0.25rem;
   color: #fff;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
+  font-weight: bold;
   padding: 0.5rem 0.75rem;
 }
 
@@ -93,9 +96,12 @@ td {
 }
 
 .toggle-group-item {
+  align-items: center;
   background-color: #fff;
   border: none;
   border-radius: 0;
+  display: flex;
+  justify-content: center;
   padding: 0.5rem;
   user-select: none;
   width: 2.25rem;
