@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { LineMetricDataset, Metric, MetricWrapper } from '../page';
-import { type Line } from '../common/types';
-import MetroLineTableRow from './lineTableRow';
+import Image from 'next/image';
 import lodash from 'lodash';
-import Filters from './filters';
+import { type Line } from '../common/types';
 import { getLineName } from '../common/lines';
+import Filters from './filters';
+import MetroLineTableRow from './lineTableRow';
+import { LineMetricDataset, Metric, MetricWrapper } from '../page';
 
 interface LineSelectorProps {
   lineMetricDataset: LineMetricDataset;
@@ -39,36 +40,43 @@ interface ColumnHeaderState {
 
 const columnStates: ColumnHeaderState[] = [
   {
+    align: 'right',
     label: '',
     key: 'id',
     sortDirection: false,
   },
   {
+    align: 'center',
     label: 'Selected',
     key: 'selected',
     sortDirection: false,
   },
   {
+    align: 'left',
     label: 'Line',
     key: 'name',
     sortDirection: false,
   },
   {
+    align: 'right',
     label: 'Avg. Ridership',
     key: 'averageRidership',
     sortDirection: false,
   },
   {
+    align: 'right',
     label: 'Change',
     key: 'changeInRidership',
     sortDirection: false,
   },
   {
+    align: 'right',
     label: 'Starting Ridership',
     key: 'startingRidership',
     sortDirection: false,
   },
   {
+    align: 'right',
     label: 'Current Ridership',
     key: 'endingRidership',
     sortDirection: false,
@@ -79,6 +87,7 @@ const columnStates: ColumnHeaderState[] = [
   //   align: 'right',
   // },
   {
+    align: 'left',
     label: 'Ridership over time',
     sortDirection: false,
     key: 'ridershipOverTime',
@@ -213,8 +222,6 @@ export default function LineSelector({
   console.log('lines', lines);
   console.log('sortedLines', sortedLines);
 
-  const subtitleClass = 'text-neutral-400 tableHeader';
-
   /**
    * From https://stackoverflow.com/a/14966131.
    *
@@ -267,52 +274,64 @@ export default function LineSelector({
   return (
     /* Styled as flexbox so overflow scroll container stretches full height */
     <div
-      id="line_selector"
       className={
-        'flex flex-col bg-white p-4 rounded-xl ' + (expanded ? 'expanded' : '')
+        'flex flex-col gap-4 w-full ' +
+        (expanded ? 'max-h-full' : 'max-h-[75vh]')
       }
     >
-      <div className="flex gap-4 items-center justify-between">
-        <span className="uppercase whitespace-nowrap">
-          Line Selector
-        </span>
+      {/* Expand button */}
+      <button
+        onClick={onExpandClick}
+        className="self-end bg-transparent border-none hover:opacity-80 p-0"
+      >
+        {expanded ? (
+          <Image
+            src="/pin-left.svg"
+            alt="Hide"
+            height={16}
+            width={16}
+            unoptimized
+          />
+        ) : (
+          <Image
+            src="/pin-right.svg"
+            alt="Expand"
+            height={16}
+            width={16}
+            unoptimized
+          />
+        )}
+      </button>
 
-        <button id="expandButton" onClick={onExpandClick}>
-          {expanded ? 'Hide' : 'Expand'}
-        </button>
-      </div>
-    
-      <div id="filters-wrapper">
-        <Filters
-          setLines={setLines}
-          searchText={searchText}
-          setSearchText={setSearchText}
-          clearSelections={clearSelections}
-          selectAllVisibleLines={selectAllVisibleLines}
-        ></Filters>
-      </div>
+      <Filters
+        setLines={setLines}
+        searchText={searchText}
+        setSearchText={setSearchText}
+        clearSelections={clearSelections}
+        selectAllVisibleLines={selectAllVisibleLines}
+      ></Filters>
 
       {/* Overflow scroll container */}
       <div className="overflow-y-auto">
-        <table className="w-full">
+        <table className="text-sm w-full">
           {/* Only show table header when line selector is expanded */}
           {expanded && (
             <thead>
               <tr>
                 {columnHeaderStates.map(
                   (columnHeaderState: ColumnHeaderState, index: number) => {
-                    let classNames: string = subtitleClass;
+                    let sortClass: string;
+
                     if (columnHeaderState.sortDirection === 'asc') {
-                      classNames = `${classNames} headerSortUp`;
+                      sortClass = 'headerSortUp';
                     } else if (columnHeaderState.sortDirection === 'desc') {
-                      classNames = `${classNames} headerSortDown`;
+                      sortClass = 'headerSortDown';
                     }
 
                     return (
                       <th
                         key={index}
-                        style={{ textAlign: 'left' }}
-                        className={classNames}
+                        className={`sticky top-0 bg-[rgba(0,0,0,0.1)] cursor-pointer p-2 max-w-24 uppercase text-${columnHeaderState.align} ${sortClass}`}
                         onClick={(): void =>
                           onSortLabelClick(columnHeaderState.key)
                         }
@@ -326,7 +345,7 @@ export default function LineSelector({
             </thead>
           )}
 
-          <tbody id="line_table">
+          <tbody>
             {sortedLines.map((line, id) => {
               const lineMetrics: MetricWrapper = lineMetricDataset[line.id];
 
@@ -345,13 +364,22 @@ export default function LineSelector({
           </tbody>
         </table>
       </div>
-      <div >
-        <a href={csvDownload()} download="metro_ridership.csv">
-          <button id="downloadButton" onClick={csvDownload}>
-            Download Selected Data as CSV
-          </button>
-        </a>
-      </div>
+
+      <a
+        href={csvDownload()}
+        download="metro_ridership.csv"
+        className="button flex gap-2 items-center justify-center"
+      >
+        Download selected data as CSV
+        <Image
+          src="/download.svg"
+          height={16}
+          width={16}
+          alt=""
+          unoptimized
+          className="recolor-white"
+        />
+      </a>
     </div>
   );
 }

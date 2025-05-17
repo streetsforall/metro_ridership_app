@@ -1,12 +1,13 @@
 'use client';
 
-import * as Checkbox from '@radix-ui/react-checkbox';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { type ChartOptions, ChartData } from 'chart.js';
+import { Line as LineChart } from 'react-chartjs-2';
+import * as Checkbox from '@radix-ui/react-checkbox';
 import { type Line } from '../common/types';
 import { getLineColor } from '../common/lines';
 import { Metric } from '../page';
-import { Chart as ChartJS, type ChartOptions, ChartData } from 'chart.js';
-import { Line as LineChart } from 'react-chartjs-2';
 
 interface MetroLineTableRowProps {
   onToggleSelectLine: (line: Line) => void;
@@ -25,9 +26,6 @@ export default function MetroLineTableRow({
   id,
   lineMetrics,
 }: MetroLineTableRowProps) {
-  const collapsedSelectorWrapperClasses =
-    'flex gap-2 items-center px-2  lineRow';
-
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [data, setData] = useState<ChartData[]>([]);
 
@@ -106,25 +104,41 @@ export default function MetroLineTableRow({
   return (
     <>
       {lineMetrics && (
-        <tr className={expanded ? 'lineRow' : collapsedSelectorWrapperClasses}>
-          <td className="w-7 text-gray-300">{id}</td>
+        <tr
+          className={
+            'even:bg-[rgba(0,0,0,0.05)] ' +
+            (expanded ? '' : 'flex gap-2 items-center')
+          }
+        >
+          {/* Line rank */}
+          <td className="text-right text-stone-400 w-6">{id}</td>
+
           {/* Is Selected */}
-          <td className="line-selected-checkbox max-w-max">
+          <td>
             <Checkbox.Root
               id={line.id.toString()}
               onClick={() => onToggleSelectLine(line)}
               checked={line.selected}
-              className="flex items-center justify-center bg-white data-[state=checked]:bg-neutral-500 border border-neutral-500 rounded-lg h-5 w-5 overflow-hidden"
+              className="flex items-center justify-center bg-white data-[state=checked]:bg-[#033056] mx-auto rounded p-0 h-5 w-5"
             >
-              <Checkbox.Indicator className="bg-neutral-500 rounded-lg h-full w-full" />
+              <Checkbox.Indicator>
+                <Image
+                  src="/check.svg"
+                  height={20}
+                  width={20}
+                  unoptimized
+                  alt="Check"
+                  className="recolor-white"
+                />
+              </Checkbox.Indicator>
             </Checkbox.Root>
           </td>
 
           {/* Line name (ex: Line 2, B Line) */}
-          <td className="line-name flex-1">
+          <td className="flex-1">
             <label
               htmlFor={String(line.id)}
-              className="flex-1 block cursor-pointer py-2"
+              className="block cursor-pointer py-2"
             >
               {line.name}
             </label>
@@ -132,7 +146,7 @@ export default function MetroLineTableRow({
 
           {/* Average ridership over a duration (ex: 3 months) */}
           {expanded && line.averageRidership && (
-            <td>
+            <td className="text-right">
               {!!line.averageRidership
                 ? Math.round(line.averageRidership).toLocaleString()
                 : 0}
@@ -143,18 +157,18 @@ export default function MetroLineTableRow({
           {expanded &&
             line.changeInRidership &&
             (line.changeInRidership < 0 ? (
-              <td className="changeDown">
+              <td className="text-right text-red-600">
                 {line.changeInRidership.toLocaleString()}
               </td>
             ) : (
-              <td className="changeUp">
+              <td className="text-right text-green-600">
                 {'+' + line.changeInRidership.toLocaleString()}
               </td>
             ))}
 
           {/* Starting ridership  */}
           {expanded && line.startingRidership && (
-            <td>
+            <td className="text-right">
               {!!line.id
                 ? Math.round(line.startingRidership).toLocaleString()
                 : 0}
@@ -163,7 +177,7 @@ export default function MetroLineTableRow({
 
           {/* Recent ridership  */}
           {expanded && line.endingRidership && (
-            <td>
+            <td className="text-right">
               {!!line.id
                 ? Math.round(line.endingRidership).toLocaleString()
                 : 0}
@@ -174,9 +188,8 @@ export default function MetroLineTableRow({
           {/* {expanded && <td>{line.division ?? division}</td>} */}
 
           {/* Ridership over time. Line graph showing ridership trend */}
-
           {expanded && (
-            <td id="table_chart_container" key={line.id}>
+            <td key={line.id} className="max-h-10 max-w-52">
               {isMounted ? (
                 <LineChart
                   options={options}

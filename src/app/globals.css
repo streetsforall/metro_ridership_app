@@ -2,19 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-@import '@radix-ui/colors/violet.css';
-
+/*
 :root {
   --foreground-rgb: 0, 0, 0;
-  --bg: #dadada;
+  --bg: #f3eee2;
   --highlight: rgb(118, 165, 197);
   --button: rgb(230, 234, 236);
   --border: rgb(156, 156, 144);
-  --modal: rgb(244, 247, 247);
+  --modal: #f8f6f1;
   --light: rgb(247, 247, 242);
   --text: rgb(47, 47, 47);
 }
-/*
+
 @media (prefers-color-scheme: dark) {
   :root {
     --foreground-rgb: 255, 255, 255;
@@ -23,84 +22,133 @@
   }
 }
 */
+
 body {
-  background-color: var(--bg);
-  font-size: .8rem;
-  color: var(--text);
-}
-
-
-#footer, #header {
-  margin: 1rem;
-  font-size: .8rem;
-  font-family: monospace;
-}
-
-#header {
-  margin-bottom: 0;
-  display: flex;
-  justify-content: space-between;
-}
-
-#sfa_logo {
-  max-height: 3rem;
+  background-color: #f3eee2;
+  font-family: 'Overpass Mono Variable', sans-serif;
+  @apply text-stone-700;
 }
 
 a {
-  color: var(--highlight)
+  color: #0fada8;
 }
 
 a:hover {
-  text-decoration: underline;
+  opacity: 0.8;
 }
 
-
-#chart {
-
+legend {
+  font-size: 0.875rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
 }
 
-#container {
+label {
+  font-size: 0.875rem;
+}
+
+input,
+select {
+  border: none;
+  border-radius: 0.25rem;
+  background-color: #fff;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+}
+
+button,
+.button {
+  background-color: #033056;
+  border: none;
+  border-radius: 0.25rem;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 0.5rem 0.75rem;
+}
+
+button:hover,
+.button:hover {
+  opacity: 0.8;
+  text-decoration: none;
+}
+
+td {
+  padding: 0 0.5rem;
+}
+
+.toggle-group {
   display: flex;
-  flex-direction: column;
+  gap: 2px;
 }
 
-
-#window {
-  max-width: 100%;
-  max-height: 100%;
-  margin: 1rem;
+.toggle-group-item {
+  align-items: center;
+  background-color: #fff;
+  border: none;
+  border-radius: 0;
   display: flex;
+  justify-content: center;
+  padding: 0.5rem;
+  user-select: none;
+  width: 2.25rem;
 }
 
-button {
-  background-color: var(--button);
-  border: .5px solid var(--border);
+.toggle-group-item:first-child {
+  margin-left: 0;
+  border-top-left-radius: 0.25rem;
+  border-bottom-left-radius: 0.25rem;
+}
+
+.toggle-group-item:last-child {
+  border-top-right-radius: 0.25rem;
+  border-bottom-right-radius: 0.25rem;
+}
+
+.toggle-group-item:hover {
+  background-color: #eee;
+}
+
+.toggle-group-item[data-state='on'] {
+  background-color: #033056;
+  color: #fff;
+}
+
+.toggle-group-item[data-state='on'] img {
+  @apply recolor-white;
+}
+
+/*
+ * Used to add sort arrows.
+ * Source: https://stackoverflow.com/questions/17639562/add-sorting-arrows-to-th-like-table-sorter
+ */
+.headerSortDown:after,
+.headerSortUp:after {
+  content: ' ';
+  position: relative;
+  left: 10px;
+  border: 7px solid transparent;
+}
+
+.headerSortDown:after {
+  top: 10px;
+  border-top-color: rgba(0, 0, 0, 0.25);
+}
+
+.headerSortUp:after {
+  bottom: 15px;
+  border-bottom-color: rgba(0, 0, 0, 0.25);
+}
+
+.pane {
+  background-color: #f8f6f1;
   border-radius: 0.5rem;
-  padding: 0 0.3rem;
-  color: var(--text);
-  height: max-content;
-
+  padding: 2rem;
+  position: relative;
 }
 
-button:hover {
-  border-color: rgb(142, 142, 142);
-  background-color: var(--highlight);
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-}
-
-.SeparatorRoot {
-  background-color: var(--violet-6);
-}
-.SeparatorRoot[data-orientation='horizontal'] {
-  height: 1px;
-  width: 100%;
-}
-.SeparatorRoot[data-orientation='vertical'] {
-  height: 100%;
-  width: 1px;
+.recolor-white {
+  filter: invert(100%) sepia(0%) saturate(226%) hue-rotate(229deg)
+    brightness(118%) contrast(100%);
 }
