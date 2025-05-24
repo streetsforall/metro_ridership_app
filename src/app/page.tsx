@@ -245,6 +245,7 @@ export default function Charts() {
           color: colors.stone['300'],
           drawTicks: false,
         },
+        min: 0,
         title: {
           display: true,
           text: 'AVG DAILY RIDERSHIP',
