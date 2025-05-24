@@ -77,7 +77,7 @@ const columnStates: ColumnHeaderState[] = [
   },
   {
     align: 'right',
-    label: 'Current Ridership',
+    label: 'Ending Ridership',
     key: 'endingRidership',
     sortDirection: false,
   },
