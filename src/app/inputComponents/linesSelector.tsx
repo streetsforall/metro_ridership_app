@@ -311,12 +311,12 @@ export default function LineSelector({
         selectAllVisibleLines={selectAllVisibleLines}
       ></Filters>
 
-      {/* Overflow scroll container */}
-      <div className="overflow-y-auto">
+      {/* Overflow scroll container for non-expanded view */}
+      <div className={!expanded ? 'overflow-y-auto' : ''}>
         <table className="text-sm w-full">
           {/* Only show table header when line selector is expanded */}
           {expanded && (
-            <thead>
+            <thead className="sticky top-0">
               <tr>
                 {columnHeaderStates.map(
                   (columnHeaderState: ColumnHeaderState, index: number) => {
@@ -331,7 +331,7 @@ export default function LineSelector({
                     return (
                       <th
                         key={index}
-                        className={`sticky top-0 bg-[rgba(0,0,0,0.1)] cursor-pointer p-2 max-w-24 uppercase text-${columnHeaderState.align} ${sortClass}`}
+                        className={`bg-stone-300 cursor-pointer p-2 max-w-24 uppercase text-${columnHeaderState.align} ${sortClass}`}
                         onClick={(): void =>
                           onSortLabelClick(columnHeaderState.key)
                         }
