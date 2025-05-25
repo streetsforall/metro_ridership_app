@@ -311,59 +311,65 @@ export default function LineSelector({
         selectAllVisibleLines={selectAllVisibleLines}
       ></Filters>
 
-      {/* Overflow scroll container for non-expanded view */}
-      <div className={!expanded ? 'overflow-y-auto' : ''}>
-        <table className="text-sm w-full">
-          {/* Only show table header when line selector is expanded */}
-          {expanded && (
-            <thead className="sticky top-0">
-              <tr>
-                {columnHeaderStates.map(
-                  (columnHeaderState: ColumnHeaderState, index: number) => {
-                    let sortClass = '';
+      {sortedLines.length ? (
+        /* Overflow scroll container for non-expanded view */
+        <div className={!expanded ? 'overflow-y-auto' : ''}>
+          <table className="text-sm w-full">
+            {/* Only show table header when line selector is expanded */}
+            {expanded && (
+              <thead className="sticky top-0">
+                <tr>
+                  {columnHeaderStates.map(
+                    (columnHeaderState: ColumnHeaderState, index: number) => {
+                      let sortClass = '';
 
-                    if (columnHeaderState.sortDirection === 'asc') {
-                      sortClass = 'headerSortUp';
-                    } else if (columnHeaderState.sortDirection === 'desc') {
-                      sortClass = 'headerSortDown';
-                    }
+                      if (columnHeaderState.sortDirection === 'asc') {
+                        sortClass = 'headerSortUp';
+                      } else if (columnHeaderState.sortDirection === 'desc') {
+                        sortClass = 'headerSortDown';
+                      }
 
-                    return (
-                      <th
-                        key={index}
-                        className={`bg-stone-300 cursor-pointer p-2 max-w-24 uppercase text-${columnHeaderState.align} ${sortClass}`}
-                        onClick={(): void =>
-                          onSortLabelClick(columnHeaderState.key)
-                        }
-                      >
-                        {columnHeaderState.label}
-                      </th>
-                    );
-                  },
-                )}
-              </tr>
-            </thead>
-          )}
+                      return (
+                        <th
+                          key={index}
+                          className={`bg-stone-300 cursor-pointer p-2 max-w-24 uppercase text-${columnHeaderState.align} ${sortClass}`}
+                          onClick={(): void =>
+                            onSortLabelClick(columnHeaderState.key)
+                          }
+                        >
+                          {columnHeaderState.label}
+                        </th>
+                      );
+                    },
+                  )}
+                </tr>
+              </thead>
+            )}
 
-          <tbody>
-            {sortedLines.map((line, id) => {
-              const lineMetrics: MetricWrapper = lineMetricDataset[line.id];
+            <tbody>
+              {sortedLines.map((line, id) => {
+                const lineMetrics: MetricWrapper = lineMetricDataset[line.id];
 
-              return (
-                <MetroLineTableRow
-                  lineMetrics={lineMetrics?.metrics}
-                  key={line.id}
-                  id={id}
-                  onToggleSelectLine={onToggleSelectLine}
-                  line={line}
-                  dayOfWeek={dayOfWeek}
-                  expanded={expanded}
-                ></MetroLineTableRow>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                return (
+                  <MetroLineTableRow
+                    lineMetrics={lineMetrics?.metrics}
+                    key={line.id}
+                    id={id}
+                    onToggleSelectLine={onToggleSelectLine}
+                    line={line}
+                    dayOfWeek={dayOfWeek}
+                    expanded={expanded}
+                  ></MetroLineTableRow>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="py-8 text-center text-sm text-stone-500">
+          Please select a transit mode.
+        </div>
+      )}
 
       <a
         href={csvDownload()}
