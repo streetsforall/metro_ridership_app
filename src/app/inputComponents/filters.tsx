@@ -52,17 +52,14 @@ export default function Filters({
   return (
     <>
       <div className="flex gap-2 border-b border-stone-300 pb-4">
-        {/* span required for proper width */}
-        <span className="block">
-          <input
-            placeholder="Search lines"
-            className="bg-[url('/magnifying-glass.svg')] bg-[0.5rem_center] bg-no-repeat pl-8 w-full"
-            value={searchText}
-            onChange={(event): void => {
-              setSearchText(event.target.value);
-            }}
-          />
-        </span>
+        <input
+          placeholder="Search lines"
+          className="bg-[url('/magnifying-glass.svg')] bg-[0.5rem_center] bg-no-repeat pl-8 w-full"
+          value={searchText}
+          onChange={(event): void => {
+            setSearchText(event.target.value);
+          }}
+        />
 
         <ToggleGroup.Root
           className="toggle-group"
