@@ -326,7 +326,7 @@ export default function Charts() {
           <a href="https://data.streetsforall.org">
             Streets for All Data/Dev Team
           </a>{' '}
-          with data sourced from <a href="https://metro.net">LA Metro.</a>
+          with data from <a href="https://metro.net">LA Metro</a>
         </p>
         <p>
           © 2025 <a href="https://streetsforall.org">Streets for All</a>
