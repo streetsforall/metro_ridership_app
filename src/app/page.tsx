@@ -309,7 +309,7 @@ export default function Charts() {
                   }}
                 />
               ) : (
-                <div className="flex-1 flex items-center justify-center text-sm text-stone-500">
+                <div className="flex-1 flex items-center justify-center text-sm text-stone-400">
                   <p>Please select a Metro line.</p>
                 </div>
               )}

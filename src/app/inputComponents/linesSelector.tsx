@@ -366,7 +366,7 @@ export default function LineSelector({
           </table>
         </div>
       ) : (
-        <div className="py-8 text-center text-sm text-stone-500">
+        <div className="py-8 text-center text-sm text-stone-400">
           Please select a transit mode.
         </div>
       )}

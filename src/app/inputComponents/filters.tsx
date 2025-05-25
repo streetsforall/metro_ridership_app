@@ -104,14 +104,14 @@ export default function Filters({
       <div className="flex gap-4">
         <button
           onClick={selectAllVisibleLines}
-          className="bg-transparent border-none p-0 font-bold text-sm text-[#0fada8]"
+          className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
         >
           Select All
         </button>
 
         <button
           onClick={clearSelections}
-          className="bg-transparent border-none p-0 font-bold text-sm text-[#0fada8]"
+          className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
         >
           Clear All
         </button>
