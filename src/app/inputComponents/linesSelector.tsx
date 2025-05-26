@@ -286,16 +286,18 @@ export default function LineSelector({
       >
         {expanded ? (
           <Image
-            src="/pin-left.svg"
-            alt="Hide"
+            src="/list.svg"
+            alt="Collapse to list view"
+            title="Collapse to list view"
             height={16}
             width={16}
             unoptimized
           />
         ) : (
           <Image
-            src="/pin-right.svg"
-            alt="Expand"
+            src="/table.svg"
+            alt="Expand to table view"
+            title="Expand to table view"
             height={16}
             width={16}
             unoptimized
