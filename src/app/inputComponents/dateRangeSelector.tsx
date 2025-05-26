@@ -153,8 +153,8 @@ export default function DateRangeSelector({
 
   return (
     <div className="flex gap-16">
-      {dateForm(startDate, 'start', 'From')}
-      {dateForm(endDate, 'end', 'To')}
+      {dateForm(startDate, 'start', 'Start')}
+      {dateForm(endDate, 'end', 'End')}
 
       <fieldset>
         <legend>Day of Week</legend>

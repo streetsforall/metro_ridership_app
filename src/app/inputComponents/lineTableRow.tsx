@@ -104,17 +104,12 @@ export default function MetroLineTableRow({
   return (
     <>
       {lineMetrics && (
-        <tr
-          className={
-            'even:bg-[rgba(0,0,0,0.05)] ' +
-            (expanded ? '' : 'flex gap-2 items-center')
-          }
-        >
+        <tr className="even:bg-[rgba(0,0,0,0.05)]">
           {/* Line rank */}
-          <td className="text-right text-stone-400 w-6">{id}</td>
+          <td className="text-right text-stone-400 w-10">{id}</td>
 
           {/* Is Selected */}
-          <td>
+          <td className={expanded ? 'w-28' : 'w-10'}>
             <Checkbox.Root
               id={line.id.toString()}
               onClick={() => onToggleSelectLine(line)}
@@ -135,7 +130,7 @@ export default function MetroLineTableRow({
           </td>
 
           {/* Line name (ex: Line 2, B Line) */}
-          <td className="flex-1">
+          <td>
             <label
               htmlFor={String(line.id)}
               className="block cursor-pointer py-2"

@@ -245,6 +245,7 @@ export default function Charts() {
           color: colors.stone['300'],
           drawTicks: false,
         },
+        min: 0,
         title: {
           display: true,
           text: 'AVG DAILY RIDERSHIP',
@@ -308,7 +309,7 @@ export default function Charts() {
                   }}
                 />
               ) : (
-                <div className="flex-1 flex items-center justify-center">
+                <div className="flex-1 flex items-center justify-center text-sm text-stone-400">
                   <p>Please select a Metro line.</p>
                 </div>
               )}
@@ -325,7 +326,7 @@ export default function Charts() {
           <a href="https://data.streetsforall.org">
             Streets for All Data/Dev Team
           </a>{' '}
-          with data sourced from <a href="https://metro.net">LA Metro.</a>
+          with data from <a href="https://metro.net">LA Metro</a>
         </p>
         <p>
           © 2025 <a href="https://streetsforall.org">Streets for All</a>

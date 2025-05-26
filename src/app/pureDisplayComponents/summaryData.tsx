@@ -56,7 +56,7 @@ export default function SummaryData(props: SummaryDataProps) {
 
           <div className="pane">
             <div className="flex justify-between mb-2 min-w-56 text-sm">
-              <span className="text-stone-400 uppercase whitespace-nowrap">Current Ridership</span>
+              <span className="text-stone-400 uppercase whitespace-nowrap">Ending Ridership</span>
 
               <span
                 aria-label="Change"
