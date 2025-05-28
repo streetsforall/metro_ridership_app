@@ -136,12 +136,12 @@ export default function MetroLineTableRow({
               className="group block cursor-pointer py-2 whitespace-nowrap"
             >
               <span
-                className={`block visible h-auto w-auto ${line.former && 'group-hover:invisible group-hover:h-0 group-hover:w-0'}`}
+                className={`block visible h-auto ${line.former && 'group-hover:invisible group-hover:h-0'}`}
               >
                 {line.name}
               </span>
               <span
-                className={`block invisible h-0 w-0 ${line.former && 'group-hover:visible group-hover:h-auto group-hover:w-auto'}`}
+                className={`block invisible h-0 ${line.former && 'group-hover:visible group-hover:h-auto'}`}
               >
                 Former {line.former}
               </span>
