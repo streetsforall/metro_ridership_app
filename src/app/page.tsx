@@ -24,7 +24,7 @@ import SummaryData from './pureDisplayComponents/summaryData';
 import useUserDashboardInput, {
   UserDashboardInputState,
 } from './hooks/useUserDashboardInput';
-import { getLineColor, getLineName } from './common/lines';
+import { getLineColor, getLineNames } from './common/lines';
 import { type Line } from './common/types';
 import * as metrics from '../app/ridership.json';
 
@@ -165,7 +165,7 @@ export default function Charts() {
           time: metric.year + ' ' + metric.month,
           stat: metric[dayOfWeek],
         })),
-        label: getLineName(Number(line)),
+        label: getLineNames(Number(line)).current,
         id: Number(line),
         backgroundColor: getLineColor(Number(line)),
         borderColor: getLineColor(Number(line)),

@@ -1,6 +1,7 @@
 export interface Line {
   id: number;
   name: string;
+  former?: string;
   mode: Mode;
   provider: 'DO' | 'PT';
   selected: boolean;

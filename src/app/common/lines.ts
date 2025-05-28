@@ -5,31 +5,37 @@ const definedLines = [
   {
     number: 801,
     letter: 'A',
+    former: 'Blue',
     color: '#0072bc',
   },
   {
     number: 802,
     letter: 'B',
+    former: 'Red',
     color: '#eb131b',
   },
   {
     number: 803,
     letter: 'C',
+    former: 'Green',
     color: '#58a738',
   },
   {
     number: 804,
     letter: 'E',
+    former: 'Expo',
     color: '#fdb913',
   },
   {
     number: 805,
     letter: 'D',
+    former: 'Purple',
     color: '#a05da5',
   },
   {
     number: 806,
     letter: 'L',
+    former: 'Gold',
     color: '#f9a825',
   },
   {
@@ -45,6 +51,7 @@ const definedLines = [
   {
     number: 910,
     letter: 'J',
+    former: 'Silver',
     color: '#adB8bf',
   },
 ];
@@ -63,8 +70,11 @@ export function getLineColor(number: number) {
   return line?.color;
 }
 
-export function getLineName(number: number) {
+export function getLineNames(number: number) {
   const line = definedLines.find((line) => line.number === number);
 
-  return line ? `${line.letter} Line` : `Line ${number}`;
+  return {
+    current: line ? `${line.letter} Line` : `Line ${number}`,
+    ...(line && line.former && {former: `${line.former} Line`}),
+  };
 }

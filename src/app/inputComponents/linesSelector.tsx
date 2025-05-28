@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import lodash from 'lodash';
 import { type Line } from '../common/types';
-import { getLineName } from '../common/lines';
+import { getLineNames } from '../common/lines';
 import Filters from './filters';
 import MetroLineTableRow from './lineTableRow';
 import { LineMetricDataset, Metric, MetricWrapper } from '../page';
@@ -260,7 +260,7 @@ export default function LineSelector({
           est_sun_ridership,
         } = metric;
 
-        const friendly_line_name = getLineName(Number(line_name));
+        const friendly_line_name = getLineNames(Number(line_name)).current;
 
         const row: string = `${friendly_line_name},${year},${month},${est_wkday_ridership},${est_sat_ridership},${est_sun_ridership}`;
         csvContent += row + '\r\n';
