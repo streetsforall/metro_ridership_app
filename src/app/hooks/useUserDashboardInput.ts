@@ -3,7 +3,7 @@ import { Line, lineNameSortFunction } from '../common/types';
 import LineJsonData from '../data/metro_line_metadata_current.json';
 import { LineMetricDataset, MetricWrapper } from '../page';
 import { calcAbsChange, calcAvg, calcStart, calcEnd } from '../inputComponents/calc';
-import { getLineName } from '../common/lines';
+import { getLineNames } from '../common/lines';
 
 interface LineJson {
   line: number;
@@ -54,7 +54,8 @@ const createLinesData = (): Line[] => {
       return {
         ...line,
         id: line.line,
-        name: getLineName(line.line),
+        name: getLineNames(line.line).current,
+        former: getLineNames(line.line).former,
         selected: false,
         visible: true,
       } as Line;
