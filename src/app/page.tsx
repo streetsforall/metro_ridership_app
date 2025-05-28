@@ -281,10 +281,10 @@ export default function Charts() {
         ></DateRangeSelector>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col lg:flex-row gap-4">
         <div
           className={
-            'pane w-1/4 ' + (expandedLineSelector ? 'w-full' : 'w-1/4')
+            'pane ' + (expandedLineSelector ? 'w-full' : 'lg:w-1/4')
           }
         >
           <LineSelector
@@ -298,8 +298,8 @@ export default function Charts() {
 
         {/* TODO: Change this from conditional rendering to conditional visibility; that way it doesn't rerender every time */}
         {!expandedLineSelector && (
-          <div className="flex flex-col gap-4 w-4/5">
-            <div className="pane flex flex-col min-h-[50vh]">
+          <div className="flex flex-col gap-4 lg:w-4/5">
+            <div className="pane flex flex-col lg:min-h-[50vh]">
               {chartData.length > 0 ? (
                 <LineChart
                   options={options}
