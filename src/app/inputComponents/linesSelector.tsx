@@ -276,7 +276,7 @@ export default function LineSelector({
     <div
       className={
         'flex flex-col gap-4 w-full ' +
-        (expanded ? 'max-h-full' : 'max-h-[75vh]')
+        (expanded ? 'max-h-full' : 'max-h-[50vh] lg:max-h-[75vh]')
       }
     >
       {/* Expand button */}

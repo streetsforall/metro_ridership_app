@@ -42,7 +42,7 @@ export default function SummaryData(props: SummaryDataProps) {
   return (
     <div>
       {visibleAndSelectedLines.length > 0 && (
-        <div className="flex gap-4 items-center">
+        <div className="flex flex-wrap xl:flex-nowrap gap-4 items-center">
           {/* Stats */}
           {/* TODO: Refactor into component */}
           <div className="pane">
@@ -74,7 +74,7 @@ export default function SummaryData(props: SummaryDataProps) {
           </div>
 
           {/* Text */}
-          <div className="flex flex-col gap-4 p-4 text-sm">
+          <div className="basis-full xl:basis-auto flex flex-col gap-4 p-4 text-sm">
             <p>
               <span className="font-bold mr-1">Selected:</span>
 

@@ -152,7 +152,7 @@ export default function DateRangeSelector({
   };
 
   return (
-    <div className="flex gap-16">
+    <div className="flex flex-col sm:flex-row flex-wrap gap-x-16 gap-y-6">
       {dateForm(startDate, 'start', 'Start')}
       {dateForm(endDate, 'end', 'End')}
 
@@ -160,7 +160,7 @@ export default function DateRangeSelector({
         <legend>Day of Week</legend>
 
         <RadioGroup.Root
-          className="flex gap-4"
+          className="flex flex-col sm:flex-row gap-4"
           aria-label="View density"
           value={dayOfWeek}
           onValueChange={(v) => {
