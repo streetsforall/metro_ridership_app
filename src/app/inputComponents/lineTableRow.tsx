@@ -133,7 +133,7 @@ export default function MetroLineTableRow({
           <td>
             <label
               htmlFor={String(line.id)}
-              className="block cursor-pointer py-2"
+              className="block cursor-pointer py-2 whitespace-nowrap"
             >
               {line.name}
             </label>

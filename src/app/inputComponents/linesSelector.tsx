@@ -315,7 +315,9 @@ export default function LineSelector({
 
       {sortedLines.length ? (
         /* Overflow scroll container for non-expanded view */
-        <div className={!expanded ? 'overflow-y-auto' : ''}>
+        <div
+          className={'overflow-x-auto ' + (!expanded ? 'overflow-y-auto' : '')}
+        >
           <table className="text-sm w-full">
             {/* Only show table header when line selector is expanded */}
             {expanded && (
