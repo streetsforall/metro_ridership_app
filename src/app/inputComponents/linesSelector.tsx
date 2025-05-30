@@ -273,12 +273,7 @@ export default function LineSelector({
 
   return (
     /* Styled as flexbox so overflow scroll container stretches full height */
-    <div
-      className={
-        'flex flex-col gap-4 w-full ' +
-        (expanded ? 'max-h-full' : 'max-h-[50vh] lg:max-h-[75vh]')
-      }
-    >
+    <div className={'flex flex-col gap-4 w-full '}>
       {/* Expand button */}
       <button
         onClick={onExpandClick}
@@ -316,7 +311,7 @@ export default function LineSelector({
       {sortedLines.length ? (
         /* Overflow scroll container for non-expanded view */
         <div
-          className={'overflow-x-auto ' + (!expanded ? 'overflow-y-auto' : '')}
+          className={`max-h-80 ${expanded ? 'lg:max-h-full overflow-x-auto lg:overflow-visible' : 'overflow-y-auto'}`}
         >
           <table className="text-sm w-full">
             {/* Only show table header when line selector is expanded */}
