@@ -14,7 +14,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      {/* Stretch full height */}
+      <body className="min-h-screen">{children}</body>
     </html>
   );
 }

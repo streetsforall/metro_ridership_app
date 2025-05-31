@@ -255,7 +255,8 @@ export default function Charts() {
   };
 
   return (
-    <div className="mx-4">
+    /* Stretch full height */
+    <div className="flex flex-col min-h-screen mx-4">
       <div className="flex items-center justify-between font-bold py-4 uppercase">
         <span className="ml-2">LA Metro Ridership App</span>
 
@@ -281,11 +282,13 @@ export default function Charts() {
         ></DateRangeSelector>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4">
+      {/* Grow to fill remaining vertical space; only one column if expanded or on mobile */}
+      <div
+        className={`grow grid flex-col gap-4 ${expandedLineSelector ? 'lg:grid-cols-[1fr]' : 'grid-cols-[1fr] lg:grid-cols-[25%_1fr]'}`}
+      >
+        {/* Hack to match sibling height - https://www.reddit.com/r/css/comments/15qu1ml/restrict_childs_height_to_parents_height_which_is/ */}
         <div
-          className={
-            'pane ' + (expandedLineSelector ? 'w-full' : 'lg:w-1/4')
-          }
+          className={`pane flex flex-col gap-4 h-[32rem] min-h-full w-0 min-w-full ${expandedLineSelector ? 'lg:h-auto' : 'lg:h-0'}`}
         >
           <LineSelector
             {...userDashboardInputState}
@@ -296,26 +299,32 @@ export default function Charts() {
           />
         </div>
 
-        {/* TODO: Change this from conditional rendering to conditional visibility; that way it doesn't rerender every time */}
+        {/**
+         * Only show right side if line selector not selected
+         * TODO: Change this from conditional rendering to conditional visibility; that way it doesn't rerender every time
+         */}
         {!expandedLineSelector && (
-          <div className="flex flex-col gap-4 lg:w-4/5">
-            <div className="pane flex flex-col lg:min-h-[50vh]">
-              {chartData.length > 0 ? (
-                <LineChart
-                  options={options}
-                  data={{
-                    labels: monthList,
-                    datasets: chartData,
-                  }}
-                />
-              ) : (
-                <div className="flex-1 flex items-center justify-center text-sm text-stone-400">
-                  <p>Please select a Metro line.</p>
+          <div className="flex flex-col gap-4 lg:min-h-[50vh]">
+            {/* Only show chart and summary metrics if something selected */}
+            {chartData.length > 0 ? (
+              <>
+                <div className="pane">
+                  <LineChart
+                    options={options}
+                    data={{
+                      labels: monthList,
+                      datasets: chartData,
+                    }}
+                  />
                 </div>
-              )}
-            </div>
 
-            <SummaryData visibleLines={visibleLines}></SummaryData>
+                <SummaryData visibleLines={visibleLines}></SummaryData>
+              </>
+            ) : (
+              <div className="pane flex-1 flex items-center justify-center text-sm text-stone-400">
+                <p>Please select a Metro line.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
