@@ -1,13 +1,11 @@
-'use client';
-
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { type ChartOptions, ChartData } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import { type Line } from '../common/types';
 import { getLineColor } from '../common/lines';
-import { Metric } from '../page';
+import { Metric } from '../App';
+import checkIcon from '../assets/check.svg';
 
 interface MetroLineTableRowProps {
   onToggleSelectLine: (line: Line) => void;
@@ -117,11 +115,10 @@ export default function MetroLineTableRow({
               className="flex items-center justify-center bg-white data-[state=checked]:bg-[#033056] mx-auto rounded p-0 h-5 w-5"
             >
               <Checkbox.Indicator>
-                <Image
-                  src="/check.svg"
+                <img
+                  src={checkIcon}
                   height={20}
                   width={20}
-                  unoptimized
                   alt="Check"
                   className="recolor-white"
                 />

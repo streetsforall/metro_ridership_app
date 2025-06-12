@@ -1,8 +1,6 @@
-'use client';
-
 import React, { Fragment } from 'react';
-import Image from 'next/image';
 import { type Line } from '../common/types';
+import infoIcon from '../assets/info.svg';
 
 interface SummaryDataProps {
   visibleLines: Line[];
@@ -95,12 +93,11 @@ export default function SummaryData(props: SummaryDataProps) {
             </p>
 
             <div className="flex gap-2 items-start">
-              <Image
-                src="/info.svg"
+              <img
+                src={infoIcon}
                 height={20}
                 width={20}
                 alt=""
-                unoptimized
                 className="mt-1"
               />
               <p>

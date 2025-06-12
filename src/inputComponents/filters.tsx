@@ -1,9 +1,9 @@
-'use client';
-
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
 import { type Line } from '../common/types';
+import busIcon from '../assets/bus.svg';
+import magnifyingGlassIcon from '../assets/magnifying-glass.svg?url';
+import trainIcon from '../assets/train.svg';
 
 interface FiltersProps {
   setLines: React.Dispatch<React.SetStateAction<Line[]>>;
@@ -54,7 +54,8 @@ export default function Filters({
       <div className="flex gap-2 border-b border-stone-300 pb-4">
         <input
           placeholder="Search lines"
-          className="bg-[url('/magnifying-glass.svg')] bg-[0.5rem_center] bg-no-repeat pl-8 w-full"
+          className={`bg-[0.5rem_center] bg-no-repeat pl-8 w-full`}
+          style={{ backgroundImage: `url("${magnifyingGlassIcon}")` }}
           value={searchText}
           onChange={(event): void => {
             setSearchText(event.target.value);
@@ -75,13 +76,12 @@ export default function Filters({
             value="bus"
             aria-label="Bus"
           >
-            <Image
-              src="/bus.svg"
+            <img
+              src={busIcon}
               height={16}
               width={16}
               alt="Bus"
               title="Bus"
-              unoptimized
             />
           </ToggleGroup.Item>
           <ToggleGroup.Item
@@ -89,13 +89,12 @@ export default function Filters({
             value="train"
             aria-label="Train"
           >
-            <Image
-              src="/train.svg"
+            <img
+              src={trainIcon}
               height={16}
               width={16}
               alt="Train"
               title="Train"
-              unoptimized
             />
           </ToggleGroup.Item>
         </ToggleGroup.Root>

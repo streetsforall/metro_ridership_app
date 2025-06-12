@@ -1,13 +1,13 @@
-'use client';
-
 import { useMemo, useState } from 'react';
-import Image from 'next/image';
 import lodash from 'lodash';
 import { type Line } from '../common/types';
 import { getLineNames } from '../common/lines';
 import Filters from './filters';
 import MetroLineTableRow from './lineTableRow';
-import { LineMetricDataset, Metric, MetricWrapper } from '../page';
+import { LineMetricDataset, Metric, MetricWrapper } from '../App';
+import downloadIcon from '../assets/download.svg';
+import listIcon from '../assets/list.svg';
+import tableIcon from '../assets/table.svg';
 
 interface LineSelectorProps {
   lineMetricDataset: LineMetricDataset;
@@ -279,22 +279,20 @@ export default function LineSelector({
         className="self-end bg-transparent border-none hover:opacity-80 p-0"
       >
         {expanded ? (
-          <Image
-            src="/list.svg"
+          <img
+            src={listIcon}
             alt="Collapse to list view"
             title="Collapse to list view"
             height={16}
             width={16}
-            unoptimized
           />
         ) : (
-          <Image
-            src="/table.svg"
+          <img
+            src={tableIcon}
             alt="Expand to table view"
             title="Expand to table view"
             height={16}
             width={16}
-            unoptimized
           />
         )}
       </button>
@@ -375,12 +373,11 @@ export default function LineSelector({
         className="button flex gap-2 items-center justify-center"
       >
         Download selected data as CSV
-        <Image
-          src="/download.svg"
+        <img
+          src={downloadIcon}
           height={16}
           width={16}
           alt=""
-          unoptimized
           className="recolor-white"
         />
       </a>

@@ -1,4 +1,4 @@
-import { Metric } from '../page';
+import { Metric } from '../App';
 import { DayOfWeek } from '../hooks/useUserDashboardInput';
 
 /**

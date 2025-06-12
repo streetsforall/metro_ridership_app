@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Line, lineNameSortFunction } from '../common/types';
 import LineJsonData from '../data/metro_line_metadata_current.json';
-import { LineMetricDataset, MetricWrapper } from '../page';
+import { LineMetricDataset, MetricWrapper } from '../App';
 import { calcAbsChange, calcAvg, calcStart, calcEnd } from '../inputComponents/calc';
 import { getLineNames } from '../common/lines';
 

@@ -1,9 +1,6 @@
-'use client';
-
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -26,7 +23,8 @@ import useUserDashboardInput, {
 } from './hooks/useUserDashboardInput';
 import { getLineColor, getLineNames } from './common/lines';
 import { type Line } from './common/types';
-import * as metrics from '../app/ridership.json';
+import * as metrics from './data/ridership.json';
+import sfaLogo from './assets/sfa-logo.png';
 
 export interface MetricWrapper {
   selected: boolean;
@@ -70,7 +68,7 @@ ChartJS.register(
   Legend,
 );
 
-export default function Charts() {
+function App() {
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [monthList, setMonthList] = useState<string[]>([]);
   const [expandedLineSelector, setExpandedLineSelector] =
@@ -261,8 +259,8 @@ export default function Charts() {
         <span className="ml-2">LA Metro Ridership App</span>
 
         <a href="https://www.streetsforall.org">
-          <Image
-            src="/sfa-logo.png"
+          <img
+            src={sfaLogo}
             height={48}
             width={48}
             alt="Streets for All logo"
@@ -345,3 +343,5 @@ export default function Charts() {
     </div>
   );
 }
+
+export default App
