@@ -1,5 +1,5 @@
 import randomColor from 'randomcolor';
-import * as lineMeta from '../data/metro_line_metadata_current.json';
+import lineMeta from '../data/metro_line_metadata_current.json';
 
 const definedLines = [
   {
@@ -57,7 +57,7 @@ const definedLines = [
 ];
 
 // Random colors need to be fixed so that lines colors are constant as state changes
-const randomColors = [lineMeta].map((line) => ({
+const randomColors = lineMeta.map((line) => ({
   number: line.line,
   color: randomColor({ luminosity: 'bright' }),
 }));

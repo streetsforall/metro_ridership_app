@@ -23,7 +23,7 @@ import useUserDashboardInput, {
 } from './hooks/useUserDashboardInput';
 import { getLineColor, getLineNames } from './common/lines';
 import { type Line } from './common/types';
-import * as metrics from './data/ridership.json';
+import metrics from './data/ridership.json';
 import sfaLogo from './assets/sfa-logo.png';
 
 export interface MetricWrapper {
