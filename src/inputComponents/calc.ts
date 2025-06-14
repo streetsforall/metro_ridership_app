@@ -48,7 +48,7 @@ function calcEnd(metrics: Metric[], dayOfWeek: DayOfWeek): number {
 
   const last = sorted[sorted.length - 1];
 
-  return (last[dayOfWeek] ?? 0);
+  return last[dayOfWeek] ?? 0;
 }
 
 function calcStart(metrics: Metric[], dayOfWeek: DayOfWeek): number {
@@ -61,7 +61,7 @@ function calcStart(metrics: Metric[], dayOfWeek: DayOfWeek): number {
   });
 
   const first = sorted[0];
-  return (first[dayOfWeek] ?? 0);
+  return first[dayOfWeek] ?? 0;
 }
 
 export { calcAbsChange, calcAvg, calcEnd, calcStart };

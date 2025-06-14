@@ -45,16 +45,23 @@ export default function SummaryData(props: SummaryDataProps) {
           {/* TODO: Refactor into component */}
           <div className="pane">
             <div className="flex justify-between mb-2 min-w-56 text-sm">
-              <span className="text-stone-400 uppercase whitespace-nowrap">Average Ridership</span>
+              <span className="text-stone-400 uppercase whitespace-nowrap">
+                Average Ridership
+              </span>
             </div>
-            <span aria-labelledby="avg-ridership" className="tracking-tighter text-5xl">
+            <span
+              aria-labelledby="avg-ridership"
+              className="tracking-tighter text-5xl"
+            >
               {Math.round(averageDailyRidership).toLocaleString()}
             </span>
           </div>
 
           <div className="pane">
             <div className="flex justify-between mb-2 min-w-56 text-sm">
-              <span className="text-stone-400 uppercase whitespace-nowrap">Ending Ridership</span>
+              <span className="text-stone-400 uppercase whitespace-nowrap">
+                Ending Ridership
+              </span>
 
               <span
                 aria-label="Change"
@@ -66,7 +73,10 @@ export default function SummaryData(props: SummaryDataProps) {
                 {changeInRidership.toLocaleString()}
               </span>
             </div>
-            <span aria-labelledby="cur-ridership" className="tracking-tighter text-5xl">
+            <span
+              aria-labelledby="cur-ridership"
+              className="tracking-tighter text-5xl"
+            >
               {Math.round(recentRidership).toLocaleString()}
             </span>
           </div>

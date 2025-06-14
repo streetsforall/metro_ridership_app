@@ -75,6 +75,6 @@ export function getLineNames(number: number) {
 
   return {
     current: line ? `${line.letter} Line` : `Line ${number}`,
-    ...(line && line.former && {former: `${line.former} Line`}),
+    ...(line && line.former && { former: `${line.former} Line` }),
   };
 }

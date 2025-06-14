@@ -25,7 +25,9 @@ export default function MetroLineTableRow({
   lineMetrics,
 }: MetroLineTableRowProps) {
   const [isMounted, setIsMounted] = useState<boolean>(false);
-  const [data, setData] = useState<ChartDataset<'line', Array<{time: string, stat: number}>>[]>([]);
+  const [data, setData] = useState<
+    ChartDataset<'line', Array<{ time: string; stat: number }>>[]
+  >([]);
 
   // most of these are suggested chartjs optomizations
   const options: ChartOptions<'line'> = {
@@ -60,7 +62,10 @@ export default function MetroLineTableRow({
     },
   };
 
-  const chartDataset: ChartDataset<'line', Array<{time: string, stat: number}>>[] = [];
+  const chartDataset: ChartDataset<
+    'line',
+    Array<{ time: string; stat: number }>
+  >[] = [];
 
   // fires on load
   useEffect(() => {
@@ -173,9 +178,7 @@ export default function MetroLineTableRow({
           {/* Recent ridership  */}
           {expanded && line.endingRidership && (
             <td className="text-right">
-              {line.id
-                ? Math.round(line.endingRidership).toLocaleString()
-                : 0}
+              {line.id ? Math.round(line.endingRidership).toLocaleString() : 0}
             </td>
           )}
 

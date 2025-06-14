@@ -2,7 +2,12 @@ import { useMemo, useState } from 'react';
 import { type Line, lineNameSortFunction } from '../common/types';
 import LineJsonData from '../data/metro_line_metadata_current.json';
 import type { LineMetricDataset, MetricWrapper } from '../App';
-import { calcAbsChange, calcAvg, calcStart, calcEnd } from '../inputComponents/calc';
+import {
+  calcAbsChange,
+  calcAvg,
+  calcStart,
+  calcEnd,
+} from '../inputComponents/calc';
 import { getLineNames } from '../common/lines';
 
 interface LineJson {
@@ -42,7 +47,7 @@ export const daysOfWeek = {
   Saturday: 'est_sat_ridership',
   Sunday: 'est_sun_ridership',
 } as const;
-export type DayOfWeek = typeof daysOfWeek[keyof typeof daysOfWeek];
+export type DayOfWeek = (typeof daysOfWeek)[keyof typeof daysOfWeek];
 
 /**
  * Default starting values

@@ -72,13 +72,7 @@ export default function Filters({
             value="bus"
             aria-label="Bus"
           >
-            <img
-              src={busIcon}
-              height={16}
-              width={16}
-              alt="Bus"
-              title="Bus"
-            />
+            <img src={busIcon} height={16} width={16} alt="Bus" title="Bus" />
           </ToggleGroup.Item>
           <ToggleGroup.Item
             className="toggle-group-item"
