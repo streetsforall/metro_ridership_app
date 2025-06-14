@@ -4,7 +4,7 @@ import { type Line } from '../common/types';
 import { getLineNames } from '../common/lines';
 import Filters from './filters';
 import MetroLineTableRow from './lineTableRow';
-import { LineMetricDataset, Metric, MetricWrapper } from '../App';
+import type { LineMetricDataset, Metric, MetricWrapper } from '../App';
 import downloadIcon from '../assets/download.svg';
 import listIcon from '../assets/list.svg';
 import tableIcon from '../assets/table.svg';

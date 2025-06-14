@@ -19,7 +19,7 @@ import DateRangeSelector from './inputComponents/dateRangeSelector';
 import LineSelector from './inputComponents/linesSelector';
 import SummaryData from './pureDisplayComponents/summaryData';
 import useUserDashboardInput, {
-  UserDashboardInputState,
+  type UserDashboardInputState,
 } from './hooks/useUserDashboardInput';
 import { getLineColor, getLineNames } from './common/lines';
 import { type Line } from './common/types';
@@ -112,7 +112,7 @@ function App() {
     }
 
     // Aggregate by line
-    let aggregated: LineMetricDataset = {};
+    const aggregated: LineMetricDataset = {};
 
     console.log('date range FILTER (start / end)', startDate, endDate);
 
@@ -120,7 +120,7 @@ function App() {
       const metric: Metric = metrics[i];
 
       // Filter by year
-      var newMetricDate = new Date(metric.year, metric.month);
+      const newMetricDate = new Date(metric.year, metric.month);
 
       // need to filter our date to make sure it falls in our date range
 
@@ -149,7 +149,7 @@ function App() {
 
     // Condense aggregated objects
     // add selected lines to the chart
-    let chartDataset: ChartData[] = [];
+    const chartDataset: ChartData[] = [];
 
     Object.entries(aggregated).forEach(([line, metricWrapper]) => {
       if (!metricWrapper.selected) {
@@ -276,7 +276,6 @@ function App() {
           setEndDate={setEndDate}
           dayOfWeek={dayOfWeek}
           setDayOfWeek={setDayOfWeek}
-          visibleLines={visibleLines}
         ></DateRangeSelector>
       </div>
 

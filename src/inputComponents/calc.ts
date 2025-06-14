@@ -1,5 +1,5 @@
-import { Metric } from '../App';
-import { DayOfWeek } from '../hooks/useUserDashboardInput';
+import type { Metric } from '../App';
+import type { DayOfWeek } from '../hooks/useUserDashboardInput';
 
 /**
  * Calculates average daily ridership over a series of metrics for a presumed line

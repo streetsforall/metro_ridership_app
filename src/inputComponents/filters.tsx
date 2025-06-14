@@ -22,10 +22,6 @@ export default function Filters({
 }: FiltersProps) {
   const [modes, setModes] = useState<string[]>(['bus', 'train']);
 
-  const resetVisibility = (): void => {
-    setModes(['bus', 'train']);
-  };
-
   useEffect(() => {
     // Convert modes array into separate booleans
     const busVis = modes.includes('bus');

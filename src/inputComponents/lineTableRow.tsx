@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { type ChartOptions, ChartData } from 'chart.js';
+import type { ChartOptions, ChartDataset } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import { type Line } from '../common/types';
 import { getLineColor } from '../common/lines';
-import { Metric } from '../App';
+import type { Metric } from '../App';
 import checkIcon from '../assets/check.svg';
 
 interface MetroLineTableRowProps {
@@ -25,7 +25,7 @@ export default function MetroLineTableRow({
   lineMetrics,
 }: MetroLineTableRowProps) {
   const [isMounted, setIsMounted] = useState<boolean>(false);
-  const [data, setData] = useState<ChartData[]>([]);
+  const [data, setData] = useState<ChartDataset<'line', Array<{time: string, stat: number}>>[]>([]);
 
   // most of these are suggested chartjs optomizations
   const options: ChartOptions<'line'> = {
@@ -53,10 +53,6 @@ export default function MetroLineTableRow({
       },
     },
     maintainAspectRatio: false,
-    // @ts-ignore
-    stepped: 0,
-    borderDash: [],
-    tension: false,
     responsive: true,
     parsing: {
       xAxisKey: 'time',
@@ -64,7 +60,7 @@ export default function MetroLineTableRow({
     },
   };
 
-  let chartDataset: ChartData[] = [];
+  const chartDataset: ChartDataset<'line', Array<{time: string, stat: number}>>[] = [];
 
   // fires on load
   useEffect(() => {
@@ -73,18 +69,16 @@ export default function MetroLineTableRow({
 
   // fires on change
   useEffect(() => {
-    lineMetrics
-      ? chartDataset.push({
-          // @ts-ignore
-          borderColor: getLineColor(Number(line.id)),
-          data: lineMetrics.map((metric) => ({
-            time: metric.year + ' ' + metric.month,
-            // @ts-ignore
-            stat: metric[dayOfWeek],
-          })),
-          id: Number(line),
-        })
-      : '';
+    if (lineMetrics) {
+      chartDataset.push({
+        borderColor: getLineColor(Number(line.id)),
+        data: lineMetrics.map((metric) => ({
+          time: metric.year + ' ' + metric.month,
+          //@ts-expect-error: No index signature with a parameter of type 'string'
+          stat: metric[dayOfWeek] as number,
+        })),
+      });
+    }
 
     console.log(line);
 
@@ -148,7 +142,7 @@ export default function MetroLineTableRow({
           {/* Average ridership over a duration (ex: 3 months) */}
           {expanded && line.averageRidership && (
             <td className="text-right">
-              {!!line.averageRidership
+              {line.averageRidership
                 ? Math.round(line.averageRidership).toLocaleString()
                 : 0}
             </td>
@@ -170,7 +164,7 @@ export default function MetroLineTableRow({
           {/* Starting ridership  */}
           {expanded && line.startingRidership && (
             <td className="text-right">
-              {!!line.id
+              {line.id
                 ? Math.round(line.startingRidership).toLocaleString()
                 : 0}
             </td>
@@ -179,7 +173,7 @@ export default function MetroLineTableRow({
           {/* Recent ridership  */}
           {expanded && line.endingRidership && (
             <td className="text-right">
-              {!!line.id
+              {line.id
                 ? Math.round(line.endingRidership).toLocaleString()
                 : 0}
             </td>
@@ -196,7 +190,6 @@ export default function MetroLineTableRow({
                   options={options}
                   id="row_chart"
                   data={{
-                    // @ts-ignore
                     datasets: data,
                   }}
                 />

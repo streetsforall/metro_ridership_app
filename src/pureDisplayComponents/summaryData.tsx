@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import { Fragment } from 'react';
 import { type Line } from '../common/types';
 import infoIcon from '../assets/info.svg';
 

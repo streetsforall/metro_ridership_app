@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Line, lineNameSortFunction } from '../common/types';
+import { type Line, lineNameSortFunction } from '../common/types';
 import LineJsonData from '../data/metro_line_metadata_current.json';
-import { LineMetricDataset, MetricWrapper } from '../App';
+import type { LineMetricDataset, MetricWrapper } from '../App';
 import { calcAbsChange, calcAvg, calcStart, calcEnd } from '../inputComponents/calc';
 import { getLineNames } from '../common/lines';
 
@@ -35,11 +35,14 @@ export interface UserDashboardInputState {
   selectAllVisibleLines: () => void;
 }
 
-export enum DayOfWeek {
-  Weekday = 'est_wkday_ridership',
-  Saturday = 'est_sat_ridership',
-  Sunday = 'est_sun_ridership',
-}
+// Object const instead of enum for TS 5.8
+// https://www.typescriptlang.org/docs/handbook/enums.html#objects-vs-enums
+export const daysOfWeek = {
+  Weekday: 'est_wkday_ridership',
+  Saturday: 'est_sat_ridership',
+  Sunday: 'est_sun_ridership',
+} as const;
+export type DayOfWeek = typeof daysOfWeek[keyof typeof daysOfWeek];
 
 /**
  * Default starting values
@@ -70,7 +73,7 @@ const createLinesData = (): Line[] => {
 const useUserDashboardInput = (): UserDashboardInputState => {
   const [startDate, setStartDate] = useState<Date>(DefaultStartDate);
   const [endDate, setEndDate] = useState<Date>(DefaultEndDate);
-  const [dayOfWeek, setDayOfWeek] = useState<DayOfWeek>(DayOfWeek.Weekday);
+  const [dayOfWeek, setDayOfWeek] = useState<DayOfWeek>(daysOfWeek.Weekday);
 
   const [lines, setLines] = useState<Line[]>(createLinesData);
   const [searchText, setSearchText] = useState<string>('');
