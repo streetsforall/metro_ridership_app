@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import type { ChartOptions, ChartDataset } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
 import * as Checkbox from '@radix-ui/react-checkbox';
-import { type Line } from '../common/types';
-import { getLineColor } from '../common/lines';
+import { type Line } from '../utils/lines';
+import { getLineColor } from '../utils/lines';
 import type { Metric } from '../App';
 import checkIcon from '../assets/check.svg';
 

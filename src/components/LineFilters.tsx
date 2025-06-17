@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
-import { type Line } from '../common/types';
+import { type Line } from '../utils/lines';
 import busIcon from '../assets/bus.svg';
 import magnifyingGlassIcon from '../assets/magnifying-glass.svg?url';
 import trainIcon from '../assets/train.svg';
@@ -13,7 +13,7 @@ interface FiltersProps {
   selectAllVisibleLines: () => void;
 }
 
-export default function Filters({
+export default function LineFilters({
   setLines,
   searchText,
   setSearchText,

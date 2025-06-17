@@ -1,30 +1,18 @@
-export const dynamic = 'force-dynamic';
-
 import { useState, useEffect } from 'react';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
   type ChartDataset,
-  type ChartOptions,
 } from 'chart.js';
-import { Line as LineChart } from 'react-chartjs-2';
-import colors from 'tailwindcss/colors';
-import DateRangeSelector from './inputComponents/dateRangeSelector';
-import LineSelector from './inputComponents/linesSelector';
-import SummaryData from './pureDisplayComponents/summaryData';
+import DateRangeSelector from './components/DateRangeSelector';
+import Footer from './components/Footer';
+import Header from './components/Header';
+import LineSelector from './components/LineSelector';
+import OutputArea from './components/OutputArea';
 import useUserDashboardInput, {
   type UserDashboardInputState,
 } from './hooks/useUserDashboardInput';
-import { getLineColor, getLineNames } from './common/lines';
-import { type Line } from './common/types';
+import { getLineColor, getLineNames } from './utils/lines';
+import { type Line } from './utils/lines';
 import metrics from './data/ridership.json';
-import sfaLogo from './assets/sfa-logo.png';
 
 export interface MetricWrapper {
   selected: boolean;
@@ -57,16 +45,6 @@ export type Inputs = {
   year: string;
   stat: keyof Metric;
 };
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-);
 
 function App() {
   const [chartData, setChartData] = useState<ChartData[]>([]);
@@ -208,66 +186,12 @@ function App() {
     [JSON.stringify(lineMetricDataset)],
   );
 
-  ChartJS.defaults.font.family = 'Overpass Mono Variable';
-  ChartJS.defaults.color = colors.stone['700'];
-  const options: ChartOptions<'line'> = {
-    interaction: {
-      axis: 'x',
-      includeInvisible: false,
-      intersect: true,
-      mode: 'index',
-    },
-    parsing: {
-      xAxisKey: 'time',
-      yAxisKey: 'stat',
-    },
-    responsive: true,
-    scales: {
-      x: {
-        border: {
-          color: colors.stone['700'],
-        },
-        grid: {
-          color: colors.stone['300'],
-        },
-        title: {
-          display: true,
-          text: 'MONTH',
-        },
-      },
-      y: {
-        border: {
-          color: colors.stone['700'],
-        },
-        grid: {
-          color: colors.stone['300'],
-          drawTicks: false,
-        },
-        min: 0,
-        title: {
-          display: true,
-          text: 'AVG DAILY RIDERSHIP',
-        },
-      },
-    },
-  };
-
   return (
     /* Stretch full height */
     <div className="flex flex-col min-h-screen mx-4">
-      <div className="flex items-center justify-between font-bold py-4 uppercase">
-        <span className="ml-2">LA Metro Ridership App</span>
+      <Header />
 
-        <a href="https://www.streetsforall.org">
-          <img
-            src={sfaLogo}
-            height={48}
-            width={48}
-            alt="Streets for All logo"
-          />
-        </a>
-      </div>
-
+      {/* Date range pane */}
       <div className="pane mb-4">
         <DateRangeSelector
           startDate={startDate}
@@ -283,7 +207,8 @@ function App() {
       <div
         className={`grow grid flex-col gap-4 ${expandedLineSelector ? 'lg:grid-cols-[1fr]' : 'grid-cols-[1fr] lg:grid-cols-[25%_1fr]'}`}
       >
-        {/* Hack to match sibling height - https://www.reddit.com/r/css/comments/15qu1ml/restrict_childs_height_to_parents_height_which_is/ */}
+        {/* Metro lines pane */}
+        {/* Hack to match sibling height - https://www.reddit.com/r/css/comments/15qu1ml/restrict_childs_height_to_parents_height_which_is/*/}
         <div
           className={`pane flex flex-col gap-4 h-[32rem] min-h-full w-0 min-w-full ${expandedLineSelector ? 'lg:h-auto' : 'lg:h-0'}`}
         >
@@ -301,44 +226,11 @@ function App() {
          * TODO: Change this from conditional rendering to conditional visibility; that way it doesn't rerender every time
          */}
         {!expandedLineSelector && (
-          <div className="flex flex-col gap-4 lg:min-h-[50vh]">
-            {/* Only show chart and summary metrics if something selected */}
-            {chartData.length > 0 ? (
-              <>
-                <div className="pane">
-                  <LineChart
-                    options={options}
-                    data={{
-                      labels: monthList,
-                      datasets: chartData,
-                    }}
-                  />
-                </div>
-
-                <SummaryData visibleLines={visibleLines}></SummaryData>
-              </>
-            ) : (
-              <div className="pane flex-1 flex items-center justify-center text-sm text-stone-400">
-                <p>Please select a Metro line.</p>
-              </div>
-            )}
-          </div>
+          <OutputArea datasets={chartData} months={monthList} />
         )}
       </div>
 
-      <div className="py-8 leading-relaxed text-xs">
-        <p>
-          Built with care by the{' '}
-          <a href="https://data.streetsforall.org">
-            Streets for All Data/Dev Team
-          </a>{' '}
-          with data from <a href="https://metro.net">LA Metro</a>
-        </p>
-        <p>
-          © 2025 <a href="https://streetsforall.org">Streets for All</a>
-        </p>
-        <p>🚌 🚲👩🏻‍🦽🚶🏾🌳</p>
-      </div>
+      <Footer />
     </div>
   );
 }

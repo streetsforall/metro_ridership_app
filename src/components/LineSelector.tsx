@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import lodash from 'lodash';
-import { type Line } from '../common/types';
-import { getLineNames } from '../common/lines';
-import Filters from './filters';
-import MetroLineTableRow from './lineTableRow';
+import { type Line } from '../utils/lines';
+import { getLineNames } from '../utils/lines';
+import LineFilters from './LineFilters';
+import LineTableRow from './LineTableRow';
 import type { LineMetricDataset, Metric, MetricWrapper } from '../App';
 import downloadIcon from '../assets/download.svg';
 import listIcon from '../assets/list.svg';
@@ -297,13 +297,13 @@ export default function LineSelector({
         )}
       </button>
 
-      <Filters
+      <LineFilters
         setLines={setLines}
         searchText={searchText}
         setSearchText={setSearchText}
         clearSelections={clearSelections}
         selectAllVisibleLines={selectAllVisibleLines}
-      ></Filters>
+      />
 
       {sortedLines.length ? (
         /* Overflow scroll container for non-expanded view */
@@ -347,7 +347,7 @@ export default function LineSelector({
                 const lineMetrics: MetricWrapper = lineMetricDataset[line.id];
 
                 return (
-                  <MetroLineTableRow
+                  <LineTableRow
                     lineMetrics={lineMetrics?.metrics}
                     key={line.id}
                     id={id}
@@ -355,7 +355,7 @@ export default function LineSelector({
                     line={line}
                     dayOfWeek={dayOfWeek}
                     expanded={expanded}
-                  ></MetroLineTableRow>
+                  />
                 );
               })}
             </tbody>

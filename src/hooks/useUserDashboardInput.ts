@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
-import { type Line, lineNameSortFunction } from '../common/types';
-import LineJsonData from '../data/metro_line_metadata_current.json';
 import type { LineMetricDataset, MetricWrapper } from '../App';
+import { type Line, lineNameSortFunction } from '../utils/lines';
 import {
   calcAbsChange,
   calcAvg,
   calcStart,
   calcEnd,
-} from '../inputComponents/calc';
-import { getLineNames } from '../common/lines';
+} from '../utils/calc';
+import { getLineNames } from '../utils/lines';
+import LineJsonData from '../data/metro_line_metadata_current.json';
 
 interface LineJson {
   line: number;

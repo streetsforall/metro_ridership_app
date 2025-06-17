@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { type Line } from '../common/types';
+import { type Line } from '../utils/lines';
 import infoIcon from '../assets/info.svg';
 
 interface SummaryDataProps {
