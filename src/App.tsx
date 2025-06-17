@@ -226,7 +226,7 @@ function App() {
          * TODO: Change this from conditional rendering to conditional visibility; that way it doesn't rerender every time
          */}
         {!expandedLineSelector && (
-          <OutputArea datasets={chartData} months={monthList} />
+          <OutputArea datasets={chartData} months={monthList} visibleLines={visibleLines} />
         )}
       </div>
 

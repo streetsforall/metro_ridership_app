@@ -13,9 +13,7 @@ import {
 import { Line as LineChart } from 'react-chartjs-2';
 import colors from 'tailwindcss/colors';
 import SummaryData from './SummaryData';
-import useUserDashboardInput, {
-  type UserDashboardInputState,
-} from '../hooks/useUserDashboardInput';
+import type { Line } from '../utils/lines';
 
 interface ChartLineData {
   time: string;
@@ -27,6 +25,7 @@ type ChartData = ChartDataset<'line', ChartLineData[]> & { id: number };
 interface OutputAreaProps {
   datasets: ChartData[];
   months: string[];
+  visibleLines: Line[];
 }
 
 ChartJS.register(
@@ -41,16 +40,9 @@ ChartJS.register(
 
 export default function OutputArea({
   datasets,
-  months
+  months,
+  visibleLines,
 }: OutputAreaProps) {
-
-  const userDashboardInputState: UserDashboardInputState =
-    useUserDashboardInput();
-
-  const {
-    visibleLines,
-  } = userDashboardInputState;
-
   ChartJS.defaults.font.family = 'Overpass Mono Variable';
   ChartJS.defaults.color = colors.stone['700'];
 
