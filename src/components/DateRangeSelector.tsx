@@ -25,7 +25,6 @@ export default function DateRangeSelector({
   const getDateSetter = (
     intervalEndpoint: IntervalEndpoint,
   ): React.Dispatch<React.SetStateAction<Date>> => {
-    console.log('dates', endDate, startDate);
     if (intervalEndpoint === 'end') {
       return setEndDate;
     } else if (intervalEndpoint === 'start') {
@@ -33,21 +32,19 @@ export default function DateRangeSelector({
     } else {
       const errorMessage =
         'Cannot support interval endpoint type: ' + intervalEndpoint;
-      console.error(errorMessage);
+
       throw new Error(errorMessage);
     }
   };
 
   const updateMonth = (title: IntervalEndpoint, newMonth: string) => {
-    // update month state
+    // Update month state
     const setDate = getDateSetter(title);
 
-    // Requires updater function.
+    // Requires updater function
     setDate((prevDate: Date) => {
       const newDate: Date = new Date(prevDate);
       newDate.setMonth(Number(newMonth));
-
-      console.log('new month date', title, newDate);
 
       return newDate;
     });
@@ -56,15 +53,13 @@ export default function DateRangeSelector({
   const updateYear = (title: IntervalEndpoint, newYear: string) => {
     // TODO: Add filter to make sure from is not larger than the "to" date
 
-    // update year state
+    // Update year state
     const setDate = getDateSetter(title);
 
-    // Requires updater function.
+    // Requires updater function
     setDate((prevDate: Date) => {
       const newDate: Date = new Date(prevDate);
       newDate.setFullYear(Number(newYear));
-
-      console.log('new year date', title, newDate);
 
       return newDate;
     });
@@ -138,9 +133,11 @@ export default function DateRangeSelector({
 
   return (
     <div className="flex flex-col sm:flex-row flex-wrap gap-x-16 gap-y-6">
+      {/* Interval */}
       {dateForm(startDate, 'start', 'Start')}
       {dateForm(endDate, 'end', 'End')}
 
+      {/* Day of week */}
       <fieldset>
         <legend>Day of Week</legend>
 

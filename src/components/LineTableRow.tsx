@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import type { ChartOptions, ChartDataset } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
 import * as Checkbox from '@radix-ui/react-checkbox';
-import { type Line } from '../utils/lines';
 import { getLineColor } from '../utils/lines';
-import type { Metric } from '../App';
+import type { CustomChartData } from '../@types/chart.types';
+import type { Line } from '../@types/lines.types';
+import type { RidershipRecord } from '../@types/metrics.types';
 import checkIcon from '../assets/check.svg';
 
 interface MetroLineTableRowProps {
@@ -13,7 +14,7 @@ interface MetroLineTableRowProps {
   line: Line;
   id: number;
   dayOfWeek: string;
-  lineMetrics: Metric[];
+  lineMetrics: RidershipRecord[];
 }
 
 export default function MetroLineTableRow({
@@ -25,9 +26,9 @@ export default function MetroLineTableRow({
   lineMetrics,
 }: MetroLineTableRowProps) {
   const [isMounted, setIsMounted] = useState<boolean>(false);
-  const [data, setData] = useState<
-    ChartDataset<'line', Array<{ time: string; stat: number }>>[]
-  >([]);
+  const [data, setData] = useState<ChartDataset<'line', CustomChartData[]>[]>(
+    [],
+  );
 
   // most of these are suggested chartjs optomizations
   const options: ChartOptions<'line'> = {
@@ -62,17 +63,14 @@ export default function MetroLineTableRow({
     },
   };
 
-  const chartDataset: ChartDataset<
-    'line',
-    Array<{ time: string; stat: number }>
-  >[] = [];
+  const chartDataset: ChartDataset<'line', CustomChartData[]>[] = [];
 
   // fires on load
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // fires on change
+  // Fires on change
   useEffect(() => {
     if (lineMetrics) {
       chartDataset.push({
@@ -84,8 +82,6 @@ export default function MetroLineTableRow({
         })),
       });
     }
-
-    console.log(line);
 
     setData(chartDataset);
     // eslint-disable-next-line react-hooks/exhaustive-deps

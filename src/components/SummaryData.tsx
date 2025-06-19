@@ -1,19 +1,17 @@
 import { Fragment } from 'react';
-import { type Line } from '../utils/lines';
+import type { Line } from '../@types/lines.types';
 import infoIcon from '../assets/info.svg';
 
 interface SummaryDataProps {
-  visibleLines: Line[];
+  lines: Line[];
 }
 
-export default function SummaryData(props: SummaryDataProps) {
-  const { visibleLines } = props;
-
-  const visibleAndSelectedLines = visibleLines.filter(
+export default function SummaryData({ lines }: SummaryDataProps) {
+  const selectedLines = lines.filter(
     (visibleLine: Line) => visibleLine.selected,
   );
 
-  const changeInRidership = visibleAndSelectedLines
+  const changeInRidership = selectedLines
     .map((line) => line.changeInRidership ?? 0)
     .reduce(
       (totalChangeInRidership, currLineChangeInRidership) =>
@@ -21,7 +19,7 @@ export default function SummaryData(props: SummaryDataProps) {
       0,
     );
 
-  const averageDailyRidership = visibleAndSelectedLines
+  const averageDailyRidership = selectedLines
     .map((line) => line.averageRidership ?? 0)
     .reduce(
       (totalAvgRidership, currLineAvgRidership) =>
@@ -29,7 +27,7 @@ export default function SummaryData(props: SummaryDataProps) {
       0,
     );
 
-  const recentRidership = visibleAndSelectedLines
+  const recentRidership = selectedLines
     .map((line) => line.endingRidership ?? 0)
     .reduce(
       (totalRecentRidership, currRecentRidership) =>
@@ -39,7 +37,7 @@ export default function SummaryData(props: SummaryDataProps) {
 
   return (
     <div>
-      {visibleAndSelectedLines.length > 0 && (
+      {selectedLines.length > 0 && (
         <div className="flex flex-wrap xl:flex-nowrap gap-4 items-center">
           {/* Stats */}
           {/* TODO: Refactor into component */}
@@ -86,8 +84,8 @@ export default function SummaryData(props: SummaryDataProps) {
             <p>
               <span className="font-bold mr-1">Selected:</span>
 
-              {visibleAndSelectedLines.length > 0 &&
-                visibleAndSelectedLines.map(
+              {selectedLines.length > 0 &&
+                selectedLines.map(
                   (visibleLine: Line, index: number) => {
                     const { name, id } = visibleLine;
 
@@ -95,7 +93,7 @@ export default function SummaryData(props: SummaryDataProps) {
                       <Fragment key={id}>
                         {name}
 
-                        {index !== visibleAndSelectedLines.length - 1 && ', '}
+                        {index !== selectedLines.length - 1 && ', '}
                       </Fragment>
                     );
                   },

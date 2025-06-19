@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  type ChartDataset,
-} from 'chart.js';
+import { type ChartDataset } from 'chart.js';
 import DateRangeSelector from './components/DateRangeSelector';
 import Footer from './components/Footer';
 import Header from './components/Header';
@@ -11,47 +9,23 @@ import useUserDashboardInput, {
   type UserDashboardInputState,
 } from './hooks/useUserDashboardInput';
 import { getLineColor, getLineNames } from './utils/lines';
-import { type Line } from './utils/lines';
-import metrics from './data/ridership.json';
-
-export interface MetricWrapper {
-  selected: boolean;
-  metrics: Metric[];
-}
-
-export interface Metric {
-  year: number;
-  month: number;
-  line_name: string;
-  est_wkday_ridership: number | null;
-  est_sat_ridership: number | null;
-  est_sun_ridership: number | null;
-}
-
-// Associative array with line name as key
-export interface LineMetricDataset {
-  [key: string]: MetricWrapper;
-}
-
-interface ChartLineData {
-  time: string;
-  stat: string | number | null;
-}
-
-type ChartData = ChartDataset<'line', ChartLineData[]> & { id: number };
-
-export type Inputs = {
-  lines: string[];
-  year: string;
-  stat: keyof Metric;
-};
+import type { CustomChartData } from './@types/chart.types';
+import type { Line } from './@types/lines.types';
+import type {
+  RidershipRecord,
+  AggregatedRidership,
+  AggregatedRecord,
+} from './@types/metrics.types';
+import ridershipRecords from './data/ridership.json';
 
 function App() {
-  const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [monthList, setMonthList] = useState<string[]>([]);
-  const [expandedLineSelector, setExpandedLineSelector] =
+  const [isLineSelectorExpanded, setIsLineSelectorExpanded] =
     useState<boolean>(false);
-  const [lineMetricDataset, setLineMetricDataset] = useState<LineMetricDataset>(
+  const [chartDatasets, setChartDatasets] = useState<
+    ChartDataset<'line', CustomChartData[]>[]
+  >([]);
+  const [monthList, setMonthList] = useState<string[]>([]);
+  const [ridershipByLine, setRidershipByLine] = useState<AggregatedRidership>(
     {},
   );
 
@@ -70,93 +44,76 @@ function App() {
     visibleLines,
   } = userDashboardInputState;
 
-  console.log('visibleLines', visibleLines);
-
-  // testing loads for build
-  useEffect(() => {
-    console.log('lines', lines);
-
-    console.log('metrics', metrics);
-    console.log('lineMetricDataset', lineMetricDataset);
-  }, []);
-
   /**
    * Update params on state change
    */
   useEffect((): void => {
-    if (!chartData) {
-      console.log('no chart data');
-      return;
-    }
+    if (!chartDatasets) return;
 
-    // Aggregate by line
-    const aggregated: LineMetricDataset = {};
+    /**
+     * Aggregate by line
+     */
+    const aggregatedRidership: AggregatedRidership = {};
 
-    console.log('date range FILTER (start / end)', startDate, endDate);
-
-    for (let i = 0; i < metrics.length; i++) {
-      const metric: Metric = metrics[i];
+    for (let i = 0; i < ridershipRecords.length; i++) {
+      const ridershipRecord: RidershipRecord = ridershipRecords[i];
 
       // Filter by year
-      const newMetricDate = new Date(metric.year, metric.month);
+      const newMetricDate = new Date(
+        ridershipRecord.year,
+        ridershipRecord.month,
+      );
 
-      // need to filter our date to make sure it falls in our date range
-
+      // Need to filter our date to make sure it falls in our date range
       const startCap = startDate.getTime() >= newMetricDate.getTime();
       const endCap = endDate.getTime() <= newMetricDate.getTime();
 
-      // if year false we break
+      // If year false we break
       if (startCap || endCap) continue;
 
-      if (!aggregated[metric.line_name]?.metrics) {
-        const selectedLine: boolean = !!lines.find(
-          (line: Line) => line.id === Number(metric.line_name),
+      if (!aggregatedRidership[ridershipRecord.line_name]?.ridershipRecords) {
+        const isSelected: boolean = !!lines.find(
+          (line: Line) => line.id === Number(ridershipRecord.line_name),
         )?.selected;
 
-        aggregated[metric.line_name] = {
-          selected: selectedLine,
-          metrics: [],
-        } as MetricWrapper;
+        aggregatedRidership[ridershipRecord.line_name] = {
+          selected: isSelected,
+          ridershipRecords: [],
+        } as AggregatedRecord;
       }
 
-      const metricWrapper = aggregated[metric.line_name];
-      metricWrapper.metrics.push(metric);
-
-      // console.log(metricWrapper)
+      const aggregatedRecord = aggregatedRidership[ridershipRecord.line_name];
+      aggregatedRecord.ridershipRecords.push(ridershipRecord);
     }
 
-    // Condense aggregated objects
-    // add selected lines to the chart
-    const chartDataset: ChartData[] = [];
+    /**
+     * Add selected lines to the chart
+     */
+    const datasets: ChartDataset<'line', CustomChartData[]>[] = [];
 
-    Object.entries(aggregated).forEach(([line, metricWrapper]) => {
-      if (!metricWrapper.selected) {
-        return;
-      }
+    Object.entries(aggregatedRidership).forEach(([line, aggregatedRecord]) => {
+      if (!aggregatedRecord.selected) return;
 
-      console.log('metricWrapper', metricWrapper);
-
-      chartDataset.push({
-        data: metricWrapper.metrics.map((metric) => ({
-          time: metric.year + ' ' + metric.month,
-          stat: metric[dayOfWeek],
+      datasets.push({
+        data: aggregatedRecord.ridershipRecords.map((record) => ({
+          time: record.year + ' ' + record.month,
+          stat: record[dayOfWeek],
         })),
         label: getLineNames(Number(line)).current,
-        id: Number(line),
         backgroundColor: getLineColor(Number(line)),
         borderColor: getLineColor(Number(line)),
       });
     });
 
-    // create month labels
-    const months = chartData[0] ? chartData[0].data.map((a) => a.time) : [];
+    setChartDatasets(datasets);
+
+    // Create month labels
+    const months = chartDatasets[0]
+      ? chartDatasets[0].data.map((a) => a.time)
+      : [];
     setMonthList(months);
 
-    console.log('aggregated', aggregated);
-
-    setChartData(chartDataset);
-
-    setLineMetricDataset(aggregated);
+    setRidershipByLine(aggregatedRidership);
 
     /**
      * Need to add data as dependency.
@@ -171,19 +128,18 @@ function App() {
     JSON.stringify(lines),
     dayOfWeek,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    JSON.stringify(chartData),
+    JSON.stringify(chartDatasets),
   ]);
 
   /**
-   * Calculate metric data for each line.
+   * Add calculated metrics to each line
    */
   useEffect(
     () => {
-      console.log('lineMetricDataset effect', lineMetricDataset);
-      updateLinesWithLineMetrics(lineMetricDataset);
+      updateLinesWithLineMetrics(ridershipByLine);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(lineMetricDataset)],
+    [JSON.stringify(ridershipByLine)],
   );
 
   return (
@@ -205,19 +161,19 @@ function App() {
 
       {/* Grow to fill remaining vertical space; only one column if expanded or on mobile */}
       <div
-        className={`grow grid flex-col gap-4 ${expandedLineSelector ? 'lg:grid-cols-[1fr]' : 'grid-cols-[1fr] lg:grid-cols-[25%_1fr]'}`}
+        className={`grow grid flex-col gap-4 ${isLineSelectorExpanded ? 'lg:grid-cols-[1fr]' : 'grid-cols-[1fr] lg:grid-cols-[25%_1fr]'}`}
       >
         {/* Metro lines pane */}
         {/* Hack to match sibling height - https://www.reddit.com/r/css/comments/15qu1ml/restrict_childs_height_to_parents_height_which_is/*/}
         <div
-          className={`pane flex flex-col gap-4 h-[32rem] min-h-full w-0 min-w-full ${expandedLineSelector ? 'lg:h-auto' : 'lg:h-0'}`}
+          className={`pane flex flex-col gap-4 h-[32rem] min-h-full w-0 min-w-full ${isLineSelectorExpanded ? 'lg:h-auto' : 'lg:h-0'}`}
         >
           <LineSelector
             {...userDashboardInputState}
-            lineMetricDataset={lineMetricDataset}
-            expanded={expandedLineSelector}
-            setExpanded={setExpandedLineSelector}
             lines={visibleLines}
+            ridershipByLine={ridershipByLine}
+            expanded={isLineSelectorExpanded}
+            setExpanded={setIsLineSelectorExpanded}
           />
         </div>
 
@@ -225,8 +181,12 @@ function App() {
          * Only show right side if line selector not selected
          * TODO: Change this from conditional rendering to conditional visibility; that way it doesn't rerender every time
          */}
-        {!expandedLineSelector && (
-          <OutputArea datasets={chartData} months={monthList} visibleLines={visibleLines} />
+        {!isLineSelectorExpanded && (
+          <OutputArea
+            chartDatasets={chartDatasets}
+            months={monthList}
+            lines={lines}
+          />
         )}
       </div>
 

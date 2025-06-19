@@ -13,19 +13,13 @@ import {
 import { Line as LineChart } from 'react-chartjs-2';
 import colors from 'tailwindcss/colors';
 import SummaryData from './SummaryData';
-import type { Line } from '../utils/lines';
-
-interface ChartLineData {
-  time: string;
-  stat: string | number | null;
-}
-
-type ChartData = ChartDataset<'line', ChartLineData[]> & { id: number };
+import type { CustomChartData } from '../@types/chart.types';
+import type { Line } from '../@types/lines.types';
 
 interface OutputAreaProps {
-  datasets: ChartData[];
+  chartDatasets: ChartDataset<'line', CustomChartData[]>[];
   months: string[];
-  visibleLines: Line[];
+  lines: Line[];
 }
 
 ChartJS.register(
@@ -39,9 +33,9 @@ ChartJS.register(
 );
 
 export default function OutputArea({
-  datasets,
+  chartDatasets,
   months,
-  visibleLines,
+  lines,
 }: OutputAreaProps) {
   ChartJS.defaults.font.family = 'Overpass Mono Variable';
   ChartJS.defaults.color = colors.stone['700'];
@@ -91,7 +85,7 @@ export default function OutputArea({
   return (
     <div className="flex flex-col gap-4 lg:min-h-[50vh]">
       {/* Only show chart and summary metrics if something selected */}
-      {datasets.length > 0 ? (
+      {chartDatasets.length > 0 ? (
         <>
           {/* Chart pane */}
           <div className="pane">
@@ -99,12 +93,12 @@ export default function OutputArea({
               options={options}
               data={{
                 labels: months,
-                datasets,
+                datasets: chartDatasets,
               }}
             />
           </div>
 
-          <SummaryData visibleLines={visibleLines} />
+          <SummaryData lines={lines} />
         </>
       ) : (
         /* Chart pane */

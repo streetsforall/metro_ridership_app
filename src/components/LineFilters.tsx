@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
-import { type Line } from '../utils/lines';
+import type { Line } from '../@types/lines.types';
 import busIcon from '../assets/bus.svg';
-import magnifyingGlassIcon from '../assets/magnifying-glass.svg?url';
+import magnifyingGlassIcon from '../assets/magnifying-glass.svg';
 import trainIcon from '../assets/train.svg';
 
-interface FiltersProps {
+interface LineFiltersProps {
   setLines: React.Dispatch<React.SetStateAction<Line[]>>;
   searchText: string;
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
@@ -19,7 +19,7 @@ export default function LineFilters({
   setSearchText,
   clearSelections,
   selectAllVisibleLines,
-}: FiltersProps) {
+}: LineFiltersProps) {
   const [modes, setModes] = useState<string[]>(['bus', 'train']);
 
   useEffect(() => {

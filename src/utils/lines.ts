@@ -1,27 +1,7 @@
 import randomColor from 'randomcolor';
 import lineMeta from '../data/metro_line_metadata_current.json';
-
-/**
- * Refers to mode of transit like bus, rail, etc.
- */
-export type Mode = 'Bus' | 'Rail';
-
-export interface Line {
-  id: number;
-  name: string;
-  former?: string;
-  mode: Mode;
-  provider: 'DO' | 'PT';
-  selected: boolean;
-  visible: boolean;
-  averageRidership?: number;
-  changeInRidership?: number;
-  ridershipOverTime?: number;
-  startingRidership?: number;
-  endingRidership?: number;
-  division?: number;
-  viewMap?: string;
-}
+import type { Line } from '../@types/lines.types';
+import type { AggregatedRidership } from '../@types/metrics.types';
 
 const definedLines = [
   {
@@ -128,4 +108,48 @@ export const lineNameSortFunction = (a: Line, b: Line) => {
 
   // Names must be equal
   return 0;
+};
+
+/**
+ * From https://stackoverflow.com/a/14966131.
+ *
+ * Warning: Looks like it doesn't work for large dataset.
+ * May return a NETWORK_INVALID_REQUEST.
+ * Will need to have CSV export logic in a backend when that happens.
+ */
+export const generateCSV = (ridershipByLine: AggregatedRidership): string => {
+  let csvContent = 'data:text/csv;charset=utf-8,';
+
+  // Add headers to CSV.
+  const headers =
+    'line_name,year,month,est_wkday_ridership,est_sat_ridership,est_sun_ridership\r\n';
+  csvContent += headers;
+
+  // Get selected lines
+  const ridershipBySelectedLine = Object.values(ridershipByLine).filter(
+    (line) => line.selected,
+  );
+
+  // For each line, get all line metric and add to CSV
+  ridershipBySelectedLine.forEach((aggregatedRecord) => {
+    aggregatedRecord.ridershipRecords.forEach((record) => {
+      const {
+        year,
+        month,
+        line_name,
+        est_wkday_ridership,
+        est_sat_ridership,
+        est_sun_ridership,
+      } = record;
+
+      const friendly_line_name = getLineNames(Number(line_name)).current;
+
+      const row: string = `${friendly_line_name},${year},${month},${est_wkday_ridership},${est_sat_ridership},${est_sun_ridership}`;
+      csvContent += row + '\r\n';
+    });
+  });
+
+  const encodedUri: string = encodeURI(csvContent);
+
+  return encodedUri;
 };
