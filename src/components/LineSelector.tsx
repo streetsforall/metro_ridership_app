@@ -155,6 +155,7 @@ export default function LineSelector({
           (columnState: ColumnHeaderState, index: number) => {
             if (columnState.key === key) {
               targetColumnHeaderIndex = index;
+
               return true;
             }
 
@@ -224,6 +225,7 @@ export default function LineSelector({
     <>
       {/* Expand button */}
       <button
+        type="button"
         onClick={onExpandClick}
         className="self-end bg-transparent border-none hover:opacity-80 p-0"
       >
@@ -265,7 +267,7 @@ export default function LineSelector({
               <thead className="sticky top-0">
                 <tr>
                   {columnHeaderStates.map(
-                    (columnHeaderState: ColumnHeaderState, index: number) => {
+                    (columnHeaderState: ColumnHeaderState) => {
                       let sortClass = '';
 
                       if (columnHeaderState.sortDirection === 'asc') {
@@ -276,7 +278,7 @@ export default function LineSelector({
 
                       return (
                         <th
-                          key={index}
+                          key={columnHeaderState.key}
                           className={`bg-stone-300 cursor-pointer p-2 max-w-24 uppercase text-${columnHeaderState.align} ${sortClass}`}
                           onClick={(): void =>
                             onSortLabelClick(columnHeaderState.key)

@@ -30,8 +30,7 @@ export default function DateRangeSelector({
     } else if (intervalEndpoint === 'start') {
       return setStartDate;
     } else {
-      const errorMessage =
-        'Cannot support interval endpoint type: ' + intervalEndpoint;
+      const errorMessage = `Cannot support interval endpoint type: ${String(intervalEndpoint)}`;
 
       throw new Error(errorMessage);
     }

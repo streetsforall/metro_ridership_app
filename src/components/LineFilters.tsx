@@ -92,6 +92,7 @@ export default function LineFilters({
 
       <div className="flex gap-4">
         <button
+          type="button"
           onClick={selectAllVisibleLines}
           className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
         >
@@ -99,6 +100,7 @@ export default function LineFilters({
         </button>
 
         <button
+          type="button"
           onClick={clearSelections}
           className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
         >
