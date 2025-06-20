@@ -1,5 +1,5 @@
-import { Metric } from '../page';
-import { DayOfWeek } from '../hooks/useUserDashboardInput';
+import type { RidershipRecord } from '../@types/metrics.types';
+import type { DayOfWeek } from '../hooks/useUserDashboardInput';
 
 /**
  * Calculates average daily ridership over a series of metrics for a presumed line
@@ -7,7 +7,7 @@ import { DayOfWeek } from '../hooks/useUserDashboardInput';
  * @param dayOfWeek Day of week enum in question
  * @returns Calculated average daily ridership
  */
-function calcAvg(metrics: Metric[], dayOfWeek: DayOfWeek): number {
+function calcAvg(metrics: RidershipRecord[], dayOfWeek: DayOfWeek): number {
   const count = metrics.length;
   const sum = metrics.reduce((prev, curr) => {
     return prev + (curr[dayOfWeek] ?? 0);
@@ -22,7 +22,7 @@ function calcAvg(metrics: Metric[], dayOfWeek: DayOfWeek): number {
  * @param dayOfWeek Day of week enum in question
  * @returns Calculated difference in daily ridership
  */
-function calcAbsChange(metrics: Metric[], dayOfWeek: DayOfWeek): number {
+function calcAbsChange(metrics: RidershipRecord[], dayOfWeek: DayOfWeek): number {
   const sorted = metrics.sort((a, b) => {
     if (a.year === b.year) {
       return a.month - b.month;
@@ -37,7 +37,7 @@ function calcAbsChange(metrics: Metric[], dayOfWeek: DayOfWeek): number {
   return (last[dayOfWeek] ?? 0) - (first[dayOfWeek] ?? 0);
 }
 
-function calcEnd(metrics: Metric[], dayOfWeek: DayOfWeek): number {
+function calcEnd(metrics: RidershipRecord[], dayOfWeek: DayOfWeek): number {
   const sorted = metrics.sort((a, b) => {
     if (a.year === b.year) {
       return a.month - b.month;
@@ -48,10 +48,10 @@ function calcEnd(metrics: Metric[], dayOfWeek: DayOfWeek): number {
 
   const last = sorted[sorted.length - 1];
 
-  return (last[dayOfWeek] ?? 0);
+  return last[dayOfWeek] ?? 0;
 }
 
-function calcStart(metrics: Metric[], dayOfWeek: DayOfWeek): number {
+function calcStart(metrics: RidershipRecord[], dayOfWeek: DayOfWeek): number {
   const sorted = metrics.sort((a, b) => {
     if (a.year === b.year) {
       return a.month - b.month;
@@ -61,7 +61,7 @@ function calcStart(metrics: Metric[], dayOfWeek: DayOfWeek): number {
   });
 
   const first = sorted[0];
-  return (first[dayOfWeek] ?? 0);
+  return first[dayOfWeek] ?? 0;
 }
 
 export { calcAbsChange, calcAvg, calcEnd, calcStart };

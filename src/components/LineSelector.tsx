@@ -1,33 +1,22 @@
-'use client';
-
 import { useMemo, useState } from 'react';
-import Image from 'next/image';
 import lodash from 'lodash';
-import { type Line } from '../common/types';
-import { getLineNames } from '../common/lines';
-import Filters from './filters';
-import MetroLineTableRow from './lineTableRow';
-import { LineMetricDataset, Metric, MetricWrapper } from '../page';
+import LineFilters from './LineFilters';
+import LineTableRow from './LineTableRow';
+import { generateCSV } from '../utils/lines';
+import type { Line } from '../@types/lines.types';
+import type {
+  AggregatedRidership,
+  AggregatedRecord,
+} from '../@types/metrics.types';
+import downloadIcon from '../assets/download.svg';
+import listIcon from '../assets/list.svg';
+import tableIcon from '../assets/table.svg';
 
-interface LineSelectorProps {
-  lineMetricDataset: LineMetricDataset;
-  lines: Line[];
-  setLines: React.Dispatch<React.SetStateAction<Line[]>>;
-  onToggleSelectLine: (line: Line) => void;
-  expanded: boolean;
-  dayOfWeek: string;
-  setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
-  searchText: string;
-  setSearchText: React.Dispatch<React.SetStateAction<string>>;
-  clearSelections: () => void;
-  selectAllVisibleLines: () => void;
-}
-
-// lazy load data rows
+// TODO: Lazy load data rows
 // const MetroLineTableRow = dynamic(() => import('./metroLineTableRow'),
 // { ssr: false})
 
-type sortDirection = 'asc' | 'desc' | false;
+type SortDirection = 'asc' | 'desc' | false;
 
 type LineKey = keyof Line;
 
@@ -35,7 +24,7 @@ interface ColumnHeaderState {
   label: string;
   key: LineKey;
   align?: 'center' | 'left' | 'right' | 'inherit' | 'justify';
-  sortDirection: sortDirection;
+  sortDirection: SortDirection;
 }
 
 const columnStates: ColumnHeaderState[] = [
@@ -100,7 +89,7 @@ const columnStates: ColumnHeaderState[] = [
   // },
 ];
 
-const toggleSortDirection = (sortDirection: sortDirection): sortDirection => {
+const toggleSortDirection = (sortDirection: SortDirection): SortDirection => {
   if (!sortDirection) {
     return 'asc';
   } else if (sortDirection === 'asc') {
@@ -112,8 +101,22 @@ const toggleSortDirection = (sortDirection: sortDirection): sortDirection => {
   }
 };
 
+interface LineSelectorProps {
+  ridershipByLine: AggregatedRidership;
+  lines: Line[];
+  setLines: React.Dispatch<React.SetStateAction<Line[]>>;
+  onToggleSelectLine: (line: Line) => void;
+  expanded: boolean;
+  dayOfWeek: string;
+  setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
+  searchText: string;
+  setSearchText: React.Dispatch<React.SetStateAction<string>>;
+  clearSelections: () => void;
+  selectAllVisibleLines: () => void;
+}
+
 export default function LineSelector({
-  lineMetricDataset,
+  ridershipByLine,
   lines,
   setLines,
   dayOfWeek,
@@ -134,10 +137,8 @@ export default function LineSelector({
     });
   };
 
-  console.log(lines);
-
   /**
-   * Only changes header column states.
+   * Only changes header column states
    * @param key
    */
   const onSortLabelClick = (key: LineKey): void => {
@@ -146,7 +147,7 @@ export default function LineSelector({
         ...prevColumnHeaderStates,
       ];
 
-      // Find column header to update.
+      // Find column header to update
       let targetColumnHeaderIndex: number = -1;
 
       let targetColumnHeader: ColumnHeaderState | undefined =
@@ -154,6 +155,7 @@ export default function LineSelector({
           (columnState: ColumnHeaderState, index: number) => {
             if (columnState.key === key) {
               targetColumnHeaderIndex = index;
+
               return true;
             }
 
@@ -161,23 +163,23 @@ export default function LineSelector({
           },
         );
 
-      // If we could not find column header, then no operations.
+      // If we could not find column header, then no operations
       if (!targetColumnHeader || targetColumnHeaderIndex < 0) {
         return latestColumnHeaderStates;
       }
 
-      // Create new object to keep pure function.
+      // Create new object to keep pure function
       targetColumnHeader = { ...targetColumnHeader };
 
-      // Update column header.
+      // Update column header
       targetColumnHeader.sortDirection = toggleSortDirection(
         targetColumnHeader.sortDirection,
       );
 
-      // Update column header states with updated column header.
+      // Update column header states with updated column header
       latestColumnHeaderStates[targetColumnHeaderIndex] = targetColumnHeader;
 
-      // Clear sort direction for other columns not being updated.
+      // Clear sort direction for other columns not being updated
       latestColumnHeaderStates = latestColumnHeaderStates.map(
         (columnHeaderState: ColumnHeaderState, index: number) => {
           if (index !== targetColumnHeaderIndex) {
@@ -193,119 +195,66 @@ export default function LineSelector({
   };
 
   const sortedLines: Line[] = useMemo(() => {
-    // Get column headers that have a sort direction (ex: asc, desc).
+    // Get column headers that have a sort direction (ex: asc, desc)
     const sortableColumnHeaders: ColumnHeaderState[] =
       columnHeaderStates.filter(
         (columnHeaderState: ColumnHeaderState) =>
           !!columnHeaderState.sortDirection,
       );
 
-    // If no sort direction is specified, just use original sorted legislators.
+    // If no sort direction is specified, just use original sorted lines
     if (sortableColumnHeaders.length === 0) {
       return lines;
     }
 
-    // Get values needed to sort legislators via lodash.
+    // Get values needed to sort lines via lodash
     const sortKeys: LineKey[] = sortableColumnHeaders.map(
       (columnHeaderState: ColumnHeaderState) => columnHeaderState.key,
     );
-    const sortDirections: sortDirection[] = sortableColumnHeaders.map(
+    const sortDirections: SortDirection[] = sortableColumnHeaders.map(
       (columnHeaderState: ColumnHeaderState) => columnHeaderState.sortDirection,
     );
 
-    // Sort lines.
+    // Sort lines
     return lodash.orderBy(lines, sortKeys, sortDirections);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(columnHeaderStates), JSON.stringify(lines), dayOfWeek]);
 
-  console.log('lines', lines);
-  console.log('sortedLines', sortedLines);
-
-  /**
-   * From https://stackoverflow.com/a/14966131.
-   *
-   * Warning: Looks like it doesn't work for large dataset.
-   * May return a NETWORK_INVALID_REQUEST.
-   * Will need to have CSV export logic in a backend when that happens.
-   */
-  const csvDownload = (): string => {
-    let csvContent = 'data:text/csv;charset=utf-8,';
-
-    // Add headers to CSV.
-    const headers =
-      'line_name,year,month,est_wkday_ridership,est_sat_ridership,est_sun_ridership\r\n';
-    csvContent += headers;
-
-    // Add line data: get selected lines.
-    const linesData: MetricWrapper[] = lines
-      .filter((line: Line) => line.selected && lineMetricDataset[line.id])
-      .map((line: Line) => {
-        const lineMetricWrapper: MetricWrapper = lineMetricDataset[
-          line.id
-        ] as MetricWrapper;
-
-        return lineMetricWrapper;
-      });
-
-    // Add line data: for each line, get all line metric and add to CSV.
-    linesData.forEach((lineMetricWrapper: MetricWrapper) => {
-      lineMetricWrapper.metrics.forEach((metric: Metric) => {
-        const {
-          year,
-          month,
-          line_name,
-          est_wkday_ridership,
-          est_sat_ridership,
-          est_sun_ridership,
-        } = metric;
-
-        const friendly_line_name = getLineNames(Number(line_name)).current;
-
-        const row: string = `${friendly_line_name},${year},${month},${est_wkday_ridership},${est_sat_ridership},${est_sun_ridership}`;
-        csvContent += row + '\r\n';
-      });
-    });
-
-    const encodedUri: string = encodeURI(csvContent);
-    return encodedUri;
-  };
-
   return (
     <>
       {/* Expand button */}
       <button
+        type="button"
         onClick={onExpandClick}
         className="self-end bg-transparent border-none hover:opacity-80 p-0"
       >
         {expanded ? (
-          <Image
-            src="/list.svg"
+          <img
+            src={listIcon}
             alt="Collapse to list view"
             title="Collapse to list view"
             height={16}
             width={16}
-            unoptimized
           />
         ) : (
-          <Image
-            src="/table.svg"
+          <img
+            src={tableIcon}
             alt="Expand to table view"
             title="Expand to table view"
             height={16}
             width={16}
-            unoptimized
           />
         )}
       </button>
 
-      <Filters
+      <LineFilters
         setLines={setLines}
         searchText={searchText}
         setSearchText={setSearchText}
         clearSelections={clearSelections}
         selectAllVisibleLines={selectAllVisibleLines}
-      ></Filters>
+      />
 
       {sortedLines.length ? (
         /* Overflow scroll container for non-expanded view */
@@ -318,7 +267,7 @@ export default function LineSelector({
               <thead className="sticky top-0">
                 <tr>
                   {columnHeaderStates.map(
-                    (columnHeaderState: ColumnHeaderState, index: number) => {
+                    (columnHeaderState: ColumnHeaderState) => {
                       let sortClass = '';
 
                       if (columnHeaderState.sortDirection === 'asc') {
@@ -329,7 +278,7 @@ export default function LineSelector({
 
                       return (
                         <th
-                          key={index}
+                          key={columnHeaderState.key}
                           className={`bg-stone-300 cursor-pointer p-2 max-w-24 uppercase text-${columnHeaderState.align} ${sortClass}`}
                           onClick={(): void =>
                             onSortLabelClick(columnHeaderState.key)
@@ -346,18 +295,18 @@ export default function LineSelector({
 
             <tbody>
               {sortedLines.map((line, id) => {
-                const lineMetrics: MetricWrapper = lineMetricDataset[line.id];
+                const lineMetrics: AggregatedRecord = ridershipByLine[line.id];
 
                 return (
-                  <MetroLineTableRow
-                    lineMetrics={lineMetrics?.metrics}
+                  <LineTableRow
+                    lineMetrics={lineMetrics?.ridershipRecords}
                     key={line.id}
                     id={id}
                     onToggleSelectLine={onToggleSelectLine}
                     line={line}
                     dayOfWeek={dayOfWeek}
                     expanded={expanded}
-                  ></MetroLineTableRow>
+                  />
                 );
               })}
             </tbody>
@@ -370,17 +319,16 @@ export default function LineSelector({
       )}
 
       <a
-        href={csvDownload()}
+        href={generateCSV(ridershipByLine)}
         download="metro_ridership.csv"
         className="button flex gap-2 items-center justify-center"
       >
         Download selected data as CSV
-        <Image
-          src="/download.svg"
+        <img
+          src={downloadIcon}
           height={16}
           width={16}
           alt=""
-          unoptimized
           className="recolor-white"
         />
       </a>

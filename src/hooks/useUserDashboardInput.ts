@@ -1,15 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Line, lineNameSortFunction } from '../common/types';
+import { calcAbsChange, calcAvg, calcStart, calcEnd } from '../utils/calc';
+import { getLineNames, lineNameSortFunction } from '../utils/lines';
+import type { Line, LineJson } from '../@types/lines.types';
+import type {
+  AggregatedRidership,
+  AggregatedRecord,
+} from '../@types/metrics.types';
 import LineJsonData from '../data/metro_line_metadata_current.json';
-import { LineMetricDataset, MetricWrapper } from '../page';
-import { calcAbsChange, calcAvg, calcStart, calcEnd } from '../inputComponents/calc';
-import { getLineNames } from '../common/lines';
-
-interface LineJson {
-  line: number;
-  mode: string;
-  provider: string;
-}
 
 export interface UserDashboardInputState {
   startDate: Date;
@@ -31,15 +28,18 @@ export interface UserDashboardInputState {
 
   onToggleSelectLine: (line: Line) => void;
   clearSelections: () => void;
-  updateLinesWithLineMetrics: (lineMetricDataset: LineMetricDataset) => void;
+  updateLinesWithLineMetrics: (ridershipByLine: AggregatedRidership) => void;
   selectAllVisibleLines: () => void;
 }
 
-export enum DayOfWeek {
-  Weekday = 'est_wkday_ridership',
-  Saturday = 'est_sat_ridership',
-  Sunday = 'est_sun_ridership',
-}
+// Object const instead of enum for TS 5.8
+// https://www.typescriptlang.org/docs/handbook/enums.html#objects-vs-enums
+export const daysOfWeek = {
+  Weekday: 'est_wkday_ridership',
+  Saturday: 'est_sat_ridership',
+  Sunday: 'est_sun_ridership',
+} as const;
+export type DayOfWeek = (typeof daysOfWeek)[keyof typeof daysOfWeek];
 
 /**
  * Default starting values
@@ -50,7 +50,6 @@ const DefaultEndDate: Date = new Date(2024, 4);
 const createLinesData = (): Line[] => {
   return (LineJsonData as LineJson[])
     .map((line: LineJson) => {
-      console.log(line);
       return {
         ...line,
         id: line.line,
@@ -70,10 +69,58 @@ const createLinesData = (): Line[] => {
 const useUserDashboardInput = (): UserDashboardInputState => {
   const [startDate, setStartDate] = useState<Date>(DefaultStartDate);
   const [endDate, setEndDate] = useState<Date>(DefaultEndDate);
-  const [dayOfWeek, setDayOfWeek] = useState<DayOfWeek>(DayOfWeek.Weekday);
+  const [dayOfWeek, setDayOfWeek] = useState<DayOfWeek>(daysOfWeek.Weekday);
 
   const [lines, setLines] = useState<Line[]>(createLinesData);
   const [searchText, setSearchText] = useState<string>('');
+
+  /**
+   * Use the aggregated metrics to add additional metrics to line metadata
+   * @param ridershipByLine
+   */
+  const updateLinesWithLineMetrics = (
+    ridershipByLine: AggregatedRidership,
+  ): void => {
+    setLines((prevLines: Line[]): Line[] =>
+      prevLines.map((prevLine: Line) => {
+        const updatedLine: Line = { ...prevLine };
+
+        // Check if ridership metrics exist for line
+        const aggregatedRecord: AggregatedRecord | undefined =
+          ridershipByLine[updatedLine.id];
+
+        if (!aggregatedRecord) {
+          updatedLine.averageRidership = undefined;
+          updatedLine.changeInRidership = undefined;
+
+          return updatedLine;
+        }
+
+        // Calculate metrics for each line
+        updatedLine.averageRidership = calcAvg(
+          aggregatedRecord.ridershipRecords,
+          dayOfWeek,
+        );
+
+        updatedLine.changeInRidership = calcAbsChange(
+          aggregatedRecord.ridershipRecords,
+          dayOfWeek,
+        );
+
+        updatedLine.startingRidership = calcStart(
+          aggregatedRecord.ridershipRecords,
+          dayOfWeek,
+        );
+
+        updatedLine.endingRidership = calcEnd(
+          aggregatedRecord.ridershipRecords,
+          dayOfWeek,
+        );
+
+        return updatedLine;
+      }),
+    );
+  };
 
   const isVisibleLine = (line: Line): boolean => {
     if (searchText) {
@@ -129,49 +176,6 @@ const useUserDashboardInput = (): UserDashboardInputState => {
       });
     });
   };
-
-  const updateLinesWithLineMetrics = (
-    lineMetricDataset: LineMetricDataset,
-  ): void => {
-    setLines((prevLines: Line[]): Line[] => {
-      return prevLines.map((prevLine: Line) => {
-        const updatedLine: Line = { ...prevLine };
-
-        // Check if metrics exist for line.
-        const lineMetricWrapper: MetricWrapper | undefined =
-          lineMetricDataset[updatedLine.id];
-        if (!lineMetricWrapper) {
-          updatedLine.averageRidership = undefined;
-          updatedLine.changeInRidership = undefined;
-          return updatedLine;
-        }
-
-        // Calculate metric data for each line.
-        updatedLine.averageRidership = calcAvg(
-          lineMetricWrapper.metrics,
-          dayOfWeek,
-        );
-        updatedLine.changeInRidership = calcAbsChange(
-          lineMetricWrapper.metrics,
-          dayOfWeek,
-        );
-
-        updatedLine.startingRidership = calcStart(
-          lineMetricWrapper.metrics,
-          dayOfWeek,
-        );
-
-        updatedLine.endingRidership = calcEnd(
-          lineMetricWrapper.metrics,
-          dayOfWeek,
-        );
-
-        return updatedLine;
-      });
-    });
-  };
-
-  console.log('dashboard lines', lines);
 
   return {
     startDate,

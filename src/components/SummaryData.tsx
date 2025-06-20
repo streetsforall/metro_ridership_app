@@ -1,21 +1,17 @@
-'use client';
-
-import React, { Fragment } from 'react';
-import Image from 'next/image';
-import { type Line } from '../common/types';
+import { Fragment } from 'react';
+import type { Line } from '../@types/lines.types';
+import infoIcon from '../assets/info.svg';
 
 interface SummaryDataProps {
-  visibleLines: Line[];
+  lines: Line[];
 }
 
-export default function SummaryData(props: SummaryDataProps) {
-  const { visibleLines } = props;
-
-  const visibleAndSelectedLines = visibleLines.filter(
+export default function SummaryData({ lines }: SummaryDataProps) {
+  const selectedLines = lines.filter(
     (visibleLine: Line) => visibleLine.selected,
   );
 
-  const changeInRidership = visibleAndSelectedLines
+  const changeInRidership = selectedLines
     .map((line) => line.changeInRidership ?? 0)
     .reduce(
       (totalChangeInRidership, currLineChangeInRidership) =>
@@ -23,7 +19,7 @@ export default function SummaryData(props: SummaryDataProps) {
       0,
     );
 
-  const averageDailyRidership = visibleAndSelectedLines
+  const averageDailyRidership = selectedLines
     .map((line) => line.averageRidership ?? 0)
     .reduce(
       (totalAvgRidership, currLineAvgRidership) =>
@@ -31,7 +27,7 @@ export default function SummaryData(props: SummaryDataProps) {
       0,
     );
 
-  const recentRidership = visibleAndSelectedLines
+  const recentRidership = selectedLines
     .map((line) => line.endingRidership ?? 0)
     .reduce(
       (totalRecentRidership, currRecentRidership) =>
@@ -41,22 +37,29 @@ export default function SummaryData(props: SummaryDataProps) {
 
   return (
     <div>
-      {visibleAndSelectedLines.length > 0 && (
+      {selectedLines.length > 0 && (
         <div className="flex flex-wrap xl:flex-nowrap gap-4 items-center">
           {/* Stats */}
           {/* TODO: Refactor into component */}
           <div className="pane">
             <div className="flex justify-between mb-2 min-w-56 text-sm">
-              <span className="text-stone-400 uppercase whitespace-nowrap">Average Ridership</span>
+              <span className="text-stone-400 uppercase whitespace-nowrap">
+                Average Ridership
+              </span>
             </div>
-            <span aria-labelledby="avg-ridership" className="tracking-tighter text-5xl">
+            <span
+              aria-labelledby="avg-ridership"
+              className="tracking-tighter text-5xl"
+            >
               {Math.round(averageDailyRidership).toLocaleString()}
             </span>
           </div>
 
           <div className="pane">
             <div className="flex justify-between mb-2 min-w-56 text-sm">
-              <span className="text-stone-400 uppercase whitespace-nowrap">Ending Ridership</span>
+              <span className="text-stone-400 uppercase whitespace-nowrap">
+                Ending Ridership
+              </span>
 
               <span
                 aria-label="Change"
@@ -68,7 +71,10 @@ export default function SummaryData(props: SummaryDataProps) {
                 {changeInRidership.toLocaleString()}
               </span>
             </div>
-            <span aria-labelledby="cur-ridership" className="tracking-tighter text-5xl">
+            <span
+              aria-labelledby="cur-ridership"
+              className="tracking-tighter text-5xl"
+            >
               {Math.round(recentRidership).toLocaleString()}
             </span>
           </div>
@@ -78,8 +84,8 @@ export default function SummaryData(props: SummaryDataProps) {
             <p>
               <span className="font-bold mr-1">Selected:</span>
 
-              {visibleAndSelectedLines.length > 0 &&
-                visibleAndSelectedLines.map(
+              {selectedLines.length > 0 &&
+                selectedLines.map(
                   (visibleLine: Line, index: number) => {
                     const { name, id } = visibleLine;
 
@@ -87,7 +93,7 @@ export default function SummaryData(props: SummaryDataProps) {
                       <Fragment key={id}>
                         {name}
 
-                        {index !== visibleAndSelectedLines.length - 1 && ', '}
+                        {index !== selectedLines.length - 1 && ', '}
                       </Fragment>
                     );
                   },
@@ -95,12 +101,11 @@ export default function SummaryData(props: SummaryDataProps) {
             </p>
 
             <div className="flex gap-2 items-start">
-              <Image
-                src="/info.svg"
+              <img
+                src={infoIcon}
                 height={20}
                 width={20}
                 alt=""
-                unoptimized
                 className="mt-1"
               />
               <p>

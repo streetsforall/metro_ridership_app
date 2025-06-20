@@ -1,7 +1,5 @@
-'use client';
-
 import * as RadioGroup from '@radix-ui/react-radio-group';
-import { DayOfWeek } from '../hooks/useUserDashboardInput';
+import { daysOfWeek, type DayOfWeek } from '../hooks/useUserDashboardInput';
 
 export interface DateRangeSelectorProps {
   startDate: Date;
@@ -12,8 +10,6 @@ export interface DateRangeSelectorProps {
 
   dayOfWeek: DayOfWeek;
   setDayOfWeek: React.Dispatch<React.SetStateAction<DayOfWeek>>;
-
-  visibleLines: Array<any>;
 }
 
 type IntervalEndpoint = 'start' | 'end';
@@ -26,63 +22,46 @@ export default function DateRangeSelector({
   dayOfWeek,
   setDayOfWeek,
 }: DateRangeSelectorProps) {
-  const getMonthYearString = (date: Date): string => {
-    const monthName: (date?: number | Date | undefined) => string =
-      new Intl.DateTimeFormat('en-US', {
-        month: 'long',
-      }).format;
-    var month = monthName(date); // ex: "July"
-
-    return `${month} ${date?.getFullYear()}`;
-  };
-
   const getDateSetter = (
     intervalEndpoint: IntervalEndpoint,
   ): React.Dispatch<React.SetStateAction<Date>> => {
-    console.log('dates', endDate, startDate);
     if (intervalEndpoint === 'end') {
       return setEndDate;
     } else if (intervalEndpoint === 'start') {
       return setStartDate;
     } else {
-      const errorMessage =
-        'Cannot support interval endpoint type: ' + intervalEndpoint;
-      console.error(errorMessage);
+      const errorMessage = `Cannot support interval endpoint type: ${String(intervalEndpoint)}`;
+
       throw new Error(errorMessage);
     }
   };
 
   const updateMonth = (title: IntervalEndpoint, newMonth: string) => {
-    // update month state
+    // Update month state
     const setDate = getDateSetter(title);
 
-    // Requires updater function.
+    // Requires updater function
     setDate((prevDate: Date) => {
       const newDate: Date = new Date(prevDate);
       newDate.setMonth(Number(newMonth));
-
-      console.log('new month date', title, newDate);
 
       return newDate;
     });
   };
 
   const updateYear = (title: IntervalEndpoint, newYear: string) => {
-    // need to add filter to make sure from is not larger than the "to" date
-    if (true) {
-      // update year state
-      const setDate = getDateSetter(title);
+    // TODO: Add filter to make sure from is not larger than the "to" date
 
-      // Requires updater function.
-      setDate((prevDate: Date) => {
-        const newDate: Date = new Date(prevDate);
-        newDate.setFullYear(Number(newYear));
+    // Update year state
+    const setDate = getDateSetter(title);
 
-        console.log('new year date', title, newDate);
+    // Requires updater function
+    setDate((prevDate: Date) => {
+      const newDate: Date = new Date(prevDate);
+      newDate.setFullYear(Number(newYear));
 
-        return newDate;
-      });
-    }
+      return newDate;
+    });
   };
 
   const dateForm = (
@@ -153,9 +132,11 @@ export default function DateRangeSelector({
 
   return (
     <div className="flex flex-col sm:flex-row flex-wrap gap-x-16 gap-y-6">
+      {/* Interval */}
       {dateForm(startDate, 'start', 'Start')}
       {dateForm(endDate, 'end', 'End')}
 
+      {/* Day of week */}
       <fieldset>
         <legend>Day of Week</legend>
 
@@ -167,7 +148,7 @@ export default function DateRangeSelector({
             setDayOfWeek(v as DayOfWeek);
           }}
         >
-          {Object.entries(DayOfWeek).map(([name, key]) => {
+          {Object.entries(daysOfWeek).map(([name, key]) => {
             return (
               <div key={key} className="flex items-center">
                 <RadioGroup.Item
