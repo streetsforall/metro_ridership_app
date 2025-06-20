@@ -1,3 +1,9 @@
+export interface LineJson {
+  line: number;
+  mode: string;
+  provider: string;
+}
+
 export interface Line {
   id: number;
   name: string;

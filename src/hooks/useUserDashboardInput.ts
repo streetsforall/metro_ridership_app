@@ -1,18 +1,12 @@
 import { useMemo, useState } from 'react';
 import { calcAbsChange, calcAvg, calcStart, calcEnd } from '../utils/calc';
 import { getLineNames, lineNameSortFunction } from '../utils/lines';
-import type { Line } from '../@types/lines.types';
+import type { Line, LineJson } from '../@types/lines.types';
 import type {
   AggregatedRidership,
   AggregatedRecord,
 } from '../@types/metrics.types';
 import LineJsonData from '../data/metro_line_metadata_current.json';
-
-interface LineJson {
-  line: number;
-  mode: string;
-  provider: string;
-}
 
 export interface UserDashboardInputState {
   startDate: Date;
