@@ -85,19 +85,17 @@ export default function SummaryData({ lines }: SummaryDataProps) {
               <span className="font-bold mr-1">Selected:</span>
 
               {selectedLines.length > 0 &&
-                selectedLines.map(
-                  (visibleLine: Line, index: number) => {
-                    const { name, id } = visibleLine;
+                selectedLines.map((visibleLine: Line, index: number) => {
+                  const { name, id } = visibleLine;
 
-                    return (
-                      <Fragment key={id}>
-                        {name}
+                  return (
+                    <Fragment key={id}>
+                      {name}
 
-                        {index !== selectedLines.length - 1 && ', '}
-                      </Fragment>
-                    );
-                  },
-                )}
+                      {index !== selectedLines.length - 1 && ', '}
+                    </Fragment>
+                  );
+                })}
             </p>
 
             <div className="flex gap-2 items-start">

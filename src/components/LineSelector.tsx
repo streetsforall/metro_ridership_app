@@ -113,23 +113,27 @@ interface LineSelectorProps {
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
   clearSelections: () => void;
   selectAllVisibleLines: () => void;
+  toggleShowAggregateLines: () => void;
 }
 
-export default function LineSelector({
-  ridershipByLine,
-  lines,
-  setLines,
-  dayOfWeek,
-  onToggleSelectLine,
-  expanded,
-  setExpanded,
-  searchText,
-  setSearchText,
-  clearSelections,
-  selectAllVisibleLines,
-}: LineSelectorProps) {
+export default function LineSelector(props: LineSelectorProps) {
   const [columnHeaderStates, setColumnHeaderStates] =
     useState<ColumnHeaderState[]>(columnStates);
+
+  const {
+    ridershipByLine,
+    lines,
+    setLines,
+    dayOfWeek,
+    onToggleSelectLine,
+    expanded,
+    setExpanded,
+    searchText,
+    setSearchText,
+    clearSelections,
+    selectAllVisibleLines,
+    toggleShowAggregateLines,
+  } = props;
 
   const onExpandClick = (): void => {
     setExpanded((prevExpanded: boolean) => {
@@ -254,6 +258,7 @@ export default function LineSelector({
         setSearchText={setSearchText}
         clearSelections={clearSelections}
         selectAllVisibleLines={selectAllVisibleLines}
+        toggleShowAggregateLines={toggleShowAggregateLines}
       />
 
       {sortedLines.length ? (

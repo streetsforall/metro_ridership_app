@@ -42,7 +42,15 @@ function App() {
     setEndDate,
     updateLinesWithLineMetrics,
     visibleLines,
+    showAggregateLines,
   } = userDashboardInputState;
+
+  const createTimeStringForChartData = (
+    year: number,
+    month: number,
+  ): string => {
+    return year + ' ' + month;
+  };
 
   /**
    * Update params on state change
@@ -96,7 +104,7 @@ function App() {
 
       datasets.push({
         data: aggregatedRecord.ridershipRecords.map((record) => ({
-          time: record.year + ' ' + record.month,
+          time: createTimeStringForChartData(record.year, record.month),
           stat: record[dayOfWeek],
         })),
         label: getLineNames(Number(line)).current,
@@ -105,13 +113,47 @@ function App() {
       });
     });
 
-    setChartDatasets(datasets);
-
     // Create month labels
     const months = chartDatasets[0]
       ? chartDatasets[0].data.map((a) => a.time)
       : [];
     setMonthList(months);
+
+    /**
+     * Add aggregate lines to chart dataset if applicable.
+     */
+    if (showAggregateLines) {
+      const aggregateDateToStatMap: CustomChartData[] = [];
+
+      datasets.forEach((chartDataset) => {
+        chartDataset.data.forEach(
+          (timeStatDataPoint: CustomChartData, index: number) => {
+            const { time, stat } = timeStatDataPoint;
+
+            let customChartData: CustomChartData =
+              aggregateDateToStatMap[index];
+            if (!customChartData) {
+              customChartData = { time: time, stat: 0 };
+              aggregateDateToStatMap[index] = customChartData;
+            }
+
+            customChartData.stat += stat;
+          },
+        );
+      });
+
+      datasets.push({
+        data: aggregateDateToStatMap,
+        label: 'Aggregate Line',
+        backgroundColor: getLineColor(-1),
+        borderColor: getLineColor(-2),
+      });
+    }
+
+    /**
+     * Update state for chart dataset
+     */
+    setChartDatasets(datasets);
 
     setRidershipByLine(aggregatedRidership);
 
@@ -129,6 +171,7 @@ function App() {
     dayOfWeek,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(chartDatasets),
+    showAggregateLines,
   ]);
 
   /**
