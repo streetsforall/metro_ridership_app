@@ -26,6 +26,9 @@ export interface UserDashboardInputState {
 
   visibleLines: Line[];
 
+  showAggregateLines: boolean;
+  toggleShowAggregateLines: () => void;
+
   onToggleSelectLine: (line: Line) => void;
   clearSelections: () => void;
   updateLinesWithLineMetrics: (ridershipByLine: AggregatedRidership) => void;
@@ -73,6 +76,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
 
   const [lines, setLines] = useState<Line[]>(createLinesData);
   const [searchText, setSearchText] = useState<string>('');
+
+  const [showAggregateLines, setShowAggregateLines] = useState<boolean>(true);
 
   /**
    * Use the aggregated metrics to add additional metrics to line metadata
@@ -177,6 +182,12 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     });
   };
 
+  const toggleShowAggregateLines = (): void => {
+    setShowAggregateLines(
+      (prevShowAggregateLine: boolean) => !prevShowAggregateLine,
+    );
+  };
+
   return {
     startDate,
     setStartDate,
@@ -187,6 +198,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     lines,
     setLines,
     visibleLines,
+    showAggregateLines,
+    toggleShowAggregateLines,
     searchText,
     setSearchText,
     onToggleSelectLine,

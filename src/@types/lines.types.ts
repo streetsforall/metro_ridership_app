@@ -19,4 +19,6 @@ export interface Line {
   endingRidership?: number;
   division?: number;
   viewMap?: string;
+  isAggregate?: boolean;
+  aggregatedLines?: number[];
 }

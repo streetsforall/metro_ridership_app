@@ -11,6 +11,7 @@ interface LineFiltersProps {
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
   clearSelections: () => void;
   selectAllVisibleLines: () => void;
+  toggleShowAggregateLines: () => void;
 }
 
 export default function LineFilters({
@@ -19,6 +20,7 @@ export default function LineFilters({
   setSearchText,
   clearSelections,
   selectAllVisibleLines,
+  toggleShowAggregateLines,
 }: LineFiltersProps) {
   const [modes, setModes] = useState<string[]>(['bus', 'train']);
 
@@ -105,6 +107,10 @@ export default function LineFilters({
           className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
         >
           Clear All
+        </button>
+
+        <button onClick={toggleShowAggregateLines} type="button">
+          Show Aggregate
         </button>
       </div>
 
