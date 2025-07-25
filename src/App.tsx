@@ -106,7 +106,7 @@ function App() {
         data: aggregatedRecord.ridershipRecords.map((record) => ({
           time: createTimeStringForChartData(record.year, record.month),
           stat: record[dayOfWeek],
-        })),
+        })) as CustomChartData[],
         label: getLineNames(Number(line)).current,
         backgroundColor: getLineColor(Number(line)),
         borderColor: getLineColor(Number(line)),
