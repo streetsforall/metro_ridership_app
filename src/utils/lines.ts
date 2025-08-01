@@ -1,7 +1,7 @@
 import randomColor from 'randomcolor';
 import lineMeta from '../data/metro_line_metadata_current.json';
 import type { Line } from '../@types/lines.types';
-import type { AggregatedRidership } from '../@types/metrics.types';
+import type { ConsolidatedRidership } from '../@types/metrics.types';
 
 const definedLines = [
   {
@@ -117,7 +117,7 @@ export const lineNameSortFunction = (a: Line, b: Line) => {
  * May return a NETWORK_INVALID_REQUEST.
  * Will need to have CSV export logic in a backend when that happens.
  */
-export const generateCSV = (ridershipByLine: AggregatedRidership): string => {
+export const generateCSV = (ridershipByLine: ConsolidatedRidership): string => {
   let csvContent = 'data:text/csv;charset=utf-8,';
 
   // Add headers to CSV.
@@ -131,8 +131,8 @@ export const generateCSV = (ridershipByLine: AggregatedRidership): string => {
   );
 
   // For each line, get all line metric and add to CSV
-  ridershipBySelectedLine.forEach((aggregatedRecord) => {
-    aggregatedRecord.ridershipRecords.forEach((record) => {
+  ridershipBySelectedLine.forEach((consolidatedRecord) => {
+    consolidatedRecord.ridershipRecords.forEach((record) => {
       const {
         year,
         month,
