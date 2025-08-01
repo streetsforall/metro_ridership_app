@@ -113,6 +113,7 @@ interface LineSelectorProps {
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
   clearSelections: () => void;
   selectAllVisibleLines: () => void;
+  showAggregateLines: boolean;
   toggleShowAggregateLines: () => void;
 }
 
@@ -132,6 +133,7 @@ export default function LineSelector(props: LineSelectorProps) {
     setSearchText,
     clearSelections,
     selectAllVisibleLines,
+    showAggregateLines,
     toggleShowAggregateLines,
   } = props;
 
@@ -258,6 +260,7 @@ export default function LineSelector(props: LineSelectorProps) {
         setSearchText={setSearchText}
         clearSelections={clearSelections}
         selectAllVisibleLines={selectAllVisibleLines}
+        showAggregateLines={showAggregateLines}
         toggleShowAggregateLines={toggleShowAggregateLines}
       />
 

@@ -144,7 +144,7 @@ function App() {
 
       datasets.push({
         data: aggregateDateToStatMap,
-        label: 'Aggregate Line',
+        label: 'Aggregate',
         backgroundColor: getLineColor(-1),
         borderColor: getLineColor(-2),
       });
