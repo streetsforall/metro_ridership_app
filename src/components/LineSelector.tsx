@@ -5,8 +5,8 @@ import LineTableRow from './LineTableRow';
 import { generateCSV } from '../utils/lines';
 import type { Line } from '../@types/lines.types';
 import type {
-  AggregatedRidership,
-  AggregatedRecord,
+  ConsolidatedRecord,
+  ConsolidatedRidership,
 } from '../@types/metrics.types';
 import downloadIcon from '../assets/download.svg';
 import listIcon from '../assets/list.svg';
@@ -102,7 +102,7 @@ const toggleSortDirection = (sortDirection: SortDirection): SortDirection => {
 };
 
 interface LineSelectorProps {
-  ridershipByLine: AggregatedRidership;
+  ridershipByLine: ConsolidatedRidership;
   lines: Line[];
   setLines: React.Dispatch<React.SetStateAction<Line[]>>;
   onToggleSelectLine: (line: Line) => void;
@@ -303,7 +303,8 @@ export default function LineSelector(props: LineSelectorProps) {
 
             <tbody>
               {sortedLines.map((line, id) => {
-                const lineMetrics: AggregatedRecord = ridershipByLine[line.id];
+                const lineMetrics: ConsolidatedRecord =
+                  ridershipByLine[line.id];
 
                 return (
                   <LineTableRow

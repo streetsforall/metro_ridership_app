@@ -12,9 +12,9 @@ import { getLineColor, getLineNames } from './utils/lines';
 import type { CustomChartData } from './@types/chart.types';
 import type { Line } from './@types/lines.types';
 import type {
+  ConsolidatedRecord,
+  ConsolidatedRidership,
   RidershipRecord,
-  AggregatedRidership,
-  AggregatedRecord,
 } from './@types/metrics.types';
 import ridershipRecords from './data/ridership.json';
 
@@ -25,7 +25,7 @@ function App() {
     ChartDataset<'line', CustomChartData[]>[]
   >([]);
   const [monthList, setMonthList] = useState<string[]>([]);
-  const [ridershipByLine, setRidershipByLine] = useState<AggregatedRidership>(
+  const [ridershipByLine, setRidershipByLine] = useState<ConsolidatedRidership>(
     {},
   );
 
@@ -59,9 +59,9 @@ function App() {
     if (!chartDatasets) return;
 
     /**
-     * Aggregate by line
+     * Consolidate by line
      */
-    const aggregatedRidership: AggregatedRidership = {};
+    const consolidatedRidership: ConsolidatedRidership = {};
 
     for (let i = 0; i < ridershipRecords.length; i++) {
       const ridershipRecord: RidershipRecord = ridershipRecords[i];
@@ -79,19 +79,19 @@ function App() {
       // If year false we break
       if (startCap || endCap) continue;
 
-      if (!aggregatedRidership[ridershipRecord.line_name]?.ridershipRecords) {
+      if (!consolidatedRidership[ridershipRecord.line_name]?.ridershipRecords) {
         const isSelected: boolean = !!lines.find(
           (line: Line) => line.id === Number(ridershipRecord.line_name),
         )?.selected;
 
-        aggregatedRidership[ridershipRecord.line_name] = {
+        consolidatedRidership[ridershipRecord.line_name] = {
           selected: isSelected,
           ridershipRecords: [],
-        } as AggregatedRecord;
+        } as ConsolidatedRecord;
       }
 
-      const aggregatedRecord = aggregatedRidership[ridershipRecord.line_name];
-      aggregatedRecord.ridershipRecords.push(ridershipRecord);
+      const consolidatedRecord = consolidatedRidership[ridershipRecord.line_name];
+      consolidatedRecord.ridershipRecords.push(ridershipRecord);
     }
 
     /**
@@ -99,11 +99,11 @@ function App() {
      */
     const datasets: ChartDataset<'line', CustomChartData[]>[] = [];
 
-    Object.entries(aggregatedRidership).forEach(([line, aggregatedRecord]) => {
-      if (!aggregatedRecord.selected) return;
+    Object.entries(consolidatedRidership).forEach(([line, consolidatedRecord]) => {
+      if (!consolidatedRecord.selected) return;
 
       datasets.push({
-        data: aggregatedRecord.ridershipRecords.map((record) => ({
+        data: consolidatedRecord.ridershipRecords.map((record) => ({
           time: createTimeStringForChartData(record.year, record.month),
           stat: record[dayOfWeek],
         })) as CustomChartData[],
@@ -155,7 +155,7 @@ function App() {
      */
     setChartDatasets(datasets);
 
-    setRidershipByLine(aggregatedRidership);
+    setRidershipByLine(consolidatedRidership);
 
     /**
      * Need to add data as dependency.
