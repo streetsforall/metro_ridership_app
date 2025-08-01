@@ -3,8 +3,8 @@ import { calcAbsChange, calcAvg, calcStart, calcEnd } from '../utils/calc';
 import { getLineNames, lineNameSortFunction } from '../utils/lines';
 import type { Line, LineJson } from '../@types/lines.types';
 import type {
-  AggregatedRidership,
-  AggregatedRecord,
+  ConsolidatedRecord,
+  ConsolidatedRidership,
 } from '../@types/metrics.types';
 import LineJsonData from '../data/metro_line_metadata_current.json';
 
@@ -26,12 +26,12 @@ export interface UserDashboardInputState {
 
   visibleLines: Line[];
 
-  showAggregateLines: boolean;
-  toggleShowAggregateLines: () => void;
+  isAggregateVisible: boolean;
+  toggleIsAggregateVisible: () => void;
 
   onToggleSelectLine: (line: Line) => void;
   clearSelections: () => void;
-  updateLinesWithLineMetrics: (ridershipByLine: AggregatedRidership) => void;
+  updateLinesWithLineMetrics: (ridershipByLine: ConsolidatedRidership) => void;
   selectAllVisibleLines: () => void;
 }
 
@@ -77,24 +77,24 @@ const useUserDashboardInput = (): UserDashboardInputState => {
   const [lines, setLines] = useState<Line[]>(createLinesData);
   const [searchText, setSearchText] = useState<string>('');
 
-  const [showAggregateLines, setShowAggregateLines] = useState<boolean>(true);
+  const [isAggregateVisible, setIsAggregateVisible] = useState<boolean>(false);
 
   /**
    * Use the aggregated metrics to add additional metrics to line metadata
    * @param ridershipByLine
    */
   const updateLinesWithLineMetrics = (
-    ridershipByLine: AggregatedRidership,
+    ridershipByLine: ConsolidatedRidership,
   ): void => {
     setLines((prevLines: Line[]): Line[] =>
       prevLines.map((prevLine: Line) => {
         const updatedLine: Line = { ...prevLine };
 
         // Check if ridership metrics exist for line
-        const aggregatedRecord: AggregatedRecord | undefined =
+        const consolidatedRecord: ConsolidatedRecord | undefined =
           ridershipByLine[updatedLine.id];
 
-        if (!aggregatedRecord) {
+        if (!consolidatedRecord) {
           updatedLine.averageRidership = undefined;
           updatedLine.changeInRidership = undefined;
 
@@ -103,22 +103,22 @@ const useUserDashboardInput = (): UserDashboardInputState => {
 
         // Calculate metrics for each line
         updatedLine.averageRidership = calcAvg(
-          aggregatedRecord.ridershipRecords,
+          consolidatedRecord.ridershipRecords,
           dayOfWeek,
         );
 
         updatedLine.changeInRidership = calcAbsChange(
-          aggregatedRecord.ridershipRecords,
+          consolidatedRecord.ridershipRecords,
           dayOfWeek,
         );
 
         updatedLine.startingRidership = calcStart(
-          aggregatedRecord.ridershipRecords,
+          consolidatedRecord.ridershipRecords,
           dayOfWeek,
         );
 
         updatedLine.endingRidership = calcEnd(
-          aggregatedRecord.ridershipRecords,
+          consolidatedRecord.ridershipRecords,
           dayOfWeek,
         );
 
@@ -182,9 +182,9 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     });
   };
 
-  const toggleShowAggregateLines = (): void => {
-    setShowAggregateLines(
-      (prevShowAggregateLine: boolean) => !prevShowAggregateLine,
+  const toggleIsAggregateVisible = (): void => {
+    setIsAggregateVisible(
+      (prevIsAggregateVisible: boolean) => !prevIsAggregateVisible,
     );
   };
 
@@ -198,8 +198,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     lines,
     setLines,
     visibleLines,
-    showAggregateLines,
-    toggleShowAggregateLines,
+    isAggregateVisible,
+    toggleIsAggregateVisible,
     searchText,
     setSearchText,
     onToggleSelectLine,

@@ -9,13 +9,13 @@ The data is generally categorized into two different types:
 - Line metadata contains summary data at the bus/rail line level, such as the line identifier and method of operation.
 - Ridership metrics are the monthly records of each line, with average daily ridership for weekdays, Saturdays, and Sundays.
 
-In order to be utilized in the chart, ridership metrics are converted from a flat structure into one that is aggregated by line (see `@types/metrics.types.ts`). Furthermore, in order to display the metrics in the line summary table, additional data is added to the line metadata based on calculations made on each line's aggregated metrics (see `@types/lines.types.ts`).
+In order to be utilized in the chart, ridership metrics are converted from a flat structure into one that is consolidated by line (see `@types/metrics.types.ts`). Furthermore, in order to display the metrics in the line summary table, additional data is added to the line metadata based on calculations made on each line's consolidated metrics (see `@types/lines.types.ts`).
 
 The general process of loading and transforming relevant data is as follows:
 
 1. Load lines and assemble JSON with `createLinesData()` in `useUserDashboardInput.ts`.
-2. Aggregate metrics by line in `App.tsx`.
-3. In `App.tsx`, using the aggregated metrics, call `updateLinesWithLineMetrics()` in `hooks/useUserDashboardInput.ts` to add summary metrics to each line.
+2. Consolidate metrics by line in `App.tsx`.
+3. In `App.tsx`, using the consolidated metrics, call `updateLinesWithLineMetrics()` in `hooks/useUserDashboardInput.ts` to add summary metrics to each line.
 
 ## Adding/updating metrics
 

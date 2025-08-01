@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import * as Checkbox from '@radix-ui/react-checkbox';
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
 import type { Line } from '../@types/lines.types';
 import busIcon from '../assets/bus.svg';
+import checkIcon from '../assets/check.svg';
 import magnifyingGlassIcon from '../assets/magnifying-glass.svg';
 import trainIcon from '../assets/train.svg';
 
@@ -11,7 +13,8 @@ interface LineFiltersProps {
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
   clearSelections: () => void;
   selectAllVisibleLines: () => void;
-  toggleShowAggregateLines: () => void;
+  isAggregateVisible: boolean;
+  toggleIsAggregateVisible: () => void;
 }
 
 export default function LineFilters({
@@ -20,7 +23,8 @@ export default function LineFilters({
   setSearchText,
   clearSelections,
   selectAllVisibleLines,
-  toggleShowAggregateLines,
+  isAggregateVisible,
+  toggleIsAggregateVisible,
 }: LineFiltersProps) {
   const [modes, setModes] = useState<string[]>(['bus', 'train']);
 
@@ -93,25 +97,46 @@ export default function LineFilters({
       </div>
 
       <div className="flex gap-4">
-        <button
-          type="button"
-          onClick={selectAllVisibleLines}
-          className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
-        >
-          Select All
-        </button>
+        <div className="flex flex-grow gap-4">
+          <button
+            type="button"
+            onClick={selectAllVisibleLines}
+            className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
+          >
+            Select All
+          </button>
 
-        <button
-          type="button"
-          onClick={clearSelections}
-          className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
-        >
-          Clear All
-        </button>
+          <button
+            type="button"
+            onClick={clearSelections}
+            className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
+          >
+            Clear All
+          </button>
+        </div>
 
-        <button onClick={toggleShowAggregateLines} type="button">
-          Show Aggregate
-        </button>
+        <label
+          className="flex items-center gap-2 cursor-pointer text-xs"
+          htmlFor="aggregate"
+        >
+          <Checkbox.Root
+            id="aggregate"
+            onClick={toggleIsAggregateVisible}
+            checked={isAggregateVisible}
+            className="flex items-center justify-center bg-white data-[state=checked]:bg-[#033056] rounded p-0 h-5 w-5"
+          >
+            <Checkbox.Indicator>
+              <img
+                src={checkIcon}
+                height={20}
+                width={20}
+                alt="Check"
+                className="recolor-white"
+              />
+            </Checkbox.Indicator>
+          </Checkbox.Root>
+          Aggregate
+        </label>
       </div>
 
       {/* not needed untill we have more toggles */}

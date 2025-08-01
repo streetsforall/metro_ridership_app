@@ -1,9 +1,9 @@
 // Associative array with line name as key
-export interface AggregatedRidership {
-  [key: string]: AggregatedRecord;
+export interface ConsolidatedRidership {
+  [key: string]: ConsolidatedRecord;
 }
 
-export interface AggregatedRecord {
+export interface ConsolidatedRecord {
   selected: boolean;
   ridershipRecords: RidershipRecord[];
 }

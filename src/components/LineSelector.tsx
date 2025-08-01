@@ -5,8 +5,8 @@ import LineTableRow from './LineTableRow';
 import { generateCSV } from '../utils/lines';
 import type { Line } from '../@types/lines.types';
 import type {
-  AggregatedRidership,
-  AggregatedRecord,
+  ConsolidatedRecord,
+  ConsolidatedRidership,
 } from '../@types/metrics.types';
 import downloadIcon from '../assets/download.svg';
 import listIcon from '../assets/list.svg';
@@ -102,18 +102,19 @@ const toggleSortDirection = (sortDirection: SortDirection): SortDirection => {
 };
 
 interface LineSelectorProps {
-  ridershipByLine: AggregatedRidership;
+  ridershipByLine: ConsolidatedRidership;
   lines: Line[];
   setLines: React.Dispatch<React.SetStateAction<Line[]>>;
   onToggleSelectLine: (line: Line) => void;
-  expanded: boolean;
+  isExpanded: boolean;
   dayOfWeek: string;
-  setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsExpanded: React.Dispatch<React.SetStateAction<boolean>>;
   searchText: string;
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
   clearSelections: () => void;
   selectAllVisibleLines: () => void;
-  toggleShowAggregateLines: () => void;
+  isAggregateVisible: boolean;
+  toggleIsAggregateVisible: () => void;
 }
 
 export default function LineSelector(props: LineSelectorProps) {
@@ -126,18 +127,19 @@ export default function LineSelector(props: LineSelectorProps) {
     setLines,
     dayOfWeek,
     onToggleSelectLine,
-    expanded,
-    setExpanded,
+    isExpanded,
+    setIsExpanded,
     searchText,
     setSearchText,
     clearSelections,
     selectAllVisibleLines,
-    toggleShowAggregateLines,
+    isAggregateVisible,
+    toggleIsAggregateVisible,
   } = props;
 
   const onExpandClick = (): void => {
-    setExpanded((prevExpanded: boolean) => {
-      return !prevExpanded;
+    setIsExpanded((prevIsExpanded: boolean) => {
+      return !prevIsExpanded;
     });
   };
 
@@ -233,7 +235,7 @@ export default function LineSelector(props: LineSelectorProps) {
         onClick={onExpandClick}
         className="self-end bg-transparent border-none hover:opacity-80 p-0"
       >
-        {expanded ? (
+        {isExpanded ? (
           <img
             src={listIcon}
             alt="Collapse to list view"
@@ -258,17 +260,18 @@ export default function LineSelector(props: LineSelectorProps) {
         setSearchText={setSearchText}
         clearSelections={clearSelections}
         selectAllVisibleLines={selectAllVisibleLines}
-        toggleShowAggregateLines={toggleShowAggregateLines}
+        isAggregateVisible={isAggregateVisible}
+        toggleIsAggregateVisible={toggleIsAggregateVisible}
       />
 
       {sortedLines.length ? (
         /* Overflow scroll container for non-expanded view */
         <div
-          className={`${expanded ? 'overflow-x-auto lg:overflow-visible' : 'overflow-y-auto'}`}
+          className={`${isExpanded ? 'overflow-x-auto lg:overflow-visible' : 'overflow-y-auto'}`}
         >
           <table className="text-sm w-full">
             {/* Only show table header when line selector is expanded */}
-            {expanded && (
+            {isExpanded && (
               <thead className="sticky top-0">
                 <tr>
                   {columnHeaderStates.map(
@@ -300,7 +303,8 @@ export default function LineSelector(props: LineSelectorProps) {
 
             <tbody>
               {sortedLines.map((line, id) => {
-                const lineMetrics: AggregatedRecord = ridershipByLine[line.id];
+                const lineMetrics: ConsolidatedRecord =
+                  ridershipByLine[line.id];
 
                 return (
                   <LineTableRow
@@ -310,7 +314,7 @@ export default function LineSelector(props: LineSelectorProps) {
                     onToggleSelectLine={onToggleSelectLine}
                     line={line}
                     dayOfWeek={dayOfWeek}
-                    expanded={expanded}
+                    isExpanded={isExpanded}
                   />
                 );
               })}
