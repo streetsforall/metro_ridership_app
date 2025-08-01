@@ -42,7 +42,7 @@ function App() {
     setEndDate,
     updateLinesWithLineMetrics,
     visibleLines,
-    showAggregateLines,
+    isAggregateVisible,
   } = userDashboardInputState;
 
   const createTimeStringForChartData = (
@@ -90,7 +90,8 @@ function App() {
         } as ConsolidatedRecord;
       }
 
-      const consolidatedRecord = consolidatedRidership[ridershipRecord.line_name];
+      const consolidatedRecord =
+        consolidatedRidership[ridershipRecord.line_name];
       consolidatedRecord.ridershipRecords.push(ridershipRecord);
     }
 
@@ -99,19 +100,21 @@ function App() {
      */
     const datasets: ChartDataset<'line', CustomChartData[]>[] = [];
 
-    Object.entries(consolidatedRidership).forEach(([line, consolidatedRecord]) => {
-      if (!consolidatedRecord.selected) return;
+    Object.entries(consolidatedRidership).forEach(
+      ([line, consolidatedRecord]) => {
+        if (!consolidatedRecord.selected) return;
 
-      datasets.push({
-        data: consolidatedRecord.ridershipRecords.map((record) => ({
-          time: createTimeStringForChartData(record.year, record.month),
-          stat: record[dayOfWeek],
-        })) as CustomChartData[],
-        label: getLineNames(Number(line)).current,
-        backgroundColor: getLineColor(Number(line)),
-        borderColor: getLineColor(Number(line)),
-      });
-    });
+        datasets.push({
+          data: consolidatedRecord.ridershipRecords.map((record) => ({
+            time: createTimeStringForChartData(record.year, record.month),
+            stat: record[dayOfWeek],
+          })) as CustomChartData[],
+          label: getLineNames(Number(line)).current,
+          backgroundColor: getLineColor(Number(line)),
+          borderColor: getLineColor(Number(line)),
+        });
+      },
+    );
 
     // Create month labels
     const months = chartDatasets[0]
@@ -122,7 +125,7 @@ function App() {
     /**
      * Add aggregate lines to chart dataset if applicable.
      */
-    if (showAggregateLines) {
+    if (isAggregateVisible) {
       const aggregateDateToStatMap: CustomChartData[] = [];
 
       datasets.forEach((chartDataset) => {
@@ -171,7 +174,7 @@ function App() {
     dayOfWeek,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(chartDatasets),
-    showAggregateLines,
+    isAggregateVisible,
   ]);
 
   /**
@@ -215,8 +218,8 @@ function App() {
             {...userDashboardInputState}
             lines={visibleLines}
             ridershipByLine={ridershipByLine}
-            expanded={isLineSelectorExpanded}
-            setExpanded={setIsLineSelectorExpanded}
+            isExpanded={isLineSelectorExpanded}
+            setIsExpanded={setIsLineSelectorExpanded}
           />
         </div>
 

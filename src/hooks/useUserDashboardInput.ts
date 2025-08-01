@@ -26,8 +26,8 @@ export interface UserDashboardInputState {
 
   visibleLines: Line[];
 
-  showAggregateLines: boolean;
-  toggleShowAggregateLines: () => void;
+  isAggregateVisible: boolean;
+  toggleIsAggregateVisible: () => void;
 
   onToggleSelectLine: (line: Line) => void;
   clearSelections: () => void;
@@ -77,7 +77,7 @@ const useUserDashboardInput = (): UserDashboardInputState => {
   const [lines, setLines] = useState<Line[]>(createLinesData);
   const [searchText, setSearchText] = useState<string>('');
 
-  const [showAggregateLines, setShowAggregateLines] = useState<boolean>(false);
+  const [isAggregateVisible, setIsAggregateVisible] = useState<boolean>(false);
 
   /**
    * Use the aggregated metrics to add additional metrics to line metadata
@@ -182,9 +182,9 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     });
   };
 
-  const toggleShowAggregateLines = (): void => {
-    setShowAggregateLines(
-      (prevShowAggregateLine: boolean) => !prevShowAggregateLine,
+  const toggleIsAggregateVisible = (): void => {
+    setIsAggregateVisible(
+      (prevIsAggregateVisible: boolean) => !prevIsAggregateVisible,
     );
   };
 
@@ -198,8 +198,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     lines,
     setLines,
     visibleLines,
-    showAggregateLines,
-    toggleShowAggregateLines,
+    isAggregateVisible,
+    toggleIsAggregateVisible,
     searchText,
     setSearchText,
     onToggleSelectLine,

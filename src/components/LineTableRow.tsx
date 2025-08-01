@@ -10,7 +10,7 @@ import checkIcon from '../assets/check.svg';
 
 interface MetroLineTableRowProps {
   onToggleSelectLine: (line: Line) => void;
-  expanded?: boolean;
+  isExpanded?: boolean;
   line: Line;
   id: number;
   dayOfWeek: string;
@@ -20,7 +20,7 @@ interface MetroLineTableRowProps {
 export default function MetroLineTableRow({
   onToggleSelectLine,
   line,
-  expanded,
+  isExpanded,
   dayOfWeek,
   id,
   lineMetrics,
@@ -102,7 +102,7 @@ export default function MetroLineTableRow({
           <td className="text-right text-stone-400 w-10">{id}</td>
 
           {/* Is Selected */}
-          <td className={expanded ? 'w-28' : 'w-10'}>
+          <td className={isExpanded ? 'w-28' : 'w-10'}>
             <Checkbox.Root
               id={line.id.toString()}
               onClick={() => onToggleSelectLine(line)}
@@ -141,7 +141,7 @@ export default function MetroLineTableRow({
           </td>
 
           {/* Average ridership over a duration (ex: 3 months) */}
-          {expanded && line.averageRidership && (
+          {isExpanded && line.averageRidership && (
             <td className="text-right">
               {line.averageRidership
                 ? Math.round(line.averageRidership).toLocaleString()
@@ -150,7 +150,7 @@ export default function MetroLineTableRow({
           )}
 
           {/* Change in ridership (ex: +1000, -200) */}
-          {expanded &&
+          {isExpanded &&
             line.changeInRidership &&
             (line.changeInRidership < 0 ? (
               <td className="text-right text-red-600">
@@ -163,7 +163,7 @@ export default function MetroLineTableRow({
             ))}
 
           {/* Starting ridership  */}
-          {expanded && line.startingRidership && (
+          {isExpanded && line.startingRidership && (
             <td className="text-right">
               {line.id
                 ? Math.round(line.startingRidership).toLocaleString()
@@ -172,17 +172,17 @@ export default function MetroLineTableRow({
           )}
 
           {/* Recent ridership  */}
-          {expanded && line.endingRidership && (
+          {isExpanded && line.endingRidership && (
             <td className="text-right">
               {line.id ? Math.round(line.endingRidership).toLocaleString() : 0}
             </td>
           )}
 
           {/* Division (ex: 3, 5) */}
-          {/* {expanded && <td>{line.division ?? division}</td>} */}
+          {/* {isExpanded && <td>{line.division ?? division}</td>} */}
 
           {/* Ridership over time. Line graph showing ridership trend */}
-          {expanded && (
+          {isExpanded && (
             <td key={line.id} className="max-h-10 max-w-52">
               {isMounted ? (
                 <LineChart
@@ -199,7 +199,7 @@ export default function MetroLineTableRow({
           )}
 
           {/* View Map hyperlink */}
-          {/* {expanded && <td>View Map</td>} */}
+          {/* {isExpanded && <td>View Map</td>} */}
         </tr>
       )}
     </>

@@ -13,8 +13,8 @@ interface LineFiltersProps {
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
   clearSelections: () => void;
   selectAllVisibleLines: () => void;
-  showAggregateLines: boolean;
-  toggleShowAggregateLines: () => void;
+  isAggregateVisible: boolean;
+  toggleIsAggregateVisible: () => void;
 }
 
 export default function LineFilters({
@@ -23,8 +23,8 @@ export default function LineFilters({
   setSearchText,
   clearSelections,
   selectAllVisibleLines,
-  showAggregateLines,
-  toggleShowAggregateLines,
+  isAggregateVisible,
+  toggleIsAggregateVisible,
 }: LineFiltersProps) {
   const [modes, setModes] = useState<string[]>(['bus', 'train']);
 
@@ -121,8 +121,8 @@ export default function LineFilters({
         >
           <Checkbox.Root
             id="aggregate"
-            onClick={toggleShowAggregateLines}
-            checked={showAggregateLines}
+            onClick={toggleIsAggregateVisible}
+            checked={isAggregateVisible}
             className="flex items-center justify-center bg-white data-[state=checked]:bg-[#033056] rounded p-0 h-5 w-5"
           >
             <Checkbox.Indicator>

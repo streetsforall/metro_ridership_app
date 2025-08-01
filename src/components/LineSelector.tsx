@@ -106,15 +106,15 @@ interface LineSelectorProps {
   lines: Line[];
   setLines: React.Dispatch<React.SetStateAction<Line[]>>;
   onToggleSelectLine: (line: Line) => void;
-  expanded: boolean;
+  isExpanded: boolean;
   dayOfWeek: string;
-  setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsExpanded: React.Dispatch<React.SetStateAction<boolean>>;
   searchText: string;
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
   clearSelections: () => void;
   selectAllVisibleLines: () => void;
-  showAggregateLines: boolean;
-  toggleShowAggregateLines: () => void;
+  isAggregateVisible: boolean;
+  toggleIsAggregateVisible: () => void;
 }
 
 export default function LineSelector(props: LineSelectorProps) {
@@ -127,19 +127,19 @@ export default function LineSelector(props: LineSelectorProps) {
     setLines,
     dayOfWeek,
     onToggleSelectLine,
-    expanded,
-    setExpanded,
+    isExpanded,
+    setIsExpanded,
     searchText,
     setSearchText,
     clearSelections,
     selectAllVisibleLines,
-    showAggregateLines,
-    toggleShowAggregateLines,
+    isAggregateVisible,
+    toggleIsAggregateVisible,
   } = props;
 
   const onExpandClick = (): void => {
-    setExpanded((prevExpanded: boolean) => {
-      return !prevExpanded;
+    setIsExpanded((prevIsExpanded: boolean) => {
+      return !prevIsExpanded;
     });
   };
 
@@ -235,7 +235,7 @@ export default function LineSelector(props: LineSelectorProps) {
         onClick={onExpandClick}
         className="self-end bg-transparent border-none hover:opacity-80 p-0"
       >
-        {expanded ? (
+        {isExpanded ? (
           <img
             src={listIcon}
             alt="Collapse to list view"
@@ -260,18 +260,18 @@ export default function LineSelector(props: LineSelectorProps) {
         setSearchText={setSearchText}
         clearSelections={clearSelections}
         selectAllVisibleLines={selectAllVisibleLines}
-        showAggregateLines={showAggregateLines}
-        toggleShowAggregateLines={toggleShowAggregateLines}
+        isAggregateVisible={isAggregateVisible}
+        toggleIsAggregateVisible={toggleIsAggregateVisible}
       />
 
       {sortedLines.length ? (
         /* Overflow scroll container for non-expanded view */
         <div
-          className={`${expanded ? 'overflow-x-auto lg:overflow-visible' : 'overflow-y-auto'}`}
+          className={`${isExpanded ? 'overflow-x-auto lg:overflow-visible' : 'overflow-y-auto'}`}
         >
           <table className="text-sm w-full">
             {/* Only show table header when line selector is expanded */}
-            {expanded && (
+            {isExpanded && (
               <thead className="sticky top-0">
                 <tr>
                   {columnHeaderStates.map(
@@ -314,7 +314,7 @@ export default function LineSelector(props: LineSelectorProps) {
                     onToggleSelectLine={onToggleSelectLine}
                     line={line}
                     dayOfWeek={dayOfWeek}
-                    expanded={expanded}
+                    isExpanded={isExpanded}
                   />
                 );
               })}
