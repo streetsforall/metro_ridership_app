@@ -47,8 +47,8 @@ export type DayOfWeek = (typeof daysOfWeek)[keyof typeof daysOfWeek];
 /**
  * Default starting values
  */
-const DefaultStartDate: Date = new Date(2020, 4);
-const DefaultEndDate: Date = new Date(2024, 4);
+const DefaultStartDate: Date = new Date(2020, 6);
+const DefaultEndDate: Date = new Date(2025, 6);
 
 const createLinesData = (): Line[] => {
   return (LineJsonData as LineJson[])
