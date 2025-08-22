@@ -325,11 +325,6 @@
     "provider":"DO"
   },
   {
-    "line":167,
-    "mode":"Bus",
-    "provider":"PT"
-  },
-  {
     "line":168,
     "mode":"Bus",
     "provider":"DO"
@@ -683,11 +678,6 @@
     "line":501,
     "mode":"Bus",
     "provider":"DO"
-  },
-  {
-    "line":501,
-    "mode":"Bus",
-    "provider":"PT"
   },
   {
     "line":534,
