@@ -6,6 +6,7 @@ import Header from './components/Header';
 import LineSelector from './components/LineSelector';
 import OutputArea from './components/OutputArea';
 import useUserDashboardInput, {
+  type DayOfWeek,
   type UserDashboardInputState,
 } from './hooks/useUserDashboardInput';
 import { getLineColor, getLineNames } from './utils/lines';
@@ -17,6 +18,10 @@ import type {
   RidershipRecord,
 } from './@types/metrics.types';
 import ridershipRecords from './data/ridership.json';
+import ShareUrls from './components/ShareUrl';
+
+// let ridershipRecords: RidershipRecord[]; // Placeholder for the actual data import
+let LoadOnce = 3; // To ensure URL parameters are only loaded once
 
 function App() {
   const [isLineSelectorExpanded, setIsLineSelectorExpanded] =
@@ -62,7 +67,7 @@ function App() {
      * Consolidate by line
      */
     const consolidatedRidership: ConsolidatedRidership = {};
-
+    console.log('ridershipRecords', ridershipRecords);
     for (let i = 0; i < ridershipRecords.length; i++) {
       const ridershipRecord: RidershipRecord = ridershipRecords[i];
 
@@ -188,6 +193,78 @@ function App() {
     [JSON.stringify(ridershipByLine)],
   );
 
+
+  /**
+   * Set state from URL parameters on mount
+   * This runs multiple times to ensure lines are updated
+   * This is a hacky solution to ensure the lines are updated correctly
+  */
+  const [linesRefreshTrigger, setLinesRefreshTrigger] = useState(0);  // State to trigger re-render
+  const refreshLines = () => {
+    setLinesRefreshTrigger((prev) => prev + 1); // Increment to trigger the effect
+  };
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedLinesParam = urlParams.get('selectedLines');
+    if (selectedLinesParam) {
+      console.log('if selectedLinesParam:', selectedLinesParam);
+      const selectedIds = selectedLinesParam
+        ? selectedLinesParam.split(',').map(Number)
+        : [];
+ 
+      // Update line to be visible if in list  
+      userDashboardInputState.lines.forEach(vLine => {
+        if (selectedIds.includes(vLine.id)) {
+          vLine.selected = true;
+        }
+      });
+
+      // this forces a re-render to ensure the changes are reflected in the UI
+      if (LoadOnce < 4) {
+        LoadOnce += 1;
+        refreshLines(); // Trigger a re-render to apply changes
+      }
+    }
+
+  }, [linesRefreshTrigger]); // Only run when linesRefreshTrigger changes
+
+  /**
+   * Set state from URL parameters on mount
+   * This runs only once on mount
+   */
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const dayOfWeekParam = urlParams.get('dayOfWeek');
+    if (dayOfWeekParam) {
+      setDayOfWeek(dayOfWeekParam as DayOfWeek);
+    }
+    const startDateParam = urlParams.get('startDate');
+    if (startDateParam) {
+      const [year, month] = startDateParam.split('-').map(Number);
+      setStartDate(new Date(year, month - 1)); // Month is 0-indexed
+    }
+    const endDateParam = urlParams.get('endDate');
+    if (endDateParam) {
+        const [eYear, eMonth] = endDateParam.split('-').map(Number);
+        setEndDate(new Date(eYear, eMonth - 1)); // Month is 0-indexed
+    }
+  }, []);
+
+  /**
+   * Edit Url Parameters for Sharing
+   */
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectlineurl = lines.filter(line => line.selected).map(line => line.id).join(',');
+    urlParams.set('dayOfWeek', dayOfWeek);
+    urlParams.set('startDate', startDate.toISOString().slice(0, 7));
+    urlParams.set('endDate', endDate.toISOString().slice(0, 7));
+    urlParams.set('selectedLines', selectlineurl);
+    urlParams.set('showAggregate', String(isAggregateVisible));
+    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?' + urlParams.toString();
+    window.history.replaceState({ path: newUrl }, '', newUrl);    
+  }, [dayOfWeek, startDate, endDate, lines, isAggregateVisible]); // Only re-run when these change
+
   return (
     /* Stretch full height */
     <div className="flex flex-col min-h-screen mx-4">
@@ -234,6 +311,15 @@ function App() {
             lines={lines}
           />
         )}
+      </div>
+      
+      {/* Share URL panel
+      shows a link to current page with parameters included
+      */}
+      <div>
+        <ShareUrls 
+          url={window.location.search ? window.location.protocol + "//" + window.location.host + window.location.pathname + window.location.search : window.location.href} 
+        />
       </div>
 
       <Footer />
