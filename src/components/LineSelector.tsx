@@ -111,6 +111,8 @@ interface LineSelectorProps {
   setIsExpanded: React.Dispatch<React.SetStateAction<boolean>>;
   searchText: string;
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
+  modes: string[];
+  setModes: React.Dispatch<React.SetStateAction<string[]>>;
   clearSelections: () => void;
   selectAllVisibleLines: () => void;
   isAggregateVisible: boolean;
@@ -124,13 +126,14 @@ export default function LineSelector(props: LineSelectorProps) {
   const {
     ridershipByLine,
     lines,
-    setLines,
     dayOfWeek,
     onToggleSelectLine,
     isExpanded,
     setIsExpanded,
     searchText,
     setSearchText,
+    modes,
+    setModes,
     clearSelections,
     selectAllVisibleLines,
     isAggregateVisible,
@@ -255,9 +258,10 @@ export default function LineSelector(props: LineSelectorProps) {
       </button>
 
       <LineFilters
-        setLines={setLines}
         searchText={searchText}
         setSearchText={setSearchText}
+        modes={modes}
+        setModes={setModes}
         clearSelections={clearSelections}
         selectAllVisibleLines={selectAllVisibleLines}
         isAggregateVisible={isAggregateVisible}

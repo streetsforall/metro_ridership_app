@@ -1,6 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { calcAbsChange, calcAvg, calcStart, calcEnd } from '../utils/calc';
 import { getLineNames, lineNameSortFunction } from '../utils/lines';
+import {
+  parseMonthParam,
+  formatMonthParam,
+  dayOfWeekToParam,
+  paramToDayOfWeek,
+  parseModesFromParams,
+} from '../utils/queryParams';
 import type { Line, LineJson } from '../@types/lines.types';
 import type {
   ConsolidatedRecord,
@@ -24,6 +31,9 @@ export interface UserDashboardInputState {
   searchText: string;
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
 
+  modes: string[];
+  setModes: React.Dispatch<React.SetStateAction<string[]>>;
+
   visibleLines: Line[];
 
   isAggregateVisible: boolean;
@@ -44,22 +54,30 @@ export const daysOfWeek = {
 } as const;
 export type DayOfWeek = (typeof daysOfWeek)[keyof typeof daysOfWeek];
 
+
 /**
  * Default starting values
  */
 const DefaultStartDate: Date = new Date(2020, 6);
 const DefaultEndDate: Date = new Date(2025, 6);
 
-const createLinesData = (): Line[] => {
+const createLinesData = (selectedLineIds: number[], modes: string[]): Line[] => {
+  const busVis = modes.includes('bus');
+  const trainVis = modes.includes('train');
+
   return (LineJsonData as LineJson[])
     .map((line: LineJson) => {
+      let visible = false;
+      if (line.mode === 'Bus') visible = busVis;
+      else if (line.mode === 'Rail') visible = trainVis;
+
       return {
         ...line,
         id: line.line,
         name: getLineNames(line.line).current,
         former: getLineNames(line.line).former,
-        selected: false,
-        visible: true,
+        selected: selectedLineIds.includes(line.line),
+        visible,
       } as Line;
     })
     .sort(lineNameSortFunction);
@@ -70,14 +88,73 @@ const createLinesData = (): Line[] => {
  * @returns
  */
 const useUserDashboardInput = (): UserDashboardInputState => {
-  const [startDate, setStartDate] = useState<Date>(DefaultStartDate);
-  const [endDate, setEndDate] = useState<Date>(DefaultEndDate);
-  const [dayOfWeek, setDayOfWeek] = useState<DayOfWeek>(daysOfWeek.Weekday);
+  const [startDate, setStartDate] = useState<Date>(() => {
+    const val = new URLSearchParams(window.location.search).get('start');
+    return val ? (parseMonthParam(val) ?? DefaultStartDate) : DefaultStartDate;
+  });
 
-  const [lines, setLines] = useState<Line[]>(createLinesData);
-  const [searchText, setSearchText] = useState<string>('');
+  const [endDate, setEndDate] = useState<Date>(() => {
+    const val = new URLSearchParams(window.location.search).get('end');
+    return val ? (parseMonthParam(val) ?? DefaultEndDate) : DefaultEndDate;
+  });
+
+  const [dayOfWeek, setDayOfWeek] = useState<DayOfWeek>(() => {
+    const val = new URLSearchParams(window.location.search).get('day');
+    return val ? ((paramToDayOfWeek[val] ?? daysOfWeek.Weekday) as DayOfWeek) : daysOfWeek.Weekday;
+  });
+
+  const [searchText, setSearchText] = useState<string>(() => {
+    return new URLSearchParams(window.location.search).get('q') ?? '';
+  });
+
+  const [modes, setModes] = useState<string[]>(() => {
+    return parseModesFromParams(new URLSearchParams(window.location.search));
+  });
+
+  const [lines, setLines] = useState<Line[]>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const linesStr = params.get('lines');
+    const selectedIds = linesStr
+      ? linesStr.split(',').map(Number).filter((id) => !isNaN(id))
+      : [];
+    return createLinesData(selectedIds, parseModesFromParams(params));
+  });
 
   const [isAggregateVisible, setIsAggregateVisible] = useState<boolean>(false);
+
+  // Sync modes → line visibility
+  useEffect(() => {
+    const busVis = modes.includes('bus');
+    const trainVis = modes.includes('train');
+
+    setLines((prevLines) =>
+      prevLines.map((prevLine) => {
+        let visible = false;
+        if (prevLine.mode === 'Bus') visible = busVis;
+        else if (prevLine.mode === 'Rail') visible = trainVis;
+        return { ...prevLine, visible };
+      }),
+    );
+  }, [modes]);
+
+  // Sync state → URL query params
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    params.set('start', formatMonthParam(startDate));
+    params.set('end', formatMonthParam(endDate));
+    params.set('day', dayOfWeekToParam[dayOfWeek]);
+
+    const selectedIds = lines.filter((l) => l.selected).map((l) => l.id);
+    if (selectedIds.length > 0) params.set('lines', selectedIds.join(','));
+
+    if (searchText) params.set('q', searchText);
+    if (!modes.includes('bus')) params.set('buses', '0');
+    if (!modes.includes('train')) params.set('trains', '0');
+
+    window.history.replaceState(null, '', `?${params.toString()}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startDate, endDate, dayOfWeek, searchText, modes, JSON.stringify(lines)]);
 
   /**
    * Use the aggregated metrics to add additional metrics to line metadata
@@ -202,6 +279,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     toggleIsAggregateVisible,
     searchText,
     setSearchText,
+    modes,
+    setModes,
     onToggleSelectLine,
     clearSelections,
     updateLinesWithLineMetrics,

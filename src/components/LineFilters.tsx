@@ -1,16 +1,15 @@
-import { useState, useEffect } from 'react';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
-import type { Line } from '../@types/lines.types';
 import busIcon from '../assets/bus.svg';
 import checkIcon from '../assets/check.svg';
 import magnifyingGlassIcon from '../assets/magnifying-glass.svg';
 import trainIcon from '../assets/train.svg';
 
 interface LineFiltersProps {
-  setLines: React.Dispatch<React.SetStateAction<Line[]>>;
   searchText: string;
   setSearchText: React.Dispatch<React.SetStateAction<string>>;
+  modes: string[];
+  setModes: React.Dispatch<React.SetStateAction<string[]>>;
   clearSelections: () => void;
   selectAllVisibleLines: () => void;
   isAggregateVisible: boolean;
@@ -18,39 +17,15 @@ interface LineFiltersProps {
 }
 
 export default function LineFilters({
-  setLines,
   searchText,
   setSearchText,
+  modes,
+  setModes,
   clearSelections,
   selectAllVisibleLines,
   isAggregateVisible,
   toggleIsAggregateVisible,
 }: LineFiltersProps) {
-  const [modes, setModes] = useState<string[]>(['bus', 'train']);
-
-  useEffect(() => {
-    // Convert modes array into separate booleans
-    const busVis = modes.includes('bus');
-    const trainVis = modes.includes('train');
-
-    setLines((prevLines) => {
-      return prevLines.map((prevLine) => {
-        // Set visibility for each line based on corresponding boolean
-        let visible;
-
-        if (prevLine.mode === 'Bus') {
-          visible = busVis;
-        } else if (prevLine.mode === 'Rail') {
-          visible = trainVis;
-        } else {
-          visible = false;
-        }
-
-        return { ...prevLine, visible };
-      });
-    });
-  }, [setLines, modes]);
-
   return (
     <>
       <div className="flex gap-2 border-b border-stone-300 pb-4">
