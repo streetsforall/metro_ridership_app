@@ -11,7 +11,7 @@ export interface ConsolidatedRecord {
 export interface RidershipRecord {
   year: number;
   month: number;
-  line_name: string;
+  line_name: number;
   est_wkday_ridership: number | null;
   est_sat_ridership: number | null;
   est_sun_ridership: number | null;
