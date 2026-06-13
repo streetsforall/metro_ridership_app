@@ -17,6 +17,53 @@ The general process of loading and transforming relevant data is as follows:
 2. Consolidate metrics by line in `App.tsx`.
 3. In `App.tsx`, using the consolidated metrics, call `updateLinesWithLineMetrics()` in `hooks/useUserDashboardInput.ts` to add summary metrics to each line.
 
+## Development
+
+### Prerequisites
+
+- Node.js (check `.nvmrc` or `package.json` engines field if present)
+- npm
+
+### Local development
+
+```bash
+npm install
+npm run dev
+```
+
+The app will be available at `http://localhost:5173` (Vite default).
+
+### Build
+
+```bash
+npm run build
+```
+
+Runs TypeScript type-checking (`tsc -b`) followed by the Vite production build. Output goes to `dist/`.
+
+To preview the production build locally:
+
+```bash
+npm run preview
+```
+
+### Test
+
+```bash
+npm run test        # run all tests once
+npm run test:watch  # run tests in watch mode
+```
+
+Tests use [Vitest](https://vitest.dev/) with `@testing-library/react` for component tests.
+
+### Lint
+
+```bash
+npm run lint
+```
+
+Uses ESLint with TypeScript, React hooks, and React refresh plugins. Fix lint errors before opening a pull request.
+
 ## Adding/updating metrics
 
 As time progresses and new ridership metrics are collected, `data/ridership.json` needs to be updated. Eventually we want an automated script that picks up the latest metrics from LA Metro's repo, parses it, and updates our JSON accordingly. But in the meantime this will need to be done manually.
