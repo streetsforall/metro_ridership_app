@@ -238,6 +238,7 @@ export default function LineSelector(props: LineSelectorProps) {
     <>
       {/* Expand button */}
       <button
+        id="expand-toggle"
         type="button"
         onClick={onExpandClick}
         className="self-end bg-transparent border-none hover:opacity-80 p-0"
@@ -336,6 +337,7 @@ export default function LineSelector(props: LineSelectorProps) {
       )}
 
       <a
+        id="download-csv"
         href={generateCSV(ridershipByLine)}
         download="metro_ridership.csv"
         className="button flex gap-2 items-center justify-center"
