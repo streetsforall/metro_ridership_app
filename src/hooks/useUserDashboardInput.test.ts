@@ -94,6 +94,23 @@ describe('initial state from URL params', () => {
     const { result } = renderHook(() => useUserDashboardInput());
     expect(result.current.dayOfWeek).toBe(daysOfWeek.Weekday);
   });
+
+  it('sets isAggregateVisible to true when aggregate=1 in URL', () => {
+    window.history.replaceState({}, '', '?aggregate=1');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.isAggregateVisible).toBe(true);
+  });
+
+  it('sets isAggregateVisible to false when aggregate param is absent', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.isAggregateVisible).toBe(false);
+  });
+
+  it('sets isAggregateVisible to false when aggregate param is not 1', () => {
+    window.history.replaceState({}, '', '?aggregate=0');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.isAggregateVisible).toBe(false);
+  });
 });
 
 describe('modes → line visibility', () => {
@@ -120,10 +137,10 @@ describe('modes → line visibility', () => {
     expect(railLines.every((l) => !l.visible)).toBe(true);
   });
 
-  it('updates visibility when modes state changes', async () => {
+  it('updates visibility when modes state changes', () => {
     const { result } = renderHook(() => useUserDashboardInput());
 
-    await act(async () => {
+    act(() => {
       result.current.setModes(['train']);
     });
 
@@ -143,40 +160,40 @@ describe('URL sync', () => {
     expect(window.location.search).toContain('day=wkday');
   });
 
-  it('updates URL when start date changes', async () => {
+  it('updates URL when start date changes', () => {
     const { result } = renderHook(() => useUserDashboardInput());
 
-    await act(async () => {
+    act(() => {
       result.current.setStartDate(new Date(2021, 0));
     });
 
     expect(window.location.search).toContain('start=2021-01');
   });
 
-  it('updates URL when end date changes', async () => {
+  it('updates URL when end date changes', () => {
     const { result } = renderHook(() => useUserDashboardInput());
 
-    await act(async () => {
+    act(() => {
       result.current.setEndDate(new Date(2024, 5));
     });
 
     expect(window.location.search).toContain('end=2024-06');
   });
 
-  it('updates URL when day of week changes to saturday', async () => {
+  it('updates URL when day of week changes to saturday', () => {
     const { result } = renderHook(() => useUserDashboardInput());
 
-    await act(async () => {
+    act(() => {
       result.current.setDayOfWeek(daysOfWeek.Saturday);
     });
 
     expect(window.location.search).toContain('day=sat');
   });
 
-  it('adds q param when search text is set', async () => {
+  it('adds q param when search text is set', () => {
     const { result } = renderHook(() => useUserDashboardInput());
 
-    await act(async () => {
+    act(() => {
       result.current.setSearchText('silver');
     });
 
@@ -188,10 +205,10 @@ describe('URL sync', () => {
     expect(window.location.search).not.toContain('q=');
   });
 
-  it('adds buses=0 param when bus mode is disabled', async () => {
+  it('adds buses=0 param when bus mode is disabled', () => {
     const { result } = renderHook(() => useUserDashboardInput());
 
-    await act(async () => {
+    act(() => {
       result.current.setModes(['train']);
     });
 
@@ -199,10 +216,10 @@ describe('URL sync', () => {
     expect(window.location.search).not.toContain('trains=0');
   });
 
-  it('adds trains=0 param when train mode is disabled', async () => {
+  it('adds trains=0 param when train mode is disabled', () => {
     const { result } = renderHook(() => useUserDashboardInput());
 
-    await act(async () => {
+    act(() => {
       result.current.setModes(['bus']);
     });
 
@@ -214,5 +231,31 @@ describe('URL sync', () => {
     renderHook(() => useUserDashboardInput());
     expect(window.location.search).not.toContain('buses=');
     expect(window.location.search).not.toContain('trains=');
+  });
+
+  it('adds aggregate=1 to URL when toggleIsAggregateVisible is called', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.toggleIsAggregateVisible();
+    });
+
+    expect(window.location.search).toContain('aggregate=1');
+  });
+
+  it('removes aggregate param from URL when toggled off', () => {
+    window.history.replaceState({}, '', '?aggregate=1');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.toggleIsAggregateVisible();
+    });
+
+    expect(window.location.search).not.toContain('aggregate=');
+  });
+
+  it('omits aggregate param when isAggregateVisible is false by default', () => {
+    renderHook(() => useUserDashboardInput());
+    expect(window.location.search).not.toContain('aggregate=');
   });
 });

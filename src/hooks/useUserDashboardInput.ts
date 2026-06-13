@@ -120,7 +120,10 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     return createLinesData(selectedIds, parseModesFromParams(params));
   });
 
-  const [isAggregateVisible, setIsAggregateVisible] = useState<boolean>(false);
+  const [isAggregateVisible, setIsAggregateVisible] = useState<boolean>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('aggregate') === '1';
+  });
 
   // Sync modes → line visibility
   useEffect(() => {
@@ -151,10 +154,11 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     if (searchText) params.set('q', searchText);
     if (!modes.includes('bus')) params.set('buses', '0');
     if (!modes.includes('train')) params.set('trains', '0');
+    if (isAggregateVisible) params.set('aggregate', '1');
 
     window.history.replaceState(null, '', `?${params.toString()}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate, dayOfWeek, searchText, modes, JSON.stringify(lines)]);
+  }, [startDate, endDate, dayOfWeek, searchText, modes, JSON.stringify(lines), isAggregateVisible]);
 
   /**
    * Use the aggregated metrics to add additional metrics to line metadata
