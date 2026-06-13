@@ -122,7 +122,6 @@ interface LineSelectorProps {
 export default function LineSelector(props: LineSelectorProps) {
   const [columnHeaderStates, setColumnHeaderStates] =
     useState<ColumnHeaderState[]>(columnStates);
-
   const {
     ridershipByLine,
     lines,
@@ -230,10 +229,16 @@ export default function LineSelector(props: LineSelectorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(columnHeaderStates), JSON.stringify(lines), dayOfWeek]);
 
+  const shareData: ShareData = {
+    title: 'LA Metro Ridership Data',
+    url: window.location.href,
+  };
+
   return (
     <>
       {/* Expand button */}
       <button
+        id="expand-toggle"
         type="button"
         onClick={onExpandClick}
         className="self-end bg-transparent border-none hover:opacity-80 p-0"
@@ -332,6 +337,7 @@ export default function LineSelector(props: LineSelectorProps) {
       )}
 
       <a
+        id="download-csv"
         href={generateCSV(ridershipByLine)}
         download="metro_ridership.csv"
         className="button flex gap-2 items-center justify-center"
@@ -345,6 +351,25 @@ export default function LineSelector(props: LineSelectorProps) {
           className="recolor-white"
         />
       </a>
+
+      <button
+        type="button"
+        id="share-button"
+        onClick={() => {
+          const url = window.location.href;
+          if (navigator.share && navigator.canShare(shareData)) {
+            void navigator.share({
+              title: 'LA Metro Ridership Data',
+              url: url,
+            });
+          } else {
+            void navigator.clipboard.writeText(url);
+          }
+        }}
+        className="button flex gap-2 items-center justify-center"
+      >
+        Share
+      </button>
     </>
   );
 }

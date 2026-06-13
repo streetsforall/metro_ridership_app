@@ -30,6 +30,7 @@ export default function LineFilters({
     <>
       <div className="flex gap-2 border-b border-stone-300 pb-4">
         <input
+          id="search-lines"
           placeholder="Search lines"
           className={`bg-[0.5rem_center] bg-no-repeat pl-8 w-full`}
           style={{ backgroundImage: `url("${magnifyingGlassIcon}")` }}
@@ -74,6 +75,7 @@ export default function LineFilters({
       <div className="flex gap-4">
         <div className="flex flex-grow gap-4">
           <button
+            id="select-all"
             type="button"
             onClick={selectAllVisibleLines}
             className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
@@ -82,6 +84,7 @@ export default function LineFilters({
           </button>
 
           <button
+            id="clear-all"
             type="button"
             onClick={clearSelections}
             className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
