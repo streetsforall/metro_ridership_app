@@ -122,6 +122,7 @@ interface LineSelectorProps {
 export default function LineSelector(props: LineSelectorProps) {
   const [columnHeaderStates, setColumnHeaderStates] =
     useState<ColumnHeaderState[]>(columnStates);
+  const [isCopied, setIsCopied] = useState(false);
   const {
     ridershipByLine,
     lines,
@@ -232,6 +233,17 @@ export default function LineSelector(props: LineSelectorProps) {
   const shareData: ShareData = {
     title: 'LA Metro Ridership Data',
     url: window.location.href,
+  };
+
+  const handleShare = async (): Promise<void> => {
+    const url = window.location.href;
+    if (navigator.share && navigator.canShare(shareData)) {
+      void navigator.share({ title: 'LA Metro Ridership Data', url });
+    } else {
+      await navigator.clipboard.writeText(url);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
   };
 
   return (
@@ -355,20 +367,10 @@ export default function LineSelector(props: LineSelectorProps) {
       <button
         type="button"
         id="share-button"
-        onClick={() => {
-          const url = window.location.href;
-          if (navigator.share && navigator.canShare(shareData)) {
-            void navigator.share({
-              title: 'LA Metro Ridership Data',
-              url: url,
-            });
-          } else {
-            void navigator.clipboard.writeText(url);
-          }
-        }}
+        onClick={() => void handleShare()}
         className="button flex gap-2 items-center justify-center"
       >
-        Share
+        {isCopied ? 'Copied to clipboard' : 'Share'}
       </button>
     </>
   );
