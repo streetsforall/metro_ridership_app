@@ -7,6 +7,12 @@ vi.mock('react-chartjs-2', () => ({
   Line: () => <canvas data-testid="line-chart" />,
 }));
 
+vi.mock('./Map', () => ({
+  default: ({ lines }: { lines: Line[] }) => (
+    <div data-testid="map" data-line-count={String(lines.length)} />
+  ),
+}));
+
 const makeLine = (overrides: Partial<Line>): Line => ({
   id: 801,
   name: 'A Line',
@@ -91,5 +97,29 @@ describe('OutputArea with datasets', () => {
       />,
     );
     expect(screen.queryByText('Average Ridership')).toBeNull();
+  });
+});
+
+describe('OutputArea Map', () => {
+  it('always renders the Map component even when there are no datasets', () => {
+    render(<OutputArea {...emptyProps} />);
+    expect(screen.getByTestId('map')).toBeTruthy();
+  });
+
+  it('renders the Map component alongside chart datasets', () => {
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2022 1']}
+        lines={[]}
+      />,
+    );
+    expect(screen.getByTestId('map')).toBeTruthy();
+  });
+
+  it('passes the lines prop through to the Map component', () => {
+    const lines = [makeLine({ id: 801 }), makeLine({ id: 802 })];
+    render(<OutputArea chartDatasets={[]} months={[]} lines={lines} />);
+    expect(screen.getByTestId('map').getAttribute('data-line-count')).toBe('2');
   });
 });
