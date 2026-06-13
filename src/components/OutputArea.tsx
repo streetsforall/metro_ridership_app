@@ -13,6 +13,7 @@ import {
 import { Line as LineChart } from 'react-chartjs-2';
 import colors from 'tailwindcss/colors';
 import SummaryData from './SummaryData';
+import Map from './Map';
 import type { CustomChartData } from '../@types/chart.types';
 import type { Line } from '../@types/lines.types';
 
@@ -106,6 +107,11 @@ export default function OutputArea({
           <p>Please select a Metro line.</p>
         </div>
       )}
+
+      {/* Map always visible below chart */}
+      <div className="pane">
+        <Map lines={lines} />
+      </div>
     </div>
   );
 }
