@@ -4,6 +4,19 @@ import LineSelector from './LineSelector';
 import type { Line } from '../@types/lines.types';
 import type { ConsolidatedRidership } from '../@types/metrics.types';
 
+vi.mock('react-chartjs-2', () => ({
+  Line: () => <canvas data-testid="sparkline" />,
+}));
+
+const mockLine: Line = {
+  id: 801,
+  name: 'A Line',
+  mode: 'Rail',
+  provider: 'DO',
+  selected: false,
+  visible: true,
+};
+
 const defaultProps = {
   ridershipByLine: {} as ConsolidatedRidership,
   lines: [] as Line[],
@@ -24,6 +37,86 @@ const defaultProps = {
 
 beforeEach(() => {
   vi.restoreAllMocks();
+});
+
+describe('expand toggle button', () => {
+  it('shows "Expand to table view" icon when not expanded', () => {
+    render(<LineSelector {...defaultProps} isExpanded={false} />);
+    expect(screen.getByAltText('Expand to table view')).toBeTruthy();
+  });
+
+  it('shows "Collapse to list view" icon when expanded', () => {
+    render(<LineSelector {...defaultProps} isExpanded={true} />);
+    expect(screen.getByAltText('Collapse to list view')).toBeTruthy();
+  });
+
+  it('calls setIsExpanded when clicked', () => {
+    const setIsExpanded = vi.fn();
+    render(<LineSelector {...defaultProps} setIsExpanded={setIsExpanded} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Expand to table view' }));
+    expect(setIsExpanded).toHaveBeenCalled();
+  });
+});
+
+describe('empty state', () => {
+  it('shows "Please select a transit mode." when lines is empty', () => {
+    render(<LineSelector {...defaultProps} lines={[]} />);
+    expect(screen.getByText('Please select a transit mode.')).toBeTruthy();
+  });
+});
+
+describe('lines table', () => {
+  it('does not show empty state message when lines are provided', () => {
+    render(<LineSelector {...defaultProps} lines={[mockLine]} />);
+    expect(screen.queryByText('Please select a transit mode.')).toBeNull();
+  });
+
+  it('hides table header when not expanded', () => {
+    render(<LineSelector {...defaultProps} lines={[mockLine]} isExpanded={false} />);
+    expect(screen.queryByText('Avg. Ridership')).toBeNull();
+  });
+
+  it('shows table header columns when expanded', () => {
+    render(<LineSelector {...defaultProps} lines={[mockLine]} isExpanded={true} />);
+    expect(screen.getByText('Avg. Ridership')).toBeTruthy();
+    expect(screen.getByText('Line')).toBeTruthy();
+  });
+
+  it('cycles sort direction on column header click: none → asc → desc → none', () => {
+    render(<LineSelector {...defaultProps} lines={[mockLine]} isExpanded={true} />);
+    const lineHeader = screen.getByText('Line');
+    expect(lineHeader.closest('th')?.className).not.toContain('headerSort');
+    fireEvent.click(lineHeader);
+    expect(lineHeader.closest('th')?.className).toContain('headerSortUp');
+    fireEvent.click(lineHeader);
+    expect(lineHeader.closest('th')?.className).toContain('headerSortDown');
+    fireEvent.click(lineHeader);
+    expect(lineHeader.closest('th')?.className).not.toContain('headerSort');
+  });
+
+  it('clears sort on other columns when a new column is sorted', () => {
+    render(<LineSelector {...defaultProps} lines={[mockLine]} isExpanded={true} />);
+    const lineHeader = screen.getByText('Line');
+    const avgHeader = screen.getByText('Avg. Ridership');
+    fireEvent.click(lineHeader);
+    expect(lineHeader.closest('th')?.className).toContain('headerSortUp');
+    fireEvent.click(avgHeader);
+    expect(lineHeader.closest('th')?.className).not.toContain('headerSort');
+    expect(avgHeader.closest('th')?.className).toContain('headerSortUp');
+  });
+});
+
+describe('download CSV link', () => {
+  it('renders the download CSV link', () => {
+    render(<LineSelector {...defaultProps} />);
+    expect(screen.getByRole('link', { name: /Download selected data as CSV/ })).toBeTruthy();
+  });
+
+  it('sets the download filename to metro_ridership.csv', () => {
+    render(<LineSelector {...defaultProps} />);
+    const link = screen.getByRole('link', { name: /Download selected data as CSV/ });
+    expect(link.getAttribute('download')).toBe('metro_ridership.csv');
+  });
 });
 
 describe('share button', () => {
