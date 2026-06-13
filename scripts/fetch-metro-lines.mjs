@@ -24,6 +24,12 @@ const GTFS_URLS = {
 // Override display names for BRT lines that appear in the bus GTFS feed
 const BRT_NAMES = { 901: 'G Line', 910: 'J Line' };
 
+// Must match busLineColor() in src/utils/lines.ts exactly
+function busLineColor(lineId) {
+  const hue = Math.round((lineId * 137.508) % 360);
+  return `hsl(${hue}, 75%, 45%)`;
+}
+
 // Canonical colors from src/utils/lines.ts definedLines (used instead of GTFS color)
 const RAIL_COLORS = {
   801: '#0072bc', 802: '#eb131b', 803: '#58a738', 804: '#fdb913',
@@ -147,9 +153,8 @@ async function processGTFSFeed(url, mode) {
       name = BRT_NAMES[lineId] ?? `Line ${lineId}`;
     }
 
-    // Use canonical brand colors for known rail/BRT IDs; fall back to GTFS color for bus.
-    const color = RAIL_COLORS[lineId]
-      ?? `#${(route.route_color || '888888').replace('#', '')}`;
+    // Use canonical brand colors for known rail/BRT IDs; deterministic hue for bus.
+    const color = RAIL_COLORS[lineId] ?? busLineColor(lineId);
 
     // Collect all unique shapes for this route
     const shapeIds = routeShapes[route.route_id] ? [...routeShapes[route.route_id]] : [];
