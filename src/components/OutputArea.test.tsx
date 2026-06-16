@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import OutputArea from './OutputArea';
-import type { ChartOptions } from 'chart.js';
+import { Chart as ChartJS, type ChartOptions } from 'chart.js';
 import type { Line } from '../@types/lines.types';
 
 let capturedOptions: ChartOptions<'line'> | undefined;
@@ -178,5 +178,67 @@ describe('tooltip itemSort', () => {
     // null treated as 0; positive item should sort first
     expect(fn(nullItem, positiveItem)).toBeGreaterThan(0);
     expect(fn(positiveItem, nullItem)).toBeLessThan(0);
+  });
+});
+
+describe('hoverCrosshair plugin', () => {
+  const makeMockChart = (hasActive: boolean) => ({
+    tooltip: {
+      getActiveElements: () =>
+        hasActive ? [{ element: { x: 100 } }] : [],
+    },
+    ctx: {
+      save: vi.fn(),
+      beginPath: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      stroke: vi.fn(),
+      restore: vi.fn(),
+      setLineDash: vi.fn(),
+      lineWidth: 0,
+      strokeStyle: '',
+    },
+    chartArea: { top: 10, bottom: 200 },
+  });
+
+  it('is registered with ChartJS', () => {
+    expect(ChartJS.registry.getPlugin('hoverCrosshair')).toBeDefined();
+  });
+
+  it('draws a vertical line at the hovered x position', () => {
+    const plugin = ChartJS.registry.getPlugin('hoverCrosshair');
+    const chart = makeMockChart(true);
+    plugin?.afterDraw?.(chart as unknown as ChartJS, {}, {});
+    expect(chart.ctx.save).toHaveBeenCalledOnce();
+    expect(chart.ctx.beginPath).toHaveBeenCalledOnce();
+    expect(chart.ctx.moveTo).toHaveBeenCalledWith(100, 10);
+    expect(chart.ctx.lineTo).toHaveBeenCalledWith(100, 200);
+    expect(chart.ctx.stroke).toHaveBeenCalledOnce();
+    expect(chart.ctx.restore).toHaveBeenCalledOnce();
+  });
+
+  it('does nothing when no tooltip elements are active', () => {
+    const plugin = ChartJS.registry.getPlugin('hoverCrosshair');
+    const chart = makeMockChart(false);
+    plugin?.afterDraw?.(chart as unknown as ChartJS, {}, {});
+    expect(chart.ctx.beginPath).not.toHaveBeenCalled();
+    expect(chart.ctx.stroke).not.toHaveBeenCalled();
+  });
+});
+
+describe('chart interaction options', () => {
+  beforeEach(() => {
+    capturedOptions = undefined;
+  });
+
+  it('sets intersect to false so the crosshair activates anywhere in a column', () => {
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2022 1']}
+        lines={[]}
+      />,
+    );
+    expect(capturedOptions?.interaction?.intersect).toBe(false);
   });
 });
