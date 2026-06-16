@@ -46,7 +46,7 @@ export function isRoundTrip(coordinates) {
   const [ls0, ls1] = coordinates;
   const end = ls0[ls0.length - 1];
   const start = ls1[0];
-  return Math.abs(end[0] - start[0]) < 0.0001 && Math.abs(end[1] - start[1]) < 0.0001;
+  return Math.abs(end[0] - start[0]) < 0.001 && Math.abs(end[1] - start[1]) < 0.001;
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

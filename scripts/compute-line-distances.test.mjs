@@ -1,5 +1,18 @@
+import { readFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { describe, it, expect } from 'vitest';
 import { haversineDistance, multiLineStringDistance, isRoundTrip } from './compute-line-distances.mjs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const geojson = JSON.parse(readFileSync(resolve(__dirname, '../public/metro_lines.geojson'), 'utf8'));
+
+function computeLineMiles(lineId) {
+  const feature = geojson.features.find((f) => f.properties.line_id === lineId);
+  const coords = feature.geometry.coordinates;
+  const miles = multiLineStringDistance(isRoundTrip(coords) ? [coords[0]] : coords);
+  return Math.round(miles * 10) / 10;
+}
 
 describe('haversineDistance', () => {
   it('returns 0 for the same point', () => {
@@ -82,10 +95,76 @@ describe('isRoundTrip', () => {
     expect(isRoundTrip([ls0, ls1])).toBe(false);
   });
 
-  it('tolerates floating-point imprecision within 0.0001 degrees', () => {
-    const ls0 = [[0, 0], [0, 1.0000001]];
-    const ls1 = [[0, 1.0000009], [0, 0]]; // within tolerance
+  it('tolerates endpoint imprecision up to 0.001 degrees (~111 m)', () => {
+    // Real GeoJSON data has endpoints offset by up to ~0.0002° at line junctions
+    const ls0 = [[0, 0], [-118.378153841, 34.1708482878]];
+    const ls1 = [[-118.378268605, 34.1708004635], [0, 0]]; // 0.000115° lon, 0.000048° lat apart
     expect(isRoundTrip([ls0, ls1])).toBe(true);
+  });
+
+  it('returns false when endpoints are more than 0.001 degrees apart', () => {
+    const ls0 = [[0, 0], [0, 1]];
+    const ls1 = [[0, 1.002], [0, 0]]; // 0.002° apart — clearly separate
+    expect(isRoundTrip([ls0, ls1])).toBe(false);
+  });
+});
+
+// Bus lines have a single lineString, so isRoundTrip returns false and the full
+// route is summed without any deduplication.
+describe('bus line distances from GeoJSON', () => {
+  it('Line 2 is ~20.6 mi', () => {
+    expect(computeLineMiles(2)).toBe(20.6);
+  });
+
+  it('Line 4 is ~21.8 mi', () => {
+    expect(computeLineMiles(4)).toBe(21.8);
+  });
+
+  it('Line 14 is ~16.8 mi', () => {
+    expect(computeLineMiles(14)).toBe(16.8);
+  });
+
+  it('bus lines are not detected as round trips', () => {
+    for (const id of [2, 4, 14]) {
+      const feature = geojson.features.find((f) => f.properties.line_id === id);
+      expect(isRoundTrip(feature.geometry.coordinates), `line ${id}`).toBe(false);
+    }
+  });
+});
+
+// Each Metro Rail line has two lineStrings (outbound + inbound). The expected
+// values below are one-way distances; without the isRoundTrip guard they would
+// be doubled (e.g. A Line would read 115.5 mi instead of 57.8 mi).
+describe('metro rail line distances from GeoJSON', () => {
+  it('A Line (801) is ~57.8 mi one-way', () => {
+    expect(computeLineMiles(801)).toBe(57.8);
+  });
+
+  it('B Line (802) is ~15.7 mi one-way', () => {
+    expect(computeLineMiles(802)).toBe(15.7);
+  });
+
+  it('C Line (803) is ~17.7 mi one-way', () => {
+    expect(computeLineMiles(803)).toBe(17.7);
+  });
+
+  it('E Line (804) is ~22 mi one-way', () => {
+    expect(computeLineMiles(804)).toBe(22);
+  });
+
+  it('K Line (805) is ~9.7 mi one-way', () => {
+    expect(computeLineMiles(805)).toBe(9.7);
+  });
+
+  it('L Line (807) is ~11.6 mi one-way', () => {
+    expect(computeLineMiles(807)).toBe(11.6);
+  });
+
+  it('all six rail lines are detected as round trips', () => {
+    for (const id of [801, 802, 803, 804, 805, 807]) {
+      const feature = geojson.features.find((f) => f.properties.line_id === id);
+      expect(isRoundTrip(feature.geometry.coordinates), `line ${id}`).toBe(true);
+    }
   });
 });
 
