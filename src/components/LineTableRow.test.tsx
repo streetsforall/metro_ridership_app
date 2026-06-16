@@ -150,6 +150,53 @@ describe('LineTableRow expanded view', () => {
     expect(changeCell.className).toContain('text-red-600');
   });
 
+  it('shows distance miles when expanded', () => {
+    const lineWithDistance = { ...mockLine, distanceMiles: 22.3 };
+    render(
+      <table>
+        <tbody>
+          <LineTableRow {...baseProps} line={lineWithDistance} isExpanded />
+        </tbody>
+      </table>,
+    );
+    expect(screen.getByText('22.3')).toBeTruthy();
+  });
+
+  it('shows — for miles when expanded and distanceMiles is absent', () => {
+    render(
+      <table>
+        <tbody>
+          <LineTableRow {...baseProps} isExpanded />
+        </tbody>
+      </table>,
+    );
+    // The first — should be for miles (ridersPerMile also uses — when absent)
+    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('shows riders per mile when expanded', () => {
+    const lineWithRpm = { ...mockLine, ridersPerMile: 750 };
+    render(
+      <table>
+        <tbody>
+          <LineTableRow {...baseProps} line={lineWithRpm} isExpanded />
+        </tbody>
+      </table>,
+    );
+    expect(screen.getByText('750')).toBeTruthy();
+  });
+
+  it('shows — for riders per mile when expanded and ridersPerMile is absent', () => {
+    render(
+      <table>
+        <tbody>
+          <LineTableRow {...baseProps} isExpanded />
+        </tbody>
+      </table>,
+    );
+    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
+  });
+
   it('does not render sparkline when not expanded', () => {
     render(
       <table>

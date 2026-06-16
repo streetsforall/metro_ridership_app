@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calcAvg, calcAbsChange, calcEnd, calcStart } from './calc';
+import { calcAvg, calcAbsChange, calcEnd, calcStart, calcRidersPerMile } from './calc';
 import type { RidershipRecord } from '../@types/metrics.types';
 
 const makeRecord = (
@@ -105,6 +105,20 @@ describe('calcEnd', () => {
   it('picks the later year as the end', () => {
     const multiYear = [makeRecord(2023, 1, 9000), makeRecord(2021, 12, 1000)];
     expect(calcEnd(multiYear, 'est_wkday_ridership')).toBe(9000);
+  });
+});
+
+describe('calcRidersPerMile', () => {
+  it('divides average ridership by distance', () => {
+    expect(calcRidersPerMile(10000, 20)).toBe(500);
+  });
+
+  it('returns a decimal when ridership does not divide evenly', () => {
+    expect(calcRidersPerMile(1000, 3)).toBeCloseTo(333.33, 1);
+  });
+
+  it('returns 0 when ridership is 0', () => {
+    expect(calcRidersPerMile(0, 15)).toBe(0);
   });
 });
 

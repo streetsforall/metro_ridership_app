@@ -178,6 +178,20 @@ export default function MetroLineTableRow({
             </td>
           )}
 
+          {/* Route miles */}
+          {isExpanded && (
+            <td className="text-right">
+              {line.distanceMiles ?? '—'}
+            </td>
+          )}
+
+          {/* Riders per mile */}
+          {isExpanded && (
+            <td className="text-right">
+              {line.ridersPerMile ? Math.round(line.ridersPerMile).toLocaleString() : '—'}
+            </td>
+          )}
+
           {/* Division (ex: 3, 5) */}
           {/* {isExpanded && <td>{line.division ?? division}</td>} */}
 

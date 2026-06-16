@@ -123,6 +123,59 @@ describe('SummaryData with selected lines', () => {
     expect(screen.queryByText('14,999')).toBeNull();
   });
 
+  it('shows the Total Miles label when selected lines have distance data', () => {
+    render(
+      <SummaryData
+        lines={[makeLine({ selected: true, averageRidership: 5000, distanceMiles: 22.3 })]}
+      />,
+    );
+    expect(screen.getByText('Total Miles')).toBeTruthy();
+  });
+
+  it('sums total miles across selected lines', () => {
+    const lines = [
+      makeLine({ selected: true, averageRidership: 5000, distanceMiles: 10.5 }),
+      makeLine({ id: 802, name: 'B Line', selected: true, averageRidership: 3000, distanceMiles: 9.5 }),
+    ];
+    render(<SummaryData lines={lines} />);
+    expect(screen.getByText('20')).toBeTruthy();
+  });
+
+  it('hides Total Miles when no selected lines have distance data', () => {
+    render(
+      <SummaryData lines={[makeLine({ selected: true, averageRidership: 5000 })]} />,
+    );
+    expect(screen.queryByText('Total Miles')).toBeNull();
+  });
+
+  it('shows the Riders / Mile label when selected lines have distance data', () => {
+    render(
+      <SummaryData
+        lines={[makeLine({ selected: true, averageRidership: 10000, distanceMiles: 20 })]}
+      />,
+    );
+    expect(screen.getByText('Riders / Mile')).toBeTruthy();
+  });
+
+  it('computes riders per mile as total riders divided by total miles', () => {
+    const lines = [
+      makeLine({ selected: true, averageRidership: 10000, distanceMiles: 20 }),
+      makeLine({ id: 802, name: 'B Line', selected: true, averageRidership: 5000, distanceMiles: 5 }),
+    ];
+    render(<SummaryData lines={lines} />);
+    // total riders = 15000, total miles = 25 → 600
+    expect(screen.getByText('600')).toBeTruthy();
+  });
+
+  it('hides the Riders / Mile stat when no lines have distance data', () => {
+    render(
+      <SummaryData
+        lines={[makeLine({ selected: true, averageRidership: 5000 })]}
+      />,
+    );
+    expect(screen.queryByText('Riders / Mile')).toBeNull();
+  });
+
   it('treats undefined averageRidership as 0 in the sum', () => {
     const lines = [
       makeLine({ selected: true, averageRidership: undefined }),

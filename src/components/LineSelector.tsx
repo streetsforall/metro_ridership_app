@@ -76,6 +76,18 @@ const columnStates: ColumnHeaderState[] = [
   //   align: 'right',
   // },
   {
+    align: 'right',
+    label: 'Miles',
+    key: 'distanceMiles',
+    sortDirection: false,
+  },
+  {
+    align: 'right',
+    label: 'Riders/Mile',
+    key: 'ridersPerMile',
+    sortDirection: false,
+  },
+  {
     align: 'left',
     label: 'Ridership over time',
     sortDirection: false,

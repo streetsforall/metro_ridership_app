@@ -1,5 +1,4 @@
-import type { RidershipRecord } from '../@types/metrics.types';
-import type { DayOfWeek } from '../hooks/useUserDashboardInput';
+import type { RidershipRecord, DayOfWeek } from '../@types/metrics.types';
 
 /**
  * Calculates average daily ridership over a series of metrics for a presumed line
@@ -64,4 +63,8 @@ function calcStart(metrics: RidershipRecord[], dayOfWeek: DayOfWeek): number {
   return first[dayOfWeek] ?? 0;
 }
 
-export { calcAbsChange, calcAvg, calcEnd, calcStart };
+function calcRidersPerMile(avgRidership: number, distanceMiles: number): number {
+  return avgRidership / distanceMiles;
+}
+
+export { calcAbsChange, calcAvg, calcEnd, calcStart, calcRidersPerMile };

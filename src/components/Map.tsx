@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import maplibregl, { Popup } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Line } from '../@types/lines.types';
+import { buildPopupHTML } from '../utils/mapPopup';
 import './Map.css';
 
 const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
@@ -14,10 +15,12 @@ interface MapProps {
   lines: Line[];
 }
 
+
 export default function Map({ lines }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const isStyleLoaded = useRef(false);
+  const linesRef = useRef<Line[]>(lines);
 
   // Initialize map once
   useEffect(() => {
@@ -106,9 +109,11 @@ export default function Map({ lines }: MapProps) {
           { hover: true },
         );
 
+        const lineId = e.features[0].properties.line_id as number;
+        const lineData = linesRef.current.find((l) => l.id === lineId);
         popup
           .setLngLat(e.lngLat)
-          .setHTML(e.features[0].properties.name as string)
+          .setHTML(buildPopupHTML(e.features[0].properties.name as string, lineData))
           .addTo(map.current!);
       };
 
@@ -147,6 +152,7 @@ export default function Map({ lines }: MapProps) {
 
   // Sync selected lines with the map filter whenever selection changes
   useEffect(() => {
+    linesRef.current = lines;
     if (!isStyleLoaded.current) return;
     const selectedIds = lines.filter((l) => l.selected).map((l) => l.id);
     map.current?.setFilter('lines-selected', [

@@ -82,6 +82,18 @@ describe('lines table', () => {
     expect(screen.getByText('Line')).toBeTruthy();
   });
 
+  it('shows Miles and Riders/Mile headers when expanded', () => {
+    render(<LineSelector {...defaultProps} lines={[mockLine]} isExpanded={true} />);
+    expect(screen.getByText('Miles')).toBeTruthy();
+    expect(screen.getByText('Riders/Mile')).toBeTruthy();
+  });
+
+  it('hides Miles and Riders/Mile headers when not expanded', () => {
+    render(<LineSelector {...defaultProps} lines={[mockLine]} isExpanded={false} />);
+    expect(screen.queryByText('Miles')).toBeNull();
+    expect(screen.queryByText('Riders/Mile')).toBeNull();
+  });
+
   it('cycles sort direction on column header click: none → asc → desc → none', () => {
     render(<LineSelector {...defaultProps} lines={[mockLine]} isExpanded={true} />);
     const lineHeader = screen.getByText('Line');

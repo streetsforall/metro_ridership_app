@@ -1,3 +1,11 @@
+export const daysOfWeek = {
+  Weekday: 'est_wkday_ridership',
+  Saturday: 'est_sat_ridership',
+  Sunday: 'est_sun_ridership',
+} as const;
+
+export type DayOfWeek = (typeof daysOfWeek)[keyof typeof daysOfWeek];
+
 // Associative array with line name as key
 export interface ConsolidatedRidership {
   [key: string]: ConsolidatedRecord;
