@@ -8,7 +8,7 @@ const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
 
 const STYLE_URL = mapTilerKey
   ? `https://api.maptiler.com/maps/ab4289f4-b600-4f7a-bbe3-c0666c48446d/style.json?key=${mapTilerKey}`
-  : 'https://tiles.openfreemap.org/styles/liberty';
+  : 'https://tiles.openfreemap.org/styles/positron';
 
 interface MapProps {
   lines: Line[];
@@ -52,7 +52,7 @@ export default function Map({ lines }: MapProps) {
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
           'line-color': '#999',
-          'line-opacity': 0.25,
+          'line-opacity': 0.15,
           'line-width': 2,
         },
       });
@@ -84,17 +84,27 @@ export default function Map({ lines }: MapProps) {
 
       let hoveredId: string | number | undefined;
 
-      const onMouseMove = (e: maplibregl.MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] }) => {
+      const onMouseMove = (
+        e: maplibregl.MapMouseEvent & {
+          features?: maplibregl.MapGeoJSONFeature[];
+        },
+      ) => {
         if (!e.features?.length) return;
 
         map.current!.getCanvas().style.cursor = 'pointer';
 
         if (hoveredId !== undefined) {
-          map.current!.setFeatureState({ source: 'metro-lines', id: hoveredId }, { hover: false });
+          map.current!.setFeatureState(
+            { source: 'metro-lines', id: hoveredId },
+            { hover: false },
+          );
         }
 
         hoveredId = e.features[0].id;
-        map.current!.setFeatureState({ source: 'metro-lines', id: hoveredId }, { hover: true });
+        map.current!.setFeatureState(
+          { source: 'metro-lines', id: hoveredId },
+          { hover: true },
+        );
 
         popup
           .setLngLat(e.lngLat)
@@ -107,7 +117,10 @@ export default function Map({ lines }: MapProps) {
         popup.remove();
 
         if (hoveredId !== undefined) {
-          map.current!.setFeatureState({ source: 'metro-lines', id: hoveredId }, { hover: false });
+          map.current!.setFeatureState(
+            { source: 'metro-lines', id: hoveredId },
+            { hover: false },
+          );
         }
         hoveredId = undefined;
       };
@@ -117,7 +130,11 @@ export default function Map({ lines }: MapProps) {
 
       // Apply initial selection state
       const selectedIds = lines.filter((l) => l.selected).map((l) => l.id);
-      map.current!.setFilter('lines-selected', ['in', ['get', 'line_id'], ['literal', selectedIds]]);
+      map.current!.setFilter('lines-selected', [
+        'in',
+        ['get', 'line_id'],
+        ['literal', selectedIds],
+      ]);
     });
 
     return () => {

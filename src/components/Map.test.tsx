@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
+import maplibregl from 'maplibre-gl';
 import Map from './Map';
 import type { Line } from '../@types/lines.types';
 
@@ -65,6 +66,13 @@ describe('Map', () => {
     expect(container.querySelector('#lineMap')).toBeTruthy();
   });
 
+  it('initialises with the positron style when no MapTiler key is set', () => {
+    render(<Map lines={[]} />);
+    expect(vi.mocked(maplibregl.Map)).toHaveBeenCalledWith(
+      expect.objectContaining({ style: 'https://tiles.openfreemap.org/styles/positron' }),
+    );
+  });
+
   it('removes the map instance on unmount', () => {
     const { unmount } = render(<Map lines={[]} />);
     unmount();
@@ -86,6 +94,17 @@ describe('Map', () => {
       act(() => { captured.loadCallback?.(); });
       expect(captured.addLayer).toHaveBeenCalledWith(expect.objectContaining({ id: 'lines-all' }));
       expect(captured.addLayer).toHaveBeenCalledWith(expect.objectContaining({ id: 'lines-selected' }));
+    });
+
+    it('renders the lines-all layer with 0.15 opacity', () => {
+      render(<Map lines={[]} />);
+      act(() => { captured.loadCallback?.(); });
+      expect(captured.addLayer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'lines-all',
+          paint: expect.objectContaining({ 'line-opacity': 0.15 }),
+        }),
+      );
     });
 
     it('filters to only the IDs of selected lines', () => {
