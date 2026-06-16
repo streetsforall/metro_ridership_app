@@ -25,7 +25,7 @@ const GTFS_URLS = {
 const BRT_NAMES = { 901: 'G Line', 910: 'J Line' };
 
 // Must match busLineColor() in src/utils/lines.ts exactly
-function busLineColor(lineId) {
+export function busLineColor(lineId) {
   const hue = Math.round((lineId * 137.508) % 360);
   return `hsl(${hue}, 75%, 45%)`;
 }
@@ -40,7 +40,7 @@ const RAIL_COLORS = {
  * Parses a simple CSV string (no multi-line quoted fields).
  * Handles quoted fields with commas inside them.
  */
-function parseCSV(text) {
+export function parseCSV(text) {
   const lines = text.replace(/\r/g, '').split('\n').filter(Boolean);
   if (lines.length === 0) return [];
 
@@ -51,7 +51,7 @@ function parseCSV(text) {
   });
 }
 
-function splitCSVLine(line) {
+export function splitCSVLine(line) {
   const result = [];
   let current = '';
   let inQuotes = false;
@@ -215,7 +215,9 @@ async function main() {
   console.log(`Total features: ${allFeatures.length}`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
