@@ -1,10 +1,16 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import OutputArea from './OutputArea';
+import type { ChartOptions } from 'chart.js';
 import type { Line } from '../@types/lines.types';
 
+let capturedOptions: ChartOptions<'line'> | undefined;
+
 vi.mock('react-chartjs-2', () => ({
-  Line: () => <canvas data-testid="line-chart" />,
+  Line: ({ options }: { options: ChartOptions<'line'> }) => {
+    capturedOptions = options;
+    return <canvas data-testid="line-chart" />;
+  },
 }));
 
 vi.mock('./Map', () => ({
@@ -121,5 +127,56 @@ describe('OutputArea Map', () => {
     const lines = [makeLine({ id: 801 }), makeLine({ id: 802 })];
     render(<OutputArea chartDatasets={[]} months={[]} lines={lines} />);
     expect(screen.getByTestId('map').getAttribute('data-line-count')).toBe('2');
+  });
+});
+
+describe('tooltip itemSort', () => {
+  type SimpleItem = { parsed: { y: number | null } };
+  type ItemSortFn = (a: SimpleItem, b: SimpleItem) => number;
+
+  beforeEach(() => {
+    capturedOptions = undefined;
+  });
+
+  const renderWithDataset = () =>
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2022 1']}
+        lines={[]}
+      />,
+    );
+
+  it('is defined on the chart options', () => {
+    renderWithDataset();
+    expect(capturedOptions?.plugins?.tooltip?.itemSort).toBeDefined();
+  });
+
+  it('places the higher-ridership item first', () => {
+    renderWithDataset();
+    const fn = capturedOptions?.plugins?.tooltip?.itemSort as unknown as ItemSortFn;
+    const high = { parsed: { y: 10000 } };
+    const low = { parsed: { y: 5000 } };
+    // itemSort(a=high, b=low) → b.y - a.y = 5000 - 10000 < 0 → a sorts first ✓
+    expect(fn(high, low)).toBeLessThan(0);
+    // itemSort(a=low, b=high) → b.y - a.y = 10000 - 5000 > 0 → b sorts first ✓
+    expect(fn(low, high)).toBeGreaterThan(0);
+  });
+
+  it('returns 0 for equal ridership values', () => {
+    renderWithDataset();
+    const fn = capturedOptions?.plugins?.tooltip?.itemSort as unknown as ItemSortFn;
+    const item = { parsed: { y: 7500 } };
+    expect(fn(item, item)).toBe(0);
+  });
+
+  it('treats null parsed.y as 0', () => {
+    renderWithDataset();
+    const fn = capturedOptions?.plugins?.tooltip?.itemSort as unknown as ItemSortFn;
+    const nullItem = { parsed: { y: null } };
+    const positiveItem = { parsed: { y: 5000 } };
+    // null treated as 0; positive item should sort first
+    expect(fn(nullItem, positiveItem)).toBeGreaterThan(0);
+    expect(fn(positiveItem, nullItem)).toBeLessThan(0);
   });
 });

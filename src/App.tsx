@@ -100,21 +100,20 @@ function App() {
      */
     const datasets: ChartDataset<'line', CustomChartData[]>[] = [];
 
-    Object.entries(consolidatedRidership).forEach(
-      ([line, consolidatedRecord]) => {
-        if (!consolidatedRecord.selected) return;
+    lines.forEach((line) => {
+      const consolidatedRecord = consolidatedRidership[line.id];
+      if (!consolidatedRecord?.selected) return;
 
-        datasets.push({
-          data: consolidatedRecord.ridershipRecords.map((record) => ({
-            time: createTimeStringForChartData(record.year, record.month),
-            stat: record[dayOfWeek],
-          })) as CustomChartData[],
-          label: getLineNames(Number(line)).current,
-          backgroundColor: getLineColor(Number(line)),
-          borderColor: getLineColor(Number(line)),
-        });
-      },
-    );
+      datasets.push({
+        data: consolidatedRecord.ridershipRecords.map((record) => ({
+          time: createTimeStringForChartData(record.year, record.month),
+          stat: record[dayOfWeek],
+        })) as CustomChartData[],
+        label: getLineNames(line.id).current,
+        backgroundColor: getLineColor(line.id),
+        borderColor: getLineColor(line.id),
+      });
+    });
 
     // Create month labels
     const months = chartDatasets[0]

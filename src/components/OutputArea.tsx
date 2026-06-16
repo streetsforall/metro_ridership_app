@@ -48,6 +48,11 @@ export default function OutputArea({
       intersect: true,
       mode: 'index',
     },
+    plugins: {
+      tooltip: {
+        itemSort: (a, b) => (b.parsed.y ?? 0) - (a.parsed.y ?? 0),
+      },
+    },
     parsing: {
       xAxisKey: 'time',
       yAxisKey: 'stat',
