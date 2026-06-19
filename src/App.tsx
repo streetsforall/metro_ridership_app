@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { type ChartDataset } from 'chart.js';
 import DateRangeSelector from './components/DateRangeSelector';
 import Footer from './components/Footer';
@@ -10,9 +10,7 @@ import useUserDashboardInput, {
 } from './hooks/useUserDashboardInput';
 import { getLineColor, getLineNames } from './utils/lines';
 import type { CustomChartData } from './@types/chart.types';
-import type { Line } from './@types/lines.types';
 import type {
-  ConsolidatedRecord,
   ConsolidatedRidership,
   RidershipRecord,
 } from './@types/metrics.types';
@@ -21,13 +19,6 @@ import ridershipRecords from './data/ridership.json';
 function App() {
   const [isLineSelectorExpanded, setIsLineSelectorExpanded] =
     useState<boolean>(false);
-  const [chartDatasets, setChartDatasets] = useState<
-    ChartDataset<'line', CustomChartData[]>[]
-  >([]);
-  const [monthList, setMonthList] = useState<string[]>([]);
-  const [ridershipByLine, setRidershipByLine] = useState<ConsolidatedRidership>(
-    {},
-  );
 
   const userDashboardInputState: UserDashboardInputState =
     useUserDashboardInput();
@@ -45,148 +36,102 @@ function App() {
     isAggregateVisible,
   } = userDashboardInputState;
 
-  const createTimeStringForChartData = (
-    year: number,
-    month: number,
-  ): string => {
-    return year + ' ' + month;
-  };
-
   /**
-   * Update params on state change
+   * Computes chartDatasets and ridershipByLine together in a single pass over
+   * ridershipRecords since both are derived from the same filtered view of the data.
    */
-  useEffect((): void => {
-    if (!chartDatasets) return;
-
+  const { chartDatasets, ridershipByLine } = useMemo(() => {
     /**
-     * Consolidate by line
+     * Group raw records by line ID, skipping any outside the selected date window.
+     * new Date(year, month) treats month as 0-based, but the data stores it as
+     * 1-based, so the comparison is effectively off by one month —
+     * preserved from the original implementation.
      */
     const consolidatedRidership: ConsolidatedRidership = {};
 
-    for (let i = 0; i < ridershipRecords.length; i++) {
-      const ridershipRecord: RidershipRecord = ridershipRecords[i];
+    for (const record of ridershipRecords as RidershipRecord[]) {
+      const metricDate = new Date(record.year, record.month);
+      if (
+        startDate.getTime() >= metricDate.getTime() ||
+        endDate.getTime() <= metricDate.getTime()
+      )
+        continue;
 
-      // Filter by year
-      const newMetricDate = new Date(
-        ridershipRecord.year,
-        ridershipRecord.month,
-      );
-
-      // Need to filter our date to make sure it falls in our date range
-      const startCap = startDate.getTime() >= newMetricDate.getTime();
-      const endCap = endDate.getTime() <= newMetricDate.getTime();
-
-      // If year false we break
-      if (startCap || endCap) continue;
-
-      if (!consolidatedRidership[ridershipRecord.line_name]?.ridershipRecords) {
-        const isSelected: boolean = !!lines.find(
-          (line: Line) => line.id === Number(ridershipRecord.line_name),
-        )?.selected;
-
-        consolidatedRidership[ridershipRecord.line_name] = {
-          selected: isSelected,
+      if (!consolidatedRidership[record.line_name]?.ridershipRecords) {
+        /**
+         * Snapshot selected status on first encounter for this line so the
+         * dataset loop below doesn't need to search lines[] on every record.
+         */
+        consolidatedRidership[record.line_name] = {
+          selected: !!lines.find((l) => l.id === Number(record.line_name))
+            ?.selected,
           ridershipRecords: [],
-        } as ConsolidatedRecord;
+        };
       }
-
-      const consolidatedRecord =
-        consolidatedRidership[ridershipRecord.line_name];
-      consolidatedRecord.ridershipRecords.push(ridershipRecord);
+      consolidatedRidership[record.line_name].ridershipRecords.push(record);
     }
 
     /**
-     * Add selected lines to the chart
+     * Build one Chart.js dataset per selected line. Iterating lines[] (already
+     * alphabetically sorted) rather than consolidatedRidership preserves legend
+     * order regardless of the numeric key enumeration order of the object.
      */
     const datasets: ChartDataset<'line', CustomChartData[]>[] = [];
 
-    Object.entries(consolidatedRidership).forEach(
-      ([line, consolidatedRecord]) => {
-        if (!consolidatedRecord.selected) return;
-
-        datasets.push({
-          data: consolidatedRecord.ridershipRecords.map((record) => ({
-            time: createTimeStringForChartData(record.year, record.month),
-            stat: record[dayOfWeek],
-          })) as CustomChartData[],
-          label: getLineNames(Number(line)).current,
-          backgroundColor: getLineColor(Number(line)),
-          borderColor: getLineColor(Number(line)),
-        });
-      },
-    );
-
-    // Create month labels
-    const months = chartDatasets[0]
-      ? chartDatasets[0].data.map((a) => a.time)
-      : [];
-    setMonthList(months);
-
-    /**
-     * Add aggregate lines to chart dataset if applicable.
-     */
-    if (isAggregateVisible) {
-      const aggregateDateToStatMap: CustomChartData[] = [];
-
-      datasets.forEach((chartDataset) => {
-        chartDataset.data.forEach(
-          (timeStatDataPoint: CustomChartData, index: number) => {
-            const { time, stat } = timeStatDataPoint;
-
-            let customChartData: CustomChartData =
-              aggregateDateToStatMap[index];
-            if (!customChartData) {
-              customChartData = { time: time, stat: 0 };
-              aggregateDateToStatMap[index] = customChartData;
-            }
-
-            customChartData.stat += stat;
-          },
-        );
-      });
+    lines.forEach((line) => {
+      const consolidated = consolidatedRidership[line.id];
+      if (!consolidated?.selected) return;
 
       datasets.push({
-        data: aggregateDateToStatMap,
+        data: consolidated.ridershipRecords.map((r) => ({
+          time: `${r.year} ${r.month}`,
+          stat: r[dayOfWeek],
+        })) as CustomChartData[],
+        label: getLineNames(line.id).current,
+        backgroundColor: getLineColor(line.id),
+        borderColor: getLineColor(line.id),
+      });
+    });
+
+    /**
+     * Sum every selected line's stat at each time index into a single series.
+     */
+    if (isAggregateVisible) {
+      const aggregateMap: CustomChartData[] = [];
+      datasets.forEach((dataset) => {
+        dataset.data.forEach((point, i) => {
+          if (!aggregateMap[i]) aggregateMap[i] = { time: point.time, stat: 0 };
+          aggregateMap[i].stat += point.stat;
+        });
+      });
+      datasets.push({
+        data: aggregateMap,
         label: 'Aggregate',
         backgroundColor: getLineColor(-1),
         borderColor: getLineColor(-2),
       });
     }
 
-    /**
-     * Update state for chart dataset
-     */
-    setChartDatasets(datasets);
-
-    setRidershipByLine(consolidatedRidership);
-
-    /**
-     * Need to add data as dependency.
-     * Since data is an array, we need to stringify due to current React system.
-     * https://github.com/facebook/react/issues/14476
-     */
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    startDate,
-    endDate,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    JSON.stringify(lines),
-    dayOfWeek,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    JSON.stringify(chartDatasets),
-    isAggregateVisible,
-  ]);
+    return { chartDatasets: datasets, ridershipByLine: consolidatedRidership };
+  }, [startDate, endDate, lines, dayOfWeek, isAggregateVisible]);
 
   /**
-   * Add calculated metrics to each line
+   * Pull time labels from the first dataset; all datasets share the same x-axis.
    */
-  useEffect(
-    () => {
-      updateLinesWithLineMetrics(ridershipByLine);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(ridershipByLine)],
+  const monthList = useMemo(
+    () => chartDatasets[0]?.data.map((d) => d.time) ?? [],
+    [chartDatasets],
   );
+
+  /**
+   * Attach computed metrics (average ridership, change, etc.) to each line entry
+   * so the LineSelector can display them. JSON.stringify is used as the dependency
+   * because ridershipByLine is a new object reference on every render (useMemo).
+   */
+  useEffect(() => {
+    updateLinesWithLineMetrics(ridershipByLine);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(ridershipByLine)]);
 
   return (
     /* Stretch full height */
@@ -202,7 +147,7 @@ function App() {
           setEndDate={setEndDate}
           dayOfWeek={dayOfWeek}
           setDayOfWeek={setDayOfWeek}
-        ></DateRangeSelector>
+        />
       </div>
 
       {/* Grow to fill remaining vertical space; only one column if expanded or on mobile */}

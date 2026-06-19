@@ -9,6 +9,7 @@ import {
   Legend,
   type ChartDataset,
   type ChartOptions,
+  type Plugin,
 } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
 import colors from 'tailwindcss/colors';
@@ -23,6 +24,25 @@ interface OutputAreaProps {
   lines: Line[];
 }
 
+const hoverCrosshairPlugin: Plugin<'line'> = {
+  id: 'hoverCrosshair',
+  afterDraw(chart) {
+    const active = chart.tooltip?.getActiveElements();
+    if (!active?.length) return;
+    const x = active[0].element.x;
+    const { ctx, chartArea: { top, bottom } } = chart;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x, bottom);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = colors.stone['500'];
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.restore();
+  },
+};
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -31,6 +51,7 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
+  hoverCrosshairPlugin,
 );
 
 export default function OutputArea({
@@ -45,8 +66,13 @@ export default function OutputArea({
     interaction: {
       axis: 'x',
       includeInvisible: false,
-      intersect: true,
+      intersect: false,
       mode: 'index',
+    },
+    plugins: {
+      tooltip: {
+        itemSort: (a, b) => (b.parsed.y ?? 0) - (a.parsed.y ?? 0),
+      },
     },
     parsing: {
       xAxisKey: 'time',
