@@ -35,8 +35,23 @@ describe('getLineColor', () => {
     expect(getLineColor(807)).toBe('#e56db1');
   });
 
-  it('returns undefined for a number not in any known list', () => {
-    expect(getLineColor(99999)).toBeUndefined();
+  it('returns an HSL color string for an unknown bus line number', () => {
+    expect(getLineColor(99999)).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/);
+  });
+
+  it('always returns a string (never undefined)', () => {
+    expect(typeof getLineColor(0)).toBe('string');
+    expect(typeof getLineColor(1)).toBe('string');
+    expect(typeof getLineColor(99999)).toBe('string');
+  });
+
+  it('returns the same color for the same bus line on repeated calls', () => {
+    expect(getLineColor(100)).toBe(getLineColor(100));
+    expect(getLineColor(200)).toBe(getLineColor(200));
+  });
+
+  it('returns different colors for different bus line numbers', () => {
+    expect(getLineColor(100)).not.toBe(getLineColor(101));
   });
 });
 

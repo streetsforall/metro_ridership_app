@@ -35,6 +35,12 @@ export default function SummaryData({ lines }: SummaryDataProps) {
       0,
     );
 
+  const totalMiles = selectedLines.reduce(
+    (sum, line) => sum + (line.distanceMiles ?? 0),
+    0,
+  );
+  const ridersPerMile = totalMiles > 0 ? averageDailyRidership / totalMiles : undefined;
+
   return (
     <div>
       {selectedLines.length > 0 && (
@@ -54,6 +60,32 @@ export default function SummaryData({ lines }: SummaryDataProps) {
               {Math.round(averageDailyRidership).toLocaleString()}
             </span>
           </div>
+
+          {ridersPerMile !== undefined && (
+            <div className="pane">
+              <div className="flex justify-between mb-2 min-w-56 text-sm">
+                <span className="text-stone-400 uppercase whitespace-nowrap">
+                  Riders / Mile
+                </span>
+              </div>
+              <span className="tracking-tighter text-5xl">
+                {Math.round(ridersPerMile).toLocaleString()}
+              </span>
+            </div>
+          )}
+
+          {totalMiles > 0 && (
+            <div className="pane">
+              <div className="flex justify-between mb-2 min-w-56 text-sm">
+                <span className="text-stone-400 uppercase whitespace-nowrap">
+                  Total Miles
+                </span>
+              </div>
+              <span className="tracking-tighter text-5xl">
+                {totalMiles.toLocaleString()}
+              </span>
+            </div>
+          )}
 
           <div className="pane">
             <div className="flex justify-between mb-2 min-w-56 text-sm">

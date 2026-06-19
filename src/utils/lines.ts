@@ -1,5 +1,3 @@
-import randomColor from 'randomcolor';
-import lineMeta from '../data/metro_line_metadata_current.json';
 import type { Line } from '../@types/lines.types';
 import type { ConsolidatedRidership } from '../@types/metrics.types';
 
@@ -58,18 +56,15 @@ const definedLines = [
   },
 ];
 
-// Random colors need to be fixed so that lines colors are constant as state changes
-const randomColors = lineMeta.map((line) => ({
-  number: line.line,
-  color: randomColor({ luminosity: 'bright' }),
-}));
+// Deterministic hue spread via the golden angle so each bus line always
+// gets the same color and it matches what the map renders.
+function busLineColor(lineId: number): string {
+  const hue = Math.round((lineId * 137.508) % 360);
+  return `hsl(${hue}, 75%, 45%)`;
+}
 
-export function getLineColor(number: number) {
-  const line =
-    definedLines.find((line) => line.number === number) ||
-    randomColors.find((line) => line.number === number);
-
-  return line?.color;
+export function getLineColor(number: number): string {
+  return definedLines.find((line) => line.number === number)?.color ?? busLineColor(number);
 }
 
 export function getLineNames(number: number) {

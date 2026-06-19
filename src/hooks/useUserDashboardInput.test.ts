@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import useUserDashboardInput, { daysOfWeek } from './useUserDashboardInput';
+import type { ConsolidatedRidership } from '../@types/metrics.types';
 
 // Reset URL and replaceState spy before each test
 beforeEach(() => {
@@ -257,5 +258,67 @@ describe('URL sync', () => {
   it('omits aggregate param when isAggregateVisible is false by default', () => {
     renderHook(() => useUserDashboardInput());
     expect(window.location.search).not.toContain('aggregate=');
+  });
+});
+
+describe('line initialisation', () => {
+  it('stamps distanceMiles onto lines that have GeoJSON data', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+    const aLine = result.current.lines.find((l) => l.id === 801);
+    expect(aLine?.distanceMiles).toBeGreaterThan(0);
+  });
+});
+
+describe('updateLinesWithLineMetrics', () => {
+  const makeRidership = (lineId: number, wkday: number): ConsolidatedRidership => ({
+    [lineId]: {
+      selected: true,
+      ridershipRecords: [
+        {
+          year: 2022,
+          month: 1,
+          line_name: lineId,
+          est_wkday_ridership: wkday,
+          est_sat_ridership: null,
+          est_sun_ridership: null,
+        },
+      ],
+    },
+  });
+
+  it('sets ridersPerMile on a line that has distanceMiles', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.updateLinesWithLineMetrics(makeRidership(801, 10000));
+    });
+
+    const aLine = result.current.lines.find((l) => l.id === 801);
+    expect(aLine?.ridersPerMile).toBeGreaterThan(0);
+  });
+
+  it('computes ridersPerMile as averageRidership divided by distanceMiles', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.updateLinesWithLineMetrics(makeRidership(801, 10000));
+    });
+
+    const aLine = result.current.lines.find((l) => l.id === 801);
+    expect(aLine?.ridersPerMile).toBeCloseTo(
+      10000 / (aLine?.distanceMiles ?? 1),
+      5,
+    );
+  });
+
+  it('leaves ridersPerMile undefined when no ridership record exists for the line', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.updateLinesWithLineMetrics({});
+    });
+
+    const aLine = result.current.lines.find((l) => l.id === 801);
+    expect(aLine?.ridersPerMile).toBeUndefined();
   });
 });

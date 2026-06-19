@@ -1,0 +1,20 @@
+#lineMap {
+  height: 400px;
+  width: 100%;
+  border-radius: inherit;
+}
+
+.maplibregl-popup table {
+  border-collapse: collapse;
+  margin-top: 6px;
+  font-size: 0.8rem;
+}
+
+.maplibregl-popup table td {
+  padding: 1px 6px 1px 0;
+}
+
+.map-popup-value {
+  text-align: right;
+  font-weight: 600;
+}

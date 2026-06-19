@@ -21,4 +21,6 @@ export interface Line {
   viewMap?: string;
   isAggregate?: boolean;
   aggregatedLines?: number[];
+  distanceMiles?: number;
+  ridersPerMile?: number;
 }

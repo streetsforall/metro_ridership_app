@@ -7,7 +7,7 @@ import reactX from 'eslint-plugin-react-x';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'next-env.d.ts'] },
   {
     extends: [
       js.configs.recommended,

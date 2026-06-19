@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { calcAbsChange, calcAvg, calcStart, calcEnd } from '../utils/calc';
+import { calcAbsChange, calcAvg, calcStart, calcEnd, calcRidersPerMile } from '../utils/calc';
 import { getLineNames, lineNameSortFunction } from '../utils/lines';
 import {
   parseMonthParam,
@@ -9,11 +9,16 @@ import {
   parseModesFromParams,
 } from '../utils/queryParams';
 import type { Line, LineJson } from '../@types/lines.types';
-import type {
-  ConsolidatedRecord,
-  ConsolidatedRidership,
+import {
+  daysOfWeek,
+  type DayOfWeek,
+  type ConsolidatedRecord,
+  type ConsolidatedRidership,
 } from '../@types/metrics.types';
+
+export { daysOfWeek, type DayOfWeek };
 import LineJsonData from '../data/metro_line_metadata_current.json';
+import LineDistances from '../data/line_distances.json';
 
 export interface UserDashboardInputState {
   startDate: Date;
@@ -45,15 +50,6 @@ export interface UserDashboardInputState {
   selectAllVisibleLines: () => void;
 }
 
-// Object const instead of enum for TS 5.8
-// https://www.typescriptlang.org/docs/handbook/enums.html#objects-vs-enums
-export const daysOfWeek = {
-  Weekday: 'est_wkday_ridership',
-  Saturday: 'est_sat_ridership',
-  Sunday: 'est_sun_ridership',
-} as const;
-export type DayOfWeek = (typeof daysOfWeek)[keyof typeof daysOfWeek];
-
 
 /**
  * Default starting values
@@ -78,6 +74,7 @@ const createLinesData = (selectedLineIds: number[], modes: string[]): Line[] => 
         former: getLineNames(line.line).former,
         selected: selectedLineIds.includes(line.line),
         visible,
+        distanceMiles: (LineDistances as Record<string, number>)[String(line.line)],
       } as Line;
     })
     .sort(lineNameSortFunction);
@@ -183,10 +180,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
         }
 
         // Calculate metrics for each line
-        updatedLine.averageRidership = calcAvg(
-          consolidatedRecord.ridershipRecords,
-          dayOfWeek,
-        );
+        const avgRidership = calcAvg(consolidatedRecord.ridershipRecords, dayOfWeek);
+        updatedLine.averageRidership = avgRidership;
 
         updatedLine.changeInRidership = calcAbsChange(
           consolidatedRecord.ridershipRecords,
@@ -202,6 +197,10 @@ const useUserDashboardInput = (): UserDashboardInputState => {
           consolidatedRecord.ridershipRecords,
           dayOfWeek,
         );
+
+        if (updatedLine.distanceMiles) {
+          updatedLine.ridersPerMile = calcRidersPerMile(avgRidership, updatedLine.distanceMiles);
+        }
 
         return updatedLine;
       }),

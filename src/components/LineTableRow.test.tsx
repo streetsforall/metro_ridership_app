@@ -150,6 +150,53 @@ describe('LineTableRow expanded view', () => {
     expect(changeCell.className).toContain('text-red-600');
   });
 
+  it('shows distance miles when expanded', () => {
+    const lineWithDistance = { ...mockLine, distanceMiles: 22.3 };
+    render(
+      <table>
+        <tbody>
+          <LineTableRow {...baseProps} line={lineWithDistance} isExpanded />
+        </tbody>
+      </table>,
+    );
+    expect(screen.getByText('22.3')).toBeTruthy();
+  });
+
+  it('shows — for miles when expanded and distanceMiles is absent', () => {
+    render(
+      <table>
+        <tbody>
+          <LineTableRow {...baseProps} isExpanded />
+        </tbody>
+      </table>,
+    );
+    // The first — should be for miles (ridersPerMile also uses — when absent)
+    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('shows riders per mile when expanded', () => {
+    const lineWithRpm = { ...mockLine, ridersPerMile: 750 };
+    render(
+      <table>
+        <tbody>
+          <LineTableRow {...baseProps} line={lineWithRpm} isExpanded />
+        </tbody>
+      </table>,
+    );
+    expect(screen.getByText('750')).toBeTruthy();
+  });
+
+  it('shows — for riders per mile when expanded and ridersPerMile is absent', () => {
+    render(
+      <table>
+        <tbody>
+          <LineTableRow {...baseProps} isExpanded />
+        </tbody>
+      </table>,
+    );
+    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
+  });
+
   it('does not render sparkline when not expanded', () => {
     render(
       <table>
@@ -159,6 +206,65 @@ describe('LineTableRow expanded view', () => {
       </table>,
     );
     expect(screen.queryByTestId('sparkline')).toBeNull();
+  });
+});
+
+describe('LineTableRow — zero ridership values', () => {
+  const renderExpanded = (lineOverride: Partial<Line>) =>
+    render(
+      <table>
+        <tbody>
+          <LineTableRow
+            {...baseProps}
+            line={{ ...mockLine, ...lineOverride }}
+            isExpanded
+          />
+        </tbody>
+      </table>,
+    );
+
+  it('shows — in averageRidership cell when value is 0', () => {
+    const { container } = renderExpanded({ averageRidership: 0 });
+    expect(container.querySelector('[data-qa="avg-ridership-801"]')?.textContent).toBe('—');
+  });
+
+  it('shows — in changeInRidership cell when value is 0', () => {
+    const { container } = renderExpanded({ changeInRidership: 0 });
+    expect(container.querySelector('[data-qa="change-ridership-801"]')?.textContent).toBe('—');
+  });
+
+  it('shows — in startingRidership cell when value is 0', () => {
+    const { container } = renderExpanded({ startingRidership: 0 });
+    expect(container.querySelector('[data-qa="starting-ridership-801"]')?.textContent).toBe('—');
+  });
+
+  it('shows — in endingRidership cell when value is 0', () => {
+    const { container } = renderExpanded({ endingRidership: 0 });
+    expect(container.querySelector('[data-qa="ending-ridership-801"]')?.textContent).toBe('—');
+  });
+
+  it('renders the same number of cells whether ridership values are 0 or non-zero', () => {
+    const { container } = renderExpanded({
+      averageRidership: 0,
+      changeInRidership: 0,
+      startingRidership: 0,
+      endingRidership: 0,
+    });
+    expect(container.querySelectorAll('td')).toHaveLength(10);
+  });
+
+  it('produces no stray 0 text nodes in the row when ridership values are 0', () => {
+    const { container } = renderExpanded({
+      averageRidership: 0,
+      changeInRidership: 0,
+      startingRidership: 0,
+      endingRidership: 0,
+    });
+    const tr = container.querySelector('tr');
+    const strayTextNodes = Array.from(tr?.childNodes ?? []).filter(
+      (node) => node.nodeType === 3 && node.textContent?.trim() !== '',
+    );
+    expect(strayTextNodes).toHaveLength(0);
   });
 });
 

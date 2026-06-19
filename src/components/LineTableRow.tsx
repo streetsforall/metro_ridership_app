@@ -99,10 +99,10 @@ export default function MetroLineTableRow({
       {lineMetrics && (
         <tr className="even:bg-[rgba(0,0,0,0.05)]">
           {/* Line rank */}
-          <td className="text-right text-stone-400 w-10">{id}</td>
+          <td data-qa={`rank-${line.id}`} className="text-right text-stone-400 w-10">{id}</td>
 
           {/* Is Selected */}
-          <td className={isExpanded ? 'w-28' : 'w-10'}>
+          <td data-qa={`select-${line.id}`} className={isExpanded ? 'w-28' : 'w-10'}>
             <Checkbox.Root
               id={line.id.toString()}
               onClick={() => onToggleSelectLine(line)}
@@ -122,7 +122,7 @@ export default function MetroLineTableRow({
           </td>
 
           {/* Line name (ex: Line 2, B Line) */}
-          <td>
+          <td data-qa={`name-${line.id}`}>
             <label
               htmlFor={String(line.id)}
               className="group block cursor-pointer py-2 whitespace-nowrap"
@@ -141,40 +141,59 @@ export default function MetroLineTableRow({
           </td>
 
           {/* Average ridership over a duration (ex: 3 months) */}
-          {isExpanded && line.averageRidership && (
-            <td className="text-right">
+          {isExpanded && (
+            <td data-qa={`avg-ridership-${line.id}`} className="text-right">
               {line.averageRidership
                 ? Math.round(line.averageRidership).toLocaleString()
-                : 0}
+                : '—'}
             </td>
           )}
 
           {/* Change in ridership (ex: +1000, -200) */}
           {isExpanded &&
-            line.changeInRidership &&
-            (line.changeInRidership < 0 ? (
-              <td className="text-right text-red-600">
-                {line.changeInRidership.toLocaleString()}
-              </td>
+            (line.changeInRidership ? (
+              line.changeInRidership < 0 ? (
+                <td data-qa={`change-ridership-${line.id}`} className="text-right text-red-600">
+                  {line.changeInRidership.toLocaleString()}
+                </td>
+              ) : (
+                <td data-qa={`change-ridership-${line.id}`} className="text-right text-green-600">
+                  {'+' + line.changeInRidership.toLocaleString()}
+                </td>
+              )
             ) : (
-              <td className="text-right text-green-600">
-                {'+' + line.changeInRidership.toLocaleString()}
-              </td>
+              <td data-qa={`change-ridership-${line.id}`} className="text-right">—</td>
             ))}
 
           {/* Starting ridership  */}
-          {isExpanded && line.startingRidership && (
-            <td className="text-right">
-              {line.id
+          {isExpanded && (
+            <td data-qa={`starting-ridership-${line.id}`} className="text-right">
+              {line.startingRidership
                 ? Math.round(line.startingRidership).toLocaleString()
-                : 0}
+                : '—'}
             </td>
           )}
 
           {/* Recent ridership  */}
-          {isExpanded && line.endingRidership && (
-            <td className="text-right">
-              {line.id ? Math.round(line.endingRidership).toLocaleString() : 0}
+          {isExpanded && (
+            <td data-qa={`ending-ridership-${line.id}`} className="text-right">
+              {line.endingRidership
+                ? Math.round(line.endingRidership).toLocaleString()
+                : '—'}
+            </td>
+          )}
+
+          {/* Route miles */}
+          {isExpanded && (
+            <td data-qa={`distance-miles-${line.id}`} className="text-right">{line.distanceMiles ?? '—'}</td>
+          )}
+
+          {/* Riders per mile */}
+          {isExpanded && (
+            <td data-qa={`riders-per-mile-${line.id}`} className="text-right">
+              {line.ridersPerMile
+                ? Math.round(line.ridersPerMile).toLocaleString()
+                : '—'}
             </td>
           )}
 
@@ -183,7 +202,7 @@ export default function MetroLineTableRow({
 
           {/* Ridership over time. Line graph showing ridership trend */}
           {isExpanded && (
-            <td key={line.id} className="max-h-10 max-w-52">
+            <td data-qa={`sparkline-${line.id}`} key={line.id} className="max-h-10 max-w-52">
               {isMounted ? (
                 <LineChart
                   options={options}
