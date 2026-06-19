@@ -25,7 +25,9 @@ vi.mock('maplibre-gl', () => ({
         addControl: captured.addControl,
         remove: captured.mapRemove,
         setFeatureState: vi.fn(),
-        getCanvas: vi.fn().mockReturnValue({ style: {} as CSSStyleDeclaration }),
+        getCanvas: vi
+          .fn()
+          .mockReturnValue({ style: {} as CSSStyleDeclaration }),
         on: vi.fn().mockImplementation(function (event: string, arg2: unknown) {
           if (event === 'load' && typeof arg2 === 'function') {
             captured.loadCallback = arg2 as () => void;
@@ -69,7 +71,9 @@ describe('Map', () => {
   it('initialises with the positron style when no MapTiler key is set', () => {
     render(<Map lines={[]} />);
     expect(vi.mocked(maplibregl.Map)).toHaveBeenCalledWith(
-      expect.objectContaining({ style: 'https://tiles.openfreemap.org/styles/positron' }),
+      expect.objectContaining({
+        style: 'https://tiles.openfreemap.org/styles/positron',
+      }),
     );
   });
 
@@ -82,7 +86,9 @@ describe('Map', () => {
   describe('on map load', () => {
     it('adds the metro-lines GeoJSON source', () => {
       render(<Map lines={[]} />);
-      act(() => { captured.loadCallback?.(); });
+      act(() => {
+        captured.loadCallback?.();
+      });
       expect(captured.addSource).toHaveBeenCalledWith(
         'metro-lines',
         expect.objectContaining({ type: 'geojson' }),
@@ -91,18 +97,26 @@ describe('Map', () => {
 
     it('adds the dimmed "lines-all" and highlighted "lines-selected" layers', () => {
       render(<Map lines={[]} />);
-      act(() => { captured.loadCallback?.(); });
-      expect(captured.addLayer).toHaveBeenCalledWith(expect.objectContaining({ id: 'lines-all' }));
-      expect(captured.addLayer).toHaveBeenCalledWith(expect.objectContaining({ id: 'lines-selected' }));
+      act(() => {
+        captured.loadCallback?.();
+      });
+      expect(captured.addLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'lines-all' }),
+      );
+      expect(captured.addLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'lines-selected' }),
+      );
     });
 
     it('renders the lines-all layer with 0.15 opacity', () => {
       render(<Map lines={[]} />);
-      act(() => { captured.loadCallback?.(); });
+      act(() => {
+        captured.loadCallback?.();
+      });
       expect(captured.addLayer).toHaveBeenCalledWith(
         expect.objectContaining({
           id: 'lines-all',
-          paint: expect.objectContaining({ 'line-opacity': 0.15 }),
+          paint: expect.objectContaining({ 'line-opacity': 0.15 }) as unknown,
         }),
       );
     });
@@ -113,39 +127,52 @@ describe('Map', () => {
         makeLine({ id: 802, selected: false }),
       ];
       render(<Map lines={lines} />);
-      act(() => { captured.loadCallback?.(); });
-      expect(captured.setFilter).toHaveBeenCalledWith(
-        'lines-selected',
-        ['in', ['get', 'line_id'], ['literal', [801]]],
-      );
+      act(() => {
+        captured.loadCallback?.();
+      });
+      expect(captured.setFilter).toHaveBeenCalledWith('lines-selected', [
+        'in',
+        ['get', 'line_id'],
+        ['literal', [801]],
+      ]);
     });
 
     it('passes an empty array to the filter when no lines are selected', () => {
       render(<Map lines={[makeLine({ selected: false })]} />);
-      act(() => { captured.loadCallback?.(); });
-      expect(captured.setFilter).toHaveBeenCalledWith(
-        'lines-selected',
-        ['in', ['get', 'line_id'], ['literal', []]],
-      );
+      act(() => {
+        captured.loadCallback?.();
+      });
+      expect(captured.setFilter).toHaveBeenCalledWith('lines-selected', [
+        'in',
+        ['get', 'line_id'],
+        ['literal', []],
+      ]);
     });
   });
 
   describe('when lines selection changes', () => {
     it('updates the filter to reflect the new selection', () => {
-      const { rerender } = render(<Map lines={[makeLine({ id: 801, selected: false })]} />);
-      act(() => { captured.loadCallback?.(); });
+      const { rerender } = render(
+        <Map lines={[makeLine({ id: 801, selected: false })]} />,
+      );
+      act(() => {
+        captured.loadCallback?.();
+      });
       vi.clearAllMocks();
 
       rerender(<Map lines={[makeLine({ id: 801, selected: true })]} />);
 
-      expect(captured.setFilter).toHaveBeenCalledWith(
-        'lines-selected',
-        ['in', ['get', 'line_id'], ['literal', [801]]],
-      );
+      expect(captured.setFilter).toHaveBeenCalledWith('lines-selected', [
+        'in',
+        ['get', 'line_id'],
+        ['literal', [801]],
+      ]);
     });
 
     it('does not call setFilter before the map style is loaded', () => {
-      const { rerender } = render(<Map lines={[makeLine({ id: 801, selected: false })]} />);
+      const { rerender } = render(
+        <Map lines={[makeLine({ id: 801, selected: false })]} />,
+      );
       // intentionally skip triggering loadCallback
       vi.clearAllMocks();
 

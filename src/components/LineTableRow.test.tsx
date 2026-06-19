@@ -209,6 +209,65 @@ describe('LineTableRow expanded view', () => {
   });
 });
 
+describe('LineTableRow — zero ridership values', () => {
+  const renderExpanded = (lineOverride: Partial<Line>) =>
+    render(
+      <table>
+        <tbody>
+          <LineTableRow
+            {...baseProps}
+            line={{ ...mockLine, ...lineOverride }}
+            isExpanded
+          />
+        </tbody>
+      </table>,
+    );
+
+  it('shows — in averageRidership cell when value is 0', () => {
+    const { container } = renderExpanded({ averageRidership: 0 });
+    expect(container.querySelector('[data-qa="avg-ridership-801"]')?.textContent).toBe('—');
+  });
+
+  it('shows — in changeInRidership cell when value is 0', () => {
+    const { container } = renderExpanded({ changeInRidership: 0 });
+    expect(container.querySelector('[data-qa="change-ridership-801"]')?.textContent).toBe('—');
+  });
+
+  it('shows — in startingRidership cell when value is 0', () => {
+    const { container } = renderExpanded({ startingRidership: 0 });
+    expect(container.querySelector('[data-qa="starting-ridership-801"]')?.textContent).toBe('—');
+  });
+
+  it('shows — in endingRidership cell when value is 0', () => {
+    const { container } = renderExpanded({ endingRidership: 0 });
+    expect(container.querySelector('[data-qa="ending-ridership-801"]')?.textContent).toBe('—');
+  });
+
+  it('renders the same number of cells whether ridership values are 0 or non-zero', () => {
+    const { container } = renderExpanded({
+      averageRidership: 0,
+      changeInRidership: 0,
+      startingRidership: 0,
+      endingRidership: 0,
+    });
+    expect(container.querySelectorAll('td')).toHaveLength(10);
+  });
+
+  it('produces no stray 0 text nodes in the row when ridership values are 0', () => {
+    const { container } = renderExpanded({
+      averageRidership: 0,
+      changeInRidership: 0,
+      startingRidership: 0,
+      endingRidership: 0,
+    });
+    const tr = container.querySelector('tr');
+    const strayTextNodes = Array.from(tr?.childNodes ?? []).filter(
+      (node) => node.nodeType === 3 && node.textContent?.trim() !== '',
+    );
+    expect(strayTextNodes).toHaveLength(0);
+  });
+});
+
 describe('LineTableRow interactions', () => {
   it('calls onToggleSelectLine with the line when checkbox is clicked', () => {
     const onToggleSelectLine = vi.fn();
