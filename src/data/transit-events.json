@@ -1,0 +1,58 @@
+[
+  {
+    "id": "e-line-opening",
+    "date": "2012-04",
+    "line_ids": [804],
+    "title": "E Line Opening",
+    "description": "The E Line (Expo) opened between 7th/Metro Center and Culver City, LA Metro's first new light rail line in over a decade.",
+    "category": "opening"
+  },
+  {
+    "id": "l-line-azusa-extension",
+    "date": "2016-03",
+    "line_ids": [806],
+    "title": "L Line Azusa Extension",
+    "description": "The L Line (Gold) extended from Azusa Avenue to Downtown Azusa and APU/Citrus College, adding six new stations in the San Gabriel Valley.",
+    "category": "extension"
+  },
+  {
+    "id": "e-line-santa-monica-extension",
+    "date": "2016-05",
+    "line_ids": [804],
+    "title": "E Line Extended to Santa Monica",
+    "description": "The E Line (Expo) extended from Culver City to Downtown Santa Monica, completing the full Expo Line corridor from downtown LA to the coast.",
+    "category": "extension"
+  },
+  {
+    "id": "covid-19-service-reductions",
+    "date": "2020-03",
+    "line_ids": [],
+    "title": "COVID-19 Service Reductions",
+    "description": "LA Metro reduced service system-wide in response to the COVID-19 pandemic. Ridership dropped dramatically and recovery has been gradual.",
+    "category": "disruption"
+  },
+  {
+    "id": "k-line-opening",
+    "date": "2021-10",
+    "line_ids": [807],
+    "title": "K Line Opening",
+    "description": "The K Line (Crenshaw/LAX) opened between Expo/Crenshaw and Westchester/Veterans stations, serving the Crenshaw corridor and Inglewood.",
+    "category": "opening"
+  },
+  {
+    "id": "regional-connector-opening",
+    "date": "2023-02",
+    "line_ids": [801, 803, 804, 806],
+    "title": "Regional Connector Opening",
+    "description": "The Regional Connector linked the A, C, E, and L lines through a new downtown tunnel, creating through-running service and eliminating transfers at 7th/Metro. Ridership figures for these lines were significantly restructured as a result.",
+    "category": "opening"
+  },
+  {
+    "id": "d-line-section-1-extension",
+    "date": "2023-10",
+    "line_ids": [805],
+    "title": "D Line Section 1 Extension",
+    "description": "The D Line (Purple) extended westward from Wilshire/Western to three new Westside stations: Wilshire/La Brea, Wilshire/Fairfax, and Wilshire/La Cienega.",
+    "category": "extension"
+  }
+]

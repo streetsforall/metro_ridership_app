@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import OutputArea from './OutputArea';
 import { Chart as ChartJS, type ChartOptions } from 'chart.js';
 import type { Line } from '../@types/lines.types';
+import type { TransitEvent } from '../@types/events.types';
 
 let capturedOptions: ChartOptions<'line'> | undefined;
 
@@ -33,6 +35,16 @@ const emptyProps = {
   chartDatasets: [],
   months: [],
   lines: [],
+  transitEvents: [] as TransitEvent[],
+};
+
+const transitEventFixture: TransitEvent = {
+  id: 'regional-connector-opening',
+  date: '2023-02',
+  line_ids: [801, 803, 804, 806],
+  title: 'Regional Connector Opening',
+  description: 'The Regional Connector linked the A, C, E, and L lines through a new downtown tunnel.',
+  category: 'opening',
 };
 
 const datasetFixture = {
@@ -61,6 +73,7 @@ describe('OutputArea with datasets', () => {
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
         lines={[]}
+        transitEvents={[]}
       />,
     );
     expect(screen.getByTestId('line-chart')).toBeTruthy();
@@ -72,6 +85,7 @@ describe('OutputArea with datasets', () => {
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
         lines={[]}
+        transitEvents={[]}
       />,
     );
     expect(screen.queryByText('Please select a Metro line.')).toBeNull();
@@ -89,6 +103,7 @@ describe('OutputArea with datasets', () => {
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
         lines={[selectedLine]}
+        transitEvents={[]}
       />,
     );
     expect(screen.getByText('Average Ridership')).toBeTruthy();
@@ -100,6 +115,7 @@ describe('OutputArea with datasets', () => {
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
         lines={[makeLine({ selected: false })]}
+        transitEvents={[]}
       />,
     );
     expect(screen.queryByText('Average Ridership')).toBeNull();
@@ -118,6 +134,7 @@ describe('OutputArea Map', () => {
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
         lines={[]}
+        transitEvents={[]}
       />,
     );
     expect(screen.getByTestId('map')).toBeTruthy();
@@ -125,7 +142,7 @@ describe('OutputArea Map', () => {
 
   it('passes the lines prop through to the Map component', () => {
     const lines = [makeLine({ id: 801 }), makeLine({ id: 802 })];
-    render(<OutputArea chartDatasets={[]} months={[]} lines={lines} />);
+    render(<OutputArea chartDatasets={[]} months={[]} lines={lines} transitEvents={[]} />);
     expect(screen.getByTestId('map').getAttribute('data-line-count')).toBe('2');
   });
 });
@@ -144,6 +161,7 @@ describe('tooltip itemSort', () => {
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
         lines={[]}
+        transitEvents={[]}
       />,
     );
 
@@ -237,8 +255,69 @@ describe('chart interaction options', () => {
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
         lines={[]}
+        transitEvents={[]}
       />,
     );
     expect(capturedOptions?.interaction?.intersect).toBe(false);
+  });
+});
+
+describe('context log panel', () => {
+  it('does not render the panel when transitEvents is empty', () => {
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2022 1']}
+        lines={[]}
+        transitEvents={[]}
+      />,
+    );
+    expect(screen.queryByText('Context Logs')).toBeNull();
+  });
+
+  it('does not render the panel when there are events but no datasets (no line selected)', () => {
+    render(
+      <OutputArea
+        chartDatasets={[]}
+        months={[]}
+        lines={[]}
+        transitEvents={[transitEventFixture]}
+      />,
+    );
+    expect(screen.queryByText('Context Logs')).toBeNull();
+  });
+
+  it('renders the panel with event title and description when events and datasets are present', () => {
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2023 2']}
+        lines={[]}
+        transitEvents={[transitEventFixture]}
+      />,
+    );
+    expect(screen.getByText('Context Logs')).toBeTruthy();
+    expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
+    expect(screen.getByText(/linked the A, C, E, and L lines/)).toBeTruthy();
+  });
+
+  it('collapses and expands the panel when the toggle button is clicked', async () => {
+    const user = userEvent.setup();
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2023 2']}
+        lines={[]}
+        transitEvents={[transitEventFixture]}
+      />,
+    );
+
+    expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: /context logs/i }));
+    expect(screen.queryByText('Regional Connector Opening')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: /context logs/i }));
+    expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
   });
 });
