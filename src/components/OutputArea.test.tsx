@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, fireEvent } from '@testing-library/react';
 import OutputArea from './OutputArea';
 import { Chart as ChartJS, type ChartOptions } from 'chart.js';
 import type { Line } from '../@types/lines.types';
@@ -301,8 +300,7 @@ describe('context log panel', () => {
     expect(screen.getByText(/linked the A, C, E, and L lines/)).toBeTruthy();
   });
 
-  it('collapses and expands the panel when the toggle button is clicked', async () => {
-    const user = userEvent.setup();
+  it('collapses and expands the panel when the toggle button is clicked', () => {
     render(
       <OutputArea
         chartDatasets={[datasetFixture]}
@@ -314,10 +312,10 @@ describe('context log panel', () => {
 
     expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
 
-    await user.click(screen.getByRole('button', { name: /context logs/i }));
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
     expect(screen.queryByText('Regional Connector Opening')).toBeNull();
 
-    await user.click(screen.getByRole('button', { name: /context logs/i }));
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
     expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
   });
 });
