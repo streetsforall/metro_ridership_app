@@ -161,14 +161,16 @@ describe('App - day of week', () => {
 
 describe('App - date range filtering', () => {
   it('excludes records before the start date', async () => {
-    // start=2021-01 → Jan 2021; the 2019-01 K Line record is before this
-    window.history.replaceState({}, '', '?lines=807&start=2021-01');
+    // start=2021-01 → Jan 2021; the 2019-01 K Line record is before this.
+    // Pin the end so the assertion isolates start filtering (the default end
+    // now tracks the latest data and would otherwise include 2026-01).
+    window.history.replaceState({}, '', '?lines=807&start=2021-01&end=2024-01');
 
     render(<App />);
 
     await waitForDatasets(1);
 
-    // Only 2022-01 survives: 2019-01 before start, 2026-01 after default end
+    // Only 2022-01 survives: 2019-01 before start, 2026-01 after end
     const kLine = capturedDatasets.find((ds) => ds.label === 'K Line');
     expect(kLine?.data).toHaveLength(1);
     expect(kLine?.data[0].stat).toBe(5000);

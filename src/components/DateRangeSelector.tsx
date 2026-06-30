@@ -1,5 +1,11 @@
 import * as RadioGroup from '@radix-ui/react-radio-group';
 import { daysOfWeek, type DayOfWeek } from '../hooks/useUserDashboardInput';
+import { dataMinYear, dataMaxYear } from '../utils/dataDateRange';
+
+const yearOptions: number[] = Array.from(
+  { length: dataMaxYear - dataMinYear + 1 },
+  (_, i) => dataMinYear + i,
+);
 
 export interface DateRangeSelectorProps {
   startDate: Date;
@@ -109,23 +115,11 @@ export default function DateRangeSelector({
           name={`${intervalEndpoint}-year`}
           value={range.getFullYear()}
         >
-          <option>2009</option>
-          <option>2010</option>
-          <option>2011</option>
-          <option>2012</option>
-          <option>2013</option>
-          <option>2014</option>
-          <option>2015</option>
-          <option>2016</option>
-          <option>2017</option>
-          <option>2018</option>
-          <option>2019</option>
-          <option>2020</option>
-          <option>2021</option>
-          <option>2022</option>
-          <option>2023</option>
-          <option>2024</option>
-          <option>2025</option>
+          {yearOptions.map((year) => (
+            <option key={year} value={year}>
+              {year}
+            </option>
+          ))}
         </select>
       </fieldset>
     );

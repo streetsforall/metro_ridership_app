@@ -19,6 +19,7 @@ import {
 export { daysOfWeek, type DayOfWeek };
 import LineJsonData from '../data/metro_line_metadata_current.json';
 import LineDistances from '../data/line_distances.json';
+import { dataDefaultEndDate } from '../utils/dataDateRange';
 
 export interface UserDashboardInputState {
   startDate: Date;
@@ -55,7 +56,7 @@ export interface UserDashboardInputState {
  * Default starting values
  */
 const DefaultStartDate: Date = new Date(2020, 6);
-const DefaultEndDate: Date = new Date(2025, 6);
+const DefaultEndDate: Date = dataDefaultEndDate;
 
 const createLinesData = (selectedLineIds: number[], modes: string[]): Line[] => {
   const busVis = modes.includes('bus');

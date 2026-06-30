@@ -67,6 +67,16 @@ describe('DateRangeSelector rendering', () => {
     const selects = screen.getAllByRole('combobox');
     expect(Number((selects[3] as HTMLSelectElement).value)).toBe(2025);
   });
+
+  it('offers 2026 as a selectable year (dynamic range tracks the data)', () => {
+    render(<DateRangeSelector {...defaultProps} />);
+    const [, startYear] = screen.getAllByRole('combobox');
+    const years = Array.from(
+      (startYear as HTMLSelectElement).options,
+      (o) => o.value,
+    );
+    expect(years).toContain('2026');
+  });
 });
 
 describe('DateRangeSelector interactions', () => {

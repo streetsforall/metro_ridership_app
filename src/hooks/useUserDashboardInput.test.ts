@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import useUserDashboardInput, { daysOfWeek } from './useUserDashboardInput';
+import { dataDefaultEndDate } from '../utils/dataDateRange';
+import { formatMonthParam } from '../utils/queryParams';
 import type { ConsolidatedRidership } from '../@types/metrics.types';
 
 // Reset URL and replaceState spy before each test
@@ -15,9 +17,9 @@ describe('default state (no URL params)', () => {
     expect(result.current.startDate).toEqual(new Date(2020, 6));
   });
 
-  it('uses default end date', () => {
+  it('uses default end date derived from the latest data', () => {
     const { result } = renderHook(() => useUserDashboardInput());
-    expect(result.current.endDate).toEqual(new Date(2025, 6));
+    expect(result.current.endDate).toEqual(dataDefaultEndDate);
   });
 
   it('uses weekday as default day of week', () => {
@@ -157,7 +159,9 @@ describe('URL sync', () => {
   it('writes default params to URL on mount', () => {
     renderHook(() => useUserDashboardInput());
     expect(window.location.search).toContain('start=2020-07');
-    expect(window.location.search).toContain('end=2025-07');
+    expect(window.location.search).toContain(
+      `end=${formatMonthParam(dataDefaultEndDate)}`,
+    );
     expect(window.location.search).toContain('day=wkday');
   });
 
