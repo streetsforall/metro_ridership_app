@@ -39,6 +39,37 @@ python scripts/compute_line_distances.py
 
 ---
 
+## Getting ridership data (public records request)
+
+LA Metro does not publish a bulk ridership download, so new data is obtained
+via a California Public Records Act (CPRA) request. Turnaround has been about
+3 days.
+
+**Submit the request:**
+
+1. Go to https://lametro.nextrequest.com/requests/new
+2. Use the following request text, updating the start month to one month after
+   the last month already in `src/data/ridership.json`:
+
+   > Hello, I would like to make a public records request for LA Metro ridership
+   > for all train lines and bus lines. This would be from the month of
+   > **[MONTH YEAR]** to the most recent month possible. It's based on this LA
+   > Metro website that has ridership data.
+   > https://opa.metro.net/MetroRidership/
+
+**What you'll receive:**
+
+Metro's Public Records Requests department (point of contact: William Cano,
+Principal Transportation Planner) releases the data as:
+
+- Individual monthly Excel files named `MM-YYYY.xlsx`
+- Zip archives for bulk years (e.g. `Rail 2025.zip`, `Bus 2025.zip`)
+
+**Next step:** see [`process_ridership`](#process_ridership) below for how to
+ingest these files into the app.
+
+---
+
 ## `process_ridership`
 
 Processes a raw LA Metro ridership CSV and merges it into `src/data/ridership.json`
