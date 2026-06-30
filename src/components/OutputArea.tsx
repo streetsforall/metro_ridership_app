@@ -33,7 +33,10 @@ const hoverCrosshairPlugin: Plugin<'line'> = {
     const active = chart.tooltip?.getActiveElements();
     if (!active?.length) return;
     const x = active[0].element.x;
-    const { ctx, chartArea: { top, bottom } } = chart;
+    const {
+      ctx,
+      chartArea: { top, bottom },
+    } = chart;
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(x, top);
@@ -125,8 +128,7 @@ export default function OutputArea({
       tooltip: {
         itemSort: (a, b) => (b.parsed.y ?? 0) - (a.parsed.y ?? 0),
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      eventMarkers: { events: transitEvents } as any,
+      eventMarkers: { events: transitEvents },
     },
     parsing: {
       xAxisKey: 'time',
@@ -192,6 +194,7 @@ export default function OutputArea({
       {transitEvents.length > 0 && chartDatasets.length > 0 && (
         <div className="pane">
           <button
+            type="button"
             onClick={() => setIsContextLogOpen((o) => !o)}
             className="flex w-full items-center justify-between text-xs font-semibold text-stone-500 uppercase tracking-wider"
           >
