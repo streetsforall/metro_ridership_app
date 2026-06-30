@@ -21,6 +21,8 @@ Run a single test file: `npx vitest run src/utils/calc.test.ts` (or pass a name 
 
 The dev server uses HTTPS via `@vitejs/plugin-basic-ssl` — expect a self-signed cert warning the first time.
 
+CI runs lint → test → build on every push/PR to `main` ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+
 ## Data flow (the core architecture)
 
 The app transforms flat ridership records into per-line consolidated structures, then derives summary metrics. Understanding this pipeline is key:
@@ -37,6 +39,7 @@ Type definitions for these shapes live in [src/@types/metrics.types.ts](src/@typ
 - **All UI state syncs to URL query params** (`start`, `end`, `day`, `lines`, `q`, `buses`, `trains`, `aggregate`) so views are shareable. State is initialized from the URL on mount and written back via `history.replaceState` in a `useEffect`. See [src/utils/queryParams.ts](src/utils/queryParams.ts). When adding new dashboard state, wire it through both the init readers and the sync effect.
 - **`JSON.stringify(...)` is intentionally used in several dependency arrays** (`lines`, `ridershipByLine`) because those objects get a new reference every render; don't "fix" these to raw object deps.
 - **Month indexing is off by one on purpose** in App.tsx's date filter (`new Date(year, month)` treats month as 0-based while data is 1-based) — preserved from the original implementation; don't silently change it.
+- **Date range bounds are derived from the data, not hardcoded** — [src/utils/dataDateRange.ts](src/utils/dataDateRange.ts) computes `dataMinYear`/`dataMaxYear` (the year `<option>`s in `DateRangeSelector`) and `dataDefaultEndDate` (the default end of the window) from `ridership.json` at module load, so the newest month is always selectable without code changes. `dataDefaultEndDate` is deliberately one month past the latest record to satisfy the exclusive, off-by-one end filter above.
 - **Line colors**: official rail/BRT lines have hardcoded brand colors in `definedLines` ([src/utils/lines.ts](src/utils/lines.ts)); all other bus lines get a deterministic golden-angle HSL hue so the chart and map agree.
 
 ## Map
@@ -45,13 +48,14 @@ Type definitions for these shapes live in [src/@types/metrics.types.ts](src/@typ
 
 ## Data processing scripts (`scripts/`)
 
-Python scripts maintain the JSON the app consumes. See [scripts/README.md](scripts/README.md). Setup: `pip install -r scripts/requirements.txt`; tests: `pytest scripts/`.
+Python scripts maintain the JSON the app consumes (the old `.mjs` versions have been removed). See [scripts/README.md](scripts/README.md). Setup: `pip install -r scripts/requirements.txt`; tests: `pytest scripts/`.
 
-- `process_ridership.py <csv.gz>` — merges a raw LA Metro CSV into `src/data/ridership.json` and appends new lines to `metro_line_metadata_current.json`. New data wins on conflicts; old data backfills.
+- `convert_excel_ridership.py <xlsx|zip|dir>` — the usual entry point for new data. LA Metro fulfills public records requests with Excel files (individual `MM-YYYY-{Bus|Rail}.xlsx` or `{Bus|Rail} YYYY.zip` archives); this converts them to the CSV `process_ridership.py` expects and invokes it. Run from the repo root.
+- `process_ridership.py <csv>` — merges a raw LA Metro CSV into `src/data/ridership.json` and appends new lines to `metro_line_metadata_current.json`. New data wins on conflicts; old data backfills.
 - `fetch_metro_lines.py` (also `npm run fetch-lines`) — downloads GTFS feeds → `public/metro_lines.geojson`. Run before the script tests, which use that file as a fixture.
 - `compute_line_distances.py` — `metro_lines.geojson` → `src/data/line_distances.json` (one-way miles; only outbound leg for rail).
 
-Store raw CSVs compressed (`.csv.gz`) in `data/raw/` — uncompressed CSVs are gitignored. `notebooks/` holds exploration notebooks (`metro_data_ridership_update.ipynb`).
+Store raw source files compressed in `data/raw/` (`.csv.gz`, or `.zip` for the `.xlsx` files Metro provides) — uncompressed `.csv`/`.xlsx` are gitignored. `notebooks/` holds exploration notebooks. How to file the public records request that sources this data is documented in [scripts/README.md](scripts/README.md).
 
 ## Styling
 

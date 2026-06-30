@@ -70,6 +70,41 @@ ingest these files into the app.
 
 ---
 
+## `convert_excel_ridership`
+
+LA Metro fulfills public records requests with Excel files, not the CSV that
+`process_ridership` expects. This script converts those Excel files (summing
+stop/station boardings to per-line totals) and chains directly into
+`process_ridership` to update `ridership.json` — so it's the usual one-step entry
+point for new data.
+
+It accepts the two shapes Metro delivers:
+
+- Individual files named `MM-YYYY-{Bus|Rail}.xlsx`
+- Typed zip archives named `{Bus|Rail} YYYY.zip` (inner files `YYYY-MM.xlsx`)
+
+**Run** (via the npm shortcut, passing the raw inputs after `--`):
+
+```bash
+# Typed zip archives (what's committed in data/raw/)
+npm run load-ridership -- "data/raw/Bus 2025.zip" "data/raw/Rail 2025.zip"
+
+# Individual xlsx files
+npm run load-ridership -- data/raw/01-2026-Bus.xlsx data/raw/01-2026-Rail.xlsx
+
+# A directory of loose .xlsx files
+npm run load-ridership -- data/raw/
+```
+
+Equivalent to calling `python scripts/convert_excel_ridership.py <inputs>`
+directly. Run from the repo root so the chained `process_ridership` step can find
+`src/data/ridership.json` and `src/data/metro_line_metadata_current.json`.
+
+> Directory mode only globs loose `.xlsx`; the committed `.zip` archives must be
+> passed explicitly (as in the first example above).
+
+---
+
 ## `process_ridership`
 
 Processes a raw LA Metro ridership CSV and merges it into `src/data/ridership.json`

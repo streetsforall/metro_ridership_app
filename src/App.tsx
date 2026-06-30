@@ -15,6 +15,8 @@ import type {
   RidershipRecord,
 } from './@types/metrics.types';
 import ridershipRecords from './data/ridership.json';
+import transitEventsData from './data/transit-events.json';
+import type { TransitEvent } from './@types/events.types';
 
 function App() {
   const [isLineSelectorExpanded, setIsLineSelectorExpanded] =
@@ -115,6 +117,22 @@ function App() {
     return { chartDatasets: datasets, ridershipByLine: consolidatedRidership };
   }, [startDate, endDate, lines, dayOfWeek, isAggregateVisible]);
 
+  const transitEvents = useMemo(() => {
+    const selectedLineIds = new Set(lines.filter((l) => l.selected).map((l) => l.id));
+    const startYYYYMM = startDate.getFullYear() * 100 + (startDate.getMonth() + 1);
+    const endYYYYMM = endDate.getFullYear() * 100 + (endDate.getMonth() + 1);
+
+    return (transitEventsData as TransitEvent[])
+      .filter((event) => {
+        const [year, month] = event.date.split('-').map(Number);
+        const eventYYYYMM = year * 100 + month;
+        if (eventYYYYMM < startYYYYMM || eventYYYYMM > endYYYYMM) return false;
+        if (event.line_ids.length === 0) return true;
+        return event.line_ids.some((id) => selectedLineIds.has(id));
+      })
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [startDate, endDate, lines]);
+
   /**
    * Pull time labels from the first dataset; all datasets share the same x-axis.
    */
@@ -177,6 +195,7 @@ function App() {
             chartDatasets={chartDatasets}
             months={monthList}
             lines={lines}
+            transitEvents={transitEvents}
           />
         )}
       </div>
