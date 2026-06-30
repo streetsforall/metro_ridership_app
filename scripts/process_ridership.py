@@ -146,7 +146,7 @@ def main(csv_path: str) -> None:
         )
         added = len(final_ridership) - len(current_ridership)
         print(
-            f"ridership updated: {len(current_ridership):,} → "
+            f"ridership updated: {len(current_ridership):,} -> "
             f"{len(final_ridership):,} records (+{added:,})"
         )
     else:
@@ -160,7 +160,7 @@ def main(csv_path: str) -> None:
         )
         added = len(final_meta) - len(current_meta)
         print(
-            f"line metadata updated: {len(current_meta)} → "
+            f"line metadata updated: {len(current_meta)} -> "
             f"{len(final_meta)} lines (+{added})"
         )
     else:
