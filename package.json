@@ -10,7 +10,8 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "preview": "vite preview",
-    "fetch-lines": "python scripts/fetch_metro_lines.py"
+    "fetch-lines": "python scripts/fetch_metro_lines.py",
+    "load-ridership": "python scripts/convert_excel_ridership.py"
   },
   "dependencies": {
     "@fontsource-variable/overpass-mono": "^5.2.5",
