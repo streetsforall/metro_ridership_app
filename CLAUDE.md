@@ -2,74 +2,61 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project
+
+Client-side React + Vite app (Streets for All Data/Dev Team) for visualizing LA Metro bus/rail ridership data. All data ships as static JSON bundled into the build — there is no backend. The app may move to full-stack if data processing gets too heavy.
+
 ## Commands
 
 ```bash
-npm run dev          # start dev server at http://localhost:5173
-npm run build        # tsc type-check + vite production build → dist/
-npm run preview      # serve the production build locally
-npm run test         # run all tests once
-npm run test:watch   # run tests in watch mode
-npm run lint         # ESLint with TypeScript + React rules
-npm run fetch-lines  # node scripts/fetch-metro-lines.mjs — updates metro line GeoJSON
+npm run dev          # Vite dev server at https://localhost:5173 (basicSsl in dev only)
+npm run build        # tsc -b type-check, then vite build → dist/
+npm run preview      # serve the production build
+npm run test         # vitest run (all tests once)
+npm run test:watch   # vitest watch mode
+npm run lint         # eslint .
 ```
 
-To run a single test file:
-```bash
-npx vitest run src/utils/calc.test.ts
-```
+Run a single test file: `npx vitest run src/utils/calc.test.ts` (or pass a name filter with `-t`). Tests use Vitest + `@testing-library/react` in a jsdom environment with globals enabled (no per-file imports of `describe`/`it`/`expect` needed).
 
-## Architecture
+The dev server uses HTTPS via `@vitejs/plugin-basic-ssl` — expect a self-signed cert warning the first time.
 
-Client-side React SPA (Vite + TypeScript). No backend. All data is bundled as static JSON files in `src/data/`.
+CI runs lint → test → build on every push/PR to `main` ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
 
-### Data flow
+## Data flow (the core architecture)
 
-1. **Line metadata** (`src/data/metro_line_metadata_current.json`) — raw `LineJson[]` with line number, mode (Bus/Rail), and provider.
-2. **Line distances** (`src/data/line_distances.json`) — keyed by line ID string.
-3. **Ridership records** (`src/data/ridership.json`) — flat `RidershipRecord[]` with monthly avg daily ridership per line.
-4. **Transit events** (`src/data/transit-events.json`) — milestone events (openings, disruptions) with dates and affected line IDs.
+The app transforms flat ridership records into per-line consolidated structures, then derives summary metrics. Understanding this pipeline is key:
 
-`useUserDashboardInput` (hook) assembles `Line[]` from the metadata + distances JSON, manages all user-selected state (date range, day-of-week filter, line selections, mode filters, search text, aggregate toggle), and syncs everything to URL query params so the view is shareable.
+1. **Lines are built from metadata** — `createLinesData()` in [src/hooks/useUserDashboardInput.ts](src/hooks/useUserDashboardInput.ts) reads `metro_line_metadata_current.json`, attaches display names/colors (via `getLineNames`/`getLineColor`), distance from `line_distances.json`, and sorts with `lineNameSortFunction` (lettered lines first, then numbered).
+2. **Records are consolidated by line** — in [src/App.tsx](src/App.tsx) a single `useMemo` filters `ridership.json` to the selected date window and groups records by `line_name` into `ConsolidatedRidership`, while building Chart.js datasets in the same pass.
+3. **Summary metrics are attached back to lines** — `updateLinesWithLineMetrics()` (in the hook) runs from a `useEffect` in App and computes average/change/start/end ridership and riders-per-mile per line using helpers in [src/utils/calc.ts](src/utils/calc.ts). The `LineSelector`/`SummaryData` components read these.
 
-`App.tsx` holds the single `useMemo` that simultaneously builds `chartDatasets` (Chart.js datasets for selected lines) and `consolidatedRidership` (records grouped by line ID). A separate `useMemo` filters `transitEvents` to only those within the selected date range and relevant to selected lines. After each ridership computation, `updateLinesWithLineMetrics()` patches each `Line` object with computed stats (average, change, start/end values, riders-per-mile).
+Type definitions for these shapes live in [src/@types/metrics.types.ts](src/@types/metrics.types.ts) (`RidershipRecord`, `ConsolidatedRidership`) and [src/@types/lines.types.ts](src/@types/lines.types.ts) (`LineJson` from disk vs. enriched `Line`).
 
-### Key types
+### Important conventions & quirks
 
-- `Line` (`src/@types/lines.types.ts`) — extends `LineJson` with runtime-computed fields (`selected`, `visible`, `averageRidership`, `changeInRidership`, etc.)
-- `ConsolidatedRidership` / `ConsolidatedRecord` (`src/@types/metrics.types.ts`) — `ridershipRecords` grouped by line ID string, keyed off `record.line_name` (a number stored as string key)
-- `TransitEvent` (`src/@types/events.types.ts`) — milestone events; `line_ids: []` means system-wide (all lines)
-- `DayOfWeek` — one of `est_wkday_ridership | est_sat_ridership | est_sun_ridership`
+- **`DayOfWeek` is the JSON column name**, not a label — `daysOfWeek` maps `Weekday/Saturday/Sunday` to `est_wkday_ridership`/`est_sat_ridership`/`est_sun_ridership`. Selecting a day-of-week literally swaps which field is read.
+- **All UI state syncs to URL query params** (`start`, `end`, `day`, `lines`, `q`, `buses`, `trains`, `aggregate`) so views are shareable. State is initialized from the URL on mount and written back via `history.replaceState` in a `useEffect`. See [src/utils/queryParams.ts](src/utils/queryParams.ts). When adding new dashboard state, wire it through both the init readers and the sync effect.
+- **`JSON.stringify(...)` is intentionally used in several dependency arrays** (`lines`, `ridershipByLine`) because those objects get a new reference every render; don't "fix" these to raw object deps.
+- **Month indexing is off by one on purpose** in App.tsx's date filter (`new Date(year, month)` treats month as 0-based while data is 1-based) — preserved from the original implementation; don't silently change it.
+- **Date range bounds are derived from the data, not hardcoded** — [src/utils/dataDateRange.ts](src/utils/dataDateRange.ts) computes `dataMinYear`/`dataMaxYear` (the year `<option>`s in `DateRangeSelector`) and `dataDefaultEndDate` (the default end of the window) from `ridership.json` at module load, so the newest month is always selectable without code changes. `dataDefaultEndDate` is deliberately one month past the latest record to satisfy the exclusive, off-by-one end filter above.
+- **Line colors**: official rail/BRT lines have hardcoded brand colors in `definedLines` ([src/utils/lines.ts](src/utils/lines.ts)); all other bus lines get a deterministic golden-angle HSL hue so the chart and map agree.
 
-### Named rail lines
+## Map
 
-Rail line numbers 801–910 have human-readable letter/color mappings defined in `src/utils/lines.ts` (`definedLines`). Bus lines get a deterministic HSL color via the golden-angle formula. `getLineColor(id)` and `getLineNames(id)` are the public API.
+[src/components/Map.tsx](src/components/Map.tsx) uses MapLibre GL, loading route geometry from `/public/metro_lines.geojson`. It renders two layers: `lines-all` (dimmed) and `lines-selected` (brand colors, filtered by selected line IDs via `setFilter`). Base tiles come from MapTiler if `VITE_MAPTILER_KEY` is set, otherwise OpenFreeMap. The map instance lives in refs (initialized once); selection changes only update the layer filter, not the map.
 
-### URL query params
+## Data processing scripts (`scripts/`)
 
-All dashboard state is encoded in the URL by `useUserDashboardInput`:
+Python scripts maintain the JSON the app consumes (the old `.mjs` versions have been removed). See [scripts/README.md](scripts/README.md). Setup: `pip install -r scripts/requirements.txt`; tests: `pytest scripts/`.
 
-| Param | Values |
-|-------|--------|
-| `start` / `end` | `YYYY-MM` |
-| `day` | `wkday` / `sat` / `sun` |
-| `lines` | comma-separated line IDs |
-| `q` | search text |
-| `buses` / `trains` | `0` to hide |
-| `aggregate` | `1` to show aggregate series |
+- `convert_excel_ridership.py <xlsx|zip|dir>` — the usual entry point for new data. LA Metro fulfills public records requests with Excel files (individual `MM-YYYY-{Bus|Rail}.xlsx` or `{Bus|Rail} YYYY.zip` archives); this converts them to the CSV `process_ridership.py` expects and invokes it. Run from the repo root.
+- `process_ridership.py <csv>` — merges a raw LA Metro CSV into `src/data/ridership.json` and appends new lines to `metro_line_metadata_current.json`. New data wins on conflicts; old data backfills.
+- `fetch_metro_lines.py` (also `npm run fetch-lines`) — downloads GTFS feeds → `public/metro_lines.geojson`. Run before the script tests, which use that file as a fixture.
+- `compute_line_distances.py` — `metro_lines.geojson` → `src/data/line_distances.json` (one-way miles; only outbound leg for rail).
 
-### Chart
+Store raw source files compressed in `data/raw/` (`.csv.gz`, or `.zip` for the `.xlsx` files Metro provides) — uncompressed `.csv`/`.xlsx` are gitignored. `notebooks/` holds exploration notebooks. How to file the public records request that sources this data is documented in [scripts/README.md](scripts/README.md).
 
-`OutputArea.tsx` registers two custom Chart.js plugins at module load:
-- `hoverCrosshairPlugin` — draws a vertical dashed line at the hovered x position
-- `eventMarkersPlugin` — draws amber vertical dashed lines at transit event dates; reads events from `chart.options.plugins.eventMarkers.events`
+## Styling
 
-Chart labels use the format `"YYYY M"` (e.g. `"2023 2"`); event dates are `"YYYY-MM"` and must be converted when matching against labels.
-
-### Map
-
-`src/components/Map.tsx` uses MapLibre GL (`maplibre-gl`). Line GeoJSON is in `public/metro_lines.geojson`. The map renders selected lines highlighted.
-
-### Tests
-
-Vitest with `jsdom` environment and `@testing-library/react`. Test files sit alongside source files (`*.test.ts` / `*.test.tsx`).
+Tailwind CSS (config in `tailwind.config.ts`). A reusable `.pane` class is used throughout for card containers. Font is Overpass Mono (via `@fontsource-variable`).
