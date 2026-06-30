@@ -64,8 +64,19 @@ npm run lint
 
 Uses ESLint with TypeScript, React hooks, and React refresh plugins. Fix lint errors before opening a pull request.
 
-## Adding/updating metrics
+## Updating ridership data
 
-As time progresses and new ridership metrics are collected, `data/ridership.json` needs to be updated. Eventually we want an automated script that picks up the latest metrics from LA Metro's repo, parses it, and updates our JSON accordingly. But in the meantime this will need to be done manually.
+Ridership CSVs are obtained directly from LA Metro or via a public records request. Once you have the CSV, run:
 
-Additionally, we need to think of a good way to structure our data as months and years pass, so that the single JSON file doesn't just grow infinitely.
+```bash
+python scripts/process_ridership.py data/raw/Monthly_Riders.csv.gz
+```
+
+This updates two files consumed by the app:
+
+- **`src/data/ridership.json`** — flat array of monthly ridership records (year, month, line, weekday/Saturday/Sunday averages)
+- **`src/data/metro_line_metadata_current.json`** — line catalog (line number, mode, provider); updated automatically when new lines appear in the CSV
+
+Store raw CSVs in `data/raw/` as compressed `.csv.gz` files (uncompressed CSVs are gitignored). See [`scripts/README.md`](scripts/README.md) for full details on the processing pipeline and compression instructions.
+
+For data exploration and debugging, use the notebooks in [`notebooks/`](notebooks/) — particularly `metro_data_ridership_update.ipynb`.

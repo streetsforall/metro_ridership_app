@@ -39,13 +39,59 @@ python scripts/compute_line_distances.py
 
 ---
 
+## `process_ridership`
+
+Processes a raw LA Metro ridership CSV and merges it into `src/data/ridership.json`
+and `src/data/metro_line_metadata_current.json`.
+
+**Input CSV format** (from LA Metro or a public records request):
+
+```
+Year, Month, Line, DayType, Riders, Shakeup, Provider, Mode, Days
+```
+
+Where `DayType` is `DX` (weekday), `SA` (Saturday), or `SU` (Sunday).
+
+**Steps:**
+1. Weighted-average ridership across shakeup periods within a month (matching Metro's rounding)
+2. Pivot from long format → separate weekday / Saturday / Sunday columns
+3. Fill any missing line × month combinations with `0`
+4. Merge with existing `ridership.json` — new data wins on conflicts; old data backfills gaps
+5. Append any newly seen lines to `metro_line_metadata_current.json`
+
+**Run:**
+
+```bash
+python scripts/process_ridership.py data/raw/Monthly_Riders.csv.gz
+```
+
+**Storing raw CSVs:** Commit them compressed to keep the repo lean. On macOS/Linux:
+
+```bash
+gzip -k Monthly_Riders.csv          # produces Monthly_Riders.csv.gz
+mv Monthly_Riders.csv.gz data/raw/
+```
+
+On Windows (PowerShell):
+
+```powershell
+Compress-Archive -Path Monthly_Riders.csv -DestinationPath data/raw/Monthly_Riders.csv.zip
+# or use 7-Zip / WSL gzip for .gz format
+```
+
+Uncompressed `.csv` files in `data/raw/` are gitignored.
+
+For interactive exploration and debugging, see the notebooks in `notebooks/`.
+
+---
+
 ## Python setup
 
 ```bash
 pip install -r scripts/requirements.txt
 ```
 
-Dependencies: `requests` (HTTP), `pytest` (tests).
+Dependencies: `requests` (HTTP), `pandas` + `numpy` (data processing), `pytest` (tests).
 
 ## Running the Python tests
 

@@ -18,6 +18,10 @@ dist-ssr
 __pycache__/
 *.pyc
 .venv/
+.ipynb_checkpoints/
+
+# Raw data (commit compressed .csv.gz only)
+data/raw/*.csv
 
 # Editor directories and files
 .vscode/*
