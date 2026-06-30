@@ -20,8 +20,9 @@ __pycache__/
 .venv/
 .ipynb_checkpoints/
 
-# Raw data (commit compressed .csv.gz only)
+# Raw data (commit compressed files only)
 data/raw/*.csv
+data/raw/*.xlsx
 
 # Editor directories and files
 .vscode/*

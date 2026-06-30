@@ -81,6 +81,27 @@ Compress-Archive -Path Monthly_Riders.csv -DestinationPath data/raw/Monthly_Ride
 
 Uncompressed `.csv` files in `data/raw/` are gitignored.
 
+**Storing raw Excel files:** Commit them as a single `.zip` archive named by date range to keep the repo lean. Uncompressed `.xlsx` files are gitignored.
+
+On Windows (PowerShell):
+
+```powershell
+# From the repo root — adjust the date range in the output filename to match your files
+Compress-Archive -Path data/raw/*.xlsx -DestinationPath data/raw/YYYY-MM_YYYY-MM.zip -Force
+```
+
+On macOS/Linux (Bash):
+
+```bash
+zip data/raw/YYYY-MM_YYYY-MM.zip data/raw/*.xlsx
+```
+
+To extract:
+
+```powershell
+Expand-Archive data/raw/2026-01_2026-03.zip -DestinationPath data/raw/
+```
+
 For interactive exploration and debugging, see the notebooks in `notebooks/`.
 
 ---
