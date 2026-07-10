@@ -70,6 +70,29 @@ ingest these files into the app.
 
 ---
 
+## `update_ridership`
+
+The day-to-day way to refresh the app's data. Scans `data/raw/` for every
+zip/Excel/CSV, works out which month/line records aren't in `ridership.json` yet,
+and **adds only the new ones** — so you don't have to name a specific archive.
+Existing records are left untouched (append-only). When new data is added, a
+matching entry is prepended to [`DATA_RELEASE_NOTES.md`](../DATA_RELEASE_NOTES.md).
+
+**Run:**
+
+```bash
+python scripts/update_ridership.py              # scan data/raw/, add new months
+python scripts/update_ridership.py --dry-run     # report what's new, write nothing
+python scripts/update_ridership.py --overwrite    # let newer numbers replace existing months
+python scripts/update_ridership.py --no-release-notes
+python scripts/update_ridership.py data/raw/2026-04_2026-05.zip   # limit to given paths
+```
+
+Under the hood it reuses `process_ridership` (below) for parsing and merging.
+Use `process_ridership` directly when you want to force-ingest one specific file.
+
+---
+
 ## `process_ridership`
 
 Processes raw LA Metro ridership data and merges it into `src/data/ridership.json`

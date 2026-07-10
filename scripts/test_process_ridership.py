@@ -304,6 +304,24 @@ class TestMergeRidership:
 
         assert final.equals(current)
 
+    def test_append_only_preserves_existing_on_conflict(self, tmp_path, monkeypatch):
+        """prefer_new=False: an existing key keeps its old value; only absent
+        keys are added."""
+        make_ridership_json([self._rec(month=1, est_wkday_ridership=999.0)], tmp_path / "r.json")
+        monkeypatch.setattr(pr, "RIDERSHIP_PATH", tmp_path / "r.json")
+
+        new_df = pd.DataFrame([
+            self._rec(month=1, est_wkday_ridership=1234.0),  # conflict -> ignored
+            self._rec(month=2, est_wkday_ridership=555.0),   # new -> added
+        ])
+        final, current = merge_ridership(new_df, prefer_new=False)
+
+        jan = final[(final["month"] == 1)].iloc[0]
+        feb = final[(final["month"] == 2)].iloc[0]
+        assert jan["est_wkday_ridership"] == 999.0  # existing preserved
+        assert feb["est_wkday_ridership"] == 555.0  # new appended
+        assert len(final) == 2 and len(current) == 1
+
 
 # ---------------------------------------------------------------------------
 # merge_line_metadata

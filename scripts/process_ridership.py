@@ -113,21 +113,38 @@ def fill_missing_months(df: pd.DataFrame) -> pd.DataFrame:
     )[RIDERSHIP_COLS]
 
 
-def merge_ridership(new_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+def merge_ridership(
+    new_df: pd.DataFrame, prefer_new: bool = True
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Merge new records with existing ridership.json.
 
-    Resolution rules:
+    With ``prefer_new=True`` (default):
     - New data wins when both new and existing have a record for the same key.
     - Gaps in new data (within its date range) are backfilled from existing data
       before the concat, preserving non-zero historical values.
     - Existing records outside the new dataset's date range are always preserved.
+
+    With ``prefer_new=False`` (append-only):
+    - Existing records always win; only keys absent from ridership.json are added.
+      No backfill is needed since existing rows are kept verbatim.
     """
     with open(RIDERSHIP_PATH) as f:
         current = pd.DataFrame(json.load(f))
 
+    keys = ["year", "month", "line_name"]
+
+    if not prefer_new:
+        final = (
+            pd.concat([current, new_df[RIDERSHIP_COLS]])
+            .drop_duplicates(subset=keys, keep="first")
+            .sort_values(keys)
+            .reset_index(drop=True)
+        )
+        return final, current
+
     # Backfill zeros in new_df from current where current has real values
     merged = new_df.merge(
-        current, on=["year", "month", "line_name"], how="left", suffixes=("_new", "_old")
+        current, on=keys, how="left", suffixes=("_new", "_old")
     )
     for col in ["est_wkday_ridership", "est_sat_ridership", "est_sun_ridership"]:
         mask = merged[f"{col}_new"].isnull() & merged[f"{col}_old"].notnull()
@@ -137,8 +154,8 @@ def merge_ridership(new_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     final = (
         pd.concat([merged, current])
-        .drop_duplicates(subset=["year", "month", "line_name"], keep="first")
-        .sort_values(["year", "month", "line_name"])
+        .drop_duplicates(subset=keys, keep="first")
+        .sort_values(keys)
         .reset_index(drop=True)
     )
     return final, current
