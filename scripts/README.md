@@ -72,16 +72,23 @@ ingest these files into the app.
 
 ## `process_ridership`
 
-Processes a raw LA Metro ridership CSV and merges it into `src/data/ridership.json`
+Processes raw LA Metro ridership data and merges it into `src/data/ridership.json`
 and `src/data/metro_line_metadata_current.json`.
 
-**Input CSV format** (from LA Metro or a public records request):
+**Accepted inputs:**
 
-```
-Year, Month, Line, DayType, Riders, Shakeup, Provider, Mode, Days
-```
+- **Excel** (what public records requests now return) — a single
+  `MM-YYYY-{Bus|Rail}.xlsx` file, or a date-range zip of them (e.g.
+  `2026-04_2026-05.zip`). These are parsed by `convert_excel_ridership.py` into
+  the CSV schema below before processing; line ridership is the sum of stop/station
+  boardings (Ons) per line.
+- **Legacy CSV** (from older requests):
 
-Where `DayType` is `DX` (weekday), `SA` (Saturday), or `SU` (Sunday).
+  ```
+  Year, Month, Line, DayType, Riders, Shakeup, Provider, Mode, Days
+  ```
+
+  Where `DayType` is `DX` (weekday), `SA` (Saturday), or `SU` (Sunday).
 
 **Steps:**
 1. Weighted-average ridership across shakeup periods within a month (matching Metro's rounding)
@@ -93,6 +100,11 @@ Where `DayType` is `DX` (weekday), `SA` (Saturday), or `SU` (Sunday).
 **Run:**
 
 ```bash
+# Excel: a date-range zip (or a single .xlsx)
+python scripts/process_ridership.py data/raw/2026-04_2026-05.zip
+python scripts/process_ridership.py data/raw/04-2026-Bus.xlsx
+
+# Legacy CSV
 python scripts/process_ridership.py data/raw/Monthly_Riders.csv.gz
 ```
 

@@ -1,12 +1,20 @@
 """
-Process a raw LA Metro ridership CSV and update src/data/ridership.json
+Process raw LA Metro ridership data and update src/data/ridership.json
 and src/data/metro_line_metadata_current.json.
 
 Usage:
+    # Legacy long-format CSV
     python scripts/process_ridership.py <path/to/Monthly_Riders.csv.gz>
+
+    # Excel from a public records request (single file or a date-range zip)
+    python scripts/process_ridership.py data/raw/04-2026-Bus.xlsx
+    python scripts/process_ridership.py data/raw/2026-04_2026-05.zip
 
 Input CSV format (Monthly_Riders from LA Metro / public records request):
     Year, Month, Line, DayType, Riders, Shakeup, Provider, Mode, Days
+
+Excel inputs (.xlsx / .zip) are parsed by convert_excel_ridership.py into the
+same long format before processing.
 
 DayType values:
     DX = weekday  |  SA = Saturday  |  SU = Sunday
@@ -19,6 +27,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from convert_excel_ridership import convert_file, convert_zip
+
 RIDERSHIP_PATH = Path("src/data/ridership.json")
 METADATA_PATH = Path("src/data/metro_line_metadata_current.json")
 
@@ -30,6 +40,31 @@ RIDERSHIP_COLS = [
 
 def load_raw_csv(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
+    df.columns = df.columns.str.lower()
+    df["line"] = df["line"].astype(int)
+    return df
+
+
+def load_raw_input(path: str) -> pd.DataFrame:
+    """Load raw ridership into the long CSV schema regardless of input format.
+
+    Dispatches on file extension:
+      .zip   -> a zip of Excel files (typed or date-range) via convert_zip
+      .xlsx  -> a single MM-YYYY-{Bus|Rail}.xlsx via convert_file
+      other  -> a legacy long-format CSV via load_raw_csv
+
+    Excel converters emit the same columns as the CSV (Year, Month, Line,
+    DayType, Riders, Shakeup, Provider, Mode, Days); normalize them to match
+    load_raw_csv (lowercased columns, int line).
+    """
+    suffix = Path(path).suffix.lower()
+    if suffix == ".zip":
+        df = convert_zip(Path(path))
+    elif suffix == ".xlsx":
+        df = convert_file(Path(path))
+    else:
+        return load_raw_csv(path)
+
     df.columns = df.columns.str.lower()
     df["line"] = df["line"].astype(int)
     return df
@@ -130,9 +165,9 @@ def merge_line_metadata(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFram
     return final, current
 
 
-def main(csv_path: str) -> None:
-    print(f"loading {csv_path}")
-    raw_df = load_raw_csv(csv_path)
+def main(input_path: str) -> None:
+    print(f"loading {input_path}")
+    raw_df = load_raw_input(input_path)
 
     print("computing ridership...")
     new_df = compute_ridership(raw_df)
@@ -171,7 +206,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print(
             "usage: python scripts/process_ridership.py "
-            "<path/to/Monthly_Riders.csv.gz>"
+            "<Monthly_Riders.csv.gz | file.xlsx | date-range.zip>"
         )
         sys.exit(1)
     main(sys.argv[1])
