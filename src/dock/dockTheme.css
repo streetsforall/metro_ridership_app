@@ -1,0 +1,44 @@
+/*
+ * Metro dockview theme: maps dockview's --dv-* variables to the app's
+ * `.pane` look (see src/index.css). Panel CONTENT padding (the `.pane p-8`
+ * feel) is applied by the dashboard's panel wrappers, not here.
+ */
+.dockview-theme-metro {
+  --dv-group-view-background-color: #f8f6f1;
+  --dv-tabs-and-actions-container-background-color: #f8f6f1;
+  --dv-border-radius: 0.5rem;
+  --dv-tab-border-radius: 0.5rem;
+  --dv-separator-border: transparent;
+  --dv-drag-over-background-color: rgba(120, 113, 108, 0.15);
+  --dv-drag-over-border-color: #9c9c90;
+  --dv-sash-color: transparent;
+  --dv-active-sash-color: rgba(120, 113, 108, 0.35);
+
+  /* Tabs: small bold uppercase, matching the app's legend/button styling.
+     Font family inherits Overpass Mono from the page body. */
+  --dv-tabs-and-actions-container-font-size: 0.75rem;
+  --dv-tabs-and-actions-container-height: 2.25rem;
+  --dv-tab-divider-color: transparent;
+  --dv-activegroup-visiblepanel-tab-background-color: #f8f6f1;
+  --dv-activegroup-visiblepanel-tab-color: #2f2f2f;
+  --dv-activegroup-hiddenpanel-tab-background-color: transparent;
+  --dv-activegroup-hiddenpanel-tab-color: #78716c;
+  --dv-inactivegroup-visiblepanel-tab-background-color: #f8f6f1;
+  --dv-inactivegroup-visiblepanel-tab-color: #57534e;
+  --dv-inactivegroup-hiddenpanel-tab-background-color: transparent;
+  --dv-inactivegroup-hiddenpanel-tab-color: #a8a29e;
+}
+
+/*
+ * The dock root paints --dv-group-view-background-color (dockview v7 has no
+ * --dv-background-color variable); keep the root transparent so the page
+ * background (#f3eee2) shows through the gaps between panes.
+ */
+.dv-dockview.dockview-theme-metro {
+  background-color: transparent;
+}
+
+.dockview-theme-metro .dv-tab {
+  font-weight: bold;
+  text-transform: uppercase;
+}
