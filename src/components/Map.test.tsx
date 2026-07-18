@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import maplibregl from 'maplibre-gl';
-import Map from './Map';
+import Map, { __resetMapForTests } from './Map';
 import type { Line } from '../@types/lines.types';
 
 // Hoisted so the vi.mock factory below can close over them
@@ -12,6 +12,7 @@ const captured = vi.hoisted(() => ({
   addLayer: vi.fn(),
   addControl: vi.fn(),
   mapRemove: vi.fn(),
+  mapResize: vi.fn(),
 }));
 
 vi.mock('maplibre-gl', () => ({
@@ -24,6 +25,7 @@ vi.mock('maplibre-gl', () => ({
         setFilter: captured.setFilter,
         addControl: captured.addControl,
         remove: captured.mapRemove,
+        resize: captured.mapResize,
         setFeatureState: vi.fn(),
         getCanvas: vi
           .fn()
@@ -58,6 +60,8 @@ const makeLine = (overrides: Partial<Line> = {}): Line => ({
 });
 
 beforeEach(() => {
+  // Reset before clearing mocks — the reset helper calls the mocked remove()
+  __resetMapForTests();
   captured.loadCallback = undefined;
   vi.clearAllMocks();
 });
@@ -66,6 +70,11 @@ describe('Map', () => {
   it('renders the map container div', () => {
     const { container } = render(<Map lines={[]} />);
     expect(container.querySelector('#lineMap')).toBeTruthy();
+  });
+
+  it('attaches the singleton host div inside the container', () => {
+    const { container } = render(<Map lines={[]} />);
+    expect(container.querySelector('#lineMap > .map-host')).toBeTruthy();
   });
 
   it('initialises with the positron style when no MapTiler key is set', () => {
@@ -77,10 +86,67 @@ describe('Map', () => {
     );
   });
 
-  it('removes the map instance on unmount', () => {
-    const { unmount } = render(<Map lines={[]} />);
-    unmount();
-    expect(captured.mapRemove).toHaveBeenCalledOnce();
+  describe('singleton lifecycle', () => {
+    it('does not destroy the map instance on unmount', () => {
+      const { unmount } = render(<Map lines={[]} />);
+      unmount();
+      expect(captured.mapRemove).not.toHaveBeenCalled();
+    });
+
+    it('detaches the host div on unmount without destroying it', () => {
+      const { container, unmount } = render(<Map lines={[]} />);
+      unmount();
+      expect(container.querySelector('.map-host')).toBeNull();
+    });
+
+    it('reuses the same map instance across unmount and remount', () => {
+      const first = render(<Map lines={[]} />);
+      first.unmount();
+      const second = render(<Map lines={[]} />);
+
+      expect(vi.mocked(maplibregl.Map)).toHaveBeenCalledOnce();
+      expect(
+        second.container.querySelector('#lineMap > .map-host'),
+      ).toBeTruthy();
+    });
+
+    it('calls map.resize() after each attach', () => {
+      const first = render(<Map lines={[]} />);
+      expect(captured.mapResize).toHaveBeenCalledTimes(1);
+      first.unmount();
+      render(<Map lines={[]} />);
+      expect(captured.mapResize).toHaveBeenCalledTimes(2);
+    });
+
+    it('re-applies the selection filter on remount once the style is loaded', () => {
+      const lines = [makeLine({ id: 801, selected: true })];
+      const first = render(<Map lines={lines} />);
+      act(() => {
+        captured.loadCallback?.();
+      });
+      first.unmount();
+      vi.clearAllMocks();
+
+      render(<Map lines={lines} />);
+
+      // No new load event — the filter comes from the remount sync effect
+      expect(captured.setFilter).toHaveBeenCalledWith('lines-selected', [
+        'in',
+        ['get', 'line_id'],
+        ['literal', [801]],
+      ]);
+    });
+
+    it('__resetMapForTests destroys the singleton so the next mount builds a fresh map', () => {
+      render(<Map lines={[]} />);
+      expect(vi.mocked(maplibregl.Map)).toHaveBeenCalledOnce();
+
+      __resetMapForTests();
+      expect(captured.mapRemove).toHaveBeenCalledOnce();
+
+      render(<Map lines={[]} />);
+      expect(vi.mocked(maplibregl.Map)).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('on map load', () => {
