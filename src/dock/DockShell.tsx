@@ -80,6 +80,7 @@ export const PANEL_DEFS: Record<PanelId, PanelDef> = {
     component: 'summary',
     title: 'Summary',
     position: { referencePanel: 'chart', direction: 'below' },
+    defaultHeight: 340,
   },
   map: {
     component: 'map',

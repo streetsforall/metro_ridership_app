@@ -6,6 +6,42 @@ interface SummaryDataProps {
   lines: Line[];
 }
 
+interface Stat {
+  label: string;
+  value: string;
+  /** Rendered as a colored +/- badge beside the label. */
+  delta?: number;
+  labelledBy?: string;
+}
+
+/** Shown in place of a value the current selection has no data for. */
+const NO_VALUE = '—';
+
+function StatCard({ label, value, delta, labelledBy }: Stat) {
+  return (
+    <div className="rounded-lg bg-white ring-1 ring-stone-200 p-4">
+      <div className="flex justify-between gap-2 mb-2 text-sm">
+        <span className="text-stone-400 uppercase whitespace-nowrap">
+          {label}
+        </span>
+
+        {delta !== undefined && (
+          <span
+            aria-label="Change"
+            className={delta < 0 ? 'text-red-600' : 'text-green-600'}
+          >
+            {delta > 0 && '+'}
+            {delta.toLocaleString()}
+          </span>
+        )}
+      </div>
+      <span aria-labelledby={labelledBy} className="tracking-tighter text-4xl">
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export default function SummaryData({ lines }: SummaryDataProps) {
   const selectedLines = lines.filter(
     (visibleLine: Line) => visibleLine.selected,
@@ -39,80 +75,51 @@ export default function SummaryData({ lines }: SummaryDataProps) {
     (sum, line) => sum + (line.distanceMiles ?? 0),
     0,
   );
-  const ridersPerMile = totalMiles > 0 ? averageDailyRidership / totalMiles : undefined;
+
+  /* Not every line has an entry in line_distances.json, so the distance-derived
+     stats keep their card and show a dash rather than disappearing. */
+  const hasDistance = totalMiles > 0;
+
+  const stats: Stat[] = [
+    {
+      label: 'Average Ridership',
+      value: Math.round(averageDailyRidership).toLocaleString(),
+      labelledBy: 'avg-ridership',
+    },
+    {
+      label: 'Riders / Mile',
+      value: hasDistance
+        ? Math.round(averageDailyRidership / totalMiles).toLocaleString()
+        : NO_VALUE,
+    },
+    {
+      label: 'Total Miles',
+      value: hasDistance ? totalMiles.toLocaleString() : NO_VALUE,
+    },
+    {
+      label: 'Ending Ridership',
+      value: Math.round(recentRidership).toLocaleString(),
+      delta: changeInRidership,
+      labelledBy: 'cur-ridership',
+    },
+  ];
 
   return (
     <div>
       {selectedLines.length > 0 && (
-        <div className="flex flex-wrap xl:flex-nowrap gap-4 items-center">
-          {/* Stats */}
-          {/* TODO: Refactor into component */}
-          <div className="pane">
-            <div className="flex justify-between mb-2 min-w-56 text-sm">
-              <span className="text-stone-400 uppercase whitespace-nowrap">
-                Average Ridership
-              </span>
-            </div>
-            <span
-              aria-labelledby="avg-ridership"
-              className="tracking-tighter text-5xl"
-            >
-              {Math.round(averageDailyRidership).toLocaleString()}
-            </span>
-          </div>
-
-          {ridersPerMile !== undefined && (
-            <div className="pane">
-              <div className="flex justify-between mb-2 min-w-56 text-sm">
-                <span className="text-stone-400 uppercase whitespace-nowrap">
-                  Riders / Mile
-                </span>
-              </div>
-              <span className="tracking-tighter text-5xl">
-                {Math.round(ridersPerMile).toLocaleString()}
-              </span>
-            </div>
-          )}
-
-          {totalMiles > 0 && (
-            <div className="pane">
-              <div className="flex justify-between mb-2 min-w-56 text-sm">
-                <span className="text-stone-400 uppercase whitespace-nowrap">
-                  Total Miles
-                </span>
-              </div>
-              <span className="tracking-tighter text-5xl">
-                {totalMiles.toLocaleString()}
-              </span>
-            </div>
-          )}
-
-          <div className="pane">
-            <div className="flex justify-between mb-2 min-w-56 text-sm">
-              <span className="text-stone-400 uppercase whitespace-nowrap">
-                Ending Ridership
-              </span>
-
-              <span
-                aria-label="Change"
-                className={
-                  changeInRidership < 0 ? 'text-red-600' : 'text-green-600'
-                }
-              >
-                {changeInRidership > 0 && '+'}
-                {changeInRidership.toLocaleString()}
-              </span>
-            </div>
-            <span
-              aria-labelledby="cur-ridership"
-              className="tracking-tighter text-5xl"
-            >
-              {Math.round(recentRidership).toLocaleString()}
-            </span>
+        <div className="flex flex-col gap-4">
+          {/* auto-fit tracks size against the panel, not the viewport — the dock
+              gives this component far less width than the old full-page row.
+              The text block stays outside the grid so unused tracks collapse
+              and the cards stretch to fill the row. */}
+          <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(11rem,1fr))]">
+            {stats.map((stat) => (
+              <StatCard key={stat.label} {...stat} />
+            ))}
           </div>
 
           {/* Text */}
-          <div className="basis-full xl:basis-auto flex flex-col gap-4 p-4 text-sm">
+          <div className="flex flex-col gap-4 px-4 pb-4 text-sm">
             <p>
               <span className="font-bold mr-1">Selected:</span>
 

@@ -141,11 +141,11 @@ describe('SummaryData with selected lines', () => {
     expect(screen.getByText('20')).toBeTruthy();
   });
 
-  it('hides Total Miles when no selected lines have distance data', () => {
+  it('keeps the Total Miles card when no selected lines have distance data', () => {
     render(
       <SummaryData lines={[makeLine({ selected: true, averageRidership: 5000 })]} />,
     );
-    expect(screen.queryByText('Total Miles')).toBeNull();
+    expect(screen.getByText('Total Miles')).toBeTruthy();
   });
 
   it('shows the Riders / Mile label when selected lines have distance data', () => {
@@ -167,13 +167,33 @@ describe('SummaryData with selected lines', () => {
     expect(screen.getByText('600')).toBeTruthy();
   });
 
-  it('hides the Riders / Mile stat when no lines have distance data', () => {
+  it('keeps the Riders / Mile card when no lines have distance data', () => {
     render(
       <SummaryData
         lines={[makeLine({ selected: true, averageRidership: 5000 })]}
       />,
     );
-    expect(screen.queryByText('Riders / Mile')).toBeNull();
+    expect(screen.getByText('Riders / Mile')).toBeTruthy();
+  });
+
+  it('shows a dash for the distance stats when no lines have distance data', () => {
+    render(
+      <SummaryData
+        lines={[makeLine({ selected: true, averageRidership: 5000 })]}
+      />,
+    );
+    expect(screen.getAllByText('—')).toHaveLength(2);
+  });
+
+  it('renders a card for every stat even without distance data', () => {
+    render(
+      <SummaryData
+        lines={[makeLine({ selected: true, averageRidership: 5000 })]}
+      />,
+    );
+    ['Average Ridership', 'Riders / Mile', 'Total Miles', 'Ending Ridership'].forEach(
+      (label) => expect(screen.getByText(label)).toBeTruthy(),
+    );
   });
 
   it('treats undefined averageRidership as 0 in the sum', () => {
