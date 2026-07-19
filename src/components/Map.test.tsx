@@ -13,6 +13,7 @@ const captured = vi.hoisted(() => ({
   addControl: vi.fn(),
   mapRemove: vi.fn(),
   mapResize: vi.fn(),
+  mapTriggerRepaint: vi.fn(),
 }));
 
 vi.mock('maplibre-gl', () => ({
@@ -26,6 +27,7 @@ vi.mock('maplibre-gl', () => ({
         addControl: captured.addControl,
         remove: captured.mapRemove,
         resize: captured.mapResize,
+        triggerRepaint: captured.mapTriggerRepaint,
         setFeatureState: vi.fn(),
         getCanvas: vi
           .fn()
@@ -116,6 +118,14 @@ describe('Map', () => {
       first.unmount();
       render(<Map lines={[]} />);
       expect(captured.mapResize).toHaveBeenCalledTimes(2);
+    });
+
+    it('repaints after each attach (resize alone no-ops when the size is unchanged)', () => {
+      const first = render(<Map lines={[]} />);
+      expect(captured.mapTriggerRepaint).toHaveBeenCalledTimes(1);
+      first.unmount();
+      render(<Map lines={[]} />);
+      expect(captured.mapTriggerRepaint).toHaveBeenCalledTimes(2);
     });
 
     it('re-applies the selection filter on remount once the style is loaded', () => {

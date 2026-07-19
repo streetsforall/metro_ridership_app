@@ -171,6 +171,7 @@ function getOrCreateSingleton(): MapSingleton {
 export function __resetMapForTests() {
   if (singleton == null) return;
   singleton.map.remove();
+  singleton.host.remove();
   singleton = null;
 }
 
@@ -186,6 +187,10 @@ export default function Map({ lines }: MapProps) {
 
     container.appendChild(s.host);
     s.map.resize();
+    // resize() early-returns when the container dimensions are unchanged, so on
+    // a re-attach at the same size it schedules no frame. Ask for one explicitly
+    // rather than relying on the next user interaction to repaint the canvas.
+    s.map.triggerRepaint();
 
     const observer = new ResizeObserver(() => {
       s.map.resize();
