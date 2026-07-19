@@ -80,7 +80,11 @@ export const PANEL_DEFS: Record<PanelId, PanelDef> = {
     component: 'summary',
     title: 'Summary',
     position: { referencePanel: 'chart', direction: 'below' },
-    defaultHeight: 340,
+    /* Tracks the content's measured worst case rather than a padded guess:
+       height granted here is taken from the chart and map below it. The
+       container queries in index.css keep that worst case roughly flat across
+       dock widths, which is what lets this stay small. */
+    defaultHeight: 295,
   },
   map: {
     component: 'map',
@@ -125,7 +129,17 @@ const panelComponents: Record<
   FunctionComponent<IDockviewPanelProps>
 > = Object.fromEntries(PANEL_IDS.map((id) => [id, makePanelComponent(id)]));
 
-const buildDefaultLayout = (api: DockviewApi): void => {
+/**
+ * Ceiling on any single panel's `defaultHeight`, as a fraction of the dock.
+ *
+ * `setSize` is competitive — height granted to one group is taken from its
+ * column siblings — so a fixed pixel default starves them on a short window.
+ * Measured at 1440x900 before this clamp: summary held its full 284px while the
+ * chart fell to 124px and the map to 89px.
+ */
+const MAX_DEFAULT_HEIGHT_RATIO = 0.35;
+
+export const buildDefaultLayout = (api: DockviewApi): void => {
   for (const id of PANEL_IDS) {
     const def = PANEL_DEFS[id];
     api.addPanel({
@@ -147,7 +161,12 @@ const buildDefaultLayout = (api: DockviewApi): void => {
     if (!panel) continue;
 
     if (defaultHeight !== undefined && api.height > 0) {
-      panel.api.setSize({ height: defaultHeight });
+      panel.api.setSize({
+        height: Math.min(
+          defaultHeight,
+          Math.round(api.height * MAX_DEFAULT_HEIGHT_RATIO),
+        ),
+      });
     }
     if (defaultWidthRatio !== undefined && api.width > 0) {
       panel.api.setSize({ width: Math.round(api.width * defaultWidthRatio) });
@@ -196,10 +215,11 @@ function DockShell({ panels, onApiReady }: DockShellProps) {
       }
     }
 
-    if (!restored) {
-      buildDefaultLayout(api);
-    }
-
+    /*
+     * Registered before the build so the build's own layout events are caught:
+     * with the listener added afterwards, a freshly built default layout was
+     * never persisted until the user happened to drag a sash.
+     */
     layoutListenerRef.current = api.onDidLayoutChange(() => {
       if (saveTimerRef.current !== null) {
         window.clearTimeout(saveTimerRef.current);
@@ -210,7 +230,29 @@ function DockShell({ panels, onApiReady }: DockShellProps) {
       }, SAVE_DEBOUNCE_MS);
     });
 
-    onApiReady?.(api);
+    try {
+      if (!restored) {
+        buildDefaultLayout(api);
+      }
+    } catch (error) {
+      // Leave the dock empty rather than half-built, and don't persist the
+      // wreckage. Surfaced, not swallowed: a dock missing panels should be
+      // debuggable.
+      api.clear();
+      clearLayout();
+      console.error('Failed to build the default panel layout', error);
+    } finally {
+      /*
+       * Always hand the api over — this is what gives the header its panel
+       * toggles and reset, so it must not be hostage to the build succeeding,
+       * or one layout error disables the only UI that can recover from it.
+       *
+       * It stays *after* the build on purpose: the handoff sets React state,
+       * and the resulting re-render re-lays out the dock, discarding the
+       * setSize calls the build just made.
+       */
+      onApiReady?.(api);
+    }
   };
 
   return (

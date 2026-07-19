@@ -6,7 +6,12 @@ import type { SerializedDockview } from 'dockview-react';
  * Layout is deliberately device-local: it is NOT threaded through the URL
  * query params (that system is reserved for shareable dashboard state).
  */
-export const LAYOUT_STORAGE_KEY = 'metro-panel-layout-v1';
+/*
+ * Bumped to v2 when the panels' default sizes were corrected: a stored layout
+ * short-circuits buildDefaultLayout entirely (see DockShell.onReady), so a new
+ * key is the only way an existing browser picks up a changed default.
+ */
+export const LAYOUT_STORAGE_KEY = 'metro-panel-layout-v2';
 
 export interface StoredLayout {
   version: 1;

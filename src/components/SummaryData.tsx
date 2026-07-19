@@ -19,9 +19,9 @@ const NO_VALUE = '—';
 
 function StatCard({ label, value, delta, labelledBy }: Stat) {
   return (
-    <div className="rounded-lg bg-white ring-1 ring-stone-200 p-4">
+    <div className="summary-card grow basis-44 rounded-lg bg-white ring-1 ring-stone-200 p-4">
       <div className="flex justify-between gap-2 mb-2 text-sm">
-        <span className="text-stone-400 uppercase whitespace-nowrap">
+        <span className="summary-card-label text-stone-400 uppercase whitespace-nowrap">
           {label}
         </span>
 
@@ -35,7 +35,10 @@ function StatCard({ label, value, delta, labelledBy }: Stat) {
           </span>
         )}
       </div>
-      <span aria-labelledby={labelledBy} className="tracking-tighter text-4xl">
+      <span
+        aria-labelledby={labelledBy}
+        className="summary-card-value tracking-tighter text-4xl"
+      >
         {value}
       </span>
     </div>
@@ -105,21 +108,22 @@ export default function SummaryData({ lines }: SummaryDataProps) {
   ];
 
   return (
-    <div>
+    <div className="summary-stats">
       {selectedLines.length > 0 && (
-        <div className="flex flex-col gap-4">
-          {/* auto-fit tracks size against the panel, not the viewport — the dock
-              gives this component far less width than the old full-page row.
-              The text block stays outside the grid so unused tracks collapse
-              and the cards stretch to fill the row. */}
-          <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(11rem,1fr))]">
-            {stats.map((stat) => (
-              <StatCard key={stat.label} {...stat} />
-            ))}
-          </div>
+        /* One wrapping row: the cards and the text block sit side by side when
+           the panel can afford it, and drop onto their own lines when it can't.
+           Sizing comes from each item's flex-basis, so this reflows on the
+           PANEL's width — the original `xl:flex-nowrap` keyed off the viewport
+           instead, which is why cards overflowed once the dock made this column
+           narrower than the screen. */
+        <div className="flex flex-wrap gap-4 items-center">
+          {stats.map((stat) => (
+            <StatCard key={stat.label} {...stat} />
+          ))}
 
           {/* Text */}
-          <div className="flex flex-col gap-4 px-4 pb-4 text-sm">
+          {/* No bottom padding: PanelChrome's p-8 already supplies it. */}
+          <div className="summary-note grow basis-80 flex flex-col gap-2 px-4 text-sm">
             <p>
               <span className="font-bold mr-1">Selected:</span>
 
