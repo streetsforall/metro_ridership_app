@@ -12,5 +12,14 @@ export default function SummaryPanel() {
     );
   }
 
-  return <SummaryData lines={lines} />;
+  return (
+    /* Centered vertically so the cards sit in the middle of whatever height the
+       panel has rather than pinning to the top over a dead band. `safe center`
+       (not plain `center`) so an overflowing row still scrolls from its start —
+       PanelChrome gives this panel `overflow-auto`. A flex COLUMN keeps
+       SummaryData full-width, which its container queries size against. */
+    <div className="flex h-full flex-col [justify-content:safe_center]">
+      <SummaryData lines={lines} />
+    </div>
+  );
 }

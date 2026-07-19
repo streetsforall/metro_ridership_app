@@ -46,6 +46,12 @@ export interface PanelDef {
   };
   /** Default group height in px, applied after the default layout is built. */
   defaultHeight?: number;
+  /**
+   * Default group height as a fraction of the dock height. Preferred over
+   * `defaultHeight` for the panels whose content should scale with the window;
+   * a panel with neither takes whatever its column has left over.
+   */
+  defaultHeightRatio?: number;
   /** Default group width as a fraction of the dock width. */
   defaultWidthRatio?: number;
 }
@@ -71,21 +77,24 @@ export const PANEL_DEFS: Record<PanelId, PanelDef> = {
     component: 'chart',
     title: 'Ridership',
     position: { referencePanel: 'line-selector', direction: 'right' },
+    /* Deliberately no default: the chart takes whatever the right column has
+       left after summary and map (~50%), which is the largest share and the
+       one that benefits most from extra height. */
   },
   summary: {
     component: 'summary',
     title: 'Summary',
     position: { referencePanel: 'chart', direction: 'below' },
-    /* Tracks the content's measured worst case rather than a padded guess:
-       height granted here is taken from the chart and map below it. The
-       container queries in index.css keep that worst case roughly flat across
-       dock widths, which is what lets this stay small. */
-    defaultHeight: 295,
+    /* Height granted here is taken from the chart and map below it, so this
+       stays the smallest share. The container queries in index.css keep the
+       cards on one row across dock widths, which is what lets it stay small. */
+    defaultHeightRatio: 0.16,
   },
   map: {
     component: 'map',
     title: 'Map',
     position: { referencePanel: 'summary', direction: 'below' },
+    defaultHeightRatio: 0.3,
   },
 };
 
@@ -132,6 +141,9 @@ const panelComponents: Record<
  * column siblings — so a fixed pixel default starves them on a short window.
  * Measured at 1440x900 before this clamp: summary held its full 284px while the
  * chart fell to 124px and the map to 89px.
+ *
+ * `defaultHeightRatio` is not clamped: a fraction of the dock already scales
+ * with the window, which is the exact failure this ceiling guards against.
  */
 const MAX_DEFAULT_HEIGHT_RATIO = 0.35;
 
@@ -152,11 +164,14 @@ export const buildDefaultLayout = (api: DockviewApi): void => {
    * calls no-op in unmeasured containers (jsdom).
    */
   for (const id of PANEL_IDS) {
-    const { defaultHeight, defaultWidthRatio } = PANEL_DEFS[id];
+    const { defaultHeight, defaultHeightRatio, defaultWidthRatio } =
+      PANEL_DEFS[id];
     const panel = api.getPanel(id);
     if (!panel) continue;
 
-    if (defaultHeight !== undefined && api.height > 0) {
+    if (defaultHeightRatio !== undefined && api.height > 0) {
+      panel.api.setSize({ height: Math.round(api.height * defaultHeightRatio) });
+    } else if (defaultHeight !== undefined && api.height > 0) {
       panel.api.setSize({
         height: Math.min(
           defaultHeight,

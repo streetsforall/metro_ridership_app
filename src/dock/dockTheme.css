@@ -173,3 +173,20 @@
   border-bottom-left-radius: var(--dv-border-radius);
   border-bottom-right-radius: var(--dv-border-radius);
 }
+
+/*
+ * Content that fills its panel.
+ *
+ * Both rules undo a fixed height that exists for the stacked mobile fallback,
+ * where the container is auto-height and the content is the only thing giving
+ * it a size. In the dock the panel already has a definite height, and a floor
+ * taller than the panel doesn't scroll — `.dv-groupview` is `overflow: hidden`,
+ * so it is silently clipped. `[data-dock-body]` is set by PanelChrome.
+ */
+[data-dock-body] .chart-fill {
+  min-height: 0;
+}
+
+[data-dock-body] #lineMap {
+  height: 100%;
+}

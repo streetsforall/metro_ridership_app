@@ -309,16 +309,23 @@ function App() {
        reset action instead of failing loudly. */
     <DashboardProvider value={dashboardValue}>
       <DockLayoutProvider value={dockLayoutValue}>
-        {/* Stretch full height */}
-        <div className="flex flex-col min-h-screen mx-4">
+        {/* The dock fits the viewport (panels split the available height, no
+            page scroll); the stacked mobile fallback still grows and scrolls. */}
+        <div
+          className={`flex flex-col mx-4 ${isDesktop ? 'h-screen' : 'min-h-screen'}`}
+        >
           <Header />
 
           {isDesktop ? (
             /* Dockview's root is `height: 100%`, which only resolves against a
                parent with a definite height — a flex-grown `height: auto` box
                collapses it to 0. The outer div takes the space; the absolutely
-               positioned inner div gives that space a definite height. */
-            <div className="relative grow min-h-[42rem]">
+               positioned inner div gives that space a definite height.
+
+               `min-h-0` is load-bearing: a flex child defaults to
+               `min-height: auto`, which refuses to shrink below its content and
+               would push the footer off-screen on a short window. */
+            <div className="relative grow min-h-0">
               <div className="absolute inset-0">
                 <DockShell
                   panels={{
