@@ -5,10 +5,16 @@ import { useDockLayout } from './DockLayoutContext';
 /**
  * Tab renderer for every dock panel (registered once as `defaultTabComponent`).
  *
- * The dashboard's design has no panel chrome: no title, no close button. But
- * dockview attaches its drag source to the tab element, so the strip cannot
- * simply be removed or panels could never be rearranged. Instead a lone panel
- * renders a blank grip that the CSS collapses to a sliver and reveals on hover.
+ * The dashboard's design has no panel chrome: no title, no close button, and no
+ * drag affordance. A lone panel renders a blank tab that the CSS collapses to
+ * zero height, so the panel's padding is its only inset. The element still has
+ * to be rendered — see the `data-metro-panel` note below — but it takes up no
+ * space and shows nothing.
+ *
+ * Dockview attaches its drag source to the tab element, so collapsing it also
+ * means a lone panel cannot be dragged. That is deliberate: Panels ▸ Edit
+ * layout is the one discoverable way to rearrange panels, and a second, nearly
+ * invisible path was not worth the asymmetric padding it cost every panel.
  *
  * Titles come back in the two cases where they carry information:
  *  - the group holds more than one panel, where blank tabs would be
@@ -54,9 +60,11 @@ const MetroTab: FunctionComponent<IDockviewPanelHeaderProps> = (props) => {
     );
   }
 
-  /* Blank on purpose — dockview makes the tab itself the drag handle, and the
-     grip bar is painted by dockTheme.css via ::before. */
-  return <span data-metro-grip data-metro-panel={api.id} aria-hidden="true" />;
+  /* Blank on purpose — kept in the DOM only as the `data-metro-panel` hook;
+     dockTheme.css collapses the strip around it to zero height. */
+  return (
+    <span data-metro-blank-tab data-metro-panel={api.id} aria-hidden="true" />
+  );
 };
 
 export default MetroTab;

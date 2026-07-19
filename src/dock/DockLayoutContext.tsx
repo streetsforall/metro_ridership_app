@@ -17,10 +17,11 @@ export interface DockLayoutContextValue {
   togglePanel: (id: PanelId) => void;
   resetLayout: () => void;
   /**
-   * Layout-editing mode. Panels normally show only a slim hover-reveal drag
-   * grip instead of a tab; edit mode brings back full titled tabs so groups
-   * can be identified while rearranging. Deliberately not persisted — coming
-   * back to the app stuck in edit mode is worse than re-toggling it.
+   * Layout-editing mode. Panels normally show no header at all; edit mode
+   * brings back full titled tabs so groups can be identified — and dragged,
+   * since dockview's drag source is the tab — while rearranging. Deliberately
+   * not persisted — coming back to the app stuck in edit mode is worse than
+   * re-toggling it.
    */
   isEditMode: boolean;
   toggleEditMode: () => void;

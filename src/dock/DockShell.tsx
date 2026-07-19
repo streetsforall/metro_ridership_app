@@ -14,6 +14,7 @@ import {
   type IDockviewPanelProps,
 } from 'dockview-react';
 import { clearLayout, loadLayout, saveLayout } from '../utils/layoutStorage';
+import { useDockLayout } from './DockLayoutContext';
 import MetroTab from './MetroTab';
 import { PANEL_IDS, type PanelId } from './panelIds';
 import 'dockview-react/dist/styles/dockview.css';
@@ -198,6 +199,8 @@ export interface DockShellProps {
 function DockShell({ panels, onApiReady }: DockShellProps) {
   const saveTimerRef = useRef<number | null>(null);
   const layoutListenerRef = useRef<{ dispose(): void } | null>(null);
+  const apiRef = useRef<DockviewApi | null>(null);
+  const { isEditMode } = useDockLayout();
 
   useEffect(() => {
     return () => {
@@ -208,8 +211,27 @@ function DockShell({ panels, onApiReady }: DockShellProps) {
     };
   }, []);
 
+  /*
+   * Toggling edit mode grows/collapses every tab strip, but purely in CSS (the
+   * `:has([data-metro-blank-tab])` rule in dockTheme.css), so dockview never
+   * learns its content boxes moved. `defaultRenderer="always"` panels are
+   * absolutely positioned overlays whose rects are only recomputed on a layout
+   * event, so they keep covering the strip they no longer share space with —
+   * and swallow every pointerdown meant for a tab, leaving panels undraggable
+   * in the one mode that exists for dragging them.
+   *
+   * `force` is required: the dock's outer dimensions have not changed, so the
+   * unforced call would early-out as a no-op.
+   */
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api || api.width === 0 || api.height === 0) return;
+    api.layout(api.width, api.height, true);
+  }, [isEditMode]);
+
   const onReady = (event: DockviewReadyEvent): void => {
     const { api } = event;
+    apiRef.current = api;
 
     const saved = loadLayout(PANEL_IDS);
     let restored = false;
