@@ -15,151 +15,201 @@ interface MapProps {
   lines: Line[];
 }
 
+/**
+ * Module-scope singleton: the MapLibre instance (and the div that owns its
+ * canvas) is created once and never destroyed. React mounts only attach and
+ * detach the host div, so camera position, layers, and the tile cache survive
+ * dockview panel hide/show, drag-docking, and layout switches.
+ */
+interface MapSingleton {
+  host: HTMLDivElement;
+  map: maplibregl.Map;
+  styleLoaded: boolean;
+  lines: Line[];
+}
+
+let singleton: MapSingleton | null = null;
+
+function applySelectionFilter(s: MapSingleton) {
+  const selectedIds = s.lines.filter((l) => l.selected).map((l) => l.id);
+  s.map.setFilter('lines-selected', [
+    'in',
+    ['get', 'line_id'],
+    ['literal', selectedIds],
+  ]);
+}
+
+function getOrCreateSingleton(): MapSingleton {
+  if (singleton != null) return singleton;
+
+  const host = document.createElement('div');
+  host.className = 'map-host';
+
+  const map = new maplibregl.Map({
+    attributionControl: { compact: true },
+    container: host,
+    style: STYLE_URL,
+    center: [-118.24, 34.05],
+    zoom: 10,
+    minZoom: 8,
+    maxZoom: 16,
+  });
+
+  map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+  const s: MapSingleton = { host, map, styleLoaded: false, lines: [] };
+
+  map.on('load', () => {
+    s.styleLoaded = true;
+
+    map.addSource('metro-lines', {
+      type: 'geojson',
+      data: '/metro_lines.geojson',
+      generateId: true,
+    });
+
+    // All lines dimmed — rendered below the selected layer
+    map.addLayer({
+      id: 'lines-all',
+      type: 'line',
+      source: 'metro-lines',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': '#999',
+        'line-opacity': 0.15,
+        'line-width': 2,
+      },
+    });
+
+    // Selected lines rendered on top with brand colors
+    map.addLayer({
+      id: 'lines-selected',
+      type: 'line',
+      source: 'metro-lines',
+      filter: ['in', ['get', 'line_id'], ['literal', []]],
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-opacity': 1,
+        'line-width': [
+          'case',
+          ['boolean', ['feature-state', 'hover'], false],
+          5,
+          3,
+        ],
+      },
+    });
+
+    // Hover popup
+    const popup = new Popup({
+      closeButton: false,
+      closeOnClick: false,
+    });
+
+    let hoveredId: string | number | undefined;
+
+    const onMouseMove = (
+      e: maplibregl.MapMouseEvent & {
+        features?: maplibregl.MapGeoJSONFeature[];
+      },
+    ) => {
+      if (!e.features?.length) return;
+
+      map.getCanvas().style.cursor = 'pointer';
+
+      if (hoveredId !== undefined) {
+        map.setFeatureState(
+          { source: 'metro-lines', id: hoveredId },
+          { hover: false },
+        );
+      }
+
+      hoveredId = e.features[0].id;
+      map.setFeatureState(
+        { source: 'metro-lines', id: hoveredId },
+        { hover: true },
+      );
+
+      const lineId = e.features[0].properties.line_id as number;
+      const lineData = s.lines.find((l) => l.id === lineId);
+      popup
+        .setLngLat(e.lngLat)
+        .setHTML(buildPopupHTML(e.features[0].properties.name as string, lineData))
+        .addTo(map);
+    };
+
+    const onMouseLeave = () => {
+      map.getCanvas().style.cursor = '';
+      popup.remove();
+
+      if (hoveredId !== undefined) {
+        map.setFeatureState(
+          { source: 'metro-lines', id: hoveredId },
+          { hover: false },
+        );
+      }
+      hoveredId = undefined;
+    };
+
+    map.on('mousemove', 'lines-selected', onMouseMove);
+    map.on('mouseleave', 'lines-selected', onMouseLeave);
+
+    // Apply initial selection state
+    applySelectionFilter(s);
+  });
+
+  singleton = s;
+  return s;
+}
+
+/**
+ * Test-only: destroy the singleton so each test starts from a clean slate.
+ * Production code must never call this — the whole point of the singleton is
+ * that the map instance outlives React mounts.
+ */
+// eslint-disable-next-line react-refresh/only-export-components -- test-only helper; HMR of this file must recreate the singleton anyway
+export function __resetMapForTests() {
+  if (singleton == null) return;
+  singleton.map.remove();
+  singleton.host.remove();
+  singleton = null;
+}
 
 export default function Map({ lines }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<maplibregl.Map | null>(null);
-  const isStyleLoaded = useRef(false);
-  const linesRef = useRef<Line[]>(lines);
 
-  // Initialize map once
+  // Attach the singleton's host div on mount, detach (but never destroy) on
+  // unmount. A ResizeObserver keeps the canvas sized to the container —
+  // MapLibre's own trackResize only watches the window, not dockview sashes.
   useEffect(() => {
-    if (map.current != null) return;
+    const container = mapContainer.current!;
+    const s = getOrCreateSingleton();
 
-    map.current = new maplibregl.Map({
-      attributionControl: { compact: true },
-      container: mapContainer.current!,
-      style: STYLE_URL,
-      center: [-118.24, 34.05],
-      zoom: 10,
-      minZoom: 8,
-      maxZoom: 16,
+    container.appendChild(s.host);
+    s.map.resize();
+    // resize() early-returns when the container dimensions are unchanged, so on
+    // a re-attach at the same size it schedules no frame. Ask for one explicitly
+    // rather than relying on the next user interaction to repaint the canvas.
+    s.map.triggerRepaint();
+
+    const observer = new ResizeObserver(() => {
+      s.map.resize();
     });
-
-    map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
-
-    map.current.on('load', () => {
-      isStyleLoaded.current = true;
-
-      map.current!.addSource('metro-lines', {
-        type: 'geojson',
-        data: '/metro_lines.geojson',
-        generateId: true,
-      });
-
-      // All lines dimmed — rendered below the selected layer
-      map.current!.addLayer({
-        id: 'lines-all',
-        type: 'line',
-        source: 'metro-lines',
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: {
-          'line-color': '#999',
-          'line-opacity': 0.15,
-          'line-width': 2,
-        },
-      });
-
-      // Selected lines rendered on top with brand colors
-      map.current!.addLayer({
-        id: 'lines-selected',
-        type: 'line',
-        source: 'metro-lines',
-        filter: ['in', ['get', 'line_id'], ['literal', []]],
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: {
-          'line-color': ['get', 'color'],
-          'line-opacity': 1,
-          'line-width': [
-            'case',
-            ['boolean', ['feature-state', 'hover'], false],
-            5,
-            3,
-          ],
-        },
-      });
-
-      // Hover popup
-      const popup = new Popup({
-        closeButton: false,
-        closeOnClick: false,
-      });
-
-      let hoveredId: string | number | undefined;
-
-      const onMouseMove = (
-        e: maplibregl.MapMouseEvent & {
-          features?: maplibregl.MapGeoJSONFeature[];
-        },
-      ) => {
-        if (!e.features?.length) return;
-
-        map.current!.getCanvas().style.cursor = 'pointer';
-
-        if (hoveredId !== undefined) {
-          map.current!.setFeatureState(
-            { source: 'metro-lines', id: hoveredId },
-            { hover: false },
-          );
-        }
-
-        hoveredId = e.features[0].id;
-        map.current!.setFeatureState(
-          { source: 'metro-lines', id: hoveredId },
-          { hover: true },
-        );
-
-        const lineId = e.features[0].properties.line_id as number;
-        const lineData = linesRef.current.find((l) => l.id === lineId);
-        popup
-          .setLngLat(e.lngLat)
-          .setHTML(buildPopupHTML(e.features[0].properties.name as string, lineData))
-          .addTo(map.current!);
-      };
-
-      const onMouseLeave = () => {
-        map.current!.getCanvas().style.cursor = '';
-        popup.remove();
-
-        if (hoveredId !== undefined) {
-          map.current!.setFeatureState(
-            { source: 'metro-lines', id: hoveredId },
-            { hover: false },
-          );
-        }
-        hoveredId = undefined;
-      };
-
-      map.current!.on('mousemove', 'lines-selected', onMouseMove);
-      map.current!.on('mouseleave', 'lines-selected', onMouseLeave);
-
-      // Apply initial selection state
-      const selectedIds = lines.filter((l) => l.selected).map((l) => l.id);
-      map.current!.setFilter('lines-selected', [
-        'in',
-        ['get', 'line_id'],
-        ['literal', selectedIds],
-      ]);
-    });
+    observer.observe(container);
 
     return () => {
-      map.current?.remove();
-      map.current = null;
-      isStyleLoaded.current = false;
+      observer.disconnect();
+      s.host.remove();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync selected lines with the map filter whenever selection changes
+  // Sync selected lines with the map filter whenever selection changes. Runs
+  // on every (re)mount too, so a remounted component re-applies its selection.
   useEffect(() => {
-    linesRef.current = lines;
-    if (!isStyleLoaded.current) return;
-    const selectedIds = lines.filter((l) => l.selected).map((l) => l.id);
-    map.current?.setFilter('lines-selected', [
-      'in',
-      ['get', 'line_id'],
-      ['literal', selectedIds],
-    ]);
+    const s = getOrCreateSingleton();
+    s.lines = lines;
+    if (!s.styleLoaded) return;
+    applySelectionFilter(s);
   }, [lines]);
 
   return <div id="lineMap" ref={mapContainer} />;

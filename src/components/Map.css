@@ -4,6 +4,14 @@
   border-radius: inherit;
 }
 
+/* Singleton host div that owns the maplibre canvas; re-parented into
+   #lineMap on every mount, so it must always fill its container. */
+.map-host {
+  height: 100%;
+  width: 100%;
+  border-radius: inherit;
+}
+
 .maplibregl-popup table {
   border-collapse: collapse;
   margin-top: 6px;
