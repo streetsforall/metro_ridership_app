@@ -1,13 +1,20 @@
 /*
- * Metro dockview theme: maps dockview's --dv-* variables to the app's
- * `.pane` look (see src/index.css). Panel CONTENT padding (the `.pane p-8`
- * feel) is applied by the dashboard's panel wrappers, not here.
+ * Metro dockview theme: gives each group the app's card look (see `.pane` in
+ * src/index.css) — white fill, stone border, rounded corners — matching the
+ * summary stat cards. Panel CONTENT padding is applied by the dashboard's
+ * panel wrappers, not here.
+ *
+ * The --dv-* radius variables below are NOT honored by dockview for custom
+ * themes: every rule that reads them is scoped to a built-in `*-spaced` theme
+ * class. The explicit rules further down are what actually paint the card.
  */
 .dockview-theme-metro {
-  --dv-group-view-background-color: #f8f6f1;
-  --dv-tabs-and-actions-container-background-color: #f8f6f1;
+  --dv-group-view-background-color: #fff;
+  --dv-tabs-and-actions-container-background-color: #fff;
   --dv-border-radius: 0.5rem;
   --dv-tab-border-radius: 0.5rem;
+  /* Matches SummaryData's `ring-stone-200` card outline. */
+  --metro-panel-border: 1px solid #e7e5e4;
   --dv-separator-border: transparent;
   --dv-drag-over-background-color: rgba(120, 113, 108, 0.15);
   --dv-drag-over-border-color: #9c9c90;
@@ -19,26 +26,67 @@
   --dv-tabs-and-actions-container-font-size: 0.75rem;
   --dv-tabs-and-actions-container-height: 2.25rem;
   --dv-tab-divider-color: transparent;
-  --dv-activegroup-visiblepanel-tab-background-color: #f8f6f1;
+  --dv-activegroup-visiblepanel-tab-background-color: #fff;
   --dv-activegroup-visiblepanel-tab-color: #2f2f2f;
   --dv-activegroup-hiddenpanel-tab-background-color: transparent;
   --dv-activegroup-hiddenpanel-tab-color: #78716c;
-  --dv-inactivegroup-visiblepanel-tab-background-color: #f8f6f1;
+  --dv-inactivegroup-visiblepanel-tab-background-color: #fff;
   --dv-inactivegroup-visiblepanel-tab-color: #57534e;
   --dv-inactivegroup-hiddenpanel-tab-background-color: transparent;
   --dv-inactivegroup-hiddenpanel-tab-color: #a8a29e;
 }
 
 /*
- * The dock root paints --dv-group-view-background-color (dockview v7 has no
- * --dv-background-color variable); keep the root transparent so the page
- * background (#f3eee2) shows through the gaps between panes.
+ * `.dv-dockview` paints --dv-group-view-background-color (dockview v7 has no
+ * --dv-background-color variable); keep it transparent so the page background
+ * (#f3eee2) shows through the gutter between panes.
+ *
+ * This has to be a DESCENDANT selector: dockview applies the theme class to
+ * the shell wrapper that always wraps `.dv-dockview`, never to `.dv-dockview`
+ * itself, so a compound `.dv-dockview.dockview-theme-metro` silently matches
+ * nothing.
  */
-.dv-dockview.dockview-theme-metro {
+.dockview-theme-metro .dv-dockview {
   background-color: transparent;
 }
 
 .dockview-theme-metro .dv-tab {
   font-weight: bold;
   text-transform: uppercase;
+}
+
+/*
+ * The card itself. The radius has to be repeated on the tab strip and the
+ * content layers because dockview paints their backgrounds directly; the
+ * group's `overflow: hidden` alone doesn't clip the render overlay, which
+ * DockShell opts into with `defaultRenderer="always"`.
+ */
+.dockview-theme-metro .dv-groupview {
+  border-radius: var(--dv-border-radius);
+  border: var(--metro-panel-border);
+  overflow: hidden;
+}
+
+.dockview-theme-metro .dv-groupview .dv-tabs-and-actions-container {
+  border-top-left-radius: var(--dv-border-radius);
+  border-top-right-radius: var(--dv-border-radius);
+}
+
+.dockview-theme-metro .dv-groupview .dv-content-container,
+.dockview-theme-metro .dv-render-overlay {
+  border-bottom-left-radius: var(--dv-border-radius);
+  border-bottom-right-radius: var(--dv-border-radius);
+}
+
+/*
+ * The summary's stat cards are white, so its panel keeps the cream pane fill
+ * to stay legible behind them. Matched on the content's own class rather than
+ * a group id so the rule follows the panel when it's dragged elsewhere.
+ */
+.dockview-theme-metro .dv-groupview:has(.summary-stats) {
+  --dv-group-view-background-color: #f8f6f1;
+  --dv-tabs-and-actions-container-background-color: #f8f6f1;
+  --dv-activegroup-visiblepanel-tab-background-color: #f8f6f1;
+  --dv-inactivegroup-visiblepanel-tab-background-color: #f8f6f1;
+  background-color: #f8f6f1;
 }

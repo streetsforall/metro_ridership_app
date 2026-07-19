@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
 
 /**
- * Content chrome for a dock panel: the dockview theme paints the `.pane`
- * background/radius on the group, so the wrapper only supplies the `.pane`
- * content padding (p-8) and overflow behavior.
+ * Content chrome for a dock panel: the dockview theme paints the card itself
+ * (fill, border, radius) on the group — see src/dock/dockTheme.css — so the
+ * wrapper only supplies the `.pane` content padding (p-8) and overflow
+ * behavior.
  */
 export default function PanelChrome({
   children,

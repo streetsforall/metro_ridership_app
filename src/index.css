@@ -142,7 +142,8 @@ td {
 }
 
 .pane {
-  background-color: #f8f6f1;
+  background-color: #fff;
+  border: 1px solid #e7e5e4;
   border-radius: 0.5rem;
   padding: 2rem;
   position: relative;
