@@ -81,7 +81,7 @@ export const PANEL_DEFS: Record<PanelId, PanelDef> = {
     /* Deliberately no default: the chart takes whatever the right column has
        left after summary and map (~50%), which is the largest share and the
        one that benefits most from extra height. */
-    defaultHeightRatio: 0.25,
+    defaultHeightRatio: 0.35,
   },
   summary: {
     component: 'summary',
@@ -105,13 +105,12 @@ export const PANEL_DEFS: Record<PanelId, PanelDef> = {
      * a browser if the note's or the cards' type changes; too low and the row
      * clips, since this panel scrolls.
      */
-    defaultHeight: 180,
   },
   map: {
     component: 'map',
     title: 'Map',
     position: { referencePanel: 'summary', direction: 'below' },
-    defaultHeightRatio: 0.25,
+    defaultHeightRatio: 0.15,
   },
 };
 

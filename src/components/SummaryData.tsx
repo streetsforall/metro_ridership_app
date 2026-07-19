@@ -124,7 +124,10 @@ export default function SummaryData({ lines }: SummaryDataProps) {
           {/* Text */}
           {/* The `px-4` is this block's only inset: the summary panel is
               mounted unpadded so its cards sit flush with the panel edges. */}
-          <div className="summary-note grow basis-80 flex flex-col gap-2 px-4 text-sm">
+          <div
+            className="summary-note grow basis-80 flex flex-col gap-2 px-4 text-sm"
+            data-testid="summary-card-group"
+          >
             <p>
               <span className="font-bold mr-1">Selected:</span>
 
@@ -142,7 +145,7 @@ export default function SummaryData({ lines }: SummaryDataProps) {
                 })}
             </p>
 
-            <div className="flex gap-2 items-start">
+            <div className="flex gap-2 items-start" data-testid="summary-info">
               <img
                 src={infoIcon}
                 height={20}
