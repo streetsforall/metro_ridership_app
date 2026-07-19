@@ -11,18 +11,25 @@ import type { ReactNode } from 'react';
  * mobile fallback, whose containers are auto-height, so the few rules that
  * differ between the two key off this attribute rather than duplicating the
  * `lg` breakpoint that useIsDesktop() already owns.
+ *
+ * `padded={false}` is for the panels whose group is not painted as a card — the
+ * summary's fill matches the page background, so there is no card edge to hold
+ * content off and its children own their own insets. Content there is meant to
+ * line up with the neighbouring panels' edges, which the padding breaks.
  */
 export default function PanelChrome({
   children,
   scroll = true,
+  padded = true,
 }: {
   children: ReactNode;
   scroll?: boolean;
+  padded?: boolean;
 }) {
   return (
     <div
       data-dock-body
-      className={`h-full p-8 ${scroll ? 'overflow-auto' : 'overflow-hidden'}`}
+      className={`h-full ${padded ? 'p-8' : ''} ${scroll ? 'overflow-auto' : 'overflow-hidden'}`}
     >
       {children}
     </div>

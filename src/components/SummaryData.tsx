@@ -122,7 +122,8 @@ export default function SummaryData({ lines }: SummaryDataProps) {
           ))}
 
           {/* Text */}
-          {/* No bottom padding: PanelChrome's p-8 already supplies it. */}
+          {/* The `px-4` is this block's only inset: the summary panel is
+              mounted unpadded so its cards sit flush with the panel edges. */}
           <div className="summary-note grow basis-80 flex flex-col gap-2 px-4 text-sm">
             <p>
               <span className="font-bold mr-1">Selected:</span>

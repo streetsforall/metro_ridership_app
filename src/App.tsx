@@ -345,7 +345,10 @@ function App() {
                       </PanelChrome>
                     ),
                     summary: (
-                      <PanelChrome>
+                      /* Unpadded: this group's fill is the page background, so
+                         its stat cards are meant to align with the chart and
+                         map panels' edges rather than sit inset from them. */
+                      <PanelChrome padded={false}>
                         <SummaryPanel />
                       </PanelChrome>
                     ),

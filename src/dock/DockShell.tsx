@@ -86,10 +86,25 @@ export const PANEL_DEFS: Record<PanelId, PanelDef> = {
     component: 'summary',
     title: 'Summary',
     position: { referencePanel: 'chart', direction: 'below' },
-    /* Height granted here is taken from the chart and map below it, so this
-       stays the smallest share. The container queries in index.css keep the
-       cards on one row across dock widths, which is what lets it stay small. */
-    defaultHeightRatio: 0.16,
+    /*
+     * Fixed, not a ratio: unlike the chart and map, this panel's content does
+     * not scale with the window. It is one row of stat cards whose height is
+     * set by their padding and type, and the container queries in index.css
+     * keep it to one row at every dock width — so a fraction of the dock only
+     * ever over-allocates on a tall window, and since setSize is competitive
+     * that surplus comes straight out of the chart and map. The panel is
+     * mounted unpadded (see App.tsx), so this is close to the content height.
+     * MAX_DEFAULT_HEIGHT_RATIO still clamps it on a short window.
+     *
+     * Sized to the content row, whose tallest item is the note beside the cards
+     * (the explainer paragraph), not the cards themselves.
+     *
+     * Calibrated, not derived: the grid settles ~11px under whatever is asked
+     * for here, so 163 lands a ~152px group around a ~148px row. Re-measure in
+     * a browser if the note's or the cards' type changes; too low and the row
+     * clips, since this panel scrolls.
+     */
+    defaultHeight: 163,
   },
   map: {
     component: 'map',
@@ -163,25 +178,41 @@ export const buildDefaultLayout = (api: DockviewApi): void => {
    * Sizes are applied after the whole grid exists: an initialHeight on the
    * first panel is meaningless while it is the only group. Guarded so the
    * calls no-op in unmeasured containers (jsdom).
+   *
+   * Twice and BOTTOM-UP, because `setSize` is competitive in both directions:
+   * it takes from the column siblings when a group grows and hands space back
+   * to them when it shrinks. In PANEL_IDS order the summary was sized and then
+   * immediately re-inflated by the map's own setSize below it, so its height
+   * was really being decided by the map's redistribution — which is what left a
+   * dead band around its one row of stat cards. Applying the column bottom-up
+   * puts the summary last, so it settles at its own target and the surplus
+   * falls to the chart, the one panel with no default and the one that should
+   * absorb it. The second pass lets the widths and the top strip settle too.
    */
-  for (const id of PANEL_IDS) {
-    const { defaultHeight, defaultHeightRatio, defaultWidthRatio } =
-      PANEL_DEFS[id];
-    const panel = api.getPanel(id);
-    if (!panel) continue;
+  const sizingOrder = [...PANEL_IDS].reverse();
 
-    if (defaultHeightRatio !== undefined && api.height > 0) {
-      panel.api.setSize({ height: Math.round(api.height * defaultHeightRatio) });
-    } else if (defaultHeight !== undefined && api.height > 0) {
-      panel.api.setSize({
-        height: Math.min(
-          defaultHeight,
-          Math.round(api.height * MAX_DEFAULT_HEIGHT_RATIO),
-        ),
-      });
-    }
-    if (defaultWidthRatio !== undefined && api.width > 0) {
-      panel.api.setSize({ width: Math.round(api.width * defaultWidthRatio) });
+  for (let pass = 0; pass < 2; pass++) {
+    for (const id of sizingOrder) {
+      const { defaultHeight, defaultHeightRatio, defaultWidthRatio } =
+        PANEL_DEFS[id];
+      const panel = api.getPanel(id);
+      if (!panel) continue;
+
+      if (defaultHeightRatio !== undefined && api.height > 0) {
+        panel.api.setSize({
+          height: Math.round(api.height * defaultHeightRatio),
+        });
+      } else if (defaultHeight !== undefined && api.height > 0) {
+        panel.api.setSize({
+          height: Math.min(
+            defaultHeight,
+            Math.round(api.height * MAX_DEFAULT_HEIGHT_RATIO),
+          ),
+        });
+      }
+      if (defaultWidthRatio !== undefined && api.width > 0) {
+        panel.api.setSize({ width: Math.round(api.width * defaultWidthRatio) });
+      }
     }
   }
 };
