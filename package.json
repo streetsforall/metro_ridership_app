@@ -10,7 +10,7 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "preview": "vite preview",
-    "fetch-lines": "node scripts/fetch-metro-lines.mjs"
+    "fetch-lines": "python scripts/fetch_metro_lines.py"
   },
   "dependencies": {
     "@fontsource-variable/overpass-mono": "^5.2.5",
