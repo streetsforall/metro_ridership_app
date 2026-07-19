@@ -18,18 +18,24 @@ vi.mock('./data/ridership.json', () => ({
 
 let capturedDatasets: ChartDataset<'line', CustomChartData[]>[] = [];
 
-vi.mock('./components/OutputArea', () => ({
-  default: ({
-    chartDatasets,
-  }: {
-    chartDatasets: ChartDataset<'line', CustomChartData[]>[];
-  }) => {
-    capturedDatasets = chartDatasets;
-    return <div data-testid="output-area" />;
-  },
-}));
+// DockShell probe: App now hands chart data to panels via DashboardContext
+// (not props), so the mock consumes the context the way real panels do.
+// importActual keeps PANEL_IDS/PANEL_DEFS real for App's toggle/reset logic.
+vi.mock('./dock/DockShell', async () => {
+  const actual =
+    await vi.importActual<typeof import('./dock/DockShell')>('./dock/DockShell');
+  const { useDashboard } = await import('./context/DashboardContext');
+
+  const DockShellProbe = () => {
+    capturedDatasets = useDashboard().chartDatasets;
+    return <div data-testid="dock-shell" />;
+  };
+
+  return { ...actual, default: DockShellProbe };
+});
 
 vi.mock('./components/Header', () => ({ default: () => <div /> }));
+vi.mock('./components/Map', () => ({ default: () => <div /> }));
 vi.mock('./components/Footer', () => ({ default: () => <div /> }));
 vi.mock('./components/DateRangeSelector', () => ({ default: () => <div /> }));
 vi.mock('./components/LineSelector', () => ({ default: () => <div /> }));
