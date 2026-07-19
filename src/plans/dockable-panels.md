@@ -123,7 +123,8 @@ export default function DockShell(props: DockShellProps): JSX.Element;
 
 ### Layout storage (`src/utils/layoutStorage.ts`)
 
-- Key: `metro-panel-layout-v1` (exported as `LAYOUT_STORAGE_KEY`)
+- Key: `metro-panel-layout-v2` (exported as `LAYOUT_STORAGE_KEY`) — bumped from
+  `-v1` to force a one-time reset after the panel default sizes changed
 - Payload: `{ version: 1, layout: SerializedDockview }`
 - API:
 

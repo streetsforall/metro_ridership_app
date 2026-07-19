@@ -1,28 +1,26 @@
 # scripts/
 
-Utility scripts for fetching and processing LA Metro route data. Each script
-has both a JavaScript (`.mjs`) and a Python (`.py`) implementation that produce
-identical output.
+Utility scripts for fetching and processing LA Metro route data. All scripts are
+Python; the earlier JavaScript (`.mjs`) implementations have been deleted.
 
 ---
 
 ## Scripts
 
-### `fetch_metro_lines` / `fetch-metro-lines.mjs`
+### `fetch_metro_lines`
 
 Downloads the LA Metro GTFS feeds (rail + bus), converts route shapes to
 GeoJSON, and writes `public/metro_lines.geojson`. Run this monthly to keep
 route geometry up to date.
 
 ```bash
-# JavaScript
-npm run fetch-lines
-
-# Python
 python scripts/fetch_metro_lines.py
+
+# or, via the npm alias
+npm run fetch-lines
 ```
 
-### `compute_line_distances` / `compute-line-distances.mjs`
+### `compute_line_distances`
 
 Reads `public/metro_lines.geojson` and writes one-way route distances (in
 miles, rounded to one decimal) to `src/data/line_distances.json`. Rail lines
@@ -30,10 +28,6 @@ store outbound + inbound as two lineStrings; only the outbound leg is measured
 to avoid double-counting.
 
 ```bash
-# JavaScript
-node scripts/compute-line-distances.mjs
-
-# Python
 python scripts/compute_line_distances.py
 ```
 

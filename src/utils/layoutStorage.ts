@@ -6,7 +6,22 @@ import type { SerializedDockview } from 'dockview-react';
  * Layout is deliberately device-local: it is NOT threaded through the URL
  * query params (that system is reserved for shareable dashboard state).
  */
-export const LAYOUT_STORAGE_KEY = 'metro-panel-layout-v1';
+/*
+ * Bumped whenever the panels' default sizes change: a stored layout
+ * short-circuits buildDefaultLayout entirely (see DockShell.onReady), so a new
+ * key is the only way an existing browser picks up a changed default.
+ *
+ * v3: the dock now fills the viewport and summary/map take a ratio of its
+ * height instead of fixed pixels, so the chart and map get room to fit.
+ * v4: summary is unpadded and back to a fixed height that hugs its one row of
+ * stat cards, returning the surplus to the chart and map.
+ * v5: v4's summary height never actually took effect — the sizing pass below
+ * the summary inflated it straight back — so any stored v4 layout holds the
+ * wrong heights.
+ * v6: the summary's height is now applied bottom-up, so it finally lands on the
+ * value asked for rather than on whatever the map's resize left it.
+ */
+export const LAYOUT_STORAGE_KEY = 'metro-panel-layout-v6';
 
 export interface StoredLayout {
   version: 1;

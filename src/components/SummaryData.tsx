@@ -6,6 +6,45 @@ interface SummaryDataProps {
   lines: Line[];
 }
 
+interface Stat {
+  label: string;
+  value: string;
+  /** Rendered as a colored +/- badge beside the label. */
+  delta?: number;
+  labelledBy?: string;
+}
+
+/** Shown in place of a value the current selection has no data for. */
+const NO_VALUE = '—';
+
+function StatCard({ label, value, delta, labelledBy }: Stat) {
+  return (
+    <div className="summary-card grow basis-44 rounded-lg bg-[#f8f6f1] p-4">
+      <div className="flex justify-between gap-2 mb-2 text-sm">
+        <span className="summary-card-label text-stone-400 uppercase whitespace-nowrap">
+          {label}
+        </span>
+
+        {delta !== undefined && (
+          <span
+            aria-label="Change"
+            className={delta < 0 ? 'text-red-600' : 'text-green-600'}
+          >
+            {delta > 0 && '+'}
+            {delta.toLocaleString()}
+          </span>
+        )}
+      </div>
+      <span
+        aria-labelledby={labelledBy}
+        className="summary-card-value tracking-tighter text-4xl"
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export default function SummaryData({ lines }: SummaryDataProps) {
   const selectedLines = lines.filter(
     (visibleLine: Line) => visibleLine.selected,
@@ -39,80 +78,56 @@ export default function SummaryData({ lines }: SummaryDataProps) {
     (sum, line) => sum + (line.distanceMiles ?? 0),
     0,
   );
-  const ridersPerMile = totalMiles > 0 ? averageDailyRidership / totalMiles : undefined;
+
+  /* Not every line has an entry in line_distances.json, so the distance-derived
+     stats keep their card and show a dash rather than disappearing. */
+  const hasDistance = totalMiles > 0;
+
+  const stats: Stat[] = [
+    {
+      label: 'Average Ridership',
+      value: Math.round(averageDailyRidership).toLocaleString(),
+      labelledBy: 'avg-ridership',
+    },
+    {
+      label: 'Riders / Mile',
+      value: hasDistance
+        ? Math.round(averageDailyRidership / totalMiles).toLocaleString()
+        : NO_VALUE,
+    },
+    {
+      label: 'Total Miles',
+      value: hasDistance ? totalMiles.toLocaleString() : NO_VALUE,
+    },
+    {
+      label: 'Ending Ridership',
+      value: Math.round(recentRidership).toLocaleString(),
+      delta: changeInRidership,
+      labelledBy: 'cur-ridership',
+    },
+  ];
 
   return (
-    <div>
+    <div className="summary-stats">
       {selectedLines.length > 0 && (
-        <div className="flex flex-wrap xl:flex-nowrap gap-4 items-center">
-          {/* Stats */}
-          {/* TODO: Refactor into component */}
-          <div className="pane">
-            <div className="flex justify-between mb-2 min-w-56 text-sm">
-              <span className="text-stone-400 uppercase whitespace-nowrap">
-                Average Ridership
-              </span>
-            </div>
-            <span
-              aria-labelledby="avg-ridership"
-              className="tracking-tighter text-5xl"
-            >
-              {Math.round(averageDailyRidership).toLocaleString()}
-            </span>
-          </div>
-
-          {ridersPerMile !== undefined && (
-            <div className="pane">
-              <div className="flex justify-between mb-2 min-w-56 text-sm">
-                <span className="text-stone-400 uppercase whitespace-nowrap">
-                  Riders / Mile
-                </span>
-              </div>
-              <span className="tracking-tighter text-5xl">
-                {Math.round(ridersPerMile).toLocaleString()}
-              </span>
-            </div>
-          )}
-
-          {totalMiles > 0 && (
-            <div className="pane">
-              <div className="flex justify-between mb-2 min-w-56 text-sm">
-                <span className="text-stone-400 uppercase whitespace-nowrap">
-                  Total Miles
-                </span>
-              </div>
-              <span className="tracking-tighter text-5xl">
-                {totalMiles.toLocaleString()}
-              </span>
-            </div>
-          )}
-
-          <div className="pane">
-            <div className="flex justify-between mb-2 min-w-56 text-sm">
-              <span className="text-stone-400 uppercase whitespace-nowrap">
-                Ending Ridership
-              </span>
-
-              <span
-                aria-label="Change"
-                className={
-                  changeInRidership < 0 ? 'text-red-600' : 'text-green-600'
-                }
-              >
-                {changeInRidership > 0 && '+'}
-                {changeInRidership.toLocaleString()}
-              </span>
-            </div>
-            <span
-              aria-labelledby="cur-ridership"
-              className="tracking-tighter text-5xl"
-            >
-              {Math.round(recentRidership).toLocaleString()}
-            </span>
-          </div>
+        /* One wrapping row: the cards and the text block sit side by side when
+           the panel can afford it, and drop onto their own lines when it can't.
+           Sizing comes from each item's flex-basis, so this reflows on the
+           PANEL's width — the original `xl:flex-nowrap` keyed off the viewport
+           instead, which is why cards overflowed once the dock made this column
+           narrower than the screen. */
+        <div className="flex flex-wrap gap-4 items-center">
+          {stats.map((stat) => (
+            <StatCard key={stat.label} {...stat} />
+          ))}
 
           {/* Text */}
-          <div className="basis-full xl:basis-auto flex flex-col gap-4 p-4 text-sm">
+          {/* The `px-4` is this block's only inset: the summary panel is
+              mounted unpadded so its cards sit flush with the panel edges. */}
+          <div
+            className="summary-note grow basis-80 flex flex-col gap-2 px-4 text-sm"
+            data-testid="summary-card-group"
+          >
             <p>
               <span className="font-bold mr-1">Selected:</span>
 
@@ -130,7 +145,7 @@ export default function SummaryData({ lines }: SummaryDataProps) {
                 })}
             </p>
 
-            <div className="flex gap-2 items-start">
+            <div className="flex gap-2 items-start" data-testid="summary-info">
               <img
                 src={infoIcon}
                 height={20}

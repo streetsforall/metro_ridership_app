@@ -148,6 +148,65 @@ td {
   position: relative;
 }
 
+/*
+ * Summary stat cards scale with the PANEL, not the viewport.
+ *
+ * In the dock the summary shares a column with the chart and map, and
+ * `setSize` is competitive — every pixel of height the summary needs is taken
+ * from its siblings. Left at a fixed size the cards wrap to two or three rows
+ * as the column narrows, which is what forced the tall `defaultHeight` that
+ * squeezed the map. Stepping the card width and type down keeps them on a
+ * single row instead, so the panel's height stays roughly flat across widths.
+ *
+ * Container queries (not media queries) because the panel is resizable and far
+ * narrower than the viewport — the same mismatch that made the original
+ * `xl:flex-nowrap` overflow. Plain CSS: Tailwind 3.4 has no container variants.
+ */
+.summary-stats {
+  container-type: inline-size;
+}
+
+@container (max-width: 60rem) {
+  .summary-card {
+    flex-basis: 10rem;
+  }
+  .summary-card-label {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  .summary-card-value {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+  /* The note wraps to 4-5 lines in a narrow column and ends up the tallest
+     item in the panel, so it scales with the cards. */
+  .summary-note {
+    font-size: 0.75rem;
+    line-height: 1.125rem;
+  }
+}
+
+@container (max-width: 44rem) {
+  .summary-card {
+    flex-basis: 8rem;
+  }
+  .summary-card-label {
+    font-size: 0.6875rem;
+    line-height: 0.875rem;
+    /* Below this width the label can no longer fit on one line; wrapping is
+       cheaper in height than letting the card grow wider and wrap the row. */
+    white-space: normal;
+  }
+  .summary-card-value {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+  .summary-note {
+    font-size: 0.6875rem;
+    line-height: 1rem;
+  }
+}
+
 .recolor-white {
   filter: invert(100%) sepia(0%) saturate(226%) hue-rotate(229deg)
     brightness(118%) contrast(100%);

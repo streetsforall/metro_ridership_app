@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { DockviewApi } from 'dockview-react';
-import DockShell, { PANEL_IDS, type PanelId } from './DockShell';
+import DockShell, { PANEL_DEFS, PANEL_IDS, type PanelId } from './DockShell';
 import { LAYOUT_STORAGE_KEY, saveLayout } from '../utils/layoutStorage';
 
 const makePanels = (): Record<PanelId, ReactNode> =>
@@ -110,5 +110,62 @@ describe('DockShell', () => {
     expect(panelIds(api)).toEqual([...PANEL_IDS].sort());
     const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
     expect(raw ?? '').not.toContain('not-a-node-list');
+  });
+
+  it('persists the default layout without waiting for user interaction', async () => {
+    // The layout listener used to be registered after the build, so the build's
+    // own events were missed and a fresh default layout stayed unsaved until
+    // the user dragged something.
+    await renderShell();
+
+    await waitFor(
+      () => {
+        const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
+        expect(raw).not.toBeNull();
+        const stored = JSON.parse(raw!) as {
+          layout: { panels: Record<string, unknown> };
+        };
+        expect(Object.keys(stored.layout.panels).sort()).toEqual(
+          [...PANEL_IDS].sort(),
+        );
+      },
+      { timeout: 2000 },
+    );
+  });
+
+  it('still hands over the api when the layout build throws', async () => {
+    // The api is what powers the header's panel toggles and reset — the only UI
+    // that can recover from a broken layout — so it must survive a failed build.
+    // Break the build the way a real mistake would: anchor a panel to a
+    // reference that does not exist.
+    const original = PANEL_DEFS.map.position;
+    PANEL_DEFS.map.position = {
+      referencePanel: 'no-such-panel' as PanelId,
+      direction: 'below',
+    };
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    try {
+      let api: DockviewApi | undefined;
+      render(
+        <DockShell
+          panels={makePanels()}
+          onApiReady={(readyApi) => {
+            api = readyApi;
+          }}
+        />,
+      );
+
+      await waitFor(() => expect(api).toBeDefined());
+      expect(consoleError).toHaveBeenCalled();
+      // Cleared rather than left half-built, and not persisted.
+      expect(api!.panels).toHaveLength(0);
+      expect(localStorage.getItem(LAYOUT_STORAGE_KEY)).toBeNull();
+    } finally {
+      PANEL_DEFS.map.position = original;
+      consoleError.mockRestore();
+    }
   });
 });

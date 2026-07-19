@@ -1,7 +1,17 @@
 /*
- * Metro dockview theme: maps dockview's --dv-* variables to the app's
- * `.pane` look (see src/index.css). Panel CONTENT padding (the `.pane p-8`
- * feel) is applied by the dashboard's panel wrappers, not here.
+ * Metro dockview theme: gives each group the app's card look (see `.pane` in
+ * src/index.css) — cream fill, rounded corners, no outline; panels are told
+ * apart by fill and the dock gap alone. The summary group is the exception and
+ * takes the page background instead (see the `:has()` rule below). Panel
+ * CONTENT padding is applied by the dashboard's panel wrappers, not here.
+ *
+ * The fill stays cream rather than white so the white form controls sitting on
+ * it (search bar, month/year selects, radios, checkboxes) read as distinct
+ * chips — see `input, select` in src/index.css.
+ *
+ * The --dv-* radius variables below are NOT honored by dockview for custom
+ * themes: every rule that reads them is scoped to a built-in `*-spaced` theme
+ * class. The explicit rules further down are what actually paint the card.
  */
 .dockview-theme-metro {
   --dv-group-view-background-color: #f8f6f1;
@@ -30,15 +40,105 @@
 }
 
 /*
- * The dock root paints --dv-group-view-background-color (dockview v7 has no
- * --dv-background-color variable); keep the root transparent so the page
- * background (#f3eee2) shows through the gaps between panes.
+ * `.dv-dockview` paints --dv-group-view-background-color (dockview v7 has no
+ * --dv-background-color variable); keep it transparent so the page background
+ * (#f3eee2) shows through the gutter between panes.
+ *
+ * This has to be a DESCENDANT selector: dockview applies the theme class to
+ * the shell wrapper that always wraps `.dv-dockview`, never to `.dv-dockview`
+ * itself, so a compound `.dv-dockview.dockview-theme-metro` silently matches
+ * nothing.
  */
-.dv-dockview.dockview-theme-metro {
+.dockview-theme-metro .dv-dockview {
   background-color: transparent;
 }
 
 .dockview-theme-metro .dv-tab {
   font-weight: bold;
   text-transform: uppercase;
+}
+
+/*
+ * Chrome-less panels (see src/dock/MetroTab.tsx).
+ *
+ * A single-panel group has no header at all: no title, no close button, no drag
+ * affordance. The strip collapses to nothing so the panel's own padding is the
+ * only inset, equal on all four sides.
+ *
+ * The tab element itself still has to exist — it carries `data-metro-panel`,
+ * the only per-panel hook that lives inside `.dv-groupview` (see the summary
+ * rule below) — so it is emptied and clipped rather than removed. Dragging is
+ * lost along with it, by design: Panels ▸ Edit layout restores real tabs and is
+ * the one way to rearrange panels.
+ *
+ * `:has()` rather than a class on the group: the strip is dockview's own DOM
+ * and MetroTab only controls what goes *inside* the tab, so the marker has to
+ * be matched upwards. Groups with 2+ tabs (and edit mode) render real titled
+ * tabs with no marker, and keep the full 2.25rem height set above.
+ */
+.dockview-theme-metro
+  .dv-tabs-and-actions-container:has([data-metro-blank-tab]) {
+  height: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/*
+ * The card itself. The radius has to be repeated on the tab strip and the
+ * content layers because dockview paints their backgrounds directly; the
+ * group's `overflow: hidden` alone doesn't clip the render overlay, which
+ * DockShell opts into with `defaultRenderer="always"`.
+ */
+.dockview-theme-metro .dv-groupview {
+  border-radius: var(--dv-border-radius);
+  overflow: hidden;
+}
+
+/*
+ * The summary group reads as part of the page rather than as a card: its fill
+ * matches the page background so only SummaryData's stat cards register as
+ * objects on it.
+ *
+ * Keyed off the TAB's `data-metro-panel` (see src/dock/MetroTab.tsx), not the
+ * panel content: `defaultRenderer="always"` renders content into
+ * `.dv-render-overlay`, which dockview anchors to the shell element and merely
+ * positions over the group, so `:has(.summary-stats)` would never match here.
+ *
+ * Overriding the vars (not just `background-color`) is what makes the tab strip
+ * follow: it resolves them from its ancestor group.
+ */
+.dockview-theme-metro .dv-groupview:has([data-metro-panel='summary']) {
+  --dv-group-view-background-color: #f3eee2;
+  --dv-tabs-and-actions-container-background-color: #f3eee2;
+  --dv-activegroup-visiblepanel-tab-background-color: #f3eee2;
+  --dv-inactivegroup-visiblepanel-tab-background-color: #f3eee2;
+  background-color: #f3eee2;
+}
+
+.dockview-theme-metro .dv-groupview .dv-tabs-and-actions-container {
+  border-top-left-radius: var(--dv-border-radius);
+  border-top-right-radius: var(--dv-border-radius);
+}
+
+.dockview-theme-metro .dv-groupview .dv-content-container,
+.dockview-theme-metro .dv-render-overlay {
+  border-bottom-left-radius: var(--dv-border-radius);
+  border-bottom-right-radius: var(--dv-border-radius);
+}
+
+/*
+ * Content that fills its panel.
+ *
+ * Both rules undo a fixed height that exists for the stacked mobile fallback,
+ * where the container is auto-height and the content is the only thing giving
+ * it a size. In the dock the panel already has a definite height, and a floor
+ * taller than the panel doesn't scroll — `.dv-groupview` is `overflow: hidden`,
+ * so it is silently clipped. `[data-dock-body]` is set by PanelChrome.
+ */
+[data-dock-body] .chart-fill {
+  min-height: 0;
+}
+
+[data-dock-body] #lineMap {
+  height: 100%;
 }

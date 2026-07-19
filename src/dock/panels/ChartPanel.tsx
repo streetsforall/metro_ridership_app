@@ -14,8 +14,10 @@ export default function ChartPanel() {
   }
 
   return (
-    /* min-h keeps the chart visible in auto-height (mobile) containers */
-    <div className="relative h-full min-h-[20rem] w-full">
+    /* min-h keeps the chart visible in auto-height (mobile) containers; inside
+       the dock `chart-fill` drops it so the canvas tracks the panel instead
+       (see src/dock/dockTheme.css). */
+    <div className="chart-fill relative h-full min-h-[20rem] w-full">
       <LineChart
         options={buildChartOptions()}
         data={{
