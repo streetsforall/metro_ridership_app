@@ -1,7 +1,9 @@
 /*
  * Metro dockview theme: gives each group the app's card look (see `.pane` in
- * src/index.css) — cream fill, stone border, rounded corners. Panel CONTENT
- * padding is applied by the dashboard's panel wrappers, not here.
+ * src/index.css) — cream fill, rounded corners, no outline; panels are told
+ * apart by fill and the dock gap alone. The summary group is the exception and
+ * takes the page background instead (see the `:has()` rule below). Panel
+ * CONTENT padding is applied by the dashboard's panel wrappers, not here.
  *
  * The fill stays cream rather than white so the white form controls sitting on
  * it (search bar, month/year selects, radios, checkboxes) read as distinct
@@ -16,8 +18,6 @@
   --dv-tabs-and-actions-container-background-color: #f8f6f1;
   --dv-border-radius: 0.5rem;
   --dv-tab-border-radius: 0.5rem;
-  /* Matches SummaryData's `ring-stone-200` card outline. */
-  --metro-panel-border: 1px solid #e7e5e4;
   --dv-separator-border: transparent;
   --dv-drag-over-background-color: rgba(120, 113, 108, 0.15);
   --dv-drag-over-border-color: #9c9c90;
@@ -89,8 +89,19 @@
   cursor: grabbing;
 }
 
-/* The visible bar. Hidden until the pointer is over the card — hovering the
-   sliver itself would be a 12px target. */
+/*
+ * The visible bar, revealed by hovering the strip.
+ *
+ * Hovering the whole card would be the friendlier target but is not available:
+ * `defaultRenderer="always"` portals panel content into `.dv-render-overlay`,
+ * a child of `.dv-shell` rather than of the group (see the border-radius rule
+ * at the bottom of this file, which has to reach it unscoped). The overlay
+ * covers the group's content area, so `.dv-groupview:hover` never fires while
+ * the pointer is over a panel — only the strip is left to hover.
+ *
+ * That makes the grip a shortcut rather than the discoverable path; Panels ▸
+ * Edit layout is the discoverable one, which is why both exist.
+ */
 .dockview-theme-metro [data-metro-grip]::before {
   content: '';
   display: block;
@@ -103,7 +114,14 @@
   transition: opacity 120ms ease;
 }
 
-.dockview-theme-metro .dv-groupview:hover [data-metro-grip]::before {
+.dockview-theme-metro
+  .dv-tabs-and-actions-container:hover
+  [data-metro-grip]::before {
+  opacity: 1;
+}
+
+/* Keep it lit through the drag, after the pointer leaves the strip. */
+.dockview-theme-metro .dv-tab:active [data-metro-grip]::before {
   opacity: 1;
 }
 
@@ -121,8 +139,28 @@
  */
 .dockview-theme-metro .dv-groupview {
   border-radius: var(--dv-border-radius);
-  border: var(--metro-panel-border);
   overflow: hidden;
+}
+
+/*
+ * The summary group reads as part of the page rather than as a card: its fill
+ * matches the page background so only SummaryData's stat cards register as
+ * objects on it.
+ *
+ * Keyed off the TAB's `data-metro-panel` (see src/dock/MetroTab.tsx), not the
+ * panel content: `defaultRenderer="always"` renders content into
+ * `.dv-render-overlay`, which dockview anchors to the shell element and merely
+ * positions over the group, so `:has(.summary-stats)` would never match here.
+ *
+ * Overriding the vars (not just `background-color`) is what makes the tab strip
+ * follow: it resolves them from its ancestor group.
+ */
+.dockview-theme-metro .dv-groupview:has([data-metro-panel='summary']) {
+  --dv-group-view-background-color: #f3eee2;
+  --dv-tabs-and-actions-container-background-color: #f3eee2;
+  --dv-activegroup-visiblepanel-tab-background-color: #f3eee2;
+  --dv-inactivegroup-visiblepanel-tab-background-color: #f3eee2;
+  background-color: #f3eee2;
 }
 
 .dockview-theme-metro .dv-groupview .dv-tabs-and-actions-container {

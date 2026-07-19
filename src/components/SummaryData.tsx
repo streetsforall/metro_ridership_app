@@ -19,7 +19,7 @@ const NO_VALUE = '—';
 
 function StatCard({ label, value, delta, labelledBy }: Stat) {
   return (
-    <div className="summary-card grow basis-44 rounded-lg bg-white ring-1 ring-stone-200 p-4">
+    <div className="summary-card grow basis-44 rounded-lg bg-[#f8f6f1] p-4">
       <div className="flex justify-between gap-2 mb-2 text-sm">
         <span className="summary-card-label text-stone-400 uppercase whitespace-nowrap">
           {label}

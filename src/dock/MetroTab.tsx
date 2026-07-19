@@ -37,13 +37,26 @@ const MetroTab: FunctionComponent<IDockviewPanelHeaderProps> = (props) => {
     return () => listener.dispose();
   }, [api, containerApi]);
 
+  /*
+   * `data-metro-panel` is how dockTheme.css reaches a *group* for per-panel
+   * styling. Panel CONTENT is not usable as the hook: with
+   * `defaultRenderer="always"` dockview renders it into `.dv-render-overlay`,
+   * which is anchored to the shell element and only positioned over the group —
+   * so `.dv-groupview:has(<content>)` never matches. The tab is one of the few
+   * things that really does live inside the group.
+   */
   if (isEditMode || panelsInGroup > 1) {
-    return <DockviewDefaultTab {...props} hideClose />;
+    /* `contents` keeps the wrapper out of layout so the tab styles unchanged. */
+    return (
+      <span className="contents" data-metro-panel={api.id}>
+        <DockviewDefaultTab {...props} hideClose />
+      </span>
+    );
   }
 
   /* Blank on purpose — dockview makes the tab itself the drag handle, and the
      grip bar is painted by dockTheme.css via ::before. */
-  return <span data-metro-grip aria-hidden="true" />;
+  return <span data-metro-grip data-metro-panel={api.id} aria-hidden="true" />;
 };
 
 export default MetroTab;
