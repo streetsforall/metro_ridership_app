@@ -28,6 +28,8 @@
      Font family inherits Overpass Mono from the page body. */
   --dv-tabs-and-actions-container-font-size: 0.75rem;
   --dv-tabs-and-actions-container-height: 2.25rem;
+  /* Collapsed strip height for chrome-less single-panel groups. */
+  --metro-grip-strip-height: 12px;
   --dv-tab-divider-color: transparent;
   --dv-activegroup-visiblepanel-tab-background-color: #f8f6f1;
   --dv-activegroup-visiblepanel-tab-color: #2f2f2f;
@@ -56,6 +58,59 @@
 .dockview-theme-metro .dv-tab {
   font-weight: bold;
   text-transform: uppercase;
+}
+
+/*
+ * Chrome-less panels (see src/dock/MetroTab.tsx).
+ *
+ * A single-panel group renders no title and no close button — just a grip that
+ * keeps the tab draggable, since dockview makes the tab element itself the drag
+ * source. The strip collapses to a sliver that reads as part of the card fill.
+ *
+ * `:has()` rather than a class on the group: the strip is dockview's own DOM
+ * and MetroTab only controls what goes *inside* the tab, so the marker has to
+ * be matched upwards. Groups with 2+ tabs (and edit mode) render real titled
+ * tabs with no marker, and keep the full 2.25rem height set above.
+ */
+.dockview-theme-metro .dv-tabs-and-actions-container:has([data-metro-grip]) {
+  height: var(--metro-grip-strip-height);
+  min-height: var(--metro-grip-strip-height);
+}
+
+/* Fills the tab so the whole sliver is a drag target, not just the bar. */
+.dockview-theme-metro [data-metro-grip] {
+  display: block;
+  width: 4rem;
+  height: 100%;
+  cursor: grab;
+}
+
+.dockview-theme-metro .dv-tab:active [data-metro-grip] {
+  cursor: grabbing;
+}
+
+/* The visible bar. Hidden until the pointer is over the card — hovering the
+   sliver itself would be a 12px target. */
+.dockview-theme-metro [data-metro-grip]::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 3px;
+  margin-top: calc((var(--metro-grip-strip-height) - 3px) / 2);
+  border-radius: 999px;
+  background-color: #d6d3d1;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.dockview-theme-metro .dv-groupview:hover [data-metro-grip]::before {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dockview-theme-metro [data-metro-grip]::before {
+    transition: none;
+  }
 }
 
 /*

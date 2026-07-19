@@ -46,6 +46,8 @@ function App() {
   const [dockApi, setDockApi] = useState<DockviewApi | null>(null);
   const [panelVisibility, setPanelVisibility] =
     useState<Record<PanelId, boolean>>(allPanelsVisible);
+  /* Transient by design — not persisted to localStorage or the URL. */
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const isDesktop = useIsDesktop();
 
   const userDashboardInputState: UserDashboardInputState =
@@ -163,6 +165,8 @@ function App() {
     if (!isDesktop) {
       setDockApi(null);
       setPanelVisibility(allPanelsVisible);
+      /* Nothing to rearrange without a dock. */
+      setIsEditMode(false);
     }
   }, [isDesktop]);
 
@@ -268,13 +272,19 @@ function App() {
     setIsLineSelectorExpanded(false);
   }, [dockApi]);
 
+  const toggleEditMode = useCallback(() => {
+    setIsEditMode((current) => !current);
+  }, []);
+
   const dockLayoutValue: DockLayoutContextValue = useMemo(
     () => ({
       visibility: panelVisibility,
       togglePanel,
       resetLayout,
+      isEditMode,
+      toggleEditMode,
     }),
-    [panelVisibility, togglePanel, resetLayout],
+    [panelVisibility, togglePanel, resetLayout, isEditMode, toggleEditMode],
   );
 
   const dashboardValue: DashboardContextValue = {

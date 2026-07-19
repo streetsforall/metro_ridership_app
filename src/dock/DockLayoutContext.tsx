@@ -1,5 +1,7 @@
 import { createContext, use, type ReactNode } from 'react';
-import { PANEL_IDS, type PanelId } from './DockShell';
+/* From panelIds, not DockShell: DockShell renders MetroTab, which reads this
+   context — importing from DockShell here would close that cycle. */
+import { PANEL_IDS, type PanelId } from './panelIds';
 
 /**
  * FROZEN CONTRACT — see src/plans/dockable-panels.md. Wave-2 PRs import from
@@ -14,6 +16,14 @@ export interface DockLayoutContextValue {
   visibility: Record<PanelId, boolean>;
   togglePanel: (id: PanelId) => void;
   resetLayout: () => void;
+  /**
+   * Layout-editing mode. Panels normally show only a slim hover-reveal drag
+   * grip instead of a tab; edit mode brings back full titled tabs so groups
+   * can be identified while rearranging. Deliberately not persisted — coming
+   * back to the app stuck in edit mode is worse than re-toggling it.
+   */
+  isEditMode: boolean;
+  toggleEditMode: () => void;
 }
 
 const allVisible = Object.fromEntries(
@@ -29,6 +39,8 @@ const defaultValue: DockLayoutContextValue = {
   visibility: allVisible,
   togglePanel: () => {},
   resetLayout: () => {},
+  isEditMode: false,
+  toggleEditMode: () => {},
 };
 
 const DockLayoutContext = createContext<DockLayoutContextValue>(defaultValue);

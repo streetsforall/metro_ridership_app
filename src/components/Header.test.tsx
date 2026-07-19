@@ -30,6 +30,8 @@ const makeMockValue = (
   },
   togglePanel: vi.fn(),
   resetLayout: vi.fn(),
+  isEditMode: false,
+  toggleEditMode: vi.fn(),
   ...overrides,
 });
 
@@ -57,8 +59,9 @@ describe('Header standalone (default no-op context)', () => {
         screen.getByRole('menuitemcheckbox', { name: title }),
       ).toBeTruthy();
     }
+    /* The menu also carries the Edit layout checkbox, which is not a panel. */
     expect(screen.getAllByRole('menuitemcheckbox')).toHaveLength(
-      PANEL_IDS.length,
+      PANEL_IDS.length + 1,
     );
   });
 
@@ -77,6 +80,13 @@ describe('Header standalone (default no-op context)', () => {
     expect(
       screen.getByRole('menuitem', { name: 'Reset layout' }),
     ).toBeTruthy();
+  });
+
+  it('shows an Edit layout toggle, off by default', () => {
+    render(<Header />);
+    openPanelsMenu();
+    const item = screen.getByRole('menuitemcheckbox', { name: 'Edit layout' });
+    expect(item.getAttribute('aria-checked')).toBe('false');
   });
 
   it('clicking items with the no-op default context throws no errors', () => {
@@ -136,6 +146,22 @@ describe('Header with a DockLayoutProvider', () => {
     expect(
       screen.getByRole('menuitemcheckbox', { name: 'Summary' }),
     ).toBeTruthy();
+  });
+
+  it('reflects isEditMode and calls toggleEditMode when Edit layout is clicked', () => {
+    const value = makeMockValue({ isEditMode: true });
+    render(
+      <DockLayoutProvider value={value}>
+        <Header />
+      </DockLayoutProvider>,
+    );
+    openPanelsMenu();
+    const item = screen.getByRole('menuitemcheckbox', { name: 'Edit layout' });
+    expect(item.getAttribute('aria-checked')).toBe('true');
+
+    fireEvent.click(item);
+    expect(value.toggleEditMode).toHaveBeenCalledOnce();
+    expect(value.togglePanel).not.toHaveBeenCalled();
   });
 
   it('calls resetLayout when Reset layout is clicked', () => {

@@ -14,6 +14,8 @@ import {
   type IDockviewPanelProps,
 } from 'dockview-react';
 import { clearLayout, loadLayout, saveLayout } from '../utils/layoutStorage';
+import MetroTab from './MetroTab';
+import { PANEL_IDS, type PanelId } from './panelIds';
 import 'dockview-react/dist/styles/dockview.css';
 import './dockTheme.css';
 
@@ -25,15 +27,9 @@ import './dockTheme.css';
 /* eslint-disable react-refresh/only-export-components -- contract module:
    exports the DockShell component alongside its panel-id/theme constants */
 
-export const PANEL_IDS = [
-  'date-range',
-  'line-selector',
-  'chart',
-  'summary',
-  'map',
-] as const;
-
-export type PanelId = (typeof PANEL_IDS)[number];
+/* Defined in panelIds.ts to keep the module graph acyclic; re-exported here so
+   this file stays the single import site for the dock's shared shapes. */
+export { PANEL_IDS, type PanelId };
 
 export interface PanelDef {
   /** Key into the DockviewReact `components` map (same as the panel id). */
@@ -259,6 +255,7 @@ function DockShell({ panels, onApiReady }: DockShellProps) {
     <PanelContentContext value={panels}>
       <DockviewReact
         components={panelComponents}
+        defaultTabComponent={MetroTab}
         onReady={onReady}
         theme={METRO_DOCK_THEME}
         defaultRenderer="always"

@@ -5,7 +5,8 @@ import checkIcon from '../assets/check.svg';
 import sfaLogo from '../assets/sfa-logo.png';
 
 export default function Header() {
-  const { visibility, togglePanel, resetLayout } = useDockLayout();
+  const { visibility, togglePanel, resetLayout, isEditMode, toggleEditMode } =
+    useDockLayout();
 
   return (
     <header className="flex items-center justify-between font-bold py-4 uppercase">
@@ -54,6 +55,28 @@ export default function Header() {
               ))}
 
               <DropdownMenu.Separator className="h-px bg-stone-300 my-1" />
+
+              <DropdownMenu.CheckboxItem
+                checked={isEditMode}
+                onCheckedChange={toggleEditMode}
+                onSelect={(event) => {
+                  event.preventDefault();
+                }}
+                className="group flex items-center gap-2 cursor-pointer select-none rounded px-2 py-1 outline-none data-[highlighted]:bg-stone-200"
+              >
+                <span className="flex items-center justify-center bg-white group-data-[state=checked]:bg-[#033056] rounded h-5 w-5">
+                  <DropdownMenu.ItemIndicator>
+                    <img
+                      src={checkIcon}
+                      height={20}
+                      width={20}
+                      alt=""
+                      className="recolor-white"
+                    />
+                  </DropdownMenu.ItemIndicator>
+                </span>
+                Edit layout
+              </DropdownMenu.CheckboxItem>
 
               <DropdownMenu.Item
                 onSelect={() => {
