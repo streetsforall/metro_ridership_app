@@ -25,6 +25,8 @@ interface OutputAreaProps {
   months: string[];
   lines: Line[];
   transitEvents: TransitEvent[];
+  /** True while the ridership dataset is still being fetched. */
+  isLoading?: boolean;
 }
 
 const hoverCrosshairPlugin: Plugin<'line'> = {
@@ -242,6 +244,7 @@ export default function OutputArea({
   months,
   lines,
   transitEvents,
+  isLoading = false,
 }: OutputAreaProps) {
   const [isContextLogOpen, setIsContextLogOpen] = useState(true);
 
@@ -327,7 +330,7 @@ export default function OutputArea({
       ) : (
         /* Chart pane */
         <div className="pane flex-1 flex items-center justify-center text-sm text-stone-400">
-          <p>Please select a Metro line.</p>
+          <p>{isLoading ? 'Loading ridership data…' : 'Please select a Metro line.'}</p>
         </div>
       )}
 
