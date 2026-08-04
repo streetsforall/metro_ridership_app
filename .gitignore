@@ -14,11 +14,17 @@ dist-ssr
 
 .next
 
-# Playwright (keep e2e/**-snapshots baselines, ignore run artifacts)
+# Playwright (keep the committed Linux baselines, ignore run artifacts)
 /test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Visual-regression baselines: only the Linux set CI compares against is
+# committed. Windows/macOS baselines are per-developer scratch — regenerate them
+# locally with `npm run test:e2e:update`.
+e2e/**/*-snapshots/*-win32.png
+e2e/**/*-snapshots/*-darwin.png
 
 # Python
 __pycache__/
