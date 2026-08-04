@@ -4,7 +4,6 @@ import type { DockviewApi } from 'dockview-react';
 import Footer from './components/Footer';
 import Header from './components/Header';
 import DockShell, {
-  buildDefaultLayout,
   PANEL_DEFS,
   PANEL_IDS,
   type PanelId,
@@ -40,14 +39,38 @@ const allPanelsVisible = Object.fromEntries(
   PANEL_IDS.map((id) => [id, true]),
 ) as Record<PanelId, boolean>;
 
+/** Rebuild the default layout; mirrors DockShell's initial build. */
+const buildDefaultLayout = (api: DockviewApi): void => {
+  for (const id of PANEL_IDS) {
+    const def = PANEL_DEFS[id];
+    api.addPanel({
+      id,
+      component: def.component,
+      title: def.title,
+      ...(def.position ? { position: def.position } : {}),
+    });
+  }
+
+  for (const id of PANEL_IDS) {
+    const { defaultHeight, defaultWidthRatio } = PANEL_DEFS[id];
+    const panel = api.getPanel(id);
+    if (!panel) continue;
+
+    if (defaultHeight !== undefined && api.height > 0) {
+      panel.api.setSize({ height: defaultHeight });
+    }
+    if (defaultWidthRatio !== undefined && api.width > 0) {
+      panel.api.setSize({ width: Math.round(api.width * defaultWidthRatio) });
+    }
+  }
+};
+
 function App() {
   const [isLineSelectorExpanded, setIsLineSelectorExpanded] =
     useState<boolean>(false);
   const [dockApi, setDockApi] = useState<DockviewApi | null>(null);
   const [panelVisibility, setPanelVisibility] =
     useState<Record<PanelId, boolean>>(allPanelsVisible);
-  /* Transient by design — not persisted to localStorage or the URL. */
-  const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const isDesktop = useIsDesktop();
 
   const userDashboardInputState: UserDashboardInputState =
@@ -165,8 +188,6 @@ function App() {
     if (!isDesktop) {
       setDockApi(null);
       setPanelVisibility(allPanelsVisible);
-      /* Nothing to rearrange without a dock. */
-      setIsEditMode(false);
     }
   }, [isDesktop]);
 
@@ -272,19 +293,13 @@ function App() {
     setIsLineSelectorExpanded(false);
   }, [dockApi]);
 
-  const toggleEditMode = useCallback(() => {
-    setIsEditMode((current) => !current);
-  }, []);
-
   const dockLayoutValue: DockLayoutContextValue = useMemo(
     () => ({
       visibility: panelVisibility,
       togglePanel,
       resetLayout,
-      isEditMode,
-      toggleEditMode,
     }),
-    [panelVisibility, togglePanel, resetLayout, isEditMode, toggleEditMode],
+    [panelVisibility, togglePanel, resetLayout],
   );
 
   const dashboardValue: DashboardContextValue = {
@@ -303,29 +318,18 @@ function App() {
   }, []);
 
   return (
-    /* Both providers wrap the whole page, not just the dock: Header's panel
-       controls call useDockLayout(), and that context has a no-op default, so a
-       Header rendered outside the provider silently loses every toggle and the
-       reset action instead of failing loudly. */
-    <DashboardProvider value={dashboardValue}>
-      <DockLayoutProvider value={dockLayoutValue}>
-        {/* The dock fits the viewport (panels split the available height, no
-            page scroll); the stacked mobile fallback still grows and scrolls. */}
-        <div
-          className={`flex flex-col mx-4 ${isDesktop ? 'h-screen' : 'min-h-screen'}`}
-        >
-          <Header />
+    /* Stretch full height */
+    <div className="flex flex-col min-h-screen mx-4">
+      <Header />
 
+      <DashboardProvider value={dashboardValue}>
+        <DockLayoutProvider value={dockLayoutValue}>
           {isDesktop ? (
             /* Dockview's root is `height: 100%`, which only resolves against a
                parent with a definite height — a flex-grown `height: auto` box
                collapses it to 0. The outer div takes the space; the absolutely
-               positioned inner div gives that space a definite height.
-
-               `min-h-0` is load-bearing: a flex child defaults to
-               `min-height: auto`, which refuses to shrink below its content and
-               would push the footer off-screen on a short window. */
-            <div className="relative grow min-h-0">
+               positioned inner div gives that space a definite height. */
+            <div className="relative grow min-h-[42rem]">
               <div className="absolute inset-0">
                 <DockShell
                   panels={{
@@ -345,10 +349,7 @@ function App() {
                       </PanelChrome>
                     ),
                     summary: (
-                      /* Unpadded: this group's fill is the page background, so
-                         its stat cards are meant to align with the chart and
-                         map panels' edges rather than sit inset from them. */
-                      <PanelChrome padded={false}>
+                      <PanelChrome>
                         <SummaryPanel />
                       </PanelChrome>
                     ),
@@ -393,11 +394,11 @@ function App() {
               </div>
             </>
           )}
+        </DockLayoutProvider>
+      </DashboardProvider>
 
-          <Footer />
-        </div>
-      </DockLayoutProvider>
-    </DashboardProvider>
+      <Footer />
+    </div>
   );
 }
 
