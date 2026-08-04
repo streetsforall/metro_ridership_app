@@ -135,6 +135,13 @@ stop/station boardings to per-line totals) and chains directly into
 `process_ridership` to update `ridership.json` — so it's the usual one-step entry
 point for new data.
 
+> **Rail is aggregated by `ROUTE`, not `LINE`.** Metro nests distinct routes
+> under a shared `LINE` grouping — notably ROUTE 805 (D/Purple) under LINE 802
+> (B/Red). Grouping by ROUTE reports each as its own line instead of summing the
+> Purple Line's riders into the Red Line's total. The route breakdown only exists
+> in the source from 2025-09 onward, so line 802 is Red+Purple combined before
+> then and Red-only after (see [`DATA_RELEASE_NOTES.md`](../DATA_RELEASE_NOTES.md)).
+
 It accepts the two shapes Metro delivers:
 
 - Individual files named `MM-YYYY-{Bus|Rail}.xlsx`
