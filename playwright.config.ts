@@ -12,10 +12,12 @@ import { defineConfig, devices } from '@playwright/test';
  * `NODE_TLS_REJECT_UNAUTHORIZED=0`).
  *
  * Snapshots are captured in headless Chromium at two fixed viewports (desktop + mobile).
- * They are OS/browser-specific, so baselines are committed for two platforms: `-win32.png` for
- * local runs on Windows, `-linux.png` for CI. A UI change that alters the screenshots requires
- * regenerating both — `npm run test:e2e:update` and `npm run test:e2e:update:linux` (the latter
- * runs in the same Playwright Docker image CI uses). See README.md § Continuous integration.
+ * They are OS/browser-specific — the default `snapshotPathTemplate` still suffixes each file with
+ * `process.platform` — but only the `-linux.png` set CI compares against is committed. `-win32.png`
+ * / `-darwin.png` are git-ignored, per-developer scratch: your first local run writes them and
+ * passes from then on. A UI change that alters the screenshots therefore needs exactly one
+ * regeneration command, `npm run test:e2e:update:linux`, which runs in the same Playwright Docker
+ * image CI uses. See README.md § Continuous integration.
  */
 export default defineConfig({
   testDir: './e2e',

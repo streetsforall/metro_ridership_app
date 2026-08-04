@@ -81,16 +81,18 @@ npm run test:e2e:update:linux  # rewrite the Linux baselines (needs Docker)
 
 Tests run against the production build served by `vite preview`, not the dev server. `npm run test:e2e` builds automatically, so there's no separate setup step.
 
-#### Baselines are committed for two platforms
+#### Only the Linux baselines are committed
 
-Playwright names each snapshot after the OS that captured it, and font rendering differs enough between platforms to cause false diffs. So [`e2e/visual.spec.ts-snapshots/`](e2e/visual.spec.ts-snapshots/) holds two sets:
+Playwright names each snapshot after the OS that captured it, and font rendering differs enough between platforms to cause false diffs. CI runs on Linux, so [`e2e/visual.spec.ts-snapshots/`](e2e/visual.spec.ts-snapshots/) commits only the Linux set:
 
-| Suffix | Used by | Regenerate with |
-| --- | --- | --- |
-| `-win32.png` | local runs on Windows | `npm run test:e2e:update` |
-| `-linux.png` | CI | `npm run test:e2e:update:linux` |
+| Suffix | Used by | In git? | Regenerate with |
+| --- | --- | --- | --- |
+| `-linux.png` | CI — the only baselines that gate a PR | committed | `npm run test:e2e:update:linux` |
+| `-win32.png` / `-darwin.png` | your local runs | git-ignored, per-developer scratch | `npm run test:e2e:update` |
 
-**When a UI change legitimately alters the screenshots, regenerate both sets and commit both.** Updating only your own platform turns CI red for everyone else. The Linux command shells out to the same Playwright Docker image CI uses (see [`scripts/README.md`](scripts/README.md#update_linux_snapshotspy)), so it needs Docker Desktop running.
+**When a UI change legitimately alters the screenshots, regenerate the Linux set and commit it:** `npm run test:e2e:update:linux`. That's the only baseline command a PR needs. It shells out to the same Playwright Docker image CI uses (see [`scripts/README.md`](scripts/README.md#update_linux_snapshotspy)), so it needs Docker Desktop running.
+
+Your own platform's baselines are yours alone — the first local `npm run test:e2e` writes them, and nothing you do to them can turn CI red.
 
 ### Lint
 
@@ -117,16 +119,17 @@ The app is built once and handed to `e2e` as an artifact, the container ships th
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| `e2e`: `A snapshot doesn't exist at …-linux.png` | You added a test, a viewport/project, or renamed a snapshot | `npm run test:e2e:update:linux`, then `npm run test:e2e:update` for the Windows set. Commit both. |
-| `e2e`: pixel diff, **and you meant to change the UI** | Baselines are stale | Regenerate **both** sets and commit. Put a screenshot of the new UI in the PR description. |
+| `e2e`: `A snapshot doesn't exist at …-linux.png` | You added a test, a viewport/project, or renamed a snapshot | `npm run test:e2e:update:linux`, then commit the new `-linux.png` files. |
+| Locally: `A snapshot doesn't exist at …-win32.png`, then it passes on a re-run | **Expected, not a bug.** Windows baselines aren't committed, so your first run on a fresh clone writes its own | Nothing. Re-run `npm run test:e2e`. The written `-win32.png` files are git-ignored. |
+| `e2e`: pixel diff, **and you meant to change the UI** | Baselines are stale | Regenerate with `npm run test:e2e:update:linux` and commit. Put a screenshot of the new UI in the PR description. |
 | `e2e`: pixel diff, **and you didn't touch the UI** | A real regression, or a non-deterministic render | Download the artifact and look at `*-diff.png` before doing anything else. **Don't regenerate baselines to make it green** — that deletes the evidence. |
 | `e2e` fails on `desktop` but not `mobile` (or vice versa) | Responsive-layout regression at 1280px or 390px | Reproduce with `npm run test:e2e -- --project=mobile`; use `npm run test:e2e:ui` to step through it. |
 | `e2e` is flaky — fails once, passes on retry | A canvas hadn't finished rendering | The config already pins `workers: 1`, `retries: 2` and `animations: 'disabled'`. If you added an animated component, `await` a settled state in the spec rather than loosening `maxDiffPixelRatio`. |
 | `e2e`: `webServer` timed out after 180s | `dist/` was missing/empty, or port 4173 was busy | Check that `build` uploaded `dist`. Locally, kill anything on 4173 — `vite preview` silently moves to 4174, which makes Playwright wait out the full timeout. |
-| `e2e`: browser not found, or a version mismatch | `@playwright/test` was upgraded | Nothing to change in `ci.yml`; the container follows the lockfile. **But a new browser build re-renders text**, so regenerate both baseline sets in the same PR. |
+| `e2e`: browser not found, or a version mismatch | `@playwright/test` was upgraded | Nothing to change in `ci.yml`; the container follows the lockfile. **But a new browser build re-renders text**, so regenerate the Linux baselines in the same PR. |
 | `build`: `tsc -b` errors in `e2e/` or `playwright.config.ts` | `tsconfig.json` references `tsconfig.e2e.json` | Fix the types. E2E code is part of the build, not a side project. |
 | `build` passes locally but fails in CI | Node version mismatch | CI reads [`.node-version`](.node-version) (`22.23.2`). Match it locally with `fnm use`. |
-| You added a page, route, or major component | It has no visual coverage | Add a test to [`e2e/visual.spec.ts`](e2e/visual.spec.ts) reusing the existing `gotoDashboard()` helper, then generate baselines for both platforms. |
+| You added a page, route, or major component | It has no visual coverage | Add a test to [`e2e/visual.spec.ts`](e2e/visual.spec.ts) reusing the existing `gotoDashboard()` helper, then generate its Linux baselines. |
 | You changed the map | **Not covered by any test** | `#lineMap` is masked in every screenshot. Verify by hand. |
 | You added a build-time env var (`VITE_*`) | Only the `build` job compiles the app | Add it to that job's `env:`. (`VITE_MAPTILER_KEY` is optional — the app falls back to OpenFreeMap — so no secret is required today.) |
 
