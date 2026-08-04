@@ -1,9 +1,8 @@
 # scripts/
 
-Utility scripts for fetching and processing LA Metro route data. The
-data-processing scripts are Python; see [Python setup](#python-setup) below.
-(There is one Node helper here too — [`update-linux-snapshots.mjs`](#update-linux-snapshotsmjs)
-— which is a developer tool, not part of the data pipeline.)
+Python utility scripts. Most fetch and process LA Metro route data; one
+([`update_linux_snapshots.py`](#update_linux_snapshotspy)) is a developer tool for
+the visual-regression suite. See [Python setup](#python-setup) below.
 
 ---
 
@@ -32,6 +31,45 @@ to avoid double-counting.
 ```bash
 python scripts/compute_line_distances.py
 ```
+
+---
+
+## Developer tools
+
+### `update_linux_snapshots.py`
+
+Regenerates the **Linux** visual-regression baselines (`e2e/visual.spec.ts-snapshots/*-linux.png`)
+inside the official Playwright Docker image. Playwright names snapshots after the OS
+that captured them, so a run on Windows writes `-win32.png` while CI (Linux) looks for
+`-linux.png`. Both sets are committed; this produces the Linux half without needing a
+Linux machine.
+
+**Requires Docker Desktop to be running.**
+
+```bash
+npm run test:e2e:update:linux
+
+# forward arguments to `playwright test --update-snapshots`
+npm run test:e2e:update:linux -- --project=desktop -g "expanded"
+```
+
+The image tag is read from `package-lock.json`, the same source
+`.github/workflows/ci.yml` uses for its `container.image` — so the browser build that
+writes a baseline here is the one CI compares against, and bumping `@playwright/test`
+moves both together.
+
+Two details worth knowing if you ever edit the docker invocation:
+
+- The bare `-v /work/node_modules` is an **anonymous volume masking the host's
+  `node_modules`**. The container runs `npm ci`, which installs Linux `esbuild`/`@swc`/
+  `rollup` binaries; without the mask those overwrite your host copies and break
+  `npm run dev` until you re-run `npm ci`.
+- `CI` is deliberately left unset inside the container, so `playwright.config.ts`'s
+  `webServer` still runs `npm run build && npm run preview` and the regeneration is
+  self-contained.
+
+When and why you'd run this is covered in the
+[Continuous integration](../README.md#continuous-integration) section of the main README.
 
 ---
 

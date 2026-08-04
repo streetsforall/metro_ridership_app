@@ -58,7 +58,31 @@ npm run test        # run all tests once
 npm run test:watch  # run tests in watch mode
 ```
 
-Tests use [Vitest](https://vitest.dev/) with `@testing-library/react` for component tests.
+Tests use [Vitest](https://vitest.dev/) with `@testing-library/react` for component tests. Specs live next to the code under `src/`; `e2e/` is excluded (it belongs to Playwright).
+
+### End-to-end / visual regression tests
+
+[Playwright](https://playwright.dev/) screenshots three views — the default dashboard, the dashboard with a line selected, and the expanded line-selector table — at two viewports (desktop 1280×800, mobile 390×844), and compares them against committed baselines. That's 6 screenshots per run. The map is masked out of every one, so **visual regression gives no coverage of the map** — verify map changes by hand.
+
+```bash
+npm run test:e2e               # run the suite (builds, serves, compares)
+npm run test:e2e:ui            # interactive UI / trace viewer
+npm run test:e2e:update        # rewrite baselines for YOUR platform
+npm run test:e2e:update:linux  # rewrite the Linux baselines (needs Docker)
+```
+
+Tests run against the production build served by `vite preview`, not the dev server. `npm run test:e2e` builds automatically, so there's no separate setup step.
+
+#### Baselines are committed for two platforms
+
+Playwright names each snapshot after the OS that captured it, and font rendering differs enough between platforms to cause false diffs. So [`e2e/visual.spec.ts-snapshots/`](e2e/visual.spec.ts-snapshots/) holds two sets:
+
+| Suffix | Used by | Regenerate with |
+| --- | --- | --- |
+| `-win32.png` | local runs on Windows | `npm run test:e2e:update` |
+| `-linux.png` | CI | `npm run test:e2e:update:linux` |
+
+**When a UI change legitimately alters the screenshots, regenerate both sets and commit both.** Updating only your own platform turns CI red for everyone else. The Linux command shells out to the same Playwright Docker image CI uses (see [`scripts/README.md`](scripts/README.md#update_linux_snapshotspy)), so it needs Docker Desktop running.
 
 ### Lint
 
@@ -67,6 +91,36 @@ npm run lint
 ```
 
 Uses ESLint with TypeScript, React hooks, and React refresh plugins. Fix lint errors before opening a pull request.
+
+## Continuous integration
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request and every push to `main`, as two jobs:
+
+| Job | Runs on | Gates |
+| --- | --- | --- |
+| **`build`** | `ubuntu-latest` | `npm run lint`, `npm run test`, `npm run build`. Because `tsc -b` covers `tsconfig.e2e.json`, this also type-checks `e2e/` and `playwright.config.ts`. Uploads `dist/` as an artifact. |
+| **`e2e`** | the official Playwright container | Downloads that `dist/`, serves it with `vite preview`, and runs the 6 visual-regression screenshots. |
+
+The app is built once and handed to `e2e` as an artifact, the container ships the browsers already installed, and superseded PR runs are cancelled automatically. The container tag is derived from `package-lock.json` at run time, so it can never drift from the installed `@playwright/test` — and `npm run test:e2e:update:linux` resolves the same tag from the same file, which is what makes locally-generated baselines match CI.
+
+**When `e2e` fails, download the `playwright-report` artifact** from the run's summary page. It contains `playwright-report/index.html` (open it in a browser) and `test-results/`, which holds the `*-expected.png` / `*-actual.png` / `*-diff.png` triplets.
+
+### CI went red — now what
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `e2e`: `A snapshot doesn't exist at …-linux.png` | You added a test, a viewport/project, or renamed a snapshot | `npm run test:e2e:update:linux`, then `npm run test:e2e:update` for the Windows set. Commit both. |
+| `e2e`: pixel diff, **and you meant to change the UI** | Baselines are stale | Regenerate **both** sets and commit. Put a screenshot of the new UI in the PR description. |
+| `e2e`: pixel diff, **and you didn't touch the UI** | A real regression, or a non-deterministic render | Download the artifact and look at `*-diff.png` before doing anything else. **Don't regenerate baselines to make it green** — that deletes the evidence. |
+| `e2e` fails on `desktop` but not `mobile` (or vice versa) | Responsive-layout regression at 1280px or 390px | Reproduce with `npm run test:e2e -- --project=mobile`; use `npm run test:e2e:ui` to step through it. |
+| `e2e` is flaky — fails once, passes on retry | A canvas hadn't finished rendering | The config already pins `workers: 1`, `retries: 2` and `animations: 'disabled'`. If you added an animated component, `await` a settled state in the spec rather than loosening `maxDiffPixelRatio`. |
+| `e2e`: `webServer` timed out after 180s | `dist/` was missing/empty, or port 4173 was busy | Check that `build` uploaded `dist`. Locally, kill anything on 4173 — `vite preview` silently moves to 4174, which makes Playwright wait out the full timeout. |
+| `e2e`: browser not found, or a version mismatch | `@playwright/test` was upgraded | Nothing to change in `ci.yml`; the container follows the lockfile. **But a new browser build re-renders text**, so regenerate both baseline sets in the same PR. |
+| `build`: `tsc -b` errors in `e2e/` or `playwright.config.ts` | `tsconfig.json` references `tsconfig.e2e.json` | Fix the types. E2E code is part of the build, not a side project. |
+| `build` passes locally but fails in CI | Node version mismatch | CI reads [`.node-version`](.node-version) (`22.23.2`). Match it locally with `fnm use`. |
+| You added a page, route, or major component | It has no visual coverage | Add a test to [`e2e/visual.spec.ts`](e2e/visual.spec.ts) reusing the existing `gotoDashboard()` helper, then generate baselines for both platforms. |
+| You changed the map | **Not covered by any test** | `#lineMap` is masked in every screenshot. Verify by hand. |
+| You added a build-time env var (`VITE_*`) | Only the `build` job compiles the app | Add it to that job's `env:`. (`VITE_MAPTILER_KEY` is optional — the app falls back to OpenFreeMap — so no secret is required today.) |
 
 ## Updating ridership data
 

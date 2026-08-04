@@ -12,8 +12,10 @@ import { defineConfig, devices } from '@playwright/test';
  * `NODE_TLS_REJECT_UNAUTHORIZED=0`).
  *
  * Snapshots are captured in headless Chromium at two fixed viewports (desktop + mobile).
- * They are OS/browser-specific — regenerate in a consistent environment (Playwright's Linux
- * Docker image, `mcr.microsoft.com/playwright`) for CI to avoid cross-platform font/AA diffs.
+ * They are OS/browser-specific, so baselines are committed for two platforms: `-win32.png` for
+ * local runs on Windows, `-linux.png` for CI. A UI change that alters the screenshots requires
+ * regenerating both — `npm run test:e2e:update` and `npm run test:e2e:update:linux` (the latter
+ * runs in the same Playwright Docker image CI uses). See README.md § Continuous integration.
  */
 export default defineConfig({
   testDir: './e2e',
@@ -24,7 +26,10 @@ export default defineConfig({
   workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  reporter: 'html',
+  // On CI, `github` writes inline annotations on the failing spec lines in the PR diff, and the
+  // html report is uploaded as an artifact. `open: 'never'` stops the reporter from trying to
+  // spawn a browser at the end of a failing run.
+  reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'html',
 
   use: {
     baseURL: 'https://localhost:4173',
@@ -57,8 +62,9 @@ export default defineConfig({
   ],
 
   webServer: {
-    // Build then preview so a run is self-contained (dist/ need not pre-exist).
-    command: 'npm run build && npm run preview',
+    // Locally, build then preview so a run is self-contained (dist/ need not pre-exist).
+    // On CI, dist/ is downloaded as an artifact from the build job — preview only, never rebuild.
+    command: process.env.CI ? 'npm run preview' : 'npm run build && npm run preview',
     url: 'https://localhost:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

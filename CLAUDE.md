@@ -15,11 +15,29 @@ npm run preview      # serve the production build
 npm run test         # vitest run (all tests once)
 npm run test:watch   # vitest watch mode
 npm run lint         # eslint .
+
+npm run test:e2e               # playwright visual-regression suite
+npm run test:e2e:ui            # playwright UI / trace viewer
+npm run test:e2e:update        # rewrite baselines for the current platform
+npm run test:e2e:update:linux  # rewrite the Linux baselines in Docker
 ```
 
 Run a single test file: `npx vitest run src/utils/calc.test.ts` (or pass a name filter with `-t`). Tests use Vitest + `@testing-library/react` in a jsdom environment with globals enabled (no per-file imports of `describe`/`it`/`expect` needed).
 
-The dev server uses HTTPS via `@vitejs/plugin-basic-ssl` — expect a self-signed cert warning the first time.
+The dev server uses HTTPS via `@vitejs/plugin-basic-ssl` — expect a self-signed cert warning the first time. **`vite preview` is also HTTPS** (basicSsl runs for `command === 'serve'`, which covers preview), which is why the Playwright config sets `ignoreHTTPSErrors` and `NODE_TLS_REJECT_UNAUTHORIZED=0`.
+
+## Testing
+
+Vitest specs live beside the code under `src/`; `vitest.config.ts` excludes `e2e/**` (and `.claude/**`, where Claude Code's throwaway worktrees live). E2E is Playwright, run against the production build on `https://localhost:4173` — not the dev server.
+
+Non-obvious constraints:
+
+- **Baselines are committed for two platforms** — `-win32.png` for local Windows runs, `-linux.png` for CI. A UI change that alters the screenshots requires regenerating **both**; updating one turns CI red for everyone else. Never regenerate baselines to silence a diff you can't explain.
+- `npm run test:e2e:update:linux` ([scripts/update_linux_snapshots.py](scripts/update_linux_snapshots.py)) needs Docker. It resolves its image tag from `package-lock.json` — the same source [.github/workflows/ci.yml](.github/workflows/ci.yml) uses — so local regeneration and CI stay in lockstep.
+- **Bumping `@playwright/test` means regenerating both baseline sets in the same PR**; a new browser build re-renders text. The workflow's container tag follows the lockfile automatically, so `ci.yml` itself needs no edit.
+- `npm run build` type-checks `e2e/` and `playwright.config.ts` — `tsconfig.json` references `tsconfig.e2e.json`, so a broken spec fails the build.
+- **`#lineMap` is masked in every screenshot**, so the visual suite gives no coverage of the map.
+- CI is two jobs: `build` (lint/test/build, uploads `dist/`) → `e2e` (Playwright container, downloads `dist/`, previews only — `playwright.config.ts` skips its own build when `CI` is set). The full failure runbook is in [README.md](README.md#ci-went-red--now-what).
 
 ## Data flow (the core architecture)
 
