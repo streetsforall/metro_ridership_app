@@ -11,6 +11,14 @@ The data is generally categorized into two different types:
 
 In order to be utilized in the chart, ridership metrics are converted from a flat structure into one that is consolidated by line (see `src/@types/metrics.types.ts`). Furthermore, in order to display the metrics in the line summary table, additional data is added to the line metadata based on calculations made on each line's consolidated metrics (see `src/@types/lines.types.ts`).
 
+### Data coverage varies by line
+
+Not every line reports for the same span of months. Lines are added and discontinued over time, and a line can also appear late because the source data only began breaking it out separately — the D Line, for instance, starts at September 2025 while most rail lines go back to 2009 (see [DATA_RELEASE_NOTES.md](DATA_RELEASE_NOTES.md)).
+
+The chart accounts for this: all selected lines are plotted against one shared month axis, and a month a line doesn't report is drawn as a gap rather than joined to the next point.
+
+The summary table does not. `Change`, `Starting Ridership` and `Ending Ridership` are computed from each line's *own* first and last available months within the selected range, so for two lines with different coverage those figures cover different periods and aren't directly comparable — a line's "change" may be measured over a few months while its neighbour's spans years. This is tracked in [issue #88](https://github.com/streetsforall/metro_ridership_app/issues/88).
+
 The general process of loading and transforming relevant data is as follows:
 
 1. Load lines and assemble JSON with `createLinesData()` in `useUserDashboardInput.ts`.
