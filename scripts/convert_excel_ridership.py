@@ -100,6 +100,12 @@ def aggregate_to_line_ridership(df: pd.DataFrame, year: int, month: int, mode: s
     Excludes aggregate "Total" rows that the Excel export includes at multiple
     levels (direction-total for Bus, route-total and station-total for Rail).
     Summing only the leaf-level rows gives the correct line ridership.
+
+    For rail, Metro nests distinct routes under a shared LINE grouping — notably
+    ROUTE 805 (D/Purple) under LINE 802 (B/Red). Boardings are aggregated by
+    ROUTE, not LINE, so each route is reported as its own line rather than being
+    summed into the parent LINE's total (which would fold the Purple Line's
+    riders into the Red Line's).
     """
     if mode == "Bus":
         # Each stop has one row per direction plus a "Total" direction row.
@@ -109,7 +115,11 @@ def aggregate_to_line_ridership(df: pd.DataFrame, year: int, month: int, mode: s
         # Each line has a line-total row (ROUTE=="Total") and per-station rows
         # where the first station row is a route-total (STATION_ORDER=="Total").
         # Keep only individual station rows.
-        df = df[df["STATION_ORDER"].notna() & (df["STATION_ORDER"] != "Total")]
+        df = df[df["STATION_ORDER"].notna() & (df["STATION_ORDER"] != "Total")].copy()
+        # Report each ROUTE as its own line. Single-route lines have ROUTE == LINE
+        # so this is a no-op for them; a non-numeric ROUTE falls back to LINE.
+        route = pd.to_numeric(df["ROUTE"], errors="coerce")
+        df["LINE"] = route.fillna(df["LINE"]).astype(int)
 
     for col in ["WD_ONS", "SA_ONS", "SU_ONS"]:
         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)

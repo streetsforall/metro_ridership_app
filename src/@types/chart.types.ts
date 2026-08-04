@@ -1,4 +1,5 @@
 export interface CustomChartData {
   time: string;
-  stat: number;
+  /** `null` where the line has no record for this month — Chart.js draws a gap. */
+  stat: number | null;
 }
