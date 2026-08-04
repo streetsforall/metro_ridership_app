@@ -138,7 +138,15 @@ and `src/data/metro_line_metadata_current.json`.
   `MM-YYYY-{Bus|Rail}.xlsx` file, or a date-range zip of them (e.g.
   `2026-04_2026-05.zip`). These are parsed by `convert_excel_ridership.py` into
   the CSV schema below before processing; line ridership is the sum of stop/station
-  boardings (Ons) per line.
+  boardings (Ons) per line — and for rail, per **`ROUTE`** rather than `LINE`.
+
+  > Metro nests distinct rail routes under a shared `LINE` grouping — notably
+  > ROUTE 805 (D/Purple) under LINE 802 (B/Red). Aggregating by ROUTE reports each
+  > as its own line instead of summing the Purple Line's riders into the Red Line's
+  > total. Single-route lines are unaffected (their ROUTE equals their LINE). The
+  > breakdown only exists in the source from 2025-09 onward, so line 802 is
+  > Red+Purple combined before then and Red-only after — see
+  > [`DATA_RELEASE_NOTES.md`](../DATA_RELEASE_NOTES.md).
 - **Legacy CSV** (from older requests):
 
   ```
