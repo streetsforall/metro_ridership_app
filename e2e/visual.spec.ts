@@ -22,7 +22,6 @@ async function gotoDashboard(page: Page): Promise<void> {
   // ResizeObserver makes Chart.js size once at load and hold, which fixes the page dimensions.
   // Layout is static after load, so nothing legitimately needs resize observation here.
   await page.addInitScript(() => {
-    // @ts-expect-error - replace with a no-op for deterministic layout during capture
     window.ResizeObserver = class {
       observe() {}
       unobserve() {}
