@@ -192,59 +192,57 @@ function App() {
 
       {/* Grow to fill remaining vertical space; only one column if expanded or on mobile */}
       <div
-        className={`grow grid flex-col lg:flex-row gap-4 ${isLineSelectorExpanded ? 'grid-cols-[1fr]' : 'grid-cols-[1fr] lg:grid-cols-[25%_1fr]'}`}
+        className={`grow grid  gap-4 ${isLineSelectorExpanded ? 'grid-cols-[1fr]' : 'grid-cols-[1fr] lg:grid-cols-[25%_1fr]'}`}
       >
         {/**
          * Only show right side if line selector not selected
          * TODO: Change this from conditional rendering to conditional visibility; that way it doesn't rerender every time
          */}
-        <Suspense
-          fallback={
-            <div className="flex flex-col gap-4 lg:min-h-[50vh]">
-              <div className="pane flex-1 flex items-center justify-center text-sm text-stone-400">
-                <p>Loading…</p>
-              </div>
-            </div>
-          }
-        >
-          {isLineSelectorExpanded ? (
+
+        {isLineSelectorExpanded ? (
+          <div className={`pane flex flex-col gap-4 w-100 min-h-full min-w-0`}>
+            <LineSelector
+              {...userDashboardInputState}
+              lines={visibleLines}
+              ridershipByLine={ridershipByLine}
+              isExpanded
+              setIsExpanded={setIsLineSelectorExpanded}
+            />
+          </div>
+        ) : (
+          <>
+            {/* Metro lines pane */}
+            {/* Hack to match sibling height - https://www.reddit.com/r/css/comments/15qu1ml/restrict_childs_height_to_parents_height_which_is/*/}
+
             <div
-              className={`pane flex flex-col gap-4 w-100 min-h-full min-w-0`}
+              className={`pane flex flex-col grow-0 shrink-1 lg:basis-1/4 gap-4 h-[32rem] min-h-full`}
             >
               <LineSelector
                 {...userDashboardInputState}
                 lines={visibleLines}
                 ridershipByLine={ridershipByLine}
-                isExpanded
+                isExpanded={false}
                 setIsExpanded={setIsLineSelectorExpanded}
               />
             </div>
-          ) : (
-            <>
-              {/* Metro lines pane */}
-              {/* Hack to match sibling height - https://www.reddit.com/r/css/comments/15qu1ml/restrict_childs_height_to_parents_height_which_is/*/}
-
-              <div
-                className={`pane flex flex-col grow-0 shrink-1 lg:basis-1/4 gap-4 h-[32rem] min-h-full`}
-              >
-                <LineSelector
-                  {...userDashboardInputState}
-                  lines={visibleLines}
-                  ridershipByLine={ridershipByLine}
-                  isExpanded={false}
-                  setIsExpanded={setIsLineSelectorExpanded}
-                />
-              </div>
-
+            <Suspense
+              fallback={
+                <div className="flex flex-col gap-4 lg:min-h-[50vh]">
+                  <div className="pane flex-1 flex items-center justify-center text-sm text-stone-400">
+                    <p>Loading…</p>
+                  </div>
+                </div>
+              }
+            >
               <OutputArea
                 chartDatasets={chartDatasets}
                 months={monthList}
                 lines={lines}
                 isLoading={isLoading}
               />
-            </>
-          )}
-        </Suspense>
+            </Suspense>
+          </>
+        )}
       </div>
 
       <Footer />
