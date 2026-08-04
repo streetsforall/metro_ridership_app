@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Manual re-run, with no inputs. A push made with GITHUB_TOKEN does not trigger workflows
+  # (GitHub's loop guard), so when update-snapshots.yml commits regenerated baselines to a PR
+  # branch, that PR keeps showing the run from before the commit. This trigger lets that workflow
+  # dispatch a fresh run at the branch; check runs attach to the commit SHA, so the new result
+  # shows up on the PR.
+  workflow_dispatch:
 
 # One in-flight run per ref. Superseded PR runs are cancelled; runs on main are never
 # cancelled, so every commit on the default branch keeps a complete, attributable result.

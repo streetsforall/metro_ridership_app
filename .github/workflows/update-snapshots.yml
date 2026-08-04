@@ -1,0 +1,276 @@
+name: Update snapshots
+
+# Regenerating the committed `-linux.png` baselines means running the suite inside the exact
+# Playwright container CI compares against — which locally means Docker Desktop, and that is the
+# one prerequisite this repo asks for that has nothing to do with writing the app. This workflow
+# does the same job on GitHub's runners: label a PR `update-snapshots` (or dispatch it against a
+# branch) and the baselines are regenerated, verified, and committed back to the branch.
+#
+# It is deliberately NOT triggered by a failing `e2e` run. Overwriting a baseline destroys the
+# only record of what the UI used to look like, so regeneration stays a deliberate human act —
+# see README.md § "CI went red — now what".
+
+on:
+  # The everyday path: no inputs to fill in and the branch is implied by the PR. The label is
+  # taken off again when the run finishes, so re-running is a single label add.
+  pull_request:
+    types: [labeled]
+  # The manual path, for a branch that has no PR yet — and the only way to pass a filter.
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to regenerate baselines on. Never `main`.'
+        required: true
+      filter:
+        description: 'Optional extra arguments for `playwright test`, e.g. `--project=map` or a title substring like `chart-content`. Empty regenerates every baseline.'
+        required: false
+        default: ''
+
+# One run per branch, keyed the same way whichever trigger fired.
+concurrency:
+  group: update-snapshots-${{ github.event.pull_request.head.ref || inputs.branch }}
+  cancel-in-progress: false     # a killed run can leave a branch half-updated
+
+permissions:
+  contents: write        # push the regenerated baselines
+  pull-requests: write   # remove the label when done
+  actions: write         # re-dispatch CI on the new commit
+
+jobs:
+  # Split out from `update` because a job's `container:` image is resolved before any of its
+  # steps run — the Playwright version therefore has to be known in a *previous* job. The safety
+  # guards live here too: they are much cheaper to fail before pulling a ~2GB image.
+  resolve:
+    name: Resolve target branch and Playwright version
+    # `github.event.label.name` is only set on the labeled event; the `workflow_dispatch` half of
+    # the condition is what lets a manual run through.
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'update-snapshots'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      ref: ${{ steps.target.outputs.ref }}
+      playwright-version: ${{ steps.playwright-version.outputs.version }}
+
+    steps:
+      # A fork PR is checked out with a read-only GITHUB_TOKEN, so the push at the end of
+      # `update` would fail after ~10 minutes of work. Fail immediately and say what to do
+      # instead. Every open PR is same-repo today; this guard is here for the day one isn't.
+      #
+      # The alternative — `pull_request_target`, which would run with a writable token — is
+      # deliberately not used: it would execute a fork's `npm ci` and its Playwright specs with
+      # write access to this repository.
+      - name: Reject fork pull requests
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error::Baselines cannot be pushed to a fork's branch (fork PRs get a read-only token). Regenerate locally with 'npm run test:e2e:update:linux', or ask a maintainer to run this workflow against a branch in $GITHUB_REPOSITORY — every run uploads the regenerated PNGs as an artifact, which a fork author can download and commit."
+          exit 1
+
+      # Branch names and dispatch inputs are attacker-influenced text, so they reach the shell
+      # through `env:` and are quoted at every expansion — never interpolated into the script.
+      - name: Resolve the target branch
+        id: target
+        env:
+          REF: ${{ github.event.pull_request.head.ref || inputs.branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ -z "$REF" ]; then
+            echo "::error::No branch to update: the 'branch' input is required for a manual run."
+            exit 1
+          fi
+          # Baselines are never rewritten on the default branch. They get there by merging a PR
+          # that regenerated them, which is what keeps the change reviewable in a diff.
+          if [ "$REF" = "main" ] || [ "$REF" = "$DEFAULT_BRANCH" ]; then
+            echo "::error::Refusing to regenerate baselines on '$REF'. Run this against a feature branch and merge the result."
+            exit 1
+          fi
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "Target branch: $REF"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.target.outputs.ref }}
+
+      # Identical to the line in ci.yml, on purpose: the image that regenerates a baseline must
+      # be the image that later compares against it, or the fonts shift under you.
+      - name: Resolve Playwright version from the lockfile
+        id: playwright-version
+        run: |
+          version="$(jq -er '.packages["node_modules/@playwright/test"].version' package-lock.json)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "@playwright/test $version -> mcr.microsoft.com/playwright:v$version-noble"
+
+  update:
+    name: Regenerate and commit Linux baselines
+    needs: resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    container:
+      # Same image, same tag source, same reasoning as ci.yml's `e2e` job — see its comment.
+      image: mcr.microsoft.com/playwright:v${{ needs.resolve.outputs.playwright-version }}-noble
+      # Docker's default 64MB /dev/shm makes Chromium crash mid-test on full-page screenshots.
+      options: --ipc=host
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The branch itself, not the default `refs/pull/N/merge`. That ref is a detached,
+          # throwaway merge commit — committing onto it produces something with nowhere to go.
+          ref: ${{ needs.resolve.outputs.ref }}
+          # Left at the default `true`: the push at the end of this job needs the credentials
+          # checkout writes into .git/config.
+          persist-credentials: true
+
+      # The container runs as root over a checkout owned by the runner user, and git refuses to
+      # touch a repository owned by someone else ("detected dubious ownership"). actions/checkout
+      # sets this itself today, but the push below is too important to rest on that default.
+      - name: Trust the workspace checkout
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      # Same key as ci.yml's `e2e` job, so the two share one cache entry. In a container job HOME
+      # is /github/home, so `~/.npm` resolves correctly — do not hardcode /root/.npm.
+      - name: Cache npm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-container-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            npm-container-
+
+      # As in ci.yml's `e2e` job, no setup-node: the image ships the Node that Playwright ships
+      # against. The build below therefore runs on that Node rather than .node-version's, which
+      # is fine — Vite's output is fixed by the locked toolchain in node_modules, and what the
+      # screenshots capture is the rendered app, not the bundle.
+      - name: Install dependencies
+        run: npm ci
+
+      # playwright.config.ts skips its own build when CI is set (on CI the app normally arrives
+      # as an artifact from ci.yml's `build` job), so `vite preview` needs a dist/ built here.
+      - name: Build
+        run: npm run build
+
+      - name: Toolchain
+        run: node -v && npm -v && npx playwright --version
+
+      # This can only ever write `-linux.png`: Playwright suffixes every snapshot with
+      # `process.platform`, and the other two suffixes are git-ignored anyway. `--update-snapshots`
+      # only rewrites the screenshots that actually differ, so the diff below stays honest.
+      - name: Regenerate the Linux baselines
+        env:
+          # Dispatch inputs reach the shell through env, never interpolated into the script.
+          FILTER: ${{ inputs.filter }}
+        run: |
+          # shellcheck disable=SC2086  # unquoted on purpose: a multi-word filter must split
+          npm run test:e2e:update -- $FILTER
+
+      # The reason a baseline committed by a bot is trustworthy. `--retries=0` overrides the
+      # config's `retries: 2` (which CI otherwise gets), so the freshly-written screenshots have
+      # to reproduce on the very first attempt. Without it, a canvas that settles differently
+      # every other run would be baked into a baseline and hidden behind a retry — turning this
+      # workflow into a machine for committing flake.
+      - name: Verify the new baselines reproduce with no retries
+        env:
+          FILTER: ${{ inputs.filter }}
+        run: |
+          # shellcheck disable=SC2086  # unquoted on purpose: a multi-word filter must split
+          npx playwright test --retries=0 $FILTER
+
+      # Two outcomes are fine: nothing changed (the baselines were already current), or only
+      # snapshot PNGs changed. Anything else means the run modified tracked source, which is not
+      # what this workflow is for and must not ride along in a `test(e2e):` commit.
+      - name: Inspect the working tree
+        id: diff
+        run: |
+          # -uall lists untracked files individually. Without it a brand-new snapshot directory
+          # (what a newly-added spec produces) collapses to one `?? e2e/foo.spec.ts-snapshots/`
+          # entry, which the .png check below would reject as an unexpected change.
+          status="$(git status --porcelain -uall)"
+          if [ -z "$status" ]; then
+            echo "baselines already current — nothing to commit"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "$status"
+          # Strip the two status columns and the separating space to get each path. Renames are
+          # not a thing a screenshot run produces, so this is enough.
+          unexpected="$(echo "$status" | cut -c4- | grep -vE '^"?e2e/.+-snapshots/.+\.png"?$' || true)"
+          if [ -n "$unexpected" ]; then
+            echo "::error::Regeneration touched files outside e2e/**/*-snapshots/*.png; refusing to commit."
+            echo "$unexpected"
+            exit 1
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      # `always()`: the interesting case is the failed one. If the verification pass above went
+      # red, these are the *-actual.png / *-diff.png and the trace that explain why — and for a
+      # fork PR, downloading this artifact and committing the PNGs by hand is the whole fallback.
+      - name: Upload regenerated baselines and the Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: updated-snapshots
+          path: |
+            e2e/**/*-snapshots/*.png
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+          overwrite: true
+
+      - name: Commit and push the regenerated baselines
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          REF: ${{ needs.resolve.outputs.ref }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A -- e2e
+          git commit \
+            --message 'test(e2e): regenerate Linux visual baselines' \
+            --message "Regenerated in the pinned Playwright container and verified with a clean --retries=0 run by $RUN_URL"
+          # Never --force: if the branch moved while this ran, the push is rejected and the run
+          # goes red rather than quietly dropping whatever landed in between.
+          git push origin "HEAD:refs/heads/$REF"
+
+      # `gh` is not installed in the Playwright image (it ships Node, browsers, git and curl and
+      # nothing else), so the two GitHub API calls below go through actions/github-script, which
+      # runs on the Node the runner injects into the container.
+      - name: Re-run CI on the pushed commit
+        if: steps.diff.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        env:
+          BRANCH: ${{ needs.resolve.outputs.ref }}
+        with:
+          script: |
+            // A push authenticated with GITHUB_TOKEN does not trigger workflows — GitHub's loop
+            // guard — so the PR would go on showing the CI run from *before* the baselines were
+            // committed. ci.yml carries a bare `workflow_dispatch:` for exactly this call; the
+            // check runs it produces attach to the new commit SHA and surface on the PR.
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'ci.yml',
+              ref: process.env.BRANCH,
+            });
+            core.info(`Dispatched ci.yml at ${process.env.BRANCH}`);
+
+      # `always()`: the label comes off even when the run failed, so a retry is one label add
+      # rather than remove-then-re-add (re-adding a label that is already there emits no event).
+      - name: Remove the update-snapshots label
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                name: 'update-snapshots',
+              });
+            } catch (error) {
+              // 404: someone took it off by hand while this ran. Not worth failing over.
+              if (error.status !== 404) throw error;
+              core.info('Label was already removed.');
+            }
