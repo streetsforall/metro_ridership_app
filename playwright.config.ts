@@ -11,11 +11,14 @@ import { defineConfig, devices } from '@playwright/test';
  * self-signed cert (`ignoreHTTPSErrors` on the browser context and the webServer probe, plus
  * `NODE_TLS_REJECT_UNAUTHORIZED=0`).
  *
- * Snapshots are captured in headless Chromium at two fixed viewports (desktop + mobile).
- * They are OS/browser-specific, so baselines are committed for two platforms: `-win32.png` for
- * local runs on Windows, `-linux.png` for CI. A UI change that alters the screenshots requires
- * regenerating both — `npm run test:e2e:update` and `npm run test:e2e:update:linux` (the latter
- * runs in the same Playwright Docker image CI uses). See README.md § Continuous integration.
+ * Snapshots are captured in headless Chromium at two fixed viewports (desktop + mobile), plus a
+ * third `map` project that covers the MapLibre map on its own (see e2e/map.spec.ts).
+ * They are OS/browser-specific — the default `snapshotPathTemplate` still suffixes each file with
+ * `process.platform` — but only the `-linux.png` set CI compares against is committed. `-win32.png`
+ * / `-darwin.png` are git-ignored, per-developer scratch: your first local run writes them and
+ * passes from then on. A UI change that alters the screenshots therefore needs exactly one
+ * regeneration command, `npm run test:e2e:update:linux`, which runs in the same Playwright Docker
+ * image CI uses. See README.md § Continuous integration.
  */
 export default defineConfig({
   testDir: './e2e',
@@ -53,11 +56,29 @@ export default defineConfig({
   projects: [
     {
       name: 'desktop',
+      testIgnore: /map\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
     },
     {
       name: 'mobile',
+      testIgnore: /map\.spec\.ts/,
       use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 } },
+    },
+    // The map suite renders identical geometry at any viewport, so it runs once rather than
+    // per-viewport — hence its own project and the testIgnore on the two above.
+    {
+      name: 'map',
+      testMatch: /map\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 800 },
+        // MapLibre draws through WebGL, so the baseline depends on the GL backend. Pinning
+        // ANGLE to SwiftShader keeps rasterisation on the CPU and off whatever GPU the host
+        // happens to have; `deviceScaleFactor` is spelled out because a fractional scale
+        // resamples the canvas and turns antialiasing into diff noise.
+        deviceScaleFactor: 1,
+        launchOptions: { args: ['--use-gl=angle', '--use-angle=swiftshader'] },
+      },
     },
   ],
 

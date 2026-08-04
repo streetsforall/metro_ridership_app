@@ -10,5 +10,8 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["e2e", "playwright.config.ts"]
+  // src/@types/globals.d.ts declares `window.__metroMap`, the MapLibre test seam that
+  // e2e/map.spec.ts drives the map through. Including it here keeps one declaration
+  // shared by the app and the e2e project instead of two that can drift apart.
+  "include": ["e2e", "playwright.config.ts", "src/@types/globals.d.ts"]
 }

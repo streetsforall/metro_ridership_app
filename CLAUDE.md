@@ -32,11 +32,11 @@ Vitest specs live beside the code under `src/`; `vitest.config.ts` excludes `e2e
 
 Non-obvious constraints:
 
-- **Baselines are committed for two platforms** — `-win32.png` for local Windows runs, `-linux.png` for CI. A UI change that alters the screenshots requires regenerating **both**; updating one turns CI red for everyone else. Never regenerate baselines to silence a diff you can't explain.
+- **Only the Linux baselines are committed** — `-linux.png` is what CI compares against; `-win32.png`/`-darwin.png` are git-ignored per-developer scratch that your first local run writes. A UI change that alters the screenshots needs one command, `npm run test:e2e:update:linux`. Never regenerate baselines to silence a diff you can't explain.
 - `npm run test:e2e:update:linux` ([scripts/update_linux_snapshots.py](scripts/update_linux_snapshots.py)) needs Docker. It resolves its image tag from `package-lock.json` — the same source [.github/workflows/ci.yml](.github/workflows/ci.yml) uses — so local regeneration and CI stay in lockstep.
-- **Bumping `@playwright/test` means regenerating both baseline sets in the same PR**; a new browser build re-renders text. The workflow's container tag follows the lockfile automatically, so `ci.yml` itself needs no edit.
+- **Bumping `@playwright/test` means regenerating the Linux baselines in the same PR**; a new browser build re-renders text. The workflow's container tag follows the lockfile automatically, so `ci.yml` itself needs no edit.
 - `npm run build` type-checks `e2e/` and `playwright.config.ts` — `tsconfig.json` references `tsconfig.e2e.json`, so a broken spec fails the build.
-- **`#lineMap` is masked in every screenshot**, so the visual suite gives no coverage of the map.
+- **`#lineMap` is masked in every `visual.spec.ts` screenshot.** The map is covered by [e2e/map.spec.ts](e2e/map.spec.ts) instead, in its own `map` Playwright project: it stubs every off-localhost request with a blank MapLibre style (one background layer, no sources), so only the same-origin `metro_lines.geojson` geometry paints and the render is byte-identical run to run. It waits on MapLibre's `idle` event via `window.__metroMap` — a test seam published by [src/components/Map.tsx](src/components/Map.tsx) that nothing in the app reads; don't delete it. Regenerate its baselines alone with `npm run test:e2e:update:linux -- --project=map`.
 - CI is two jobs: `build` (lint/test/build, uploads `dist/`) → `e2e` (Playwright container, downloads `dist/`, previews only — `playwright.config.ts` skips its own build when `CI` is set). The full failure runbook is in [README.md](README.md#ci-went-red--now-what).
 
 CI runs lint → test → build on every push/PR to `main` ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
