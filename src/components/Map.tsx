@@ -36,6 +36,11 @@ export default function Map({ lines }: MapProps) {
       maxZoom: 16,
     });
 
+    // Test seam for e2e/map.spec.ts: MapLibre renders into a WebGL canvas, so a test has no
+    // way to wait on it or inspect it from the DOM. Publishing the instance lets the spec
+    // await the `idle` event and call queryRenderedFeatures(). Inert in the app itself.
+    window.__metroMap = map.current;
+
     map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
 
     map.current.on('load', () => {
@@ -146,6 +151,7 @@ export default function Map({ lines }: MapProps) {
       map.current?.remove();
       map.current = null;
       isStyleLoaded.current = false;
+      delete window.__metroMap;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
