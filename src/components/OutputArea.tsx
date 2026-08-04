@@ -30,10 +30,7 @@ const hoverCrosshairPlugin: Plugin<'line'> = {
     const active = chart.tooltip?.getActiveElements();
     if (!active?.length) return;
     const x = active[0].element.x;
-    const {
-      ctx,
-      chartArea: { top, bottom },
-    } = chart;
+    const { ctx, chartArea: { top, bottom } } = chart;
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(x, top);
@@ -115,7 +112,7 @@ export default function OutputArea({
   };
 
   return (
-    <div className="flex flex-col grow-0 shrink-1 basis-3/4 gap-4 lg:min-h-[50vh] w-auto min-w-0">
+    <div className="flex flex-col gap-4 lg:min-h-[50vh] w-auto min-w-0">
       {/* Only show chart and summary metrics if something selected */}
       {chartDatasets.length > 0 ? (
         <>
