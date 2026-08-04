@@ -1,28 +1,27 @@
 # scripts/
 
-Utility scripts for fetching and processing LA Metro route data. Each script
-has both a JavaScript (`.mjs`) and a Python (`.py`) implementation that produce
-identical output.
+Python utility scripts. Most fetch and process LA Metro route data; one
+([`update_linux_snapshots.py`](#update_linux_snapshotspy)) is a developer tool for
+the visual-regression suite. See [Python setup](#python-setup) below.
 
 ---
 
-## Scripts
+## Data scripts
 
-### `fetch_metro_lines` / `fetch-metro-lines.mjs`
+### `fetch_metro_lines.py`
 
 Downloads the LA Metro GTFS feeds (rail + bus), converts route shapes to
 GeoJSON, and writes `public/metro_lines.geojson`. Run this monthly to keep
 route geometry up to date.
 
 ```bash
-# JavaScript
-npm run fetch-lines
-
-# Python
 python scripts/fetch_metro_lines.py
+
+# or, equivalently
+npm run fetch-lines
 ```
 
-### `compute_line_distances` / `compute-line-distances.mjs`
+### `compute_line_distances.py`
 
 Reads `public/metro_lines.geojson` and writes one-way route distances (in
 miles, rounded to one decimal) to `src/data/line_distances.json`. Rail lines
@@ -30,12 +29,47 @@ store outbound + inbound as two lineStrings; only the outbound leg is measured
 to avoid double-counting.
 
 ```bash
-# JavaScript
-node scripts/compute-line-distances.mjs
-
-# Python
 python scripts/compute_line_distances.py
 ```
+
+---
+
+## Developer tools
+
+### `update_linux_snapshots.py`
+
+Regenerates the **Linux** visual-regression baselines (`e2e/visual.spec.ts-snapshots/*-linux.png`)
+inside the official Playwright Docker image. Playwright names snapshots after the OS
+that captured them, so a run on Windows writes `-win32.png` while CI (Linux) looks for
+`-linux.png`. Both sets are committed; this produces the Linux half without needing a
+Linux machine.
+
+**Requires Docker Desktop to be running.**
+
+```bash
+npm run test:e2e:update:linux
+
+# forward arguments to `playwright test --update-snapshots`
+npm run test:e2e:update:linux -- --project=desktop -g "expanded"
+```
+
+The image tag is read from `package-lock.json`, the same source
+`.github/workflows/ci.yml` uses for its `container.image` — so the browser build that
+writes a baseline here is the one CI compares against, and bumping `@playwright/test`
+moves both together.
+
+Two details worth knowing if you ever edit the docker invocation:
+
+- The bare `-v /work/node_modules` is an **anonymous volume masking the host's
+  `node_modules`**. The container runs `npm ci`, which installs Linux `esbuild`/`@swc`/
+  `rollup` binaries; without the mask those overwrite your host copies and break
+  `npm run dev` until you re-run `npm ci`.
+- `CI` is deliberately left unset inside the container, so `playwright.config.ts`'s
+  `webServer` still runs `npm run build && npm run preview` and the regeneration is
+  self-contained.
+
+When and why you'd run this is covered in the
+[Continuous integration](../README.md#continuous-integration) section of the main README.
 
 ---
 
@@ -213,7 +247,8 @@ For interactive exploration and debugging, see the notebooks in `notebooks/`.
 pip install -r scripts/requirements.txt
 ```
 
-Dependencies: `requests` (HTTP), `pandas` + `numpy` (data processing), `pytest` (tests).
+Dependencies: `requests` (HTTP), `pandas` + `numpy` (data processing), `openpyxl`
+(reading the `.xlsx` files public records requests return), `pytest` (tests).
 
 ## Running the Python tests
 

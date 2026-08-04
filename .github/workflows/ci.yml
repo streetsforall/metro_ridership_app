@@ -6,26 +6,124 @@ on:
   pull_request:
     branches: [main]
 
+# One in-flight run per ref. Superseded PR runs are cancelled; runs on main are never
+# cancelled, so every commit on the default branch keeps a complete, attributable result.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
 jobs:
-  ci:
+  build:
+    name: Lint, unit tests, build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      playwright-version: ${{ steps.playwright-version.outputs.version }}
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
+      # The e2e job's container tag is derived from this, so the image can never drift from
+      # the installed @playwright/test client.
+      - name: Resolve Playwright version from the lockfile
+        id: playwright-version
+        run: |
+          version="$(jq -er '.packages["node_modules/@playwright/test"].version' package-lock.json)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "@playwright/test $version -> mcr.microsoft.com/playwright:v$version-noble"
+
       - name: Lint
         run: npm run lint
 
-      - name: Test
+      - name: Unit tests
         run: npm run test
 
+      # `tsc -b` builds every project referenced from tsconfig.json (app, node, e2e), so this
+      # also type-checks e2e/ and playwright.config.ts before the e2e job starts.
       - name: Build
         run: npm run build
+
+      # Handed to the e2e job so the app is built exactly once per run.
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 1
+          if-no-files-found: error
+          overwrite: true
+
+  e2e:
+    name: Visual regression
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    container:
+      # Pinned to the exact @playwright/test version from package-lock.json: the browser build,
+      # system libraries and font stack that produced the committed *-linux.png baselines are
+      # therefore identical to the ones the client expects. scripts/update_linux_snapshots.py
+      # resolves the same tag from the same file, so local regeneration matches CI.
+      image: mcr.microsoft.com/playwright:v${{ needs.build.outputs.playwright-version }}-noble
+      # Docker's default 64MB /dev/shm makes Chromium crash mid-test on full-page screenshots.
+      options: --ipc=host
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Deliberately no setup-node: the image ships the Node that Playwright ships against, and
+      # swapping it out only adds download time. In a container job HOME is /github/home, so
+      # `~/.npm` resolves correctly for both npm and actions/cache — do not hardcode /root/.npm.
+      - name: Cache npm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-container-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            npm-container-
+
+      # Needed for the playwright CLI and for `vite preview` (both devDependencies). The
+      # browsers themselves come from the image (PLAYWRIGHT_BROWSERS_PATH=/ms-playwright).
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Toolchain
+        run: node -v && npm -v && npx playwright --version
+
+      - name: Download dist from the build job
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Verify dist
+        run: test -s dist/index.html
+
+      # playwright.config.ts serves this dist with `vite preview` and skips the rebuild on CI.
+      - name: Run visual regression tests
+        run: npm run test:e2e
+
+      # test-results/ holds the *-actual.png / *-diff.png triplets and traces — what you need to
+      # triage a visual diff. See the "Continuous integration" section of README.md.
+      - name: Upload Playwright report and failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+          overwrite: true
