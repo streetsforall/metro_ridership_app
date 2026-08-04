@@ -1,20 +1,32 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, waitFor, act } from '@testing-library/react';
 import App from './App';
 import type { ChartDataset } from 'chart.js';
 import type { CustomChartData } from './@types/chart.types';
 
-// Ridership mock covering multiple scenarios:
-//   Line 807 (K Line): 2019-01 (before default start Jul 2020), 2022-01 (in range), 2026-01 (after default end Jul 2025)
+// Ridership fixture covering multiple scenarios:
+//   Line 807 (K Line): 2019-01 (before default start Jul 2020), 2022-01 (in range), 2026-01 (in range)
 //   Line 806 (L Line): 2022-01 (in range, inserted before K Line so numeric key order != alphabetical)
-vi.mock('./data/ridership.json', () => ({
-  default: [
-    { year: 2019, month: 1, line_name: 807, est_wkday_ridership: 1000, est_sat_ridership: 600, est_sun_ridership: 400 },
-    { year: 2022, month: 1, line_name: 807, est_wkday_ridership: 5000, est_sat_ridership: 3000, est_sun_ridership: 2000 },
-    { year: 2022, month: 1, line_name: 806, est_wkday_ridership: 8000, est_sat_ridership: 5000, est_sun_ridership: 3000 },
-    { year: 2026, month: 1, line_name: 807, est_wkday_ridership: 9000, est_sat_ridership: 7000, est_sun_ridership: 5000 },
-  ],
-}));
+// The app fetches /ridership.json as a columnar { cols, rows } blob (emitted by the
+// ridership-data Vite plugin) and decodes it, so the fetch mock serves that shape.
+const RIDERSHIP_RECORDS = [
+  { year: 2019, month: 1, line_name: 807, est_wkday_ridership: 1000, est_sat_ridership: 600, est_sun_ridership: 400 },
+  { year: 2022, month: 1, line_name: 807, est_wkday_ridership: 5000, est_sat_ridership: 3000, est_sun_ridership: 2000 },
+  { year: 2022, month: 1, line_name: 806, est_wkday_ridership: 8000, est_sat_ridership: 5000, est_sun_ridership: 3000 },
+  { year: 2026, month: 1, line_name: 807, est_wkday_ridership: 9000, est_sat_ridership: 7000, est_sun_ridership: 5000 },
+];
+
+const RIDERSHIP_COLUMNAR = {
+  cols: ['year', 'month', 'line_name', 'est_wkday_ridership', 'est_sat_ridership', 'est_sun_ridership'],
+  rows: RIDERSHIP_RECORDS.map((r) => [
+    r.year,
+    r.month,
+    r.line_name,
+    r.est_wkday_ridership,
+    r.est_sat_ridership,
+    r.est_sun_ridership,
+  ]),
+};
 
 let capturedDatasets: ChartDataset<'line', CustomChartData[]>[] = [];
 
@@ -37,6 +49,18 @@ vi.mock('./components/LineSelector', () => ({ default: () => <div /> }));
 beforeEach(() => {
   capturedDatasets = [];
   window.history.replaceState({}, '', '/');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() =>
+      Promise.resolve({
+        json: () => Promise.resolve(RIDERSHIP_COLUMNAR),
+      } as Response),
+    ),
+  );
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 // Helper: wait for all effects to settle by polling until datasets stabilise

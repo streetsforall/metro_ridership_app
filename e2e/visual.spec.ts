@@ -31,6 +31,14 @@ async function gotoDashboard(page: Page): Promise<void> {
 
   await page.goto('/');
   await expect(page.locator('#expand-toggle')).toBeVisible();
+
+  // Ridership data is fetched at runtime (/ridership.json). Wait for it to land:
+  // line rows only render once per-line metrics are computed from the dataset, and
+  // #lineMap confirms the lazy-loaded OutputArea chunk has mounted. Without this the
+  // screenshot can capture the loading state instead of the populated dashboard.
+  await expect(page.locator('td[data-qa^="select-"]').first()).toBeVisible();
+  await expect(page.locator('#lineMap')).toBeVisible();
+
   await page.evaluate(async () => {
     await document.fonts.ready;
   });

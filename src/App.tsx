@@ -1,24 +1,52 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { type ChartDataset } from 'chart.js';
 import DateRangeSelector from './components/DateRangeSelector';
 import Footer from './components/Footer';
 import Header from './components/Header';
 import LineSelector from './components/LineSelector';
-import OutputArea from './components/OutputArea';
 import useUserDashboardInput, {
   type UserDashboardInputState,
 } from './hooks/useUserDashboardInput';
 import { getLineColor, getLineNames } from './utils/lines';
+import { decodeRidership, type ColumnarRidership } from './utils/ridershipData';
 import type { CustomChartData } from './@types/chart.types';
 import type {
   ConsolidatedRidership,
   RidershipRecord,
 } from './@types/metrics.types';
-import ridershipRecords from './data/ridership.json';
+
+/**
+ * OutputArea pulls in Chart.js and MapLibre GL. Lazy-loading it keeps MapLibre (the
+ * single largest dependency) out of the entry chunk, so the header and line selector
+ * can paint before the chart/map code downloads.
+ */
+const OutputArea = lazy(() => import('./components/OutputArea'));
 
 function App() {
   const [isLineSelectorExpanded, setIsLineSelectorExpanded] =
     useState<boolean>(false);
+
+  /**
+   * Ridership records are fetched at runtime from /ridership.json — a minified
+   * columnar blob emitted by the ridership-data Vite plugin — instead of being
+   * bundled into the JS. That keeps ~6.6 MB of data out of the entry chunk's parse
+   * path. `null` until the fetch resolves.
+   */
+  const [ridershipRecords, setRidershipRecords] = useState<
+    RidershipRecord[] | null
+  >(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/ridership.json', { signal: controller.signal })
+      .then((res) => res.json() as Promise<ColumnarRidership>)
+      .then((data) => setRidershipRecords(decodeRidership(data)))
+      .catch((err) => {
+        if (!controller.signal.aborted)
+          console.error('Failed to load ridership data', err);
+      });
+    return () => controller.abort();
+  }, []);
 
   const userDashboardInputState: UserDashboardInputState =
     useUserDashboardInput();
@@ -36,39 +64,44 @@ function App() {
     isAggregateVisible,
   } = userDashboardInputState;
 
+  const isLoading = ridershipRecords === null;
+
   /**
    * Computes chartDatasets and ridershipByLine together in a single pass over
    * ridershipRecords since both are derived from the same filtered view of the data.
+   * Until the data loads (`ridershipRecords` is null) this yields empty results.
    */
   const { chartDatasets, ridershipByLine } = useMemo(() => {
+    const consolidatedRidership: ConsolidatedRidership = {};
+
     /**
      * Group raw records by line ID, skipping any outside the selected date window.
      * new Date(year, month) treats month as 0-based, but the data stores it as
      * 1-based, so the comparison is effectively off by one month —
      * preserved from the original implementation.
      */
-    const consolidatedRidership: ConsolidatedRidership = {};
+    if (ridershipRecords) {
+      for (const record of ridershipRecords) {
+        const metricDate = new Date(record.year, record.month);
+        if (
+          startDate.getTime() >= metricDate.getTime() ||
+          endDate.getTime() <= metricDate.getTime()
+        )
+          continue;
 
-    for (const record of ridershipRecords as RidershipRecord[]) {
-      const metricDate = new Date(record.year, record.month);
-      if (
-        startDate.getTime() >= metricDate.getTime() ||
-        endDate.getTime() <= metricDate.getTime()
-      )
-        continue;
-
-      if (!consolidatedRidership[record.line_name]?.ridershipRecords) {
-        /**
-         * Snapshot selected status on first encounter for this line so the
-         * dataset loop below doesn't need to search lines[] on every record.
-         */
-        consolidatedRidership[record.line_name] = {
-          selected: !!lines.find((l) => l.id === Number(record.line_name))
-            ?.selected,
-          ridershipRecords: [],
-        };
+        if (!consolidatedRidership[record.line_name]?.ridershipRecords) {
+          /**
+           * Snapshot selected status on first encounter for this line so the
+           * dataset loop below doesn't need to search lines[] on every record.
+           */
+          consolidatedRidership[record.line_name] = {
+            selected: !!lines.find((l) => l.id === Number(record.line_name))
+              ?.selected,
+            ridershipRecords: [],
+          };
+        }
+        consolidatedRidership[record.line_name].ridershipRecords.push(record);
       }
-      consolidatedRidership[record.line_name].ridershipRecords.push(record);
     }
 
     /**
@@ -113,7 +146,7 @@ function App() {
     }
 
     return { chartDatasets: datasets, ridershipByLine: consolidatedRidership };
-  }, [startDate, endDate, lines, dayOfWeek, isAggregateVisible]);
+  }, [startDate, endDate, lines, dayOfWeek, isAggregateVisible, ridershipRecords]);
 
   /**
    * Pull time labels from the first dataset; all datasets share the same x-axis.
@@ -173,11 +206,22 @@ function App() {
          * TODO: Change this from conditional rendering to conditional visibility; that way it doesn't rerender every time
          */}
         {!isLineSelectorExpanded && (
-          <OutputArea
-            chartDatasets={chartDatasets}
-            months={monthList}
-            lines={lines}
-          />
+          <Suspense
+            fallback={
+              <div className="flex flex-col gap-4 lg:min-h-[50vh]">
+                <div className="pane flex-1 flex items-center justify-center text-sm text-stone-400">
+                  <p>Loading…</p>
+                </div>
+              </div>
+            }
+          >
+            <OutputArea
+              chartDatasets={chartDatasets}
+              months={monthList}
+              lines={lines}
+              isLoading={isLoading}
+            />
+          </Suspense>
         )}
       </div>
 

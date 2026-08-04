@@ -236,7 +236,10 @@ def main() -> None:
     all_features = rail_features + bus_features  # merge rail and bus into one list
     geojson = {"type": "FeatureCollection", "features": all_features}  # GeoJSON FeatureCollection envelope
 
-    OUT_PATH.write_text(json.dumps(geojson, indent=2), encoding="utf-8")
+    # Minified (compact separators, no indent): this file is ~6 MB and is fetched by
+    # the app at runtime, so whitespace is pure overhead. json.load consumers are
+    # unaffected by the formatting.
+    OUT_PATH.write_text(json.dumps(geojson, separators=(",", ":")), encoding="utf-8")
     print(f"Written to {OUT_PATH}")
     print(f"Total features: {len(all_features)}")
 

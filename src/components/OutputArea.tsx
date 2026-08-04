@@ -22,6 +22,8 @@ interface OutputAreaProps {
   chartDatasets: ChartDataset<'line', CustomChartData[]>[];
   months: string[];
   lines: Line[];
+  /** True while the ridership dataset is still being fetched. */
+  isLoading?: boolean;
 }
 
 const hoverCrosshairPlugin: Plugin<'line'> = {
@@ -58,6 +60,7 @@ export default function OutputArea({
   chartDatasets,
   months,
   lines,
+  isLoading = false,
 }: OutputAreaProps) {
   ChartJS.defaults.font.family = 'Overpass Mono Variable';
   ChartJS.defaults.color = colors.stone['700'];
@@ -130,7 +133,7 @@ export default function OutputArea({
       ) : (
         /* Chart pane */
         <div className="pane flex-1 flex items-center justify-center text-sm text-stone-400">
-          <p>Please select a Metro line.</p>
+          <p>{isLoading ? 'Loading ridership data…' : 'Please select a Metro line.'}</p>
         </div>
       )}
 
