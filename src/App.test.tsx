@@ -7,13 +7,23 @@ import type { CustomChartData } from './@types/chart.types';
 // Ridership fixture covering multiple scenarios:
 //   Line 807 (K Line): 2019-01 (before default start Jul 2020), 2022-01 (in range), 2026-01 (in range)
 //   Line 806 (L Line): 2022-01 (in range, inserted before K Line so numeric key order != alphabetical)
+//   Line 804 (E Line): four months spanning 2020-08 → 2026-01 (long series)
+//   Line 805 (D Line): 2025-07 and 2026-01 only (short series that starts mid-window).
+//     D sorts before E alphabetically, so the short series is the *first* dataset —
+//     the shape that used to scramble the x-axis.
 // The app fetches /ridership.json as a columnar { cols, rows } blob (emitted by the
 // ridership-data Vite plugin) and decodes it, so the fetch mock serves that shape.
 const RIDERSHIP_RECORDS = [
   { year: 2019, month: 1, line_name: 807, est_wkday_ridership: 1000, est_sat_ridership: 600, est_sun_ridership: 400 },
+  { year: 2020, month: 8, line_name: 804, est_wkday_ridership: 4000, est_sat_ridership: 2000, est_sun_ridership: 1000 },
   { year: 2022, month: 1, line_name: 807, est_wkday_ridership: 5000, est_sat_ridership: 3000, est_sun_ridership: 2000 },
   { year: 2022, month: 1, line_name: 806, est_wkday_ridership: 8000, est_sat_ridership: 5000, est_sun_ridership: 3000 },
+  { year: 2022, month: 1, line_name: 804, est_wkday_ridership: 4400, est_sat_ridership: 2200, est_sun_ridership: 1100 },
+  { year: 2025, month: 7, line_name: 804, est_wkday_ridership: 4800, est_sat_ridership: 2400, est_sun_ridership: 1200 },
+  { year: 2025, month: 7, line_name: 805, est_wkday_ridership: 700, est_sat_ridership: 350, est_sun_ridership: 175 },
   { year: 2026, month: 1, line_name: 807, est_wkday_ridership: 9000, est_sat_ridership: 7000, est_sun_ridership: 5000 },
+  { year: 2026, month: 1, line_name: 804, est_wkday_ridership: 5200, est_sat_ridership: 2600, est_sun_ridership: 1300 },
+  { year: 2026, month: 1, line_name: 805, est_wkday_ridership: 900, est_sat_ridership: 450, est_sun_ridership: 225 },
 ];
 
 const RIDERSHIP_COLUMNAR = {
@@ -29,14 +39,18 @@ const RIDERSHIP_COLUMNAR = {
 };
 
 let capturedDatasets: ChartDataset<'line', CustomChartData[]>[] = [];
+let capturedMonths: string[] = [];
 
 vi.mock('./components/OutputArea', () => ({
   default: ({
     chartDatasets,
+    months,
   }: {
     chartDatasets: ChartDataset<'line', CustomChartData[]>[];
+    months: string[];
   }) => {
     capturedDatasets = chartDatasets;
+    capturedMonths = months;
     return <div data-testid="output-area" />;
   },
 }));
@@ -48,6 +62,7 @@ vi.mock('./components/LineSelector', () => ({ default: () => <div /> }));
 
 beforeEach(() => {
   capturedDatasets = [];
+  capturedMonths = [];
   window.history.replaceState({}, '', '/');
   vi.stubGlobal(
     'fetch',
@@ -277,7 +292,9 @@ describe('App - aggregate dataset', () => {
     expect(aggregate).toBeDefined();
 
     // 2022-01: K weekday = 5000, L weekday = 8000 → aggregate = 13000
-    expect(aggregate!.data[0].stat).toBe(kLine!.data[0].stat + lLine!.data[0].stat);
+    expect(aggregate!.data[0].stat).toBe(
+      kLine!.data[0].stat! + lLine!.data[0].stat!,
+    );
     expect(aggregate!.data[0].stat).toBe(13000);
   });
 
@@ -290,6 +307,77 @@ describe('App - aggregate dataset', () => {
 
     const lastLabel = capturedDatasets[capturedDatasets.length - 1].label;
     expect(lastLabel).toBe('Aggregate');
+  });
+});
+
+describe('App - shared month axis across lines of differing coverage', () => {
+  // Regression: the axis used to be taken from chartDatasets[0] alone. D Line sorts
+  // first and covers far fewer months than E Line, so the axis became D Line's months
+  // and Chart.js appended E Line's remaining months to the *end* — producing an
+  // x-axis that jumped from 2026 back to 2020 and a stroke drawn across the plot.
+  const bothRailLines = '?lines=804,805&start=2020-01&end=2027-01';
+
+  it('spans the union of both lines months in chronological order', async () => {
+    window.history.replaceState({}, '', bothRailLines);
+
+    render(<App />);
+
+    await waitForDatasets(2);
+
+    expect(capturedMonths).toEqual(['2020 8', '2022 1', '2025 7', '2026 1']);
+  });
+
+  it('gives every dataset the same time sequence as the axis', async () => {
+    window.history.replaceState({}, '', bothRailLines);
+
+    render(<App />);
+
+    await waitForDatasets(2);
+
+    for (const dataset of capturedDatasets)
+      expect(dataset.data.map((d) => d.time)).toEqual(capturedMonths);
+  });
+
+  it('nulls the months the short line does not cover', async () => {
+    window.history.replaceState({}, '', bothRailLines);
+
+    render(<App />);
+
+    await waitForDatasets(2);
+
+    const dLine = capturedDatasets.find((ds) => ds.label === 'D Line');
+    // D Line reports only 2025-07 and 2026-01; the earlier months are gaps, not
+    // points shifted onto the front of the axis.
+    expect(dLine?.data.map((d) => d.stat)).toEqual([null, null, 700, 900]);
+  });
+
+  it('keeps the long line aligned to its own months', async () => {
+    window.history.replaceState({}, '', bothRailLines);
+
+    render(<App />);
+
+    await waitForDatasets(2);
+
+    const eLine = capturedDatasets.find((ds) => ds.label === 'E Line');
+    expect(eLine?.data.map((d) => d.stat)).toEqual([4000, 4400, 4800, 5200]);
+  });
+
+  it('sums the aggregate by month rather than by array index', async () => {
+    window.history.replaceState({}, '', `${bothRailLines}&aggregate=1`);
+
+    render(<App />);
+
+    await waitForDatasets(3);
+
+    const aggregate = capturedDatasets.find((ds) => ds.label === 'Aggregate');
+    // Months only E Line reports total E Line alone — a line with no record must
+    // not be counted as a zero and drag the total down.
+    expect(aggregate?.data.map((d) => d.stat)).toEqual([
+      4000,
+      4400,
+      4800 + 700,
+      5200 + 900,
+    ]);
   });
 });
 
