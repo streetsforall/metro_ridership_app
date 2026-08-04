@@ -8,6 +8,8 @@ export default defineConfig({
     globals: true,
     // Playwright specs under e2e/ use the @playwright/test runner, not Vitest — exclude them
     // (Vitest's default glob otherwise picks up *.spec.ts).
-    exclude: [...configDefaults.exclude, 'e2e/**'],
+    // `.claude/worktrees` holds throwaway git worktrees created by Claude Code, each a full copy
+    // of the source; without this the whole suite is collected once per worktree.
+    exclude: [...configDefaults.exclude, 'e2e/**', '.claude/**'],
   },
 });

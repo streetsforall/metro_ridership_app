@@ -13,7 +13,7 @@
     "test:e2e:ui": "playwright test --ui",
     "lint": "eslint .",
     "preview": "vite preview",
-    "fetch-lines": "node scripts/fetch-metro-lines.mjs"
+    "fetch-lines": "python scripts/fetch_metro_lines.py"
   },
   "dependencies": {
     "@fontsource-variable/overpass-mono": "^5.2.5",
@@ -38,7 +38,6 @@
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react-swc": "^3.9.0",
-    "adm-zip": "^0.6.0",
     "eslint": "^9.25.0",
     "eslint-plugin-react-dom": "^1.52.2",
     "eslint-plugin-react-hooks": "^5.2.0",

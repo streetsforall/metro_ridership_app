@@ -34,24 +34,28 @@ Type definitions for these shapes live in [src/@types/metrics.types.ts](src/@typ
 ### Important conventions & quirks
 
 - **`DayOfWeek` is the JSON column name**, not a label — `daysOfWeek` maps `Weekday/Saturday/Sunday` to `est_wkday_ridership`/`est_sat_ridership`/`est_sun_ridership`. Selecting a day-of-week literally swaps which field is read.
-- **All UI state syncs to URL query params** (`start`, `end`, `day`, `lines`, `q`, `buses`, `trains`, `aggregate`) so views are shareable. State is initialized from the URL on mount and written back via `history.replaceState` in a `useEffect`. See [src/utils/queryParams.ts](src/utils/queryParams.ts). When adding new dashboard state, wire it through both the init readers and the sync effect.
+- **All UI state syncs to URL query params** (`start`, `end`, `day`, `lines`, `q`, `buses`, `trains`, `aggregate`) so views are shareable. The canonical set lives in [src/hooks/useUserDashboardInput.ts](src/hooks/useUserDashboardInput.ts) — read from the URL on mount (~L114-123) and written back via `history.replaceState` in a `useEffect` (~L145-155); [src/utils/queryParams.ts](src/utils/queryParams.ts) only holds the parse/format helpers. When adding new dashboard state, wire it through both the init readers and the sync effect.
 - **`JSON.stringify(...)` is intentionally used in several dependency arrays** (`lines`, `ridershipByLine`) because those objects get a new reference every render; don't "fix" these to raw object deps.
 - **Month indexing is off by one on purpose** in App.tsx's date filter (`new Date(year, month)` treats month as 0-based while data is 1-based) — preserved from the original implementation; don't silently change it.
 - **Line colors**: official rail/BRT lines have hardcoded brand colors in `definedLines` ([src/utils/lines.ts](src/utils/lines.ts)); all other bus lines get a deterministic golden-angle HSL hue so the chart and map agree.
 
 ## Map
 
-[src/components/Map.tsx](src/components/Map.tsx) uses MapLibre GL, loading route geometry from `/public/metro_lines.geojson`. It renders two layers: `lines-all` (dimmed) and `lines-selected` (brand colors, filtered by selected line IDs via `setFilter`). Base tiles come from MapTiler if `VITE_MAPTILER_KEY` is set, otherwise OpenFreeMap. The map instance lives in refs (initialized once); selection changes only update the layer filter, not the map.
+[src/components/Map.tsx](src/components/Map.tsx) uses MapLibre GL, loading route geometry from `public/metro_lines.geojson` (served at `/metro_lines.geojson`). It renders two layers: `lines-all` (dimmed) and `lines-selected` (brand colors, filtered by selected line IDs via `setFilter`). Base tiles come from MapTiler if `VITE_MAPTILER_KEY` is set, otherwise OpenFreeMap. The map instance lives in refs (initialized once); selection changes only update the layer filter, not the map.
 
 ## Data processing scripts (`scripts/`)
 
 Python scripts maintain the JSON the app consumes. See [scripts/README.md](scripts/README.md). Setup: `pip install -r scripts/requirements.txt`; tests: `pytest scripts/`.
 
-- `process_ridership.py <csv.gz>` — merges a raw LA Metro CSV into `src/data/ridership.json` and appends new lines to `metro_line_metadata_current.json`. New data wins on conflicts; old data backfills.
+- `update_ridership.py` — **the day-to-day entry point.** Scans `data/raw/`, works out which month/line records are missing, and appends only those (append-only unless `--overwrite`). Prepends an entry to `DATA_RELEASE_NOTES.md` unless `--no-release-notes`. Supports `--dry-run`.
+- `process_ridership.py <xlsx|zip|csv.gz>` — the merge engine `update_ridership.py` calls; use it directly to force-ingest one specific file. Merges into `src/data/ridership.json` and appends new lines to `metro_line_metadata_current.json`. New data wins on conflicts; old data backfills.
+- `convert_excel_ridership.py` — helper invoked by `process_ridership.py` to parse the `.xlsx` files records requests return into the legacy CSV schema. Not run directly.
 - `fetch_metro_lines.py` (also `npm run fetch-lines`) — downloads GTFS feeds → `public/metro_lines.geojson`. Run before the script tests, which use that file as a fixture.
 - `compute_line_distances.py` — `metro_lines.geojson` → `src/data/line_distances.json` (one-way miles; only outbound leg for rail).
 
-Store raw CSVs compressed (`.csv.gz`) in `data/raw/` — uncompressed CSVs are gitignored. `notebooks/` holds exploration notebooks (`metro_data_ridership_update.ipynb`).
+Store raw files compressed in `data/raw/` — `.zip` for Excel, `.csv.gz` for legacy CSVs; uncompressed `.xlsx`/`.csv` are gitignored. `notebooks/` holds exploration notebooks (`metro_data_ridership_update.ipynb`).
+
+Note `DATA_RELEASE_NOTES.md` (data updates) and `RELEASE_NOTES.md` (app releases) are different files.
 
 ## Styling
 

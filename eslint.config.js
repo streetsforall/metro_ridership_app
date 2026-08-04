@@ -7,7 +7,9 @@ import reactX from 'eslint-plugin-react-x';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'next-env.d.ts'] },
+  // `.claude/worktrees` holds throwaway git worktrees created by Claude Code. They contain full
+  // copies of the source that no tsconfig covers, so linting them is both wrong and very slow.
+  { ignores: ['dist', '.claude'] },
   {
     extends: [
       js.configs.recommended,
