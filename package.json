@@ -8,9 +8,13 @@
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots",
+    "test:e2e:update:linux": "python scripts/update_linux_snapshots.py",
+    "test:e2e:ui": "playwright test --ui",
     "lint": "eslint .",
     "preview": "vite preview",
-    "fetch-lines": "node scripts/fetch-metro-lines.mjs"
+    "fetch-lines": "python scripts/fetch_metro_lines.py"
   },
   "dependencies": {
     "@fontsource-variable/overpass-mono": "^5.2.5",
@@ -26,8 +30,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@playwright/test": "^1.62.1",
     "@testing-library/react": "^16.3.2",
-    "@types/adm-zip": "^0.5.8",
     "@types/geojson": "^7946.0.16",
     "@types/lodash": "^4.17.7",
     "@types/node": "^20",
@@ -35,7 +39,6 @@
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react-swc": "^3.9.0",
-    "adm-zip": "^0.5.17",
     "eslint": "^9.25.0",
     "eslint-plugin-react-dom": "^1.52.2",
     "eslint-plugin-react-hooks": "^5.2.0",
@@ -48,7 +51,7 @@
     "tailwindcss": "^3.4.1",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.30.1",
-    "vite": "6.3.5",
+    "vite": "^6.4.3",
     "vitest": "^4.1.8"
   }
 }
