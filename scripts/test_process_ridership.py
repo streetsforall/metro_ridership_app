@@ -13,13 +13,16 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+import convert_excel_ridership as ce
 import process_ridership as pr
 from process_ridership import (
     compute_ridership,
     fill_missing_months,
+    load_raw_input,
     merge_line_metadata,
     merge_ridership,
 )
+from test_convert_excel_ridership import _make_test_zip, _make_xlsx_bytes
 
 
 # ---------------------------------------------------------------------------
@@ -40,6 +43,65 @@ def make_ridership_json(rows: list[dict], path: Path) -> None:
 
 def make_metadata_json(rows: list[dict], path: Path) -> None:
     path.write_text(json.dumps(rows, indent=2), encoding="utf-8")
+
+
+_BUS_ROW = {
+    "STOP_NAME": "Stop A", "LINE": 90, "DIRECTION": "IB",
+    "WD_ONS": 100, "WD_OFFS": 90, "WD_ACT": 190,
+    "SA_ONS": 60, "SA_OFFS": 55, "SA_ACT": 115,
+    "SU_ONS": 40, "SU_OFFS": 35, "SU_ACT": 75,
+}
+_RAIL_ROW = {
+    "LINE": 807, "ROUTE": 807, "STATION_ORDER": "Station 1",
+    "WD_ONS": 500, "WD_OFFS": 490, "WD_ACT": 990,
+    "SA_ONS": 250, "SA_OFFS": 240, "SA_ACT": 490,
+    "SU_ONS": 200, "SU_OFFS": 190, "SU_ACT": 390,
+}
+
+# The long CSV columns load_raw_csv/load_raw_input normalize to (lowercased).
+_LONG_COLS = {
+    "year", "month", "line", "daytype", "riders",
+    "shakeup", "provider", "mode", "days",
+}
+
+
+# ---------------------------------------------------------------------------
+# load_raw_input (format dispatch)
+# ---------------------------------------------------------------------------
+
+class TestLoadRawInput:
+    def test_csv_uses_load_raw_csv(self, tmp_path):
+        csv = tmp_path / "riders.csv"
+        csv.write_text(
+            "Year,Month,Line,DayType,Riders,Shakeup,Provider,Mode,Days\n"
+            "2026,4,90,DX,6228,S1,DO,Bus,1\n",
+            encoding="utf-8",
+        )
+        df = load_raw_input(str(csv))
+        assert _LONG_COLS <= set(df.columns)
+        assert df["line"].dtype.kind == "i"
+
+    def test_xlsx_dispatches_to_convert_file(self, tmp_path):
+        xlsx = tmp_path / "04-2026-Bus.xlsx"
+        xlsx.write_bytes(_make_xlsx_bytes([_BUS_ROW], ce.BUS_COLS))
+        df = load_raw_input(str(xlsx))
+        # Same normalized schema as the CSV path
+        assert _LONG_COLS <= set(df.columns)
+        assert df["line"].dtype.kind == "i"
+        assert set(df["daytype"]) == {"DX", "SA", "SU"}
+        assert (df["month"] == 4).all() and (df["year"] == 2026).all()
+
+    def test_zip_dispatches_to_convert_zip(self, tmp_path):
+        zip_path = tmp_path / "2026-04_2026-05.zip"
+        zip_path.write_bytes(_make_test_zip({
+            "04-2026-Bus.xlsx": _make_xlsx_bytes([_BUS_ROW], ce.BUS_COLS),
+            "05-2026-Rail.xlsx": _make_xlsx_bytes([_RAIL_ROW], ce.RAIL_COLS),
+        }))
+        df = load_raw_input(str(zip_path))
+        assert _LONG_COLS <= set(df.columns)
+        assert df["line"].dtype.kind == "i"
+        assert set(df["mode"]) == {"Bus", "Rail"}
+        assert set(df["month"]) == {4, 5}
 
 
 # ---------------------------------------------------------------------------
@@ -241,6 +303,24 @@ class TestMergeRidership:
         final, current = merge_ridership(new_df)
 
         assert final.equals(current)
+
+    def test_append_only_preserves_existing_on_conflict(self, tmp_path, monkeypatch):
+        """prefer_new=False: an existing key keeps its old value; only absent
+        keys are added."""
+        make_ridership_json([self._rec(month=1, est_wkday_ridership=999.0)], tmp_path / "r.json")
+        monkeypatch.setattr(pr, "RIDERSHIP_PATH", tmp_path / "r.json")
+
+        new_df = pd.DataFrame([
+            self._rec(month=1, est_wkday_ridership=1234.0),  # conflict -> ignored
+            self._rec(month=2, est_wkday_ridership=555.0),   # new -> added
+        ])
+        final, current = merge_ridership(new_df, prefer_new=False)
+
+        jan = final[(final["month"] == 1)].iloc[0]
+        feb = final[(final["month"] == 2)].iloc[0]
+        assert jan["est_wkday_ridership"] == 999.0  # existing preserved
+        assert feb["est_wkday_ridership"] == 555.0  # new appended
+        assert len(final) == 2 and len(current) == 1
 
 
 # ---------------------------------------------------------------------------

@@ -378,16 +378,45 @@ class TestConvertZip:
         result = convert_zip(zip_path)
         assert len(result) > 0  # only xlsx processed
 
-    def test_invalid_zip_name_raises(self, tmp_path):
+    def test_typed_inner_file_with_unparseable_zip_name_raises(self, tmp_path):
+        """A YYYY-MM.xlsx inner file needs its mode from the zip name; an
+        unparseable zip name must raise rather than guess."""
+        rail_xlsx = _make_xlsx_bytes(self._rail_rows(), ce.RAIL_COLS)
         zip_path = tmp_path / "mystery.zip"
-        zip_path.write_bytes(_make_test_zip({}))
-        with pytest.raises(ValueError, match="Expected format"):
+        zip_path.write_bytes(_make_test_zip({"2025-07.xlsx": rail_xlsx}))
+        with pytest.raises(ValueError, match="Cannot parse mode"):
             convert_zip(zip_path)
 
     def test_empty_zip_raises(self, tmp_path):
         zip_path = tmp_path / "Bus 2025.zip"
         zip_path.write_bytes(_make_test_zip({"ignored.txt": b""}))
-        with pytest.raises(ValueError, match="No YYYY-MM.xlsx files found"):
+        with pytest.raises(ValueError, match="No .*files found"):
+            convert_zip(zip_path)
+
+    def test_date_range_zip_mixed_modes_and_months(self, tmp_path):
+        """A date-range zip named YYYY-MM_YYYY-MM.zip whose inner files are
+        MM-YYYY-{Bus|Rail}.xlsx: mode/month/year come from each inner filename."""
+        bus_xlsx = _make_xlsx_bytes(self._bus_rows(), ce.BUS_COLS)
+        rail_xlsx = _make_xlsx_bytes(self._rail_rows(), ce.RAIL_COLS)
+        zip_bytes = _make_test_zip({
+            "04-2026-Bus.xlsx": bus_xlsx,
+            "04-2026-Rail.xlsx": rail_xlsx,
+            "05-2026-Bus.xlsx": bus_xlsx,
+        })
+        zip_path = tmp_path / "2026-04_2026-05.zip"
+        zip_path.write_bytes(zip_bytes)
+
+        result = convert_zip(zip_path)
+        assert set(result["Mode"].unique()) == {"Bus", "Rail"}
+        assert set(result["Month"].unique()) == {4, 5}
+        assert all(result["Year"] == 2026)
+        # Bus line 90 and Rail line 807 both present
+        assert {90, 807} <= set(result["Line"].unique())
+
+    def test_date_range_zip_no_matching_files_raises(self, tmp_path):
+        zip_path = tmp_path / "2026-04_2026-05.zip"
+        zip_path.write_bytes(_make_test_zip({"notes.txt": b"nothing here"}))
+        with pytest.raises(ValueError, match="No .*files found"):
             convert_zip(zip_path)
 
 

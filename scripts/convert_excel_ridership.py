@@ -9,6 +9,9 @@ Usage:
     # Typed zip archives ({Bus|Rail} YYYY.zip format, inner files YYYY-MM.xlsx)
     python scripts/convert_excel_ridership.py "data/raw/Bus 2025.zip" "data/raw/Rail 2025.zip"
 
+    # Date-range zip archives (any name, inner files MM-YYYY-{Bus|Rail}.xlsx)
+    python scripts/convert_excel_ridership.py data/raw/2026-04_2026-05.zip
+
     # All xlsx files in a directory
     python scripts/convert_excel_ridership.py data/raw/
 
@@ -142,34 +145,51 @@ def convert_file(path: Path) -> pd.DataFrame:
 
 
 def convert_zip(zip_path: Path) -> pd.DataFrame:
-    """Convert all xlsx files inside a typed zip like 'Bus 2025.zip' or 'Rail 2025.zip'.
+    """Convert all xlsx files inside a zip archive. Two conventions are supported:
 
-    Zip name must match: {Bus|Rail} YYYY.zip
-    Inner xlsx names must match: YYYY-MM.xlsx
+    1. Typed zip — '{Bus|Rail} YYYY.zip' with inner files named 'YYYY-MM.xlsx'.
+       Mode comes from the zip name; each inner file provides year/month.
+    2. Date-range/mixed zip — any zip name (e.g. 'YYYY-MM_YYYY-MM.zip') with inner
+       files named 'MM-YYYY-{Bus|Rail}.xlsx'. Each inner file self-describes its
+       mode/month/year, so the zip name is irrelevant.
     """
-    m = ZIP_FILENAME_RE.match(zip_path.name)
-    if not m:
-        raise ValueError(
-            f"Cannot parse mode from '{zip_path.name}'. "
-            "Expected format: 'Bus YYYY.zip' or 'Rail YYYY.zip'"
-        )
-    mode = m.group(1).capitalize()
-    cols = BUS_COLS if mode == "Bus" else RAIL_COLS
+    typed_mode = None
+    zm = ZIP_FILENAME_RE.match(zip_path.name)
+    if zm:
+        typed_mode = zm.group(1).capitalize()
 
     frames = []
     with zipfile.ZipFile(zip_path) as zf:
         for entry in sorted(zf.infolist(), key=lambda e: e.filename):
             basename = Path(entry.filename).name
-            fm = INNER_FILENAME_RE.match(basename)
-            if not fm:
-                continue
-            year, month = int(fm.group(1)), int(fm.group(2))
-            data = zf.read(entry.filename)
-            df = _read_excel_bytes(data, basename, cols)
+
+            # Date-range/mixed zip: inner file names itself MM-YYYY-{Bus|Rail}.xlsx
+            fm = FILENAME_RE.match(basename)
+            if fm:
+                month, year = int(fm.group(1)), int(fm.group(2))
+                mode = fm.group(3).capitalize()
+            else:
+                # Typed zip: inner file is YYYY-MM.xlsx, mode from the zip name
+                im = INNER_FILENAME_RE.match(basename)
+                if not im:
+                    continue
+                if typed_mode is None:
+                    raise ValueError(
+                        f"Cannot parse mode from '{zip_path.name}'. Zips with "
+                        "'YYYY-MM.xlsx' inner files must be named 'Bus YYYY.zip' "
+                        "or 'Rail YYYY.zip'."
+                    )
+                year, month, mode = int(im.group(1)), int(im.group(2)), typed_mode
+
+            cols = BUS_COLS if mode == "Bus" else RAIL_COLS
+            df = _read_excel_bytes(zf.read(entry.filename), basename, cols)
             frames.append(aggregate_to_line_ridership(df, year, month, mode))
 
     if not frames:
-        raise ValueError(f"No YYYY-MM.xlsx files found inside {zip_path.name}")
+        raise ValueError(
+            f"No 'MM-YYYY-{{Bus|Rail}}.xlsx' or 'YYYY-MM.xlsx' files found "
+            f"inside {zip_path.name}"
+        )
 
     return pd.concat(frames, ignore_index=True)
 
