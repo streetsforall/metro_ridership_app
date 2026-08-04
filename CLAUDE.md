@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Client-side React + Vite app (Streets for All Data/Dev Team) for visualizing LA Metro bus/rail ridership data. All data ships as static JSON bundled into the build — there is no backend. The app may move to full-stack if data processing gets too heavy.
+Client-side React + Vite app (Streets for All Data/Dev Team) for visualizing LA Metro bus/rail ridership data. There is no backend. Small metadata JSON (line metadata, distances) is bundled into the build; the large ridership dataset is served as a separate columnar asset **fetched at runtime** (see the `ridership-data` Vite plugin) so it stays out of the JS bundle. The app may move to full-stack if data processing gets too heavy.
 
 ## Commands
 
@@ -44,7 +44,7 @@ Non-obvious constraints:
 The app transforms flat ridership records into per-line consolidated structures, then derives summary metrics. Understanding this pipeline is key:
 
 1. **Lines are built from metadata** — `createLinesData()` in [src/hooks/useUserDashboardInput.ts](src/hooks/useUserDashboardInput.ts) reads `metro_line_metadata_current.json`, attaches display names/colors (via `getLineNames`/`getLineColor`), distance from `line_distances.json`, and sorts with `lineNameSortFunction` (lettered lines first, then numbered).
-2. **Records are consolidated by line** — in [src/App.tsx](src/App.tsx) a single `useMemo` filters `ridership.json` to the selected date window and groups records by `line_name` into `ConsolidatedRidership`, while building Chart.js datasets in the same pass.
+2. **Records are consolidated by line** — [src/App.tsx](src/App.tsx) fetches `/ridership.json` at runtime (a columnar blob decoded by [src/utils/ridershipData.ts](src/utils/ridershipData.ts)), then a single `useMemo` filters it to the selected date window and groups records by `line_name` into `ConsolidatedRidership`, while building Chart.js datasets in the same pass. The memo yields empty results until the fetch resolves.
 3. **Summary metrics are attached back to lines** — `updateLinesWithLineMetrics()` (in the hook) runs from a `useEffect` in App and computes average/change/start/end ridership and riders-per-mile per line using helpers in [src/utils/calc.ts](src/utils/calc.ts). The `LineSelector`/`SummaryData` components read these.
 
 Type definitions for these shapes live in [src/@types/metrics.types.ts](src/@types/metrics.types.ts) (`RidershipRecord`, `ConsolidatedRidership`) and [src/@types/lines.types.ts](src/@types/lines.types.ts) (`LineJson` from disk vs. enriched `Line`).
@@ -54,6 +54,7 @@ Type definitions for these shapes live in [src/@types/metrics.types.ts](src/@typ
 - **`DayOfWeek` is the JSON column name**, not a label — `daysOfWeek` maps `Weekday/Saturday/Sunday` to `est_wkday_ridership`/`est_sat_ridership`/`est_sun_ridership`. Selecting a day-of-week literally swaps which field is read.
 - **All UI state syncs to URL query params** (`start`, `end`, `day`, `lines`, `q`, `buses`, `trains`, `aggregate`) so views are shareable. The canonical set lives in [src/hooks/useUserDashboardInput.ts](src/hooks/useUserDashboardInput.ts) — read from the URL on mount (~L114-123) and written back via `history.replaceState` in a `useEffect` (~L145-155); [src/utils/queryParams.ts](src/utils/queryParams.ts) only holds the parse/format helpers. When adding new dashboard state, wire it through both the init readers and the sync effect.
 - **`JSON.stringify(...)` is intentionally used in several dependency arrays** (`lines`, `ridershipByLine`) because those objects get a new reference every render; don't "fix" these to raw object deps.
+- **The ridership dataset is fetched, not bundled** — `src/data/ridership.json` remains the canonical record-format source (the Python pipeline reads/writes it), but the app fetches `/ridership.json` at runtime as a minified columnar `{cols,rows}` blob emitted by the `ridership-data` Vite plugin ([vite/ridership-data-plugin.ts](vite/ridership-data-plugin.ts)) and decodes it via [src/utils/ridershipData.ts](src/utils/ridershipData.ts). The selectable date bounds come from the plugin's `virtual:ridership-bounds` module, so the full dataset never enters the JS bundle. The plugin is registered in both `vite.config.ts` and `vitest.config.ts`. Run `ANALYZE=1 npm run build` for a bundle treemap at `dist/stats.html`. `OutputArea` (Chart.js + MapLibre GL) is lazy-loaded to keep MapLibre out of the entry chunk.
 - **Month indexing is off by one on purpose** in App.tsx's date filter (`new Date(year, month)` treats month as 0-based while data is 1-based) — preserved from the original implementation; don't silently change it.
 - **Line colors**: official rail/BRT lines have hardcoded brand colors in `definedLines` ([src/utils/lines.ts](src/utils/lines.ts)); all other bus lines get a deterministic golden-angle HSL hue so the chart and map agree.
 

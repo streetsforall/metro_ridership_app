@@ -1,8 +1,11 @@
 import { defineConfig, configDefaults } from 'vitest/config';
 import react from '@vitejs/plugin-react-swc';
+import { ridershipDataPlugin } from './vite/ridership-data-plugin';
 
 export default defineConfig({
-  plugins: [react()],
+  // ridershipDataPlugin resolves `virtual:ridership-bounds` (imported by
+  // src/utils/dataDateRange.ts) so the module tree loads under the test runner.
+  plugins: [react(), ridershipDataPlugin()],
   test: {
     environment: 'jsdom',
     globals: true,
