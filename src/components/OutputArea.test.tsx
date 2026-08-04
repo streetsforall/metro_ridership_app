@@ -319,3 +319,140 @@ describe('context log panel', () => {
     expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
   });
 });
+
+describe('tooltip callbacks', () => {
+  type TitleFn = (items: { label: string }[]) => string;
+  type LabelFn = (item: {
+    dataset: { label?: string };
+    parsed: { y: number | null };
+  }) => string;
+
+  beforeEach(() => {
+    capturedOptions = undefined;
+  });
+
+  const getCallbacks = () => {
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2026 5']}
+        lines={[]}
+        transitEvents={[]}
+      />,
+    );
+    return capturedOptions?.plugins?.tooltip?.callbacks;
+  };
+
+  it('formats the title label "YYYY M" as "Mon YYYY"', () => {
+    const title = getCallbacks()?.title as unknown as TitleFn;
+    expect(title([{ label: '2026 5' }])).toBe('May 2026');
+  });
+
+  it('returns an empty title when there are no items', () => {
+    const title = getCallbacks()?.title as unknown as TitleFn;
+    expect(title([])).toBe('');
+  });
+
+  it('formats the label as "<line>: <comma-grouped ridership>"', () => {
+    const label = getCallbacks()?.label as unknown as LabelFn;
+    expect(label({ dataset: { label: 'A Line' }, parsed: { y: 12345 } })).toBe(
+      'A Line: 12,345',
+    );
+  });
+});
+
+describe('eventMarkers plugin hover', () => {
+  type AfterEvent = (
+    chart: unknown,
+    args: { event: { type: string; x: number }; inChartArea: boolean; changed?: boolean },
+    opts: unknown,
+  ) => void;
+  type AfterDraw = (chart: unknown, args: unknown, opts: unknown) => void;
+
+  const markerEvent: TransitEvent = {
+    id: 'd-line-section-1-extension',
+    date: '2026-05',
+    line_ids: [805],
+    title: 'D Line Section 1 Extension',
+    description: 'Extended westward to three new Westside stations.',
+    category: 'extension',
+  };
+
+  const makeCtx = () => ({
+    save: vi.fn(),
+    restore: vi.fn(),
+    beginPath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    stroke: vi.fn(),
+    setLineDash: vi.fn(),
+    measureText: vi.fn(() => ({ width: 40 })),
+    arcTo: vi.fn(),
+    closePath: vi.fn(),
+    fill: vi.fn(),
+    fillText: vi.fn(),
+    lineWidth: 0,
+    strokeStyle: '',
+    fillStyle: '',
+    font: '',
+    textBaseline: 'alphabetic' as CanvasTextBaseline,
+  });
+
+  const makeChart = (hoveredEventId: string | null = null) => ({
+    $eventMarkers: [] as { xPos: number; event: TransitEvent }[],
+    $hoveredEventId: hoveredEventId,
+    options: { plugins: { eventMarkers: { events: [markerEvent] } } },
+    data: { labels: ['2026 4', '2026 5'] },
+    scales: { x: { getPixelForValue: (i: number) => 50 + i * 50 } },
+    chartArea: { top: 10, bottom: 200, left: 0, right: 300 },
+    ctx: makeCtx(),
+  });
+
+  // Cast the registered plugin so its hooks are called directly on the object
+  // (avoids @typescript-eslint/unbound-method from extracting the methods).
+  type MarkerPlugin = { afterEvent: AfterEvent; afterDraw: AfterDraw };
+  const markerPlugin = () =>
+    ChartJS.registry.getPlugin('eventMarkers') as unknown as MarkerPlugin;
+
+  it('is registered with ChartJS', () => {
+    expect(ChartJS.registry.getPlugin('eventMarkers')).toBeDefined();
+  });
+
+  it('caches marker hitboxes at their x-pixel position after drawing', () => {
+    const chart = makeChart();
+    markerPlugin().afterDraw(chart, {}, {});
+    // label "2026 5" is index 1 → getPixelForValue(1) = 100
+    expect(chart.$eventMarkers).toHaveLength(1);
+    expect(chart.$eventMarkers[0].xPos).toBe(100);
+    expect(chart.$eventMarkers[0].event.id).toBe('d-line-section-1-extension');
+    expect(chart.ctx.stroke).toHaveBeenCalled();
+  });
+
+  it('marks an event hovered when the cursor is near its marker', () => {
+    const chart = makeChart();
+    chart.$eventMarkers = [{ xPos: 100, event: markerEvent }];
+    const args = { event: { type: 'mousemove', x: 103 }, inChartArea: true, changed: false };
+    markerPlugin().afterEvent(chart, args, {});
+    expect(chart.$hoveredEventId).toBe('d-line-section-1-extension');
+    expect(args.changed).toBe(true);
+  });
+
+  it('does not hover when the cursor is far from any marker', () => {
+    const chart = makeChart();
+    chart.$eventMarkers = [{ xPos: 100, event: markerEvent }];
+    const args = { event: { type: 'mousemove', x: 250 }, inChartArea: true, changed: false };
+    markerPlugin().afterEvent(chart, args, {});
+    expect(chart.$hoveredEventId).toBeNull();
+    expect(args.changed).toBe(false);
+  });
+
+  it('draws the tooltip box (title text) for the hovered marker', () => {
+    const chart = makeChart('d-line-section-1-extension');
+    markerPlugin().afterDraw(chart, {}, {});
+    expect(chart.ctx.fillText).toHaveBeenCalledWith(
+      'D Line Section 1 Extension',
+      expect.any(Number),
+      expect.any(Number),
+    );
+  });
+});

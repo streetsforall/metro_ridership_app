@@ -49,13 +49,116 @@ const hoverCrosshairPlugin: Plugin<'line'> = {
   },
 };
 
+interface EventMarkerHitbox {
+  xPos: number;
+  event: TransitEvent;
+}
+
+/** Fields stashed on the chart instance to bridge afterEvent → afterDraw. */
+type ChartWithMarkers = ChartJS<'line'> & {
+  $eventMarkers?: EventMarkerHitbox[];
+  $hoveredEventId?: string | null;
+};
+
+// How close (px) the cursor must be to a marker's vertical line to hover it.
+const MARKER_HIT_RADIUS = 6;
+
+/** Draws an amber-bordered tooltip box for a hovered event marker. */
+function drawEventTooltip(
+  ctx: CanvasRenderingContext2D,
+  hit: EventMarkerHitbox,
+  area: { left: number; right: number; top: number },
+): void {
+  const { event, xPos } = hit;
+  const title = event.title;
+  const subtitle = `${formatEventDate(event.date)} · ${event.category}`;
+
+  const titleFont = '600 12px "Overpass Mono Variable"';
+  const subFont = '11px "Overpass Mono Variable"';
+
+  ctx.save();
+  ctx.font = titleFont;
+  const titleWidth = ctx.measureText(title).width;
+  ctx.font = subFont;
+  const subWidth = ctx.measureText(subtitle).width;
+
+  const padX = 8;
+  const padY = 6;
+  const gap = 4;
+  const titleH = 12;
+  const subH = 11;
+  const boxW = Math.ceil(Math.max(titleWidth, subWidth)) + padX * 2;
+  const boxH = padY * 2 + titleH + gap + subH;
+
+  // Prefer the right of the marker; flip left if it would overflow the plot.
+  let boxX = xPos + 8;
+  if (boxX + boxW > area.right) boxX = xPos - 8 - boxW;
+  boxX = Math.max(area.left, Math.min(boxX, area.right - boxW));
+  const boxY = area.top + 8;
+
+  const r = 4;
+  ctx.beginPath();
+  ctx.moveTo(boxX + r, boxY);
+  ctx.arcTo(boxX + boxW, boxY, boxX + boxW, boxY + boxH, r);
+  ctx.arcTo(boxX + boxW, boxY + boxH, boxX, boxY + boxH, r);
+  ctx.arcTo(boxX, boxY + boxH, boxX, boxY, r);
+  ctx.arcTo(boxX, boxY, boxX + boxW, boxY, r);
+  ctx.closePath();
+  ctx.fillStyle = colors.stone['800'];
+  ctx.strokeStyle = colors.amber['500'];
+  ctx.lineWidth = 1;
+  ctx.setLineDash([]);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.textBaseline = 'top';
+  ctx.font = titleFont;
+  ctx.fillStyle = colors.amber['400'];
+  ctx.fillText(title, boxX + padX, boxY + padY);
+  ctx.font = subFont;
+  ctx.fillStyle = colors.stone['300'];
+  ctx.fillText(subtitle, boxX + padX, boxY + padY + titleH + gap);
+
+  ctx.restore();
+}
+
 const eventMarkersPlugin: Plugin<'line'> = {
   id: 'eventMarkers',
+
+  // Hit-test the cursor against cached marker positions and request a redraw
+  // only when the hovered marker changes.
+  afterEvent(chart, args) {
+    const c = chart as ChartWithMarkers;
+    const markers = c.$eventMarkers ?? [];
+    let hoveredId: string | null = null;
+
+    if (args.event.type === 'mousemove' && args.inChartArea && markers.length) {
+      const x = args.event.x ?? -1;
+      let best = MARKER_HIT_RADIUS;
+      for (const marker of markers) {
+        const dist = Math.abs(marker.xPos - x);
+        if (dist <= best) {
+          best = dist;
+          hoveredId = marker.event.id;
+        }
+      }
+    }
+
+    if (hoveredId !== (c.$hoveredEventId ?? null)) {
+      c.$hoveredEventId = hoveredId;
+      args.changed = true;
+    }
+  },
+
   afterDraw(chart) {
+    const c = chart as ChartWithMarkers;
     const events: TransitEvent[] =
       (chart.options.plugins as Record<string, { events?: TransitEvent[] }>)
         .eventMarkers?.events ?? [];
-    if (!events.length) return;
+    if (!events.length) {
+      c.$eventMarkers = [];
+      return;
+    }
 
     const {
       ctx,
@@ -64,6 +167,8 @@ const eventMarkersPlugin: Plugin<'line'> = {
     } = chart;
     const labels = chart.data.labels as string[];
 
+    // Draw each marker and cache its x-position for hover hit-testing.
+    const hitboxes: EventMarkerHitbox[] = [];
     ctx.save();
     ctx.setLineDash([3, 3]);
     ctx.lineWidth = 1.5;
@@ -76,6 +181,7 @@ const eventMarkersPlugin: Plugin<'line'> = {
       if (idx === -1) return;
 
       const xPos = x.getPixelForValue(idx);
+      hitboxes.push({ xPos, event });
       ctx.beginPath();
       ctx.moveTo(xPos, top);
       ctx.lineTo(xPos, bottom);
@@ -83,6 +189,19 @@ const eventMarkersPlugin: Plugin<'line'> = {
     });
 
     ctx.restore();
+    c.$eventMarkers = hitboxes;
+
+    // Overlay a tooltip box for the currently hovered marker, if any.
+    if (c.$hoveredEventId) {
+      const hovered = hitboxes.find((h) => h.event.id === c.$hoveredEventId);
+      if (hovered) {
+        drawEventTooltip(ctx, hovered, {
+          left: chart.chartArea.left,
+          right: chart.chartArea.right,
+          top,
+        });
+      }
+    }
   },
 };
 
@@ -106,6 +225,18 @@ function formatEventDate(date: string): string {
   });
 }
 
+/** Turns a chart x-label ("YYYY M", e.g. "2026 5") into "May 2026". */
+function formatMonthLabel(label: string): string {
+  const [year, month] = label.split(' ').map(Number);
+  if (!year || !month) return label;
+  return new Date(year, month - 1).toLocaleString('en-US', {
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+const ridershipFormatter = new Intl.NumberFormat('en-US');
+
 export default function OutputArea({
   chartDatasets,
   months,
@@ -127,6 +258,16 @@ export default function OutputArea({
     plugins: {
       tooltip: {
         itemSort: (a, b) => (b.parsed.y ?? 0) - (a.parsed.y ?? 0),
+        callbacks: {
+          // x-labels are "YYYY M"; show a readable "May 2026" heading.
+          title: (items) =>
+            items.length ? formatMonthLabel(items[0].label) : '',
+          // "A Line: 12,345" with the color swatch Chart.js draws by default.
+          label: (item) =>
+            `${item.dataset.label ?? ''}: ${ridershipFormatter.format(
+              item.parsed.y ?? 0,
+            )}`,
+        },
       },
       eventMarkers: { events: transitEvents },
     },
