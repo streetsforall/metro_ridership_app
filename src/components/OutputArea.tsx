@@ -30,7 +30,10 @@ const hoverCrosshairPlugin: Plugin<'line'> = {
     const active = chart.tooltip?.getActiveElements();
     if (!active?.length) return;
     const x = active[0].element.x;
-    const { ctx, chartArea: { top, bottom } } = chart;
+    const {
+      ctx,
+      chartArea: { top, bottom },
+    } = chart;
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(x, top);
@@ -79,6 +82,8 @@ export default function OutputArea({
       yAxisKey: 'stat',
     },
     responsive: true,
+    maintainAspectRatio: true,
+    resizeDelay: 10,
     scales: {
       x: {
         border: {
@@ -110,7 +115,7 @@ export default function OutputArea({
   };
 
   return (
-    <div className="flex flex-col gap-4 lg:min-h-[50vh]">
+    <div className="flex flex-col grow-0 shrink-1 basis-3/4 gap-4 lg:min-h-[50vh] w-auto min-w-0">
       {/* Only show chart and summary metrics if something selected */}
       {chartDatasets.length > 0 ? (
         <>
@@ -123,6 +128,13 @@ export default function OutputArea({
                 datasets: chartDatasets,
               }}
             />
+            {/* 
+                This span somehow fixes a resizing issue, lol:
+                https://github.com/reactchartjs/react-chartjs-2/issues/1169#issuecomment-3425692216
+             */}
+            <span style={{ visibility: 'hidden' }}>
+              This makes sure the graph grows when the window grows.
+            </span>
           </div>
 
           <SummaryData lines={lines} />

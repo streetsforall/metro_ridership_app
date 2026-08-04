@@ -152,32 +152,45 @@ function App() {
 
       {/* Grow to fill remaining vertical space; only one column if expanded or on mobile */}
       <div
-        className={`grow grid flex-col gap-4 ${isLineSelectorExpanded ? 'lg:grid-cols-[1fr]' : 'grid-cols-[1fr] lg:grid-cols-[25%_1fr]'}`}
+        className={`grow flex flex-col lg:flex-row gap-4 ${isLineSelectorExpanded ? 'grid-cols-[1fr]' : 'grid-cols-[1fr] lg:grid-cols-[25%_1fr]'}`}
       >
-        {/* Metro lines pane */}
-        {/* Hack to match sibling height - https://www.reddit.com/r/css/comments/15qu1ml/restrict_childs_height_to_parents_height_which_is/*/}
-        <div
-          className={`pane flex flex-col gap-4 h-[32rem] min-h-full w-0 min-w-full ${isLineSelectorExpanded ? 'lg:h-auto' : 'lg:h-0'}`}
-        >
-          <LineSelector
-            {...userDashboardInputState}
-            lines={visibleLines}
-            ridershipByLine={ridershipByLine}
-            isExpanded={isLineSelectorExpanded}
-            setIsExpanded={setIsLineSelectorExpanded}
-          />
-        </div>
-
         {/**
          * Only show right side if line selector not selected
          * TODO: Change this from conditional rendering to conditional visibility; that way it doesn't rerender every time
          */}
-        {!isLineSelectorExpanded && (
-          <OutputArea
-            chartDatasets={chartDatasets}
-            months={monthList}
-            lines={lines}
-          />
+
+        {isLineSelectorExpanded ? (
+          <div className={`pane flex flex-col gap-4 w-100 min-h-full`}>
+            <LineSelector
+              {...userDashboardInputState}
+              lines={visibleLines}
+              ridershipByLine={ridershipByLine}
+              isExpanded
+              setIsExpanded={setIsLineSelectorExpanded}
+            />
+          </div>
+        ) : (
+          <>
+            {/* Metro lines pane */}
+            {/* Hack to match sibling height - https://www.reddit.com/r/css/comments/15qu1ml/restrict_childs_height_to_parents_height_which_is/*/}
+
+            <div
+              className={`pane flex flex-col grow-0 shrink-1 lg:basis-1/4 gap-4 h-[32rem] min-h-full`}
+            >
+              <LineSelector
+                {...userDashboardInputState}
+                lines={visibleLines}
+                ridershipByLine={ridershipByLine}
+                isExpanded={false}
+                setIsExpanded={setIsLineSelectorExpanded}
+              />
+            </div>
+            <OutputArea
+              chartDatasets={chartDatasets}
+              months={monthList}
+              lines={lines}
+            />
+          </>
         )}
       </div>
 
