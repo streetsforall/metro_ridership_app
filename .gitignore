@@ -14,6 +14,12 @@ dist-ssr
 
 .next
 
+# Playwright (keep e2e/**-snapshots baselines, ignore run artifacts)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # Python
 __pycache__/
 *.pyc

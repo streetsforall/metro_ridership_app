@@ -8,6 +8,9 @@
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots",
+    "test:e2e:ui": "playwright test --ui",
     "lint": "eslint .",
     "preview": "vite preview",
     "fetch-lines": "node scripts/fetch-metro-lines.mjs"
@@ -26,6 +29,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@playwright/test": "^1.62.1",
     "@testing-library/react": "^16.3.2",
     "@types/adm-zip": "^0.5.8",
     "@types/geojson": "^7946.0.16",
