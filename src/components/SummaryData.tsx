@@ -39,23 +39,24 @@ export default function SummaryData({ lines }: SummaryDataProps) {
     (sum, line) => sum + (line.distanceMiles ?? 0),
     0,
   );
-  const ridersPerMile = totalMiles > 0 ? averageDailyRidership / totalMiles : undefined;
+  const ridersPerMile =
+    totalMiles > 0 ? averageDailyRidership / totalMiles : undefined;
 
   return (
     <div>
       {selectedLines.length > 0 && (
-        <div className="flex flex-wrap xl:flex-nowrap gap-4 items-center">
+        <div className="grid lg:flex  grid-cols-[1fr_1fr] flex-wrap gap-4 items-center">
           {/* Stats */}
           {/* TODO: Refactor into component */}
           <div className="pane">
-            <div className="flex justify-between mb-2 min-w-56 text-sm">
+            <div className="flex justify-between mb-2 lg:min-w-56 text-sm">
               <span className="text-stone-400 uppercase whitespace-nowrap">
                 Average Ridership
               </span>
             </div>
             <span
               aria-labelledby="avg-ridership"
-              className="tracking-tighter text-5xl"
+              className="tracking-tighter text-3xl lg:text-5xl"
             >
               {Math.round(averageDailyRidership).toLocaleString()}
             </span>
@@ -63,12 +64,12 @@ export default function SummaryData({ lines }: SummaryDataProps) {
 
           {ridersPerMile !== undefined && (
             <div className="pane">
-              <div className="flex justify-between mb-2 min-w-56 text-sm">
+              <div className="flex justify-between mb-2 lg:min-w-56 text-sm">
                 <span className="text-stone-400 uppercase whitespace-nowrap">
                   Riders / Mile
                 </span>
               </div>
-              <span className="tracking-tighter text-5xl">
+              <span className="tracking-tighter text-3xl lg:text-5xl">
                 {Math.round(ridersPerMile).toLocaleString()}
               </span>
             </div>
@@ -76,19 +77,19 @@ export default function SummaryData({ lines }: SummaryDataProps) {
 
           {totalMiles > 0 && (
             <div className="pane">
-              <div className="flex justify-between mb-2 min-w-56 text-sm">
+              <div className="flex justify-between mb-2 lg:min-w-56 text-sm">
                 <span className="text-stone-400 uppercase whitespace-nowrap">
                   Total Miles
                 </span>
               </div>
-              <span className="tracking-tighter text-5xl">
+              <span className="tracking-tighter text-3xl lg:text-5xl">
                 {totalMiles.toLocaleString()}
               </span>
             </div>
           )}
 
           <div className="pane">
-            <div className="flex justify-between mb-2 min-w-56 text-sm">
+            <div className="flex justify-between mb-2 lg:min-w-56 text-sm">
               <span className="text-stone-400 uppercase whitespace-nowrap">
                 Ending Ridership
               </span>
@@ -105,14 +106,14 @@ export default function SummaryData({ lines }: SummaryDataProps) {
             </div>
             <span
               aria-labelledby="cur-ridership"
-              className="tracking-tighter text-5xl"
+              className="tracking-tighter text-3xl lg:text-5xl"
             >
               {Math.round(recentRidership).toLocaleString()}
             </span>
           </div>
 
           {/* Text */}
-          <div className="basis-full xl:basis-auto flex flex-col gap-4 p-4 text-sm">
+          <div className="basis-full flex flex-col col-span-2 gap-4 p-4 text-sm  max-w-[54rem]">
             <p>
               <span className="font-bold mr-1">Selected:</span>
 

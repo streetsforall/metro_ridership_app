@@ -146,7 +146,14 @@ function App() {
     }
 
     return { chartDatasets: datasets, ridershipByLine: consolidatedRidership };
-  }, [startDate, endDate, lines, dayOfWeek, isAggregateVisible, ridershipRecords]);
+  }, [
+    startDate,
+    endDate,
+    lines,
+    dayOfWeek,
+    isAggregateVisible,
+    ridershipRecords,
+  ]);
 
   /**
    * Pull time labels from the first dataset; all datasets share the same x-axis.
@@ -185,44 +192,57 @@ function App() {
 
       {/* Grow to fill remaining vertical space; only one column if expanded or on mobile */}
       <div
-        className={`grow grid flex-col gap-4 ${isLineSelectorExpanded ? 'lg:grid-cols-[1fr]' : 'grid-cols-[1fr] lg:grid-cols-[25%_1fr]'}`}
+        className={`grow flex flex-col lg:flex-row gap-4 ${isLineSelectorExpanded ? 'grid-cols-[1fr]' : 'grid-cols-[1fr] lg:grid-cols-[25%_1fr]'}`}
       >
-        {/* Metro lines pane */}
-        {/* Hack to match sibling height - https://www.reddit.com/r/css/comments/15qu1ml/restrict_childs_height_to_parents_height_which_is/*/}
-        <div
-          className={`pane flex flex-col gap-4 h-[32rem] min-h-full w-0 min-w-full ${isLineSelectorExpanded ? 'lg:h-auto' : 'lg:h-0'}`}
-        >
-          <LineSelector
-            {...userDashboardInputState}
-            lines={visibleLines}
-            ridershipByLine={ridershipByLine}
-            isExpanded={isLineSelectorExpanded}
-            setIsExpanded={setIsLineSelectorExpanded}
-          />
-        </div>
-
         {/**
          * Only show right side if line selector not selected
          * TODO: Change this from conditional rendering to conditional visibility; that way it doesn't rerender every time
          */}
-        {!isLineSelectorExpanded && (
-          <Suspense
-            fallback={
-              <div className="flex flex-col gap-4 lg:min-h-[50vh]">
-                <div className="pane flex-1 flex items-center justify-center text-sm text-stone-400">
-                  <p>Loading…</p>
-                </div>
+        <Suspense
+          fallback={
+            <div className="flex flex-col gap-4 lg:min-h-[50vh]">
+              <div className="pane flex-1 flex items-center justify-center text-sm text-stone-400">
+                <p>Loading…</p>
               </div>
-            }
-          >
-            <OutputArea
-              chartDatasets={chartDatasets}
-              months={monthList}
-              lines={lines}
-              isLoading={isLoading}
-            />
-          </Suspense>
-        )}
+            </div>
+          }
+        >
+          {isLineSelectorExpanded ? (
+            <div className={`pane flex flex-col gap-4 w-100 min-h-full`}>
+              <LineSelector
+                {...userDashboardInputState}
+                lines={visibleLines}
+                ridershipByLine={ridershipByLine}
+                isExpanded
+                setIsExpanded={setIsLineSelectorExpanded}
+              />
+            </div>
+          ) : (
+            <>
+              {/* Metro lines pane */}
+              {/* Hack to match sibling height - https://www.reddit.com/r/css/comments/15qu1ml/restrict_childs_height_to_parents_height_which_is/*/}
+
+              <div
+                className={`pane flex flex-col grow-0 shrink-1 lg:basis-1/4 gap-4 h-[32rem] min-h-full`}
+              >
+                <LineSelector
+                  {...userDashboardInputState}
+                  lines={visibleLines}
+                  ridershipByLine={ridershipByLine}
+                  isExpanded={false}
+                  setIsExpanded={setIsLineSelectorExpanded}
+                />
+              </div>
+
+              <OutputArea
+                chartDatasets={chartDatasets}
+                months={monthList}
+                lines={lines}
+                isLoading={isLoading}
+              />
+            </>
+          )}
+        </Suspense>
       </div>
 
       <Footer />
