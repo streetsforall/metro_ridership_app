@@ -32,6 +32,28 @@ to avoid double-counting.
 python scripts/compute_line_distances.py
 ```
 
+### `check_transit_events.py`
+
+Cross-checks the hand-curated milestones in `src/data/transit-events.json`
+against independent sources so wrong dates don't ship. For each event it:
+
+1. Confirms every `line_id` still exists as a route in the live GTFS rail feed.
+2. For single-line `opening` events, compares the curated month to the first
+   month that line reports non-zero ridership in `src/data/ridership.json` — a
+   brand-new line shows up in the data when it opens, so the two should agree.
+3. Flags extensions, disruptions, and multi-line events for **manual**
+   verification (a station extension makes no new route and the line already
+   has ridership history, so it can't be dated automatically).
+
+Exits non-zero if an opening date disagrees with the ridership data. The
+offline schema/date checks also run in CI via `src/data/transit-events.test.ts`.
+
+```bash
+python scripts/check_transit_events.py
+# or
+npm run check-transit-events
+```
+
 ---
 
 ## Developer tools

@@ -73,6 +73,7 @@ Python scripts maintain the JSON the app consumes (the old `.mjs` versions have 
 - `convert_excel_ridership.py` — helper invoked by `process_ridership.py` to parse the `.xlsx` files records requests return into the legacy CSV schema. Also exposed as `npm run load-ridership` for converting Excel inputs directly.
 - `fetch_metro_lines.py` (also `npm run fetch-lines`) — downloads GTFS feeds → `public/metro_lines.geojson`. Run before the script tests, which use that file as a fixture.
 - `compute_line_distances.py` — `metro_lines.geojson` → `src/data/line_distances.json` (one-way miles; only outbound leg for rail).
+- `check_transit_events.py` (also `npm run check-transit-events`) — validates `src/data/transit-events.json`: line_ids exist in the live GTFS feed, and single-line `opening` dates match the first non-zero ridership month. Extensions are flagged for manual review. Offline schema checks also run in `src/data/transit-events.test.ts`.
 
 Store raw files compressed in `data/raw/` — `.zip` for Excel, `.csv.gz` for legacy CSVs; uncompressed `.xlsx`/`.csv` are gitignored. `notebooks/` holds exploration notebooks (`metro_data_ridership_update.ipynb`).
 

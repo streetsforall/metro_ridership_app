@@ -33,7 +33,7 @@
   },
   {
     "id": "k-line-opening",
-    "date": "2021-10",
+    "date": "2022-10",
     "line_ids": [807],
     "title": "K Line Opening",
     "description": "The K Line (Crenshaw/LAX) opened between Expo/Crenshaw and Westchester/Veterans stations, serving the Crenshaw corridor and Inglewood.",
@@ -41,7 +41,7 @@
   },
   {
     "id": "regional-connector-opening",
-    "date": "2023-02",
+    "date": "2023-06",
     "line_ids": [801, 803, 804, 806],
     "title": "Regional Connector Opening",
     "description": "The Regional Connector linked the A, C, E, and L lines through a new downtown tunnel, creating through-running service and eliminating transfers at 7th/Metro. Ridership figures for these lines were significantly restructured as a result.",
@@ -49,7 +49,7 @@
   },
   {
     "id": "d-line-section-1-extension",
-    "date": "2023-10",
+    "date": "2026-05",
     "line_ids": [805],
     "title": "D Line Section 1 Extension",
     "description": "The D Line (Purple) extended westward from Wilshire/Western to three new Westside stations: Wilshire/La Brea, Wilshire/Fairfax, and Wilshire/La Cienega.",
