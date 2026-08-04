@@ -7,6 +7,11 @@ import LineSelector from './components/LineSelector';
 import useUserDashboardInput, {
   type UserDashboardInputState,
 } from './hooks/useUserDashboardInput';
+import {
+  alignToMonthAxis,
+  buildAggregateSeries,
+  buildMonthAxis,
+} from './utils/chartData';
 import { getLineColor, getLineNames } from './utils/lines';
 import { decodeRidership, type ColumnarRidership } from './utils/ridershipData';
 import type { CustomChartData } from './@types/chart.types';
@@ -69,11 +74,12 @@ function App() {
   const isLoading = ridershipRecords === null;
 
   /**
-   * Computes chartDatasets and ridershipByLine together in a single pass over
-   * ridershipRecords since both are derived from the same filtered view of the data.
-   * Until the data loads (`ridershipRecords` is null) this yields empty results.
+   * Computes chartDatasets, monthList and ridershipByLine together in a single pass
+   * over ridershipRecords since all three are derived from the same filtered view of
+   * the data. Until the data loads (`ridershipRecords` is null) this yields empty
+   * results.
    */
-  const { chartDatasets, ridershipByLine } = useMemo(() => {
+  const { chartDatasets, monthList, ridershipByLine } = useMemo(() => {
     const consolidatedRidership: ConsolidatedRidership = {};
 
     /**
@@ -107,47 +113,58 @@ function App() {
     }
 
     /**
-     * Build one Chart.js dataset per selected line. Iterating lines[] (already
-     * alphabetically sorted) rather than consolidatedRidership preserves legend
-     * order regardless of the numeric key enumeration order of the object.
+     * Collect the selected lines in lines[] order (already alphabetically sorted)
+     * rather than consolidatedRidership order, so the legend ordering is stable
+     * regardless of the numeric key enumeration order of the object.
      */
-    const datasets: ChartDataset<'line', CustomChartData[]>[] = [];
+    const selected = lines.filter(
+      (line) => consolidatedRidership[line.id]?.selected,
+    );
 
-    lines.forEach((line) => {
-      const consolidated = consolidatedRidership[line.id];
-      if (!consolidated?.selected) return;
+    /**
+     * One shared x-axis for every dataset: the chronologically sorted union of the
+     * months the selected lines cover. Selected lines can cover different spans (a
+     * line added mid-window has far fewer months), and Chart.js appends any label
+     * missing from `labels` to the end of the axis — so deriving the axis from one
+     * dataset scrambles the ordering of the rest.
+     */
+    const months = buildMonthAxis(
+      selected.map((line) => consolidatedRidership[line.id].ridershipRecords),
+    );
 
-      datasets.push({
-        data: consolidated.ridershipRecords.map((r) => ({
-          time: `${r.year} ${r.month}`,
-          stat: r[dayOfWeek],
-        })) as CustomChartData[],
+    const datasets: ChartDataset<'line', CustomChartData[]>[] = selected.map(
+      (line) => ({
+        data: alignToMonthAxis(
+          consolidatedRidership[line.id].ridershipRecords,
+          months,
+          dayOfWeek,
+        ),
         label: getLineNames(line.id).current,
         backgroundColor: getLineColor(line.id),
         borderColor: getLineColor(line.id),
-      });
-    });
+      }),
+    );
 
     /**
-     * Sum every selected line's stat at each time index into a single series.
+     * Sum every selected line's stat at each month into a single series.
      */
     if (isAggregateVisible) {
-      const aggregateMap: CustomChartData[] = [];
-      datasets.forEach((dataset) => {
-        dataset.data.forEach((point, i) => {
-          if (!aggregateMap[i]) aggregateMap[i] = { time: point.time, stat: 0 };
-          aggregateMap[i].stat += point.stat;
-        });
-      });
       datasets.push({
-        data: aggregateMap,
+        data: buildAggregateSeries(
+          datasets.map((dataset) => dataset.data),
+          months,
+        ),
         label: 'Aggregate',
         backgroundColor: getLineColor(-1),
         borderColor: getLineColor(-2),
       });
     }
 
-    return { chartDatasets: datasets, ridershipByLine: consolidatedRidership };
+    return {
+      chartDatasets: datasets,
+      monthList: months,
+      ridershipByLine: consolidatedRidership,
+    };
   }, [startDate, endDate, lines, dayOfWeek, isAggregateVisible, ridershipRecords]);
 
   const transitEvents = useMemo(() => {
@@ -165,14 +182,6 @@ function App() {
       })
       .sort((a, b) => a.date.localeCompare(b.date));
   }, [startDate, endDate, lines]);
-
-  /**
-   * Pull time labels from the first dataset; all datasets share the same x-axis.
-   */
-  const monthList = useMemo(
-    () => chartDatasets[0]?.data.map((d) => d.time) ?? [],
-    [chartDatasets],
-  );
 
   /**
    * Attach computed metrics (average ridership, change, etc.) to each line entry

@@ -3,7 +3,8 @@ import type { TransitEvent } from './events.types';
 
 export interface CustomChartData {
   time: string;
-  stat: number;
+  /** `null` where the line has no record for this month — Chart.js draws a gap. */
+  stat: number | null;
 }
 
 declare module 'chart.js' {
