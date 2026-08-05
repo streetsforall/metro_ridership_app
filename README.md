@@ -70,9 +70,17 @@ Tests use [Vitest](https://vitest.dev/) with `@testing-library/react` for compon
 
 ### End-to-end / visual regression tests
 
-[Playwright](https://playwright.dev/) screenshots three views — the default dashboard, the dashboard with a line selected, and the expanded line-selector table — at two viewports (desktop 1280×800, mobile 390×844), and compares them against committed baselines. That's 6 screenshots per run. The map is masked out of every one, because a live MapLibre map over third-party tiles never renders identically twice.
+[Playwright](https://playwright.dev/) screenshots three full-page views — the default dashboard, the dashboard with a line selected, and the expanded line-selector table — at two viewports (desktop 1280×800, mobile 390×844), and compares them against committed baselines. That's 6 screenshots per run. The map is masked out of every one, because a live MapLibre map over third-party tiles never renders identically twice.
 
 [`e2e/map.spec.ts`](e2e/map.spec.ts) covers the map separately, in its own `map` project (one run, not per-viewport). It gets determinism by stubbing the basemap: every off-localhost request is fulfilled with a blank style — one solid background layer, no sources — so no tiles, sprites or glyphs are fetched and the only thing that paints is the route geometry the app loads from same-origin `public/metro_lines.geojson`. That's the part that actually regresses when line data or map styling changes. Two more screenshots per run.
+
+[`e2e/chart-content.spec.ts`](e2e/chart-content.spec.ts) covers what the ridership chart itself *draws*: one line, several lines, the aggregate series, a non-weekday statistic, and a narrow date window — five views × the two viewports, so ten more screenshots. Each is driven purely by the query string, since all dashboard state is URL-addressable.
+
+These are **element-scoped** — cropped to the `#ridership-chart` pane rather than shot full-page — for a reason worth keeping. On a full-page capture the chart is a small fraction of the frame, and `maxDiffPixelRatio` is measured against the whole page, so a chart drawing the wrong series, the wrong brand colours or the wrong axis stays comfortably under the threshold and passes. Cropping to the pane makes the graph most of its own frame, which is why these specs also run a tighter tolerance (`maxDiffPixelRatio: 0.01`) than the full-page set. The pane rather than the bare `<canvas>`: its padding and background give a stable box, and `#lineMap` sits outside it, so no mask is needed.
+
+The Chart.js intro animation is disabled under test via `prefers-reduced-motion`, which [`src/components/OutputArea.tsx`](src/components/OutputArea.tsx) honours and `playwright.config.ts` emulates. That is a real accessibility behaviour rather than a test-only hook; making the canvas paint its final frame immediately is a side benefit.
+
+That's 18 screenshots per run in total.
 
 ```bash
 npm run test:e2e               # run the suite (builds, serves, compares)
@@ -102,6 +110,14 @@ The map baselines in [`e2e/map.spec.ts-snapshots/`](e2e/map.spec.ts-snapshots/) 
 npm run test:e2e:update:linux -- --project=map
 ```
 
+To regenerate one suite's baselines, pass the mode to `--update-snapshots` explicitly before the file filter:
+
+```bash
+npm run test:e2e:update:linux -- --update-snapshots=all chart-content
+```
+
+The explicit `=all` is load-bearing. `--update-snapshots` takes an *optional* mode argument, so a bare positional filter directly after it is swallowed as the mode and the run dies with `argument 'chart-content' is invalid`. Flag-shaped filters like `--project=map` are unaffected.
+
 #### The map suite
 
 Beyond the two screenshots, [`e2e/map.spec.ts`](e2e/map.spec.ts) asserts on what MapLibre actually rendered — the layer stack, and the `line_id`s each layer paints, read back with `queryRenderedFeatures`. Those assertions fail with a list of line IDs instead of a pixel count, so they localise a broken selection filter far faster than a diff image does; the screenshots are there for the things IDs can't express (colour, width, opacity, draw order).
@@ -128,7 +144,7 @@ Uses ESLint with TypeScript, React hooks, and React refresh plugins. Fix lint er
 | Job | Runs on | Gates |
 | --- | --- | --- |
 | **`build`** | `ubuntu-latest` | `npm run lint`, `npm run test`, `npm run build`. Because `tsc -b` covers `tsconfig.e2e.json`, this also type-checks `e2e/` and `playwright.config.ts`. Uploads `dist/` as an artifact. |
-| **`e2e`** | the official Playwright container | Downloads that `dist/`, serves it with `vite preview`, and runs the 8 visual-regression screenshots plus the map's structural assertions. |
+| **`e2e`** | the official Playwright container | Downloads that `dist/`, serves it with `vite preview`, and runs the 18 visual-regression screenshots plus the map's structural assertions. |
 
 The app is built once and handed to `e2e` as an artifact, the container ships the browsers already installed, and superseded PR runs are cancelled automatically. The container tag is derived from `package-lock.json` at run time, so it can never drift from the installed `@playwright/test` — and `npm run test:e2e:update:linux` resolves the same tag from the same file, which is what makes locally-generated baselines match CI.
 
@@ -148,7 +164,7 @@ The app is built once and handed to `e2e` as an artifact, the container ships th
 | `e2e`: browser not found, or a version mismatch | `@playwright/test` was upgraded | Nothing to change in `ci.yml`; the container follows the lockfile. **But a new browser build re-renders text**, so regenerate the Linux baselines in the same PR. |
 | `build`: `tsc -b` errors in `e2e/` or `playwright.config.ts` | `tsconfig.json` references `tsconfig.e2e.json` | Fix the types. E2E code is part of the build, not a side project. |
 | `build` passes locally but fails in CI | Node version mismatch | CI reads [`.node-version`](.node-version) (`22.23.2`). Match it locally with `fnm use`. |
-| You added a page, route, or major component | It has no visual coverage | Add a test to [`e2e/visual.spec.ts`](e2e/visual.spec.ts) reusing the existing `gotoDashboard()` helper, then generate its Linux baselines. Map changes go in [`e2e/map.spec.ts`](e2e/map.spec.ts) via `gotoMap()` instead. |
+| You added a page, route, or major component | It has no visual coverage | Add a test to [`e2e/visual.spec.ts`](e2e/visual.spec.ts) reusing the shared `gotoDashboard()` helper from [`e2e/helpers.ts`](e2e/helpers.ts), then generate its Linux baselines. Chart rendering goes in [`e2e/chart-content.spec.ts`](e2e/chart-content.spec.ts) via `shootChart()`; map changes go in [`e2e/map.spec.ts`](e2e/map.spec.ts) via `gotoMap()` instead. |
 | `map`: pixel diff after a line-data update | New/changed geometry in `public/metro_lines.geojson` legitimately moves the lines | `npm run test:e2e:update:linux -- --project=map`. |
 | `map`: the screenshot shows a real basemap, or the layer-stack assertion sees ~100 layers | A map request escaped the route stub in `e2e/map.spec.ts` | Fix the stub. Don't loosen `maxDiffPixelRatio` — with the basemap gone this suite is byte-stable. |
 | `map`: `window.__metroMap` is undefined | The test seam was removed from `src/components/Map.tsx` | Put it back, or give the spec another handle on the instance. It's the only way to await a WebGL canvas. |

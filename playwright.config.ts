@@ -38,6 +38,16 @@ export default defineConfig({
     baseURL: 'https://localhost:4173',
     ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
+    // The app honours prefers-reduced-motion: OutputArea disables the Chart.js intro animation
+    // when it is set (an accessibility behaviour in its own right, not a test-only hook). Emulating
+    // it here means the ridership canvas paints its final frame immediately, so snapshots do not
+    // depend on waiting an animation out.
+    //
+    // It goes under `contextOptions` rather than as a bare `use.reducedMotion`: as of Playwright
+    // 1.62 the emulation flags are no longer hoisted onto `PlaywrightTestOptions`, and this is the
+    // spelling Playwright's own docs use. Projects below only override `viewport`/`launchOptions`,
+    // and `use` merges per key, so this survives into all three.
+    contextOptions: { reducedMotion: 'reduce' },
   },
 
   expect: {
