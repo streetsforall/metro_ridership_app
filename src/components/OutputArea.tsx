@@ -284,6 +284,12 @@ export default function OutputArea({
       xAxisKey: 'time',
       yAxisKey: 'stat',
     },
+    /**
+     * The canvas takes its height from its container (see the wrapper below) rather than
+     * from Chart.js's own width÷aspectRatio. Chart.js only consults the container's height
+     * when this is off, so it is what lets the CSS height floor reach the plot.
+     */
+    maintainAspectRatio: false,
     responsive: true,
     scales: {
       x: {
@@ -322,13 +328,38 @@ export default function OutputArea({
         <>
           {/* Chart pane */}
           <div className="pane" id="ridership-chart">
-            <LineChart
-              options={options}
-              data={{
-                labels: months,
-                datasets: chartDatasets,
-              }}
-            />
+            {/**
+             * Sizing box for the canvas. Chart.js's own `maintainAspectRatio` derives the
+             * canvas height from the container width alone, which on a 390px phone is a
+             * 300×150 canvas — and once the legend wraps to a second row (three lines plus
+             * the aggregate is enough) it eats ~60px of that, collapsing the plot to a ~20px
+             * band that fits only two y-axis ticks and rounds the axis up to 500,000. Sizing
+             * the box in CSS instead lets a height floor apply where Chart.js has none.
+             *
+             * `pt-[50%]` is the percentage-padding ratio trick rather than `aspect-[2/1]` on
+             * purpose. A box with a real `aspect-ratio` transfers its floored height back into
+             * a min-content *width* of 2× the floor; this div sits inside a `1fr` grid track
+             * whose automatic minimum has to honour that, so the column — and the whole page —
+             * grew sideways past the viewport. Percentage padding resolves to zero for
+             * intrinsic sizing and the absolutely positioned child is out of flow, so this box
+             * contributes no width at all and the surrounding layout is untouched.
+             *
+             * Height is therefore `max(50% of the width, 20rem)`: the 2:1 ratio every viewport
+             * already rendered at, with a floor that only bites below 640px of container width.
+             * `relative` also makes this the dedicated container Chart.js's responsive mode
+             * wants — it measures the canvas's parent, so nothing else may share that box.
+             */}
+            <div className="relative min-h-[20rem] pt-[50%]">
+              <div className="absolute inset-0">
+                <LineChart
+                  options={options}
+                  data={{
+                    labels: months,
+                    datasets: chartDatasets,
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           <SummaryData lines={lines} />
