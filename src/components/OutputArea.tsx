@@ -18,7 +18,7 @@ import SummaryData from './SummaryData';
 import Map from './Map';
 import type { CustomChartData } from '../@types/chart.types';
 import type { Line } from '../@types/lines.types';
-import type { TransitEvent } from '../@types/events.types';
+import type { EventCategory, TransitEvent } from '../@types/events.types';
 
 interface OutputAreaProps {
   chartDatasets: ChartDataset<'line', CustomChartData[]>[];
@@ -53,6 +53,59 @@ const hoverCrosshairPlugin: Plugin<'line'> = {
   },
 };
 
+/**
+ * Tailwind hue each context-log category is drawn in, so the taxonomy is legible
+ * on the chart instead of one undifferentiated amber. Grouped by what the event
+ * did to service: emerald = more of it, rose = less of it, sky = it costs
+ * something different, amber = it runs differently (and the catch-all).
+ *
+ * Only the hue is stored; callers pick the weight, which keeps the marker (500)
+ * and the tooltip's title text (400, for contrast on stone-800) in the same
+ * family without a second nine-entry table to keep in sync.
+ */
+type CategoryHue = 'emerald' | 'rose' | 'amber' | 'sky';
+
+const CATEGORY_COLOR: Record<EventCategory, CategoryHue> = {
+  opening: 'emerald',
+  extension: 'emerald',
+  closure: 'rose',
+  disruption: 'rose',
+  route_change: 'amber',
+  headway_change: 'amber',
+  hours_change: 'amber',
+  service_change: 'amber',
+  fare_change: 'sky',
+};
+
+/** Category of last resort. Also what an unrecognised category falls back to. */
+const DEFAULT_CATEGORY_HUE: CategoryHue = 'amber';
+
+/**
+ * Total lookup over `CATEGORY_COLOR`. The events are fetched data, so a category
+ * the union doesn't cover can reach here at runtime regardless of the types —
+ * those still render, in amber, rather than throwing or drawing nothing.
+ */
+function categoryHue(category: EventCategory | undefined): CategoryHue {
+  return CATEGORY_COLOR[category as EventCategory] ?? DEFAULT_CATEGORY_HUE;
+}
+
+/** Marker/border color for an event's category. */
+function categoryColor(category: EventCategory | undefined): string {
+  return colors[categoryHue(category)]['500'];
+}
+
+/** Lighter variant, for category-tinted text on the dark tooltip. */
+function categoryTextColor(category: EventCategory | undefined): string {
+  return colors[categoryHue(category)]['400'];
+}
+
+/** "headway_change" → "Headway change", for the panel's category label. */
+function formatCategory(category: EventCategory | undefined): string {
+  if (!category) return 'Service change';
+  const words = category.replace(/_/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 interface EventMarkerHitbox {
   xPos: number;
   event: TransitEvent;
@@ -67,7 +120,7 @@ type ChartWithMarkers = ChartJS<'line'> & {
 // How close (px) the cursor must be to a marker's vertical line to hover it.
 const MARKER_HIT_RADIUS = 6;
 
-/** Draws an amber-bordered tooltip box for a hovered event marker. */
+/** Draws a category-colored tooltip box for a hovered event marker. */
 function drawEventTooltip(
   ctx: CanvasRenderingContext2D,
   hit: EventMarkerHitbox,
@@ -109,7 +162,7 @@ function drawEventTooltip(
   ctx.arcTo(boxX, boxY, boxX + boxW, boxY, r);
   ctx.closePath();
   ctx.fillStyle = colors.stone['800'];
-  ctx.strokeStyle = colors.amber['500'];
+  ctx.strokeStyle = categoryColor(event.category);
   ctx.lineWidth = 1;
   ctx.setLineDash([]);
   ctx.fill();
@@ -117,7 +170,7 @@ function drawEventTooltip(
 
   ctx.textBaseline = 'top';
   ctx.font = titleFont;
-  ctx.fillStyle = colors.amber['400'];
+  ctx.fillStyle = categoryTextColor(event.category);
   ctx.fillText(title, boxX + padX, boxY + padY);
   ctx.font = subFont;
   ctx.fillStyle = colors.stone['300'];
@@ -176,7 +229,6 @@ const eventMarkersPlugin: Plugin<'line'> = {
     ctx.save();
     ctx.setLineDash([3, 3]);
     ctx.lineWidth = 1.5;
-    ctx.strokeStyle = colors.amber['500'];
 
     events.forEach((event) => {
       // Chart labels are "YYYY M" (e.g. "2023 2"); event dates are "YYYY-MM"
@@ -186,6 +238,8 @@ const eventMarkersPlugin: Plugin<'line'> = {
 
       const xPos = x.getPixelForValue(idx);
       hitboxes.push({ xPos, event });
+      // Per-event: markers in range can span several categories.
+      ctx.strokeStyle = categoryColor(event.category);
       ctx.beginPath();
       ctx.moveTo(xPos, top);
       ctx.lineTo(xPos, bottom);
@@ -385,13 +439,24 @@ export default function OutputArea({
           {isContextLogOpen && (
             <ol className="flex flex-col gap-3 mt-3">
               {transitEvents.map((event) => (
-                <li key={event.id} className="flex gap-3 text-sm">
+                /* The rule carries the same category color as the chart marker, so a row
+                   and its marker read as the same thing. It is decoration only — the
+                   category is also spelled out below, because these hues sit around 2.5:1
+                   on the pane's white and must never be the sole signal. */
+                <li
+                  key={event.id}
+                  className="flex gap-3 text-sm border-l-2 pl-3"
+                  style={{ borderColor: categoryColor(event.category) }}
+                >
                   <span className="text-stone-400 whitespace-nowrap shrink-0">
                     {formatEventDate(event.date)}
                   </span>
                   <div>
                     <p className="font-medium text-stone-700">{event.title}</p>
                     <p className="text-stone-500">{event.description}</p>
+                    <p className="mt-0.5 text-xs uppercase tracking-wider text-stone-400">
+                      {formatCategory(event.category)}
+                    </p>
                   </div>
                 </li>
               ))}

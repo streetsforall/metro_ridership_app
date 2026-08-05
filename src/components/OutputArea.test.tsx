@@ -2,8 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import OutputArea from './OutputArea';
 import { Chart as ChartJS, type ChartOptions } from 'chart.js';
+import colors from 'tailwindcss/colors';
 import type { Line } from '../@types/lines.types';
-import type { TransitEvent } from '../@types/events.types';
+import type { EventCategory, TransitEvent } from '../@types/events.types';
 
 let capturedOptions: ChartOptions<'line'> | undefined;
 
@@ -396,6 +397,26 @@ describe('tooltip callbacks', () => {
   });
 });
 
+const makeCtx = () => ({
+  save: vi.fn(),
+  restore: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  stroke: vi.fn(),
+  setLineDash: vi.fn(),
+  measureText: vi.fn(() => ({ width: 40 })),
+  arcTo: vi.fn(),
+  closePath: vi.fn(),
+  fill: vi.fn(),
+  fillText: vi.fn(),
+  lineWidth: 0,
+  strokeStyle: '',
+  fillStyle: '',
+  font: '',
+  textBaseline: 'alphabetic' as CanvasTextBaseline,
+});
+
 describe('eventMarkers plugin hover', () => {
   type AfterEvent = (
     chart: unknown,
@@ -412,26 +433,6 @@ describe('eventMarkers plugin hover', () => {
     description: 'Extended westward to three new Westside stations.',
     category: 'extension',
   };
-
-  const makeCtx = () => ({
-    save: vi.fn(),
-    restore: vi.fn(),
-    beginPath: vi.fn(),
-    moveTo: vi.fn(),
-    lineTo: vi.fn(),
-    stroke: vi.fn(),
-    setLineDash: vi.fn(),
-    measureText: vi.fn(() => ({ width: 40 })),
-    arcTo: vi.fn(),
-    closePath: vi.fn(),
-    fill: vi.fn(),
-    fillText: vi.fn(),
-    lineWidth: 0,
-    strokeStyle: '',
-    fillStyle: '',
-    font: '',
-    textBaseline: 'alphabetic' as CanvasTextBaseline,
-  });
 
   const makeChart = (hoveredEventId: string | null = null) => ({
     $eventMarkers: [] as { xPos: number; event: TransitEvent }[],
@@ -489,5 +490,151 @@ describe('eventMarkers plugin hover', () => {
       expect.any(Number),
       expect.any(Number),
     );
+  });
+});
+
+describe('event marker category colors', () => {
+  type AfterDraw = (chart: unknown, args: unknown, opts: unknown) => void;
+  const markerPlugin = () =>
+    ChartJS.registry.getPlugin('eventMarkers') as unknown as { afterDraw: AfterDraw };
+
+  // One event per label, so marker N in the stroke log is category N.
+  const labels = ['2020 1', '2020 2', '2020 3', '2020 4'];
+  const makeEvent = (index: number, category: EventCategory): TransitEvent => ({
+    id: `event-${index}`,
+    date: `2020-0${index + 1}`,
+    line_ids: [801],
+    title: `Event ${index}`,
+    description: `Description ${index}`,
+    category,
+  });
+
+  /**
+   * Runs afterDraw over `categories` and returns the strokeStyle in force at each
+   * stroke() — the marker rules first, then the hovered tooltip's border if any.
+   */
+  const strokesFor = (categories: EventCategory[], hoveredIndex?: number) => {
+    const events = categories.map((category, i) => makeEvent(i, category));
+    const ctx = makeCtx();
+    const strokes: string[] = [];
+    ctx.stroke = vi.fn(() => {
+      strokes.push(ctx.strokeStyle);
+    });
+    const chart = {
+      $eventMarkers: [] as { xPos: number; event: TransitEvent }[],
+      $hoveredEventId: hoveredIndex === undefined ? null : `event-${hoveredIndex}`,
+      options: { plugins: { eventMarkers: { events } } },
+      data: { labels },
+      scales: { x: { getPixelForValue: (i: number) => 50 + i * 50 } },
+      chartArea: { top: 10, bottom: 200, left: 0, right: 300 },
+      ctx,
+    };
+    markerPlugin().afterDraw(chart, {}, {});
+    return strokes;
+  };
+
+  it('resolves a different marker color for closure than for headway_change', () => {
+    const [closure, headway] = strokesFor(['closure', 'headway_change']);
+    expect(closure).not.toBe(headway);
+    expect(closure).toBe(colors.rose['500']);
+    expect(headway).toBe(colors.amber['500']);
+  });
+
+  it('strokes each marker in its own category hue', () => {
+    expect(strokesFor(['opening', 'closure', 'fare_change', 'route_change'])).toEqual([
+      colors.emerald['500'],
+      colors.rose['500'],
+      colors.sky['500'],
+      colors.amber['500'],
+    ]);
+  });
+
+  it('falls back to amber for a category outside the union', () => {
+    // Events are fetched data, so an unknown category can dodge the type at runtime.
+    const rogue = 'not_a_real_category' as EventCategory;
+    expect(strokesFor([rogue])).toEqual([colors.amber['500']]);
+  });
+
+  it('borders the hovered tooltip in the hovered event category color', () => {
+    // Markers stroke first, so the tooltip border is the last stroke.
+    const strokes = strokesFor(['opening', 'disruption'], 1);
+    expect(strokes).toHaveLength(3);
+    expect(strokes[2]).toBe(colors.rose['500']);
+  });
+
+  it('groups the remaining categories onto their shared hues', () => {
+    expect(strokesFor(['extension', 'disruption', 'hours_change', 'service_change'])).toEqual([
+      colors.emerald['500'],
+      colors.rose['500'],
+      colors.amber['500'],
+      colors.amber['500'],
+    ]);
+  });
+});
+
+describe('context log panel category colors', () => {
+  const panelEvent = (id: string, category: EventCategory): TransitEvent => ({
+    id,
+    date: '2023-02',
+    line_ids: [801],
+    title: `${id} title`,
+    description: `${id} description`,
+    category,
+  });
+
+  const renderPanel = (events: TransitEvent[]) =>
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2023 2']}
+        lines={[]}
+        transitEvents={events}
+        showContextLogs={true}
+      />,
+    );
+
+  /** jsdom serializes inline colors its own way; normalize both sides the same. */
+  const asBorderColor = (value: string) => {
+    const el = document.createElement('div');
+    el.style.borderColor = value;
+    return el.style.borderColor;
+  };
+
+  it('tints each row with its category color', () => {
+    const { container } = renderPanel([
+      panelEvent('closed', 'closure'),
+      panelEvent('rescheduled', 'headway_change'),
+    ]);
+    const rows = Array.from(container.querySelectorAll('#context-log-panel li'));
+    expect(rows).toHaveLength(2);
+    expect(rows[0].getAttribute('style')).not.toBe(rows[1].getAttribute('style'));
+    expect((rows[0] as HTMLElement).style.borderColor).toBe(
+      asBorderColor(colors.rose['500']),
+    );
+    expect((rows[1] as HTMLElement).style.borderColor).toBe(
+      asBorderColor(colors.amber['500']),
+    );
+  });
+
+  it('also spells the category out, so color is not the only signal', () => {
+    renderPanel([panelEvent('rescheduled', 'headway_change')]);
+    expect(screen.getByText('Headway change')).toBeTruthy();
+  });
+
+  it('falls back to amber for an unknown category', () => {
+    const { container } = renderPanel([
+      panelEvent('mystery', 'not_a_real_category' as EventCategory),
+    ]);
+    const row = container.querySelector('#context-log-panel li') as HTMLElement;
+    expect(row.style.borderColor).toBe(asBorderColor(colors.amber['500']));
+  });
+
+  it('falls back to amber when an event carries no category at all', () => {
+    const missing = panelEvent('untyped', 'opening');
+    delete (missing as Partial<TransitEvent>).category;
+    const { container } = renderPanel([missing]);
+    const row = container.querySelector('#context-log-panel li') as HTMLElement;
+    expect(row.style.borderColor).toBe(asBorderColor(colors.amber['500']));
+    expect(screen.getByText('Service change')).toBeTruthy();
   });
 });
