@@ -25,6 +25,8 @@ interface OutputAreaProps {
   months: string[];
   lines: Line[];
   transitEvents: TransitEvent[];
+  /** Whether the context-log panel is enabled from the filter bar. */
+  showContextLogs: boolean;
   /** True while the ridership dataset is still being fetched. */
   isLoading?: boolean;
 }
@@ -244,6 +246,7 @@ export default function OutputArea({
   months,
   lines,
   transitEvents,
+  showContextLogs,
   isLoading = false,
 }: OutputAreaProps) {
   const [isContextLogOpen, setIsContextLogOpen] = useState(true);
@@ -334,9 +337,9 @@ export default function OutputArea({
         </div>
       )}
 
-      {/* Context log panel — only shown when events exist and a line is selected */}
-      {transitEvents.length > 0 && chartDatasets.length > 0 && (
-        <div className="pane">
+      {/* Context log panel — opt-in from the filter bar, and only when events exist and a line is selected */}
+      {showContextLogs && transitEvents.length > 0 && chartDatasets.length > 0 && (
+        <div className="pane" id="context-log-panel">
           <button
             type="button"
             onClick={() => setIsContextLogOpen((o) => !o)}

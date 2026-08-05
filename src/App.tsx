@@ -69,6 +69,8 @@ function App() {
     updateLinesWithLineMetrics,
     visibleLines,
     isAggregateVisible,
+    showContextLogs,
+    toggleShowContextLogs,
   } = userDashboardInputState;
 
   const isLoading = ridershipRecords === null;
@@ -207,6 +209,8 @@ function App() {
           setEndDate={setEndDate}
           dayOfWeek={dayOfWeek}
           setDayOfWeek={setDayOfWeek}
+          showContextLogs={showContextLogs}
+          toggleShowContextLogs={toggleShowContextLogs}
         />
       </div>
 
@@ -247,6 +251,7 @@ function App() {
               months={monthList}
               lines={lines}
               transitEvents={transitEvents}
+              showContextLogs={showContextLogs}
               isLoading={isLoading}
             />
           </Suspense>

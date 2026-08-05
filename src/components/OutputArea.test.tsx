@@ -35,6 +35,7 @@ const emptyProps = {
   months: [],
   lines: [],
   transitEvents: [] as TransitEvent[],
+  showContextLogs: false,
 };
 
 const transitEventFixture: TransitEvent = {
@@ -73,6 +74,7 @@ describe('OutputArea with datasets', () => {
         months={['2022 1']}
         lines={[]}
         transitEvents={[]}
+        showContextLogs={false}
       />,
     );
     expect(screen.getByTestId('line-chart')).toBeTruthy();
@@ -85,6 +87,7 @@ describe('OutputArea with datasets', () => {
         months={['2022 1']}
         lines={[]}
         transitEvents={[]}
+        showContextLogs={false}
       />,
     );
     expect(screen.queryByText('Please select a Metro line.')).toBeNull();
@@ -103,6 +106,7 @@ describe('OutputArea with datasets', () => {
         months={['2022 1']}
         lines={[selectedLine]}
         transitEvents={[]}
+        showContextLogs={false}
       />,
     );
     expect(screen.getByText('Average Ridership')).toBeTruthy();
@@ -115,6 +119,7 @@ describe('OutputArea with datasets', () => {
         months={['2022 1']}
         lines={[makeLine({ selected: false })]}
         transitEvents={[]}
+        showContextLogs={false}
       />,
     );
     expect(screen.queryByText('Average Ridership')).toBeNull();
@@ -134,6 +139,7 @@ describe('OutputArea Map', () => {
         months={['2022 1']}
         lines={[]}
         transitEvents={[]}
+        showContextLogs={false}
       />,
     );
     expect(screen.getByTestId('map')).toBeTruthy();
@@ -141,7 +147,15 @@ describe('OutputArea Map', () => {
 
   it('passes the lines prop through to the Map component', () => {
     const lines = [makeLine({ id: 801 }), makeLine({ id: 802 })];
-    render(<OutputArea chartDatasets={[]} months={[]} lines={lines} transitEvents={[]} />);
+    render(
+      <OutputArea
+        chartDatasets={[]}
+        months={[]}
+        lines={lines}
+        transitEvents={[]}
+        showContextLogs={false}
+      />,
+    );
     expect(screen.getByTestId('map').getAttribute('data-line-count')).toBe('2');
   });
 });
@@ -161,6 +175,7 @@ describe('tooltip itemSort', () => {
         months={['2022 1']}
         lines={[]}
         transitEvents={[]}
+        showContextLogs={false}
       />,
     );
 
@@ -255,6 +270,7 @@ describe('chart interaction options', () => {
         months={['2022 1']}
         lines={[]}
         transitEvents={[]}
+        showContextLogs={false}
       />,
     );
     expect(capturedOptions?.interaction?.intersect).toBe(false);
@@ -269,6 +285,7 @@ describe('context log panel', () => {
         months={['2022 1']}
         lines={[]}
         transitEvents={[]}
+        showContextLogs={true}
       />,
     );
     expect(screen.queryByText('Context Logs')).toBeNull();
@@ -281,9 +298,24 @@ describe('context log panel', () => {
         months={[]}
         lines={[]}
         transitEvents={[transitEventFixture]}
+        showContextLogs={true}
       />,
     );
     expect(screen.queryByText('Context Logs')).toBeNull();
+  });
+
+  it('does not render the panel when showContextLogs is false', () => {
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2023 2']}
+        lines={[]}
+        transitEvents={[transitEventFixture]}
+        showContextLogs={false}
+      />,
+    );
+    expect(screen.queryByText('Context Logs')).toBeNull();
+    expect(screen.queryByText('Regional Connector Opening')).toBeNull();
   });
 
   it('renders the panel with event title and description when events and datasets are present', () => {
@@ -293,6 +325,7 @@ describe('context log panel', () => {
         months={['2023 2']}
         lines={[]}
         transitEvents={[transitEventFixture]}
+        showContextLogs={true}
       />,
     );
     expect(screen.getByText('Context Logs')).toBeTruthy();
@@ -307,6 +340,7 @@ describe('context log panel', () => {
         months={['2023 2']}
         lines={[]}
         transitEvents={[transitEventFixture]}
+        showContextLogs={true}
       />,
     );
 
@@ -338,6 +372,7 @@ describe('tooltip callbacks', () => {
         months={['2026 5']}
         lines={[]}
         transitEvents={[]}
+        showContextLogs={false}
       />,
     );
     return capturedOptions?.plugins?.tooltip?.callbacks;
