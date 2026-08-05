@@ -170,19 +170,16 @@ export default function DateRangeSelector({
         </RadioGroup.Root>
       </fieldset>
 
-      {/* Optional panels */}
-      <fieldset className="flex items-center">
-        <legend className="sr-only">Panels</legend>
+      {/* Panel visibility */}
+      <fieldset>
+        <legend>Panel Visibility</legend>
 
-        <label
-          className="flex items-center gap-2 cursor-pointer text-xs"
-          htmlFor="context-logs"
-        >
+        <div className="flex items-center">
           <Checkbox.Root
             id="context-logs"
             onClick={toggleShowContextLogs}
             checked={showContextLogs}
-            className="flex items-center justify-center bg-white data-[state=checked]:bg-[#033056] rounded p-0 h-5 w-5"
+            className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
           >
             <Checkbox.Indicator>
               <img
@@ -194,8 +191,11 @@ export default function DateRangeSelector({
               />
             </Checkbox.Indicator>
           </Checkbox.Root>
-          Context Logs
-        </label>
+
+          <label className="pl-2" htmlFor="context-logs">
+            Context Logs
+          </label>
+        </div>
       </fieldset>
     </div>
   );
