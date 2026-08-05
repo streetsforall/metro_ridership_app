@@ -114,6 +114,23 @@ describe('initial state from URL params', () => {
     const { result } = renderHook(() => useUserDashboardInput());
     expect(result.current.isAggregateVisible).toBe(false);
   });
+
+  it('sets showContextLogs to true when logs=1 in URL', () => {
+    window.history.replaceState({}, '', '?logs=1');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.showContextLogs).toBe(true);
+  });
+
+  it('sets showContextLogs to false when logs param is absent', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.showContextLogs).toBe(false);
+  });
+
+  it('sets showContextLogs to false when logs param is not 1', () => {
+    window.history.replaceState({}, '', '?logs=0');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.showContextLogs).toBe(false);
+  });
 });
 
 describe('modes → line visibility', () => {
@@ -262,6 +279,32 @@ describe('URL sync', () => {
   it('omits aggregate param when isAggregateVisible is false by default', () => {
     renderHook(() => useUserDashboardInput());
     expect(window.location.search).not.toContain('aggregate=');
+  });
+
+  it('adds logs=1 to URL when toggleShowContextLogs is called', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.toggleShowContextLogs();
+    });
+
+    expect(window.location.search).toContain('logs=1');
+  });
+
+  it('removes logs param from URL when toggled off', () => {
+    window.history.replaceState({}, '', '?logs=1');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.toggleShowContextLogs();
+    });
+
+    expect(window.location.search).not.toContain('logs=');
+  });
+
+  it('omits logs param when showContextLogs is false by default', () => {
+    renderHook(() => useUserDashboardInput());
+    expect(window.location.search).not.toContain('logs=');
   });
 });
 

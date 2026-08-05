@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import OutputArea from './OutputArea';
 import { Chart as ChartJS, type ChartOptions } from 'chart.js';
 import type { Line } from '../@types/lines.types';
+import type { TransitEvent } from '../@types/events.types';
 
 let capturedOptions: ChartOptions<'line'> | undefined;
 
@@ -33,6 +34,17 @@ const emptyProps = {
   chartDatasets: [],
   months: [],
   lines: [],
+  transitEvents: [] as TransitEvent[],
+  showContextLogs: false,
+};
+
+const transitEventFixture: TransitEvent = {
+  id: 'regional-connector-opening',
+  date: '2023-02',
+  line_ids: [801, 803, 804, 806],
+  title: 'Regional Connector Opening',
+  description: 'The Regional Connector linked the A, C, E, and L lines through a new downtown tunnel.',
+  category: 'opening',
 };
 
 const datasetFixture = {
@@ -61,6 +73,8 @@ describe('OutputArea with datasets', () => {
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
         lines={[]}
+        transitEvents={[]}
+        showContextLogs={false}
       />,
     );
     expect(screen.getByTestId('line-chart')).toBeTruthy();
@@ -72,6 +86,8 @@ describe('OutputArea with datasets', () => {
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
         lines={[]}
+        transitEvents={[]}
+        showContextLogs={false}
       />,
     );
     expect(screen.queryByText('Please select a Metro line.')).toBeNull();
@@ -89,6 +105,8 @@ describe('OutputArea with datasets', () => {
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
         lines={[selectedLine]}
+        transitEvents={[]}
+        showContextLogs={false}
       />,
     );
     expect(screen.getByText('Average Ridership')).toBeTruthy();
@@ -100,6 +118,8 @@ describe('OutputArea with datasets', () => {
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
         lines={[makeLine({ selected: false })]}
+        transitEvents={[]}
+        showContextLogs={false}
       />,
     );
     expect(screen.queryByText('Average Ridership')).toBeNull();
@@ -118,6 +138,8 @@ describe('OutputArea Map', () => {
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
         lines={[]}
+        transitEvents={[]}
+        showContextLogs={false}
       />,
     );
     expect(screen.getByTestId('map')).toBeTruthy();
@@ -125,7 +147,15 @@ describe('OutputArea Map', () => {
 
   it('passes the lines prop through to the Map component', () => {
     const lines = [makeLine({ id: 801 }), makeLine({ id: 802 })];
-    render(<OutputArea chartDatasets={[]} months={[]} lines={lines} />);
+    render(
+      <OutputArea
+        chartDatasets={[]}
+        months={[]}
+        lines={lines}
+        transitEvents={[]}
+        showContextLogs={false}
+      />,
+    );
     expect(screen.getByTestId('map').getAttribute('data-line-count')).toBe('2');
   });
 });
@@ -144,6 +174,8 @@ describe('tooltip itemSort', () => {
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
         lines={[]}
+        transitEvents={[]}
+        showContextLogs={false}
       />,
     );
 
@@ -237,8 +269,225 @@ describe('chart interaction options', () => {
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
         lines={[]}
+        transitEvents={[]}
+        showContextLogs={false}
       />,
     );
     expect(capturedOptions?.interaction?.intersect).toBe(false);
+  });
+});
+
+describe('context log panel', () => {
+  it('does not render the panel when transitEvents is empty', () => {
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2022 1']}
+        lines={[]}
+        transitEvents={[]}
+        showContextLogs={true}
+      />,
+    );
+    expect(screen.queryByText('Context Logs')).toBeNull();
+  });
+
+  it('does not render the panel when there are events but no datasets (no line selected)', () => {
+    render(
+      <OutputArea
+        chartDatasets={[]}
+        months={[]}
+        lines={[]}
+        transitEvents={[transitEventFixture]}
+        showContextLogs={true}
+      />,
+    );
+    expect(screen.queryByText('Context Logs')).toBeNull();
+  });
+
+  it('does not render the panel when showContextLogs is false', () => {
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2023 2']}
+        lines={[]}
+        transitEvents={[transitEventFixture]}
+        showContextLogs={false}
+      />,
+    );
+    expect(screen.queryByText('Context Logs')).toBeNull();
+    expect(screen.queryByText('Regional Connector Opening')).toBeNull();
+  });
+
+  it('renders the panel with event title and description when events and datasets are present', () => {
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2023 2']}
+        lines={[]}
+        transitEvents={[transitEventFixture]}
+        showContextLogs={true}
+      />,
+    );
+    expect(screen.getByText('Context Logs')).toBeTruthy();
+    expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
+    expect(screen.getByText(/linked the A, C, E, and L lines/)).toBeTruthy();
+  });
+
+  it('collapses and expands the panel when the toggle button is clicked', () => {
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2023 2']}
+        lines={[]}
+        transitEvents={[transitEventFixture]}
+        showContextLogs={true}
+      />,
+    );
+
+    expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
+    expect(screen.queryByText('Regional Connector Opening')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
+    expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
+  });
+});
+
+describe('tooltip callbacks', () => {
+  type TitleFn = (items: { label: string }[]) => string;
+  type LabelFn = (item: {
+    dataset: { label?: string };
+    parsed: { y: number | null };
+  }) => string;
+
+  beforeEach(() => {
+    capturedOptions = undefined;
+  });
+
+  const getCallbacks = () => {
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2026 5']}
+        lines={[]}
+        transitEvents={[]}
+        showContextLogs={false}
+      />,
+    );
+    return capturedOptions?.plugins?.tooltip?.callbacks;
+  };
+
+  it('formats the title label "YYYY M" as "Mon YYYY"', () => {
+    const title = getCallbacks()?.title as unknown as TitleFn;
+    expect(title([{ label: '2026 5' }])).toBe('May 2026');
+  });
+
+  it('returns an empty title when there are no items', () => {
+    const title = getCallbacks()?.title as unknown as TitleFn;
+    expect(title([])).toBe('');
+  });
+
+  it('formats the label as "<line>: <comma-grouped ridership>"', () => {
+    const label = getCallbacks()?.label as unknown as LabelFn;
+    expect(label({ dataset: { label: 'A Line' }, parsed: { y: 12345 } })).toBe(
+      'A Line: 12,345',
+    );
+  });
+});
+
+describe('eventMarkers plugin hover', () => {
+  type AfterEvent = (
+    chart: unknown,
+    args: { event: { type: string; x: number }; inChartArea: boolean; changed?: boolean },
+    opts: unknown,
+  ) => void;
+  type AfterDraw = (chart: unknown, args: unknown, opts: unknown) => void;
+
+  const markerEvent: TransitEvent = {
+    id: 'd-line-section-1-extension',
+    date: '2026-05',
+    line_ids: [805],
+    title: 'D Line Section 1 Extension',
+    description: 'Extended westward to three new Westside stations.',
+    category: 'extension',
+  };
+
+  const makeCtx = () => ({
+    save: vi.fn(),
+    restore: vi.fn(),
+    beginPath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    stroke: vi.fn(),
+    setLineDash: vi.fn(),
+    measureText: vi.fn(() => ({ width: 40 })),
+    arcTo: vi.fn(),
+    closePath: vi.fn(),
+    fill: vi.fn(),
+    fillText: vi.fn(),
+    lineWidth: 0,
+    strokeStyle: '',
+    fillStyle: '',
+    font: '',
+    textBaseline: 'alphabetic' as CanvasTextBaseline,
+  });
+
+  const makeChart = (hoveredEventId: string | null = null) => ({
+    $eventMarkers: [] as { xPos: number; event: TransitEvent }[],
+    $hoveredEventId: hoveredEventId,
+    options: { plugins: { eventMarkers: { events: [markerEvent] } } },
+    data: { labels: ['2026 4', '2026 5'] },
+    scales: { x: { getPixelForValue: (i: number) => 50 + i * 50 } },
+    chartArea: { top: 10, bottom: 200, left: 0, right: 300 },
+    ctx: makeCtx(),
+  });
+
+  // Cast the registered plugin so its hooks are called directly on the object
+  // (avoids @typescript-eslint/unbound-method from extracting the methods).
+  type MarkerPlugin = { afterEvent: AfterEvent; afterDraw: AfterDraw };
+  const markerPlugin = () =>
+    ChartJS.registry.getPlugin('eventMarkers') as unknown as MarkerPlugin;
+
+  it('is registered with ChartJS', () => {
+    expect(ChartJS.registry.getPlugin('eventMarkers')).toBeDefined();
+  });
+
+  it('caches marker hitboxes at their x-pixel position after drawing', () => {
+    const chart = makeChart();
+    markerPlugin().afterDraw(chart, {}, {});
+    // label "2026 5" is index 1 → getPixelForValue(1) = 100
+    expect(chart.$eventMarkers).toHaveLength(1);
+    expect(chart.$eventMarkers[0].xPos).toBe(100);
+    expect(chart.$eventMarkers[0].event.id).toBe('d-line-section-1-extension');
+    expect(chart.ctx.stroke).toHaveBeenCalled();
+  });
+
+  it('marks an event hovered when the cursor is near its marker', () => {
+    const chart = makeChart();
+    chart.$eventMarkers = [{ xPos: 100, event: markerEvent }];
+    const args = { event: { type: 'mousemove', x: 103 }, inChartArea: true, changed: false };
+    markerPlugin().afterEvent(chart, args, {});
+    expect(chart.$hoveredEventId).toBe('d-line-section-1-extension');
+    expect(args.changed).toBe(true);
+  });
+
+  it('does not hover when the cursor is far from any marker', () => {
+    const chart = makeChart();
+    chart.$eventMarkers = [{ xPos: 100, event: markerEvent }];
+    const args = { event: { type: 'mousemove', x: 250 }, inChartArea: true, changed: false };
+    markerPlugin().afterEvent(chart, args, {});
+    expect(chart.$hoveredEventId).toBeNull();
+    expect(args.changed).toBe(false);
+  });
+
+  it('draws the tooltip box (title text) for the hovered marker', () => {
+    const chart = makeChart('d-line-section-1-extension');
+    markerPlugin().afterDraw(chart, {}, {});
+    expect(chart.ctx.fillText).toHaveBeenCalledWith(
+      'D Line Section 1 Extension',
+      expect.any(Number),
+      expect.any(Number),
+    );
   });
 });

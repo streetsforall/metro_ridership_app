@@ -45,13 +45,19 @@ vi.mock('./components/OutputArea', () => ({
   default: ({
     chartDatasets,
     months,
+    showContextLogs,
   }: {
     chartDatasets: ChartDataset<'line', CustomChartData[]>[];
     months: string[];
+    showContextLogs: boolean;
   }) => {
     capturedDatasets = chartDatasets;
     capturedMonths = months;
-    return <div data-testid="output-area" />;
+    return (
+      <div data-testid="output-area">
+        {showContextLogs && <div data-testid="context-log-panel" />}
+      </div>
+    );
   },
 }));
 
@@ -378,6 +384,28 @@ describe('App - shared month axis across lines of differing coverage', () => {
       4800 + 700,
       5200 + 900,
     ]);
+  });
+});
+
+describe('App - context log panel', () => {
+  it('renders the context log panel when logs=1', async () => {
+    window.history.replaceState({}, '', '?lines=807&logs=1');
+
+    const { getByTestId } = render(<App />);
+
+    await waitForDatasets(1);
+
+    expect(getByTestId('context-log-panel')).toBeTruthy();
+  });
+
+  it('does not render the context log panel when the logs param is absent', async () => {
+    window.history.replaceState({}, '', '?lines=807');
+
+    const { queryByTestId } = render(<App />);
+
+    await waitForDatasets(1);
+
+    expect(queryByTestId('context-log-panel')).toBeNull();
   });
 });
 

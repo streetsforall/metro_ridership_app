@@ -10,6 +10,8 @@ const defaultProps = {
   setEndDate: vi.fn(),
   dayOfWeek: daysOfWeek.Weekday,
   setDayOfWeek: vi.fn(),
+  showContextLogs: false,
+  toggleShowContextLogs: vi.fn(),
 };
 
 beforeEach(() => {
@@ -117,5 +119,38 @@ describe('DateRangeSelector interactions', () => {
     render(<DateRangeSelector {...defaultProps} setDayOfWeek={setDayOfWeek} />);
     fireEvent.click(screen.getByText('Saturday'));
     expect(setDayOfWeek).toHaveBeenCalled();
+  });
+});
+
+describe('DateRangeSelector context logs checkbox', () => {
+  it('renders the Context Logs checkbox', () => {
+    render(<DateRangeSelector {...defaultProps} />);
+    expect(
+      screen.getByRole('checkbox', { name: 'Context Logs' }),
+    ).toBeTruthy();
+  });
+
+  it('is unchecked when showContextLogs is false', () => {
+    render(<DateRangeSelector {...defaultProps} showContextLogs={false} />);
+    const checkbox = screen.getByRole('checkbox', { name: 'Context Logs' });
+    expect(checkbox.getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('is checked when showContextLogs is true', () => {
+    render(<DateRangeSelector {...defaultProps} showContextLogs={true} />);
+    const checkbox = screen.getByRole('checkbox', { name: 'Context Logs' });
+    expect(checkbox.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('calls toggleShowContextLogs when clicked', () => {
+    const toggleShowContextLogs = vi.fn();
+    render(
+      <DateRangeSelector
+        {...defaultProps}
+        toggleShowContextLogs={toggleShowContextLogs}
+      />,
+    );
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Context Logs' }));
+    expect(toggleShowContextLogs).toHaveBeenCalledOnce();
   });
 });

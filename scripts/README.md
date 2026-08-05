@@ -32,6 +32,28 @@ to avoid double-counting.
 python scripts/compute_line_distances.py
 ```
 
+### `check_transit_events.py`
+
+Cross-checks the hand-curated milestones in `src/data/transit-events.json`
+against independent sources so wrong dates don't ship. For each event it:
+
+1. Confirms every `line_id` still exists as a route in the live GTFS rail feed.
+2. For single-line `opening` events, compares the curated month to the first
+   month that line reports non-zero ridership in `src/data/ridership.json` — a
+   brand-new line shows up in the data when it opens, so the two should agree.
+3. Flags extensions, disruptions, and multi-line events for **manual**
+   verification (a station extension makes no new route and the line already
+   has ridership history, so it can't be dated automatically).
+
+Exits non-zero if an opening date disagrees with the ridership data. The
+offline schema/date checks also run in CI via `src/data/transit-events.test.ts`.
+
+```bash
+python scripts/check_transit_events.py
+# or
+npm run check-transit-events
+```
+
 ---
 
 ## Developer tools
@@ -124,6 +146,48 @@ python scripts/update_ridership.py data/raw/2026-04_2026-05.zip   # limit to giv
 
 Under the hood it reuses `process_ridership` (below) for parsing and merging.
 Use `process_ridership` directly when you want to force-ingest one specific file.
+
+---
+
+## `convert_excel_ridership`
+
+LA Metro fulfills public records requests with Excel files, not the CSV that
+`process_ridership` expects. This script converts those Excel files (summing
+stop/station boardings to per-line totals) and chains directly into
+`process_ridership` to update `ridership.json` — so it's the usual one-step entry
+point for new data.
+
+> **Rail is aggregated by `ROUTE`, not `LINE`.** Metro nests distinct routes
+> under a shared `LINE` grouping — notably ROUTE 805 (D/Purple) under LINE 802
+> (B/Red). Grouping by ROUTE reports each as its own line instead of summing the
+> Purple Line's riders into the Red Line's total. The route breakdown only exists
+> in the source from 2025-09 onward, so line 802 is Red+Purple combined before
+> then and Red-only after (see [`DATA_RELEASE_NOTES.md`](../DATA_RELEASE_NOTES.md)).
+
+It accepts the two shapes Metro delivers:
+
+- Individual files named `MM-YYYY-{Bus|Rail}.xlsx`
+- Typed zip archives named `{Bus|Rail} YYYY.zip` (inner files `YYYY-MM.xlsx`)
+
+**Run** (via the npm shortcut, passing the raw inputs after `--`):
+
+```bash
+# Typed zip archives (what's committed in data/raw/)
+npm run load-ridership -- "data/raw/Bus 2025.zip" "data/raw/Rail 2025.zip"
+
+# Individual xlsx files
+npm run load-ridership -- data/raw/01-2026-Bus.xlsx data/raw/01-2026-Rail.xlsx
+
+# A directory of loose .xlsx files
+npm run load-ridership -- data/raw/
+```
+
+Equivalent to calling `python scripts/convert_excel_ridership.py <inputs>`
+directly. Run from the repo root so the chained `process_ridership` step can find
+`src/data/ridership.json` and `src/data/metro_line_metadata_current.json`.
+
+> Directory mode only globs loose `.xlsx`; the committed `.zip` archives must be
+> passed explicitly (as in the first example above).
 
 ---
 

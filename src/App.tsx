@@ -19,6 +19,8 @@ import type {
   ConsolidatedRidership,
   RidershipRecord,
 } from './@types/metrics.types';
+import transitEventsData from './data/transit-events.json';
+import type { TransitEvent } from './@types/events.types';
 
 /**
  * OutputArea pulls in Chart.js and MapLibre GL. Lazy-loading it keeps MapLibre (the
@@ -67,6 +69,8 @@ function App() {
     updateLinesWithLineMetrics,
     visibleLines,
     isAggregateVisible,
+    showContextLogs,
+    toggleShowContextLogs,
   } = userDashboardInputState;
 
   const isLoading = ridershipRecords === null;
@@ -165,6 +169,22 @@ function App() {
     };
   }, [startDate, endDate, lines, dayOfWeek, isAggregateVisible, ridershipRecords]);
 
+  const transitEvents = useMemo(() => {
+    const selectedLineIds = new Set(lines.filter((l) => l.selected).map((l) => l.id));
+    const startYYYYMM = startDate.getFullYear() * 100 + (startDate.getMonth() + 1);
+    const endYYYYMM = endDate.getFullYear() * 100 + (endDate.getMonth() + 1);
+
+    return (transitEventsData as TransitEvent[])
+      .filter((event) => {
+        const [year, month] = event.date.split('-').map(Number);
+        const eventYYYYMM = year * 100 + month;
+        if (eventYYYYMM < startYYYYMM || eventYYYYMM > endYYYYMM) return false;
+        if (event.line_ids.length === 0) return true;
+        return event.line_ids.some((id) => selectedLineIds.has(id));
+      })
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [startDate, endDate, lines]);
+
   /**
    * Attach computed metrics (average ridership, change, etc.) to each line entry
    * so the LineSelector can display them. JSON.stringify is used as the dependency
@@ -189,6 +209,8 @@ function App() {
           setEndDate={setEndDate}
           dayOfWeek={dayOfWeek}
           setDayOfWeek={setDayOfWeek}
+          showContextLogs={showContextLogs}
+          toggleShowContextLogs={toggleShowContextLogs}
         />
       </div>
 
@@ -228,6 +250,8 @@ function App() {
               chartDatasets={chartDatasets}
               months={monthList}
               lines={lines}
+              transitEvents={transitEvents}
+              showContextLogs={showContextLogs}
               isLoading={isLoading}
             />
           </Suspense>

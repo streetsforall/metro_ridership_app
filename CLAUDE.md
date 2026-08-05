@@ -39,6 +39,8 @@ Non-obvious constraints:
 - **`#lineMap` is masked in every `visual.spec.ts` screenshot.** The map is covered by [e2e/map.spec.ts](e2e/map.spec.ts) instead, in its own `map` Playwright project: it stubs every off-localhost request with a blank MapLibre style (one background layer, no sources), so only the same-origin `metro_lines.geojson` geometry paints and the render is byte-identical run to run. It waits on MapLibre's `idle` event via `window.__metroMap` — a test seam published by [src/components/Map.tsx](src/components/Map.tsx) that nothing in the app reads; don't delete it. Regenerate its baselines alone with `npm run test:e2e:update:linux -- --project=map`.
 - CI is two jobs: `build` (lint/test/build, uploads `dist/`) → `e2e` (Playwright container, downloads `dist/`, previews only — `playwright.config.ts` skips its own build when `CI` is set). The full failure runbook is in [README.md](README.md#ci-went-red--now-what).
 
+CI runs lint → test → build on every push/PR to `main` ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+
 ## Data flow (the core architecture)
 
 The app transforms flat ridership records into per-line consolidated structures, then derives summary metrics. Understanding this pipeline is key:
@@ -56,6 +58,7 @@ Type definitions for these shapes live in [src/@types/metrics.types.ts](src/@typ
 - **`JSON.stringify(...)` is intentionally used in several dependency arrays** (`lines`, `ridershipByLine`) because those objects get a new reference every render; don't "fix" these to raw object deps.
 - **The ridership dataset is fetched, not bundled** — `src/data/ridership.json` remains the canonical record-format source (the Python pipeline reads/writes it), but the app fetches `/ridership.json` at runtime as a minified columnar `{cols,rows}` blob emitted by the `ridership-data` Vite plugin ([vite/ridership-data-plugin.ts](vite/ridership-data-plugin.ts)) and decodes it via [src/utils/ridershipData.ts](src/utils/ridershipData.ts). The selectable date bounds come from the plugin's `virtual:ridership-bounds` module, so the full dataset never enters the JS bundle. The plugin is registered in both `vite.config.ts` and `vitest.config.ts`. Run `ANALYZE=1 npm run build` for a bundle treemap at `dist/stats.html`. `OutputArea` (Chart.js + MapLibre GL) is lazy-loaded to keep MapLibre out of the entry chunk.
 - **Month indexing is off by one on purpose** in App.tsx's date filter (`new Date(year, month)` treats month as 0-based while data is 1-based) — preserved from the original implementation; don't silently change it.
+- **Date range bounds are derived from the data, not hardcoded** — [src/utils/dataDateRange.ts](src/utils/dataDateRange.ts) computes `dataMinYear`/`dataMaxYear` (the year `<option>`s in `DateRangeSelector`) and `dataDefaultEndDate` (the default end of the window) from `ridership.json` at module load, so the newest month is always selectable without code changes. `dataDefaultEndDate` is deliberately one month past the latest record to satisfy the exclusive, off-by-one end filter above.
 - **Lines cover different date ranges** — a line added mid-history has far fewer records than its neighbours (the D Line starts 2025-09; most rail starts 2009). Chart.js `CategoryScale` **appends** any label missing from `labels` to the end of the axis, so every dataset must be drawn against one shared axis: [src/utils/chartData.ts](src/utils/chartData.ts) builds the chronologically sorted union of months (`buildMonthAxis`), pads each line onto it with `null` for months it doesn't cover (`alignToMonthAxis`), and sums the aggregate by month rather than by array index (`buildAggregateSeries`). Never derive the axis from a single dataset, and don't set `spanGaps` — the gaps are meaningful. The per-line metrics in [src/utils/calc.ts](src/utils/calc.ts) are **not** coverage-aware (see issue #88).
 - **Line colors**: official rail/BRT lines have hardcoded brand colors in `definedLines` ([src/utils/lines.ts](src/utils/lines.ts)); all other bus lines get a deterministic golden-angle HSL hue so the chart and map agree.
 
@@ -65,13 +68,14 @@ Type definitions for these shapes live in [src/@types/metrics.types.ts](src/@typ
 
 ## Data processing scripts (`scripts/`)
 
-Python scripts maintain the JSON the app consumes. See [scripts/README.md](scripts/README.md). Setup: `pip install -r scripts/requirements.txt`; tests: `pytest scripts/`.
+Python scripts maintain the JSON the app consumes (the old `.mjs` versions have been removed). See [scripts/README.md](scripts/README.md). Setup: `pip install -r scripts/requirements.txt`; tests: `pytest scripts/`.
 
 - `update_ridership.py` — **the day-to-day entry point.** Scans `data/raw/`, works out which month/line records are missing, and appends only those (append-only unless `--overwrite`). Prepends an entry to `DATA_RELEASE_NOTES.md` unless `--no-release-notes`. Supports `--dry-run`.
 - `process_ridership.py <xlsx|zip|csv.gz>` — the merge engine `update_ridership.py` calls; use it directly to force-ingest one specific file. Merges into `src/data/ridership.json` and appends new lines to `metro_line_metadata_current.json`. New data wins on conflicts; old data backfills.
-- `convert_excel_ridership.py` — helper invoked by `process_ridership.py` to parse the `.xlsx` files records requests return into the legacy CSV schema. Not run directly.
+- `convert_excel_ridership.py` — helper invoked by `process_ridership.py` to parse the `.xlsx` files records requests return into the legacy CSV schema. Also exposed as `npm run load-ridership` for converting Excel inputs directly.
 - `fetch_metro_lines.py` (also `npm run fetch-lines`) — downloads GTFS feeds → `public/metro_lines.geojson`. Run before the script tests, which use that file as a fixture.
 - `compute_line_distances.py` — `metro_lines.geojson` → `src/data/line_distances.json` (one-way miles; only outbound leg for rail).
+- `check_transit_events.py` (also `npm run check-transit-events`) — validates `src/data/transit-events.json`: line_ids exist in the live GTFS feed, and single-line `opening` dates match the first non-zero ridership month. Extensions are flagged for manual review. Offline schema checks also run in `src/data/transit-events.test.ts`.
 
 Store raw files compressed in `data/raw/` — `.zip` for Excel, `.csv.gz` for legacy CSVs; uncompressed `.xlsx`/`.csv` are gitignored. `notebooks/` holds exploration notebooks (`metro_data_ridership_update.ipynb`).
 
