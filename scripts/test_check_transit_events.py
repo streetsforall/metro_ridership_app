@@ -1,11 +1,13 @@
 """
 Tests for check_transit_events.py.
 
-Covers the pure date/ridership logic with tiny in-memory fixtures — no network
-and no real data files, so `known_route_ids` is passed explicitly.
+Covers the pure date/ridership/shakeup logic with tiny in-memory fixtures — no
+network and no real data files, so `known_route_ids`, `shakeups` and
+`check_source` are all passed explicitly.
 """
 
 from check_transit_events import (
+    bus_route_ids,
     check_events,
     dataset_month_bounds,
     first_nonzero_month,
@@ -35,6 +37,12 @@ RECORDS = [
     # line 804 reports from the dataset start (no opening signal)
     rec(2009, 1, 804, 4000, 2000, 1500),
 ]
+
+SHAKEUPS = {"202004", "202112", "202210", "202306"}
+
+
+def levels(findings, level):
+    return [msg for lvl, msg in findings if lvl == level]
 
 
 def test_month_int():
@@ -120,3 +128,174 @@ def test_future_dated_event_warns():
     ]
     findings = check_events(events, RECORDS, known_route_ids={807})
     assert any(level == "WARN" and "past the latest" in msg for level, msg in findings)
+
+
+# --- bus route resolution -------------------------------------------------
+
+
+def test_bus_route_ids_reads_short_names_and_brt_fallback():
+    # 2 is a plain bus line; the G Line (901) has a blank short_name and must
+    # fall back to the numeric prefix of route_id — the case that used to make
+    # every bus/BRT id look unknown when only the rail feed was consulted.
+    routes = [
+        {"route_id": "2-13166", "route_short_name": "2"},
+        {"route_id": "901-13166", "route_short_name": ""},
+        {"route_id": "not-a-line", "route_short_name": ""},
+    ]
+    assert bus_route_ids(lambda _name: routes) == {2, 901}
+
+
+def test_bus_line_event_is_not_warned_when_bus_feed_included():
+    events = [
+        {"id": "b", "date": "2022-10", "line_ids": [2], "category": "headway_change"},
+    ]
+    findings = check_events(events, RECORDS, known_route_ids={2, 807})
+    assert not any(level == "WARN" and "line 2" in msg for level, msg in findings)
+    # New categories land in the MANUAL bucket alongside extensions.
+    assert any(level == "MANUAL" and "headway_change" in msg for level, msg in findings)
+
+
+# --- shakeup cross-check --------------------------------------------------
+
+
+def test_matching_shakeup_passes():
+    events = [
+        {
+            "id": "k",
+            "date": "2022-10",
+            "line_ids": [807],
+            "category": "opening",
+            "shakeup": "202210",
+        },
+    ]
+    findings = check_events(events, RECORDS, known_route_ids={807}, shakeups=SHAKEUPS)
+    assert not [f for f in findings if f[0] == "FAIL"]
+
+
+def test_shakeup_one_month_off_is_tolerated():
+    # COVID: announced 2020-03, took effect on the 202004 pick.
+    events = [
+        {
+            "id": "covid",
+            "date": "2020-03",
+            "line_ids": [],
+            "category": "disruption",
+            "shakeup": "202004",
+        },
+    ]
+    findings = check_events(events, RECORDS, known_route_ids=set(), shakeups=SHAKEUPS)
+    assert not [f for f in findings if f[0] == "FAIL"]
+
+
+def test_shakeup_not_in_lookup_fails():
+    events = [
+        {
+            "id": "k",
+            "date": "2022-10",
+            "line_ids": [807],
+            "category": "opening",
+            "shakeup": "202211",  # correct format, never a real pick
+        },
+    ]
+    findings = check_events(events, RECORDS, known_route_ids={807}, shakeups=SHAKEUPS)
+    assert any("not a pick period Metro ran" in msg for msg in levels(findings, "FAIL"))
+
+
+def test_shakeup_far_from_event_date_fails():
+    events = [
+        {
+            "id": "k",
+            "date": "2022-10",
+            "line_ids": [807],
+            "category": "opening",
+            "shakeup": "202112",  # a real pick, but 10 months away
+        },
+    ]
+    findings = check_events(events, RECORDS, known_route_ids={807}, shakeups=SHAKEUPS)
+    assert any("10 months apart" in msg for msg in levels(findings, "FAIL"))
+
+
+def test_malformed_shakeup_fails():
+    events = [
+        {
+            "id": "k",
+            "date": "2022-10",
+            "line_ids": [807],
+            "category": "opening",
+            "shakeup": "2022-10",
+        },
+    ]
+    findings = check_events(events, RECORDS, known_route_ids={807}, shakeups=SHAKEUPS)
+    assert any("not a YYYYMM id" in msg for msg in levels(findings, "FAIL"))
+
+
+def test_shakeup_membership_skipped_without_lookup():
+    events = [
+        {
+            "id": "k",
+            "date": "2022-10",
+            "line_ids": [807],
+            "category": "opening",
+            "shakeup": "202211",
+        },
+    ]
+    findings = check_events(events, RECORDS, known_route_ids={807}, shakeups=None)
+    assert not any("not a pick period" in msg for msg in levels(findings, "FAIL"))
+
+
+# --- source checks --------------------------------------------------------
+
+
+def base_event(**overrides):
+    event = {"id": "s", "date": "2022-10", "line_ids": [807], "category": "opening"}
+    event.update(overrides)
+    return event
+
+
+def test_missing_source_warns_but_does_not_fail():
+    # Link/citation problems must never gate a data update.
+    findings = check_events([base_event()], RECORDS, known_route_ids={807})
+    assert any("no source URL cited" in msg for msg in levels(findings, "WARN"))
+    assert not [f for f in findings if f[0] == "FAIL"]
+
+
+def test_non_https_source_warns():
+    events = [base_event(source="http://example.com/a")]
+    findings = check_events(events, RECORDS, known_route_ids={807})
+    assert any("not https" in msg for msg in levels(findings, "WARN"))
+
+
+def test_reachable_source_is_silent():
+    events = [base_event(source="https://example.com/a")]
+    findings = check_events(
+        events, RECORDS, known_route_ids={807}, check_source=lambda _url: True
+    )
+    assert not levels(findings, "WARN")
+
+
+def test_dead_source_warns_but_does_not_fail():
+    events = [base_event(source="https://example.com/gone")]
+    findings = check_events(
+        events, RECORDS, known_route_ids={807}, check_source=lambda _url: False
+    )
+    assert any("error status" in msg for msg in levels(findings, "WARN"))
+    assert not [f for f in findings if f[0] == "FAIL"]
+
+
+def test_source_check_transport_error_warns_but_does_not_fail():
+    def boom(_url):
+        raise OSError("no network")
+
+    events = [base_event(source="https://example.com/a")]
+    findings = check_events(
+        events, RECORDS, known_route_ids={807}, check_source=boom
+    )
+    assert any("unreachable" in msg for msg in levels(findings, "WARN"))
+    assert not [f for f in findings if f[0] == "FAIL"]
+
+
+def test_source_check_skipped_when_not_injected():
+    # Default (offline) path: cited sources produce no findings at all.
+    events = [base_event(source="https://example.com/a")]
+    findings = check_events(events, RECORDS, known_route_ids={807})
+    assert not levels(findings, "WARN")
