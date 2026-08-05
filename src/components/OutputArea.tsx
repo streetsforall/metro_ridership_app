@@ -66,6 +66,9 @@ export default function OutputArea({
   ChartJS.defaults.color = colors.stone['700'];
 
   const options: ChartOptions<'line'> = {
+    // Honour prefers-reduced-motion: skip the intro easing rather than animating the canvas.
+    // Playwright sets this for snapshot runs, which also makes the chart deterministic.
+    animation: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? false : undefined,
     interaction: {
       axis: 'x',
       includeInvisible: false,
@@ -118,7 +121,7 @@ export default function OutputArea({
       {chartDatasets.length > 0 ? (
         <>
           {/* Chart pane */}
-          <div className="pane">
+          <div className="pane" id="ridership-chart">
             <LineChart
               options={options}
               data={{
