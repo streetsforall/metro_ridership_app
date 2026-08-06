@@ -44,8 +44,18 @@ export default function SummaryData({ lines }: SummaryDataProps) {
 
   return (
     <div>
+      {/**
+       * Three layouts, widest last. Below `sm` the tiles stack: two columns do
+       * not fit a 390px phone, because each `.pane` carries 4rem of horizontal
+       * padding and a `whitespace-nowrap` label, giving it a min-content width
+       * of ~262px against a ~171px track — and a `1fr` track has to honour
+       * min-content, so the page scrolls sideways. `lg:flex` restores the
+       * single row. Deliberately not `xl:flex-nowrap`: an unwrappable row hands
+       * the surrounding `1fr` grid track its full min-content width and
+       * overflows the page (see OutputArea's min-w-0).
+       */}
       {selectedLines.length > 0 && (
-        <div className="grid lg:flex grid-cols-[1fr_1fr] flex-wrap gap-4 items-center">
+        <div className="grid grid-cols-[1fr] sm:grid-cols-[1fr_1fr] lg:flex flex-wrap gap-4 items-center">
           {/* Stats */}
           {/* TODO: Refactor into component */}
           <div className="pane">
@@ -113,7 +123,7 @@ export default function SummaryData({ lines }: SummaryDataProps) {
           </div>
 
           {/* Text */}
-          <div className="basis-full flex flex-col col-span-2 gap-4 p-4 text-sm max-w-[54rem]">
+          <div className="basis-full flex flex-col col-span-full gap-4 p-4 text-sm max-w-[54rem]">
             <p>
               <span className="font-bold mr-1">Selected:</span>
 
