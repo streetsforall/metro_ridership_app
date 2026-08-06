@@ -28,7 +28,7 @@ opens the PR. Letters run in one series and are never reused. Batch prefix:
 | B | 1 — ridership view module | implement → PR | **done** — #105, #106, #107, #108 |
 | C | 2 — derived metrics off state | grill → spec → tickets | **ready** |
 | D | 2 — derived metrics off state | implement → PR | blocked by C |
-| E | 3 — collapse `calc.ts` | grill → spec → tickets | **ready** |
+| E | 3 — collapse `calc.ts` | grill → spec → tickets | **ready** — read PR #93 first |
 | F | 3 — collapse `calc.ts` | implement → PR | blocked by E |
 | G | 4 — a `Month` module | grill → spec → tickets | **ready** |
 | H | 4 — a `Month` module | implement → PR | blocked by G |
@@ -161,6 +161,19 @@ Four `JSON.stringify` dependency arrays exist to keep that cycle from spinning.
 
 **Files** — `src/utils/calc.ts` · `src/utils/calc.test.ts` ·
 `src/hooks/useUserDashboardInput.ts` (L193–213)
+
+> **Read PR #93 before grilling E.** It is open against this exact territory and closes #88.
+> It already fixes the in-place `metrics.sort()` mutation and the unguarded `sorted[0]`, and it
+> takes a deliberate policy decision — *label, don't redefine* — that the "coverage-aware"
+> column below assumes rather than argues: metrics keep estimating from each line's own first
+> and last record, and the UI stops claiming they all describe the same period. Re-anchoring
+> them to the window endpoints is explicitly deferred there as its own decision. E should either
+> build on that policy or reopen it on purpose, not rediscover it.
+>
+> Two mechanical notes: #93 predates the candidate 1 work, so it edits `src/utils/chartData.ts`,
+> which #106 moved to `src/ridership/`, and it touches `SummaryData.test.tsx` and
+> `useUserDashboardInput.test.ts`, whose fixtures #110 rewrote. It needs a rebase before either
+> it or E can land. Whichever goes second absorbs that cost — worth deciding the order up front.
 
 **Problem.** Five exports that always fire together, each re-sorting the caller's array **in
 place**, and the caller must know to skip `calcRidersPerMile` when distance is missing. The
