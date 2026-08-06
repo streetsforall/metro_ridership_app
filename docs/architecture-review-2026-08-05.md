@@ -36,7 +36,10 @@ opens the PR. Letters run in one series and are never reused. Batch prefix:
 
 Candidate 1 was the frozen contract: it defines the module that 2, 3 and 4 all attach to, so it
 landed alone before anything else started. It is now on `main`, which is what unblocked C, E and
-G — they are independent of each other and can run in any order, or in parallel.
+G — they are independent of each other and can run in any order, but **not in parallel**. Each
+appends to `CONTEXT.md` and claims the next `docs/adr/NNNN` number (0004 is next free), so
+concurrent sessions collide on both; and all three are interactive grill sessions, which
+serialise on the user's attention regardless of file fencing.
 
 A's outputs are on `main`: `CONTEXT.md` (the repo's first glossary), `docs/adr/0001`–`0003`, and
 `src/plans/ridership-view-module.md`. C, E and G should read those before grilling — in
