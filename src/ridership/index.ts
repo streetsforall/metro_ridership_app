@@ -4,10 +4,18 @@
  * Everything else in this folder is implementation: importing `../ridership/chartData`
  * from outside is visibly reaching past the seam. See
  * `docs/adr/0003-one-domain-folder-not-a-repo-wide-reorganisation.md`.
- *
- * Transitional shape — these three helpers are re-exported only so the move of
- * `chartData` stays a pure relocation. They are replaced by the single
- * `buildRidershipView` export once that module exists (#102).
+ */
+export {
+  buildRidershipView,
+  type RidershipView,
+  type RidershipViewInput,
+  type LineSelection,
+} from './buildRidershipView';
+
+/**
+ * Transitional — `App.tsx` still calls the chart helpers directly. Dropped in
+ * #103, once App is wired to `buildRidershipView` and `chartData` becomes
+ * implementation reachable only from within this folder.
  */
 export {
   buildMonthAxis,
