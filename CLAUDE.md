@@ -6,6 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Client-side React + Vite app (Streets for All Data/Dev Team) for visualizing LA Metro bus/rail ridership data. There is no backend. Small metadata JSON (line metadata, distances) is bundled into the build; the large ridership dataset is served as a separate columnar asset **fetched at runtime** (see the `ridership-data` Vite plugin) so it stays out of the JS bundle. The app may move to full-stack if data processing gets too heavy.
 
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on `streetsforall/metro_ridership_app`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles map onto existing repo labels where they exist (`needs-info` → `question`, `ready-for-human` → `help wanted`, `wontfix` → `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — one `CONTEXT.md` + `docs/adr/` at the repo root (neither exists yet; created lazily). See `docs/agents/domain.md`.
+
 ## Commands
 
 ```bash
