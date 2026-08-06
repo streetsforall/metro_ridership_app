@@ -24,8 +24,8 @@ opens the PR. Letters run in one series and are never reused. Batch prefix:
 
 | Letter | Candidate | Session does | Status |
 | --- | --- | --- | --- |
-| A | 1 — ridership view module | grill → spec → tickets | not started |
-| B | 1 — ridership view module | implement → PR | blocked by A |
+| A | 1 — ridership view module | grill → spec → tickets | **done** — #100 (+ #101, #102, #103, #104) |
+| B | 1 — ridership view module | implement → PR | **ready** — work #101 → #102 → #103 |
 | C | 2 — derived metrics off state | grill → spec → tickets | blocked by B |
 | D | 2 — derived metrics off state | implement → PR | blocked by C |
 | E | 3 — collapse `calc.ts` | grill → spec → tickets | blocked by B |
@@ -36,6 +36,12 @@ opens the PR. Letters run in one series and are never reused. Batch prefix:
 
 Candidate 1 is the frozen contract: it defines the module that 2, 3 and 4 all attach to, so it
 lands alone before anything else starts.
+
+A's outputs are on branch `claude/agitated-nash-d3e284`: `CONTEXT.md` (the repo's first glossary),
+`docs/adr/0001`–`0003`, and `src/plans/ridership-view-module.md`. C, E and G should read those
+before grilling — in particular ADR-0001, which settles the deliberate month-window offset, and
+ADR-0003, which settles why `src/ridership/` is the only domain folder. #104 (duplicated test-data
+factories) came out of A but is independent of the module and of every other letter.
 
 ---
 
