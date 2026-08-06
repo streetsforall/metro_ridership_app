@@ -44,7 +44,7 @@ export interface RidershipView {
   /** One dataset per selected line in `lines` order; the Aggregate Series last, if requested. */
   datasets: ChartDataset<'line', CustomChartData[]>[];
   /** Records grouped by line, each carrying its Selection Snapshot. */
-  byLine: ConsolidatedRidership;
+  consolidated: ConsolidatedRidership;
   /** Transit Events inside the Event Window that apply to the selection, chronologically. */
   events: TransitEvent[];
 }
@@ -199,7 +199,7 @@ export function buildRidershipView(input: RidershipViewInput): RidershipView {
   return {
     months,
     datasets,
-    byLine: consolidatedRidership,
+    consolidated: consolidatedRidership,
     events,
   };
 }

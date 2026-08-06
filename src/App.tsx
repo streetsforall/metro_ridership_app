@@ -69,10 +69,10 @@ function App() {
    * deliberately offset month window, the shared axis, the aggregate ordering)
    * lives in src/ridership/ and is unit-tested there.
    *
-   * Kept memoised: the metrics effect below keys on JSON.stringify(byLine), and
+   * Kept memoised: the metrics effect below keys on JSON.stringify(consolidated), and
    * a fresh object every render would thrash it.
    */
-  const { months, datasets, byLine, events } = useMemo(
+  const { months, datasets, consolidated, events } = useMemo(
     () =>
       buildRidershipView({
         records: ridershipRecords,
@@ -88,12 +88,12 @@ function App() {
   /**
    * Attach computed metrics (average ridership, change, etc.) to each line entry
    * so the LineSelector can display them. JSON.stringify is used as the dependency
-   * because byLine is a new object reference on every render (useMemo).
+   * because consolidated is a new object reference on every render (useMemo).
    */
   useEffect(() => {
-    updateLinesWithLineMetrics(byLine);
+    updateLinesWithLineMetrics(consolidated);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(byLine)]);
+  }, [JSON.stringify(consolidated)]);
 
   return (
     /* Stretch full height */
@@ -126,7 +126,7 @@ function App() {
           <LineSelector
             {...userDashboardInputState}
             lines={visibleLines}
-            ridershipByLine={byLine}
+            ridershipByLine={consolidated}
             isExpanded={isLineSelectorExpanded}
             setIsExpanded={setIsLineSelectorExpanded}
           />
