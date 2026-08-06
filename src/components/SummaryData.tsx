@@ -45,7 +45,7 @@ export default function SummaryData({ lines }: SummaryDataProps) {
   return (
     <div>
       {selectedLines.length > 0 && (
-        <div className="grid lg:flex  grid-cols-[1fr_1fr] flex-wrap gap-4 items-center">
+        <div className="grid lg:flex grid-cols-[1fr_1fr] flex-wrap gap-4 items-center">
           {/* Stats */}
           {/* TODO: Refactor into component */}
           <div className="pane">
@@ -113,7 +113,7 @@ export default function SummaryData({ lines }: SummaryDataProps) {
           </div>
 
           {/* Text */}
-          <div className="basis-full flex flex-col col-span-2 gap-4 p-4 text-sm  max-w-[54rem]">
+          <div className="basis-full flex flex-col col-span-2 gap-4 p-4 text-sm max-w-[54rem]">
             <p>
               <span className="font-bold mr-1">Selected:</span>
 

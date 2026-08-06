@@ -13,6 +13,21 @@ Entries are newest first.
 
 ---
 
+## D/Purple Line split from B/Red (reprocessing)
+
+- **Type:** data-model correction — no new months added
+- **What changed:** the rail Excel nests the **D Line (Purple)** as `ROUTE` 805 under
+  `LINE` 802 (the B/Red grouping). The ETL previously summed both routes into a single
+  "802" total, folding the Purple Line's riders into the Red Line. It now aggregates rail
+  by `ROUTE`, so line **805** is reported on its own.
+- **Effect:** line **805** added for **2025-09 → 2026-05** (the months the source provides
+  the route breakdown; +11 records). Line **802** drops to Red-only for those same months
+  (e.g. May 2026 weekday 87,237 → 47,611). Earlier history has no route column in the
+  source, so **802 remains Red+Purple combined before 2025-09** — a deliberate discontinuity
+  in the B-Line series at Sept 2025.
+- **Source:** re-ingested `Bus 2025.zip`, `Rail 2025.zip`, `2026-01_2026-03.zip`,
+  `2026-04_2026-05.zip` through the updated `convert_excel_ridership.py`.
+
 ## Apr–May 2026
 
 - **Months:** April 2026, May 2026

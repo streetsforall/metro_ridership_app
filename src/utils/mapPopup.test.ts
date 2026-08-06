@@ -1,16 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildPopupHTML } from './mapPopup';
-import type { Line } from '../@types/lines.types';
-
-const makeLine = (overrides: Partial<Line> = {}): Line => ({
-  id: 801,
-  name: 'A Line',
-  mode: 'Rail',
-  provider: 'DO',
-  selected: true,
-  visible: true,
-  ...overrides,
-});
+import { makeLine } from '../test/builders';
 
 describe('buildPopupHTML', () => {
   it('always includes the line name in bold', () => {

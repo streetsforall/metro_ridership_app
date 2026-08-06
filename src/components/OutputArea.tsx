@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -17,11 +18,15 @@ import SummaryData from './SummaryData';
 import Map from './Map';
 import type { CustomChartData } from '../@types/chart.types';
 import type { Line } from '../@types/lines.types';
+import type { TransitEvent } from '../@types/events.types';
 
 interface OutputAreaProps {
   chartDatasets: ChartDataset<'line', CustomChartData[]>[];
   months: string[];
   lines: Line[];
+  transitEvents: TransitEvent[];
+  /** Whether the context-log panel is enabled from the filter bar. */
+  showContextLogs: boolean;
   /** True while the ridership dataset is still being fetched. */
   isLoading?: boolean;
 }
@@ -32,7 +37,10 @@ const hoverCrosshairPlugin: Plugin<'line'> = {
     const active = chart.tooltip?.getActiveElements();
     if (!active?.length) return;
     const x = active[0].element.x;
-    const { ctx, chartArea: { top, bottom } } = chart;
+    const {
+      ctx,
+      chartArea: { top, bottom },
+    } = chart;
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(x, top);
@@ -45,6 +53,162 @@ const hoverCrosshairPlugin: Plugin<'line'> = {
   },
 };
 
+interface EventMarkerHitbox {
+  xPos: number;
+  event: TransitEvent;
+}
+
+/** Fields stashed on the chart instance to bridge afterEvent → afterDraw. */
+type ChartWithMarkers = ChartJS<'line'> & {
+  $eventMarkers?: EventMarkerHitbox[];
+  $hoveredEventId?: string | null;
+};
+
+// How close (px) the cursor must be to a marker's vertical line to hover it.
+const MARKER_HIT_RADIUS = 6;
+
+/** Draws an amber-bordered tooltip box for a hovered event marker. */
+function drawEventTooltip(
+  ctx: CanvasRenderingContext2D,
+  hit: EventMarkerHitbox,
+  area: { left: number; right: number; top: number },
+): void {
+  const { event, xPos } = hit;
+  const title = event.title;
+  const subtitle = `${formatEventDate(event.date)} · ${event.category}`;
+
+  const titleFont = '600 12px "Overpass Mono Variable"';
+  const subFont = '11px "Overpass Mono Variable"';
+
+  ctx.save();
+  ctx.font = titleFont;
+  const titleWidth = ctx.measureText(title).width;
+  ctx.font = subFont;
+  const subWidth = ctx.measureText(subtitle).width;
+
+  const padX = 8;
+  const padY = 6;
+  const gap = 4;
+  const titleH = 12;
+  const subH = 11;
+  const boxW = Math.ceil(Math.max(titleWidth, subWidth)) + padX * 2;
+  const boxH = padY * 2 + titleH + gap + subH;
+
+  // Prefer the right of the marker; flip left if it would overflow the plot.
+  let boxX = xPos + 8;
+  if (boxX + boxW > area.right) boxX = xPos - 8 - boxW;
+  boxX = Math.max(area.left, Math.min(boxX, area.right - boxW));
+  const boxY = area.top + 8;
+
+  const r = 4;
+  ctx.beginPath();
+  ctx.moveTo(boxX + r, boxY);
+  ctx.arcTo(boxX + boxW, boxY, boxX + boxW, boxY + boxH, r);
+  ctx.arcTo(boxX + boxW, boxY + boxH, boxX, boxY + boxH, r);
+  ctx.arcTo(boxX, boxY + boxH, boxX, boxY, r);
+  ctx.arcTo(boxX, boxY, boxX + boxW, boxY, r);
+  ctx.closePath();
+  ctx.fillStyle = colors.stone['800'];
+  ctx.strokeStyle = colors.amber['500'];
+  ctx.lineWidth = 1;
+  ctx.setLineDash([]);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.textBaseline = 'top';
+  ctx.font = titleFont;
+  ctx.fillStyle = colors.amber['400'];
+  ctx.fillText(title, boxX + padX, boxY + padY);
+  ctx.font = subFont;
+  ctx.fillStyle = colors.stone['300'];
+  ctx.fillText(subtitle, boxX + padX, boxY + padY + titleH + gap);
+
+  ctx.restore();
+}
+
+const eventMarkersPlugin: Plugin<'line'> = {
+  id: 'eventMarkers',
+
+  // Hit-test the cursor against cached marker positions and request a redraw
+  // only when the hovered marker changes.
+  afterEvent(chart, args) {
+    const c = chart as ChartWithMarkers;
+    const markers = c.$eventMarkers ?? [];
+    let hoveredId: string | null = null;
+
+    if (args.event.type === 'mousemove' && args.inChartArea && markers.length) {
+      const x = args.event.x ?? -1;
+      let best = MARKER_HIT_RADIUS;
+      for (const marker of markers) {
+        const dist = Math.abs(marker.xPos - x);
+        if (dist <= best) {
+          best = dist;
+          hoveredId = marker.event.id;
+        }
+      }
+    }
+
+    if (hoveredId !== (c.$hoveredEventId ?? null)) {
+      c.$hoveredEventId = hoveredId;
+      args.changed = true;
+    }
+  },
+
+  afterDraw(chart) {
+    const c = chart as ChartWithMarkers;
+    const events: TransitEvent[] =
+      (chart.options.plugins as Record<string, { events?: TransitEvent[] }>)
+        .eventMarkers?.events ?? [];
+    if (!events.length) {
+      c.$eventMarkers = [];
+      return;
+    }
+
+    const {
+      ctx,
+      chartArea: { top, bottom },
+      scales: { x },
+    } = chart;
+    const labels = chart.data.labels as string[];
+
+    // Draw each marker and cache its x-position for hover hit-testing.
+    const hitboxes: EventMarkerHitbox[] = [];
+    ctx.save();
+    ctx.setLineDash([3, 3]);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = colors.amber['500'];
+
+    events.forEach((event) => {
+      // Chart labels are "YYYY M" (e.g. "2023 2"); event dates are "YYYY-MM"
+      const label = `${event.date.slice(0, 4)} ${parseInt(event.date.slice(5), 10)}`;
+      const idx = labels.indexOf(label);
+      if (idx === -1) return;
+
+      const xPos = x.getPixelForValue(idx);
+      hitboxes.push({ xPos, event });
+      ctx.beginPath();
+      ctx.moveTo(xPos, top);
+      ctx.lineTo(xPos, bottom);
+      ctx.stroke();
+    });
+
+    ctx.restore();
+    c.$eventMarkers = hitboxes;
+
+    // Overlay a tooltip box for the currently hovered marker, if any.
+    if (c.$hoveredEventId) {
+      const hovered = hitboxes.find((h) => h.event.id === c.$hoveredEventId);
+      if (hovered) {
+        drawEventTooltip(ctx, hovered, {
+          left: chart.chartArea.left,
+          right: chart.chartArea.right,
+          top,
+        });
+      }
+    }
+  },
+};
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -54,18 +218,46 @@ ChartJS.register(
   Tooltip,
   Legend,
   hoverCrosshairPlugin,
+  eventMarkersPlugin,
 );
+
+function formatEventDate(date: string): string {
+  const [year, month] = date.split('-').map(Number);
+  return new Date(year, month - 1).toLocaleString('en-US', {
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+/** Turns a chart x-label ("YYYY M", e.g. "2026 5") into "May 2026". */
+function formatMonthLabel(label: string): string {
+  const [year, month] = label.split(' ').map(Number);
+  if (!year || !month) return label;
+  return new Date(year, month - 1).toLocaleString('en-US', {
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+const ridershipFormatter = new Intl.NumberFormat('en-US');
 
 export default function OutputArea({
   chartDatasets,
   months,
   lines,
+  transitEvents,
+  showContextLogs,
   isLoading = false,
 }: OutputAreaProps) {
+  const [isContextLogOpen, setIsContextLogOpen] = useState(true);
+
   ChartJS.defaults.font.family = 'Overpass Mono Variable';
   ChartJS.defaults.color = colors.stone['700'];
 
   const options: ChartOptions<'line'> = {
+    // Honour prefers-reduced-motion: skip the intro easing rather than animating the canvas.
+    // Playwright sets this for snapshot runs, which also makes the chart deterministic.
+    animation: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? false : undefined,
     interaction: {
       axis: 'x',
       includeInvisible: false,
@@ -75,15 +267,30 @@ export default function OutputArea({
     plugins: {
       tooltip: {
         itemSort: (a, b) => (b.parsed.y ?? 0) - (a.parsed.y ?? 0),
+        callbacks: {
+          // x-labels are "YYYY M"; show a readable "May 2026" heading.
+          title: (items) =>
+            items.length ? formatMonthLabel(items[0].label) : '',
+          // "A Line: 12,345" with the color swatch Chart.js draws by default.
+          label: (item) =>
+            `${item.dataset.label ?? ''}: ${ridershipFormatter.format(
+              item.parsed.y ?? 0,
+            )}`,
+        },
       },
+      eventMarkers: { events: transitEvents },
     },
     parsing: {
       xAxisKey: 'time',
       yAxisKey: 'stat',
     },
+    /**
+     * The canvas takes its height from its container (see the wrapper below) rather than
+     * from Chart.js's own width÷aspectRatio. Chart.js only consults the container's height
+     * when this is off, so it is what lets the CSS height floor reach the plot.
+     */
+    maintainAspectRatio: false,
     responsive: true,
-    maintainAspectRatio: true,
-    resizeDelay: 10,
     scales: {
       x: {
         border: {
@@ -114,27 +321,52 @@ export default function OutputArea({
     },
   };
 
+  /**
+   * `min-w-0` on the root opts this grid item out of its automatic minimum,
+   * which is otherwise its min-content width. Without it a child that refuses
+   * to wrap — the summary row below did at `xl` — hands the surrounding `1fr`
+   * track a min-content width larger than its share, and the whole page scrolls
+   * sideways.
+   */
   return (
-    <div className="flex flex-col gap-4 lg:min-h-[50vh] w-auto min-w-0">
+    <div className="flex flex-col gap-4 lg:min-h-[50vh] min-w-0">
       {/* Only show chart and summary metrics if something selected */}
       {chartDatasets.length > 0 ? (
         <>
           {/* Chart pane */}
-          <div className="pane">
-            <LineChart
-              options={options}
-              data={{
-                labels: months,
-                datasets: chartDatasets,
-              }}
-            />
-            {/* 
-                This span somehow fixes a resizing issue, lol:
-                https://github.com/reactchartjs/react-chartjs-2/issues/1169#issuecomment-3425692216
+          <div className="pane" id="ridership-chart">
+            {/**
+             * Sizing box for the canvas. Chart.js's own `maintainAspectRatio` derives the
+             * canvas height from the container width alone, which on a 390px phone is a
+             * 300×150 canvas — and once the legend wraps to a second row (three lines plus
+             * the aggregate is enough) it eats ~60px of that, collapsing the plot to a ~20px
+             * band that fits only two y-axis ticks and rounds the axis up to 500,000. Sizing
+             * the box in CSS instead lets a height floor apply where Chart.js has none.
+             *
+             * `pt-[50%]` is the percentage-padding ratio trick rather than `aspect-[2/1]` on
+             * purpose. A box with a real `aspect-ratio` transfers its floored height back into
+             * a min-content *width* of 2× the floor; this div sits inside a `1fr` grid track
+             * whose automatic minimum has to honour that, so the column — and the whole page —
+             * grew sideways past the viewport. Percentage padding resolves to zero for
+             * intrinsic sizing and the absolutely positioned child is out of flow, so this box
+             * contributes no width at all and the surrounding layout is untouched.
+             *
+             * Height is therefore `max(50% of the width, 20rem)`: the 2:1 ratio every viewport
+             * already rendered at, with a floor that only bites below 640px of container width.
+             * `relative` also makes this the dedicated container Chart.js's responsive mode
+             * wants — it measures the canvas's parent, so nothing else may share that box.
              */}
-            <span style={{ visibility: 'hidden' }}>
-              This makes sure the graph grows when the window grows.
-            </span>
+            <div className="relative min-h-[20rem] pt-[50%]">
+              <div className="absolute inset-0">
+                <LineChart
+                  options={options}
+                  data={{
+                    labels: months,
+                    datasets: chartDatasets,
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           <SummaryData lines={lines} />
@@ -143,6 +375,35 @@ export default function OutputArea({
         /* Chart pane */
         <div className="pane flex-1 flex items-center justify-center text-sm text-stone-400">
           <p>{isLoading ? 'Loading ridership data…' : 'Please select a Metro line.'}</p>
+        </div>
+      )}
+
+      {/* Context log panel — opt-in from the filter bar, and only when events exist and a line is selected */}
+      {showContextLogs && transitEvents.length > 0 && chartDatasets.length > 0 && (
+        <div className="pane" id="context-log-panel">
+          <button
+            type="button"
+            onClick={() => setIsContextLogOpen((o) => !o)}
+            className="flex w-full items-center justify-between text-xs font-semibold text-stone-500 uppercase tracking-wider"
+          >
+            <span>Context Logs</span>
+            <span>{isContextLogOpen ? '▴' : '▾'}</span>
+          </button>
+          {isContextLogOpen && (
+            <ol className="flex flex-col gap-3 mt-3">
+              {transitEvents.map((event) => (
+                <li key={event.id} className="flex gap-3 text-sm">
+                  <span className="text-stone-400 whitespace-nowrap shrink-0">
+                    {formatEventDate(event.date)}
+                  </span>
+                  <div>
+                    <p className="font-medium text-stone-700">{event.title}</p>
+                    <p className="text-stone-500">{event.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
       )}
 

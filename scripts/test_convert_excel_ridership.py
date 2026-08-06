@@ -246,6 +246,36 @@ class TestAggregateToLineRidership:
         assert row.iloc[0]["Riders"] == 800.0
         assert row.iloc[0]["Mode"] == "Rail"
 
+    def test_rail_nonnumeric_route_falls_back_to_line(self):
+        """_make_rail_df uses ROUTE 'K' (non-numeric); it must be grouped under
+        its LINE (807), not dropped."""
+        result = aggregate_to_line_ridership(_make_rail_df(), year=2026, month=1, mode="Rail")
+        assert set(result["Line"].unique()) == {807}
+
+    def test_rail_routes_split_into_separate_lines(self):
+        """Metro nests ROUTE 805 (D/Purple) under LINE 802 (B/Red). Each route
+        must be reported as its own line, not summed into the LINE 802 total."""
+        df = pd.DataFrame({
+            "LINE":          [802,   802,   802,   802],
+            "ROUTE":         ["802", "802", "805", "805"],
+            "STATION_ORDER": ["S1",  "S2",  "S1",  "S2"],
+            "WD_ONS":        [100.0, 200.0, 40.0,  60.0],
+            "WD_OFFS":       [0.0,   0.0,   0.0,   0.0],
+            "WD_ACT":        [0.0,   0.0,   0.0,   0.0],
+            "SA_ONS":        [10.0,  20.0,  4.0,   6.0],
+            "SA_OFFS":       [0.0,   0.0,   0.0,   0.0],
+            "SA_ACT":        [0.0,   0.0,   0.0,   0.0],
+            "SU_ONS":        [5.0,   15.0,  2.0,   8.0],
+            "SU_OFFS":       [0.0,   0.0,   0.0,   0.0],
+            "SU_ACT":        [0.0,   0.0,   0.0,   0.0],
+        })
+        result = aggregate_to_line_ridership(df, year=2026, month=5, mode="Rail")
+        assert {802, 805} <= set(result["Line"].unique())
+        red = result[(result["Line"] == 802) & (result["DayType"] == "DX")]
+        purple = result[(result["Line"] == 805) & (result["DayType"] == "DX")]
+        assert red.iloc[0]["Riders"] == 300.0     # 100 + 200, Red only
+        assert purple.iloc[0]["Riders"] == 100.0  # 40 + 60, Purple broken out
+
     def test_saturday_and_sunday_ridership(self):
         result = aggregate_to_line_ridership(_make_rail_df(), year=2026, month=1, mode="Rail")
         sa = result[(result["Line"] == 807) & (result["DayType"] == "SA")]

@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
-import { type ChartDataset } from 'chart.js';
 import DateRangeSelector from './components/DateRangeSelector';
 import Footer from './components/Footer';
 import Header from './components/Header';
@@ -7,13 +6,9 @@ import LineSelector from './components/LineSelector';
 import useUserDashboardInput, {
   type UserDashboardInputState,
 } from './hooks/useUserDashboardInput';
-import { getLineColor, getLineNames } from './utils/lines';
+import { buildRidershipView } from './ridership';
 import { decodeRidership, type ColumnarRidership } from './utils/ridershipData';
-import type { CustomChartData } from './@types/chart.types';
-import type {
-  ConsolidatedRidership,
-  RidershipRecord,
-} from './@types/metrics.types';
+import type { RidershipRecord } from './@types/metrics.types';
 
 /**
  * OutputArea pulls in Chart.js and MapLibre GL. Lazy-loading it keeps MapLibre (the
@@ -62,116 +57,43 @@ function App() {
     updateLinesWithLineMetrics,
     visibleLines,
     isAggregateVisible,
+    showContextLogs,
+    toggleShowContextLogs,
   } = userDashboardInputState;
 
   const isLoading = ridershipRecords === null;
 
   /**
-   * Computes chartDatasets and ridershipByLine together in a single pass over
-   * ridershipRecords since both are derived from the same filtered view of the data.
-   * Until the data loads (`ridershipRecords` is null) this yields empty results.
+   * The whole derived view — month axis, per-line datasets, records grouped by
+   * line, and the context-log events — in one pass. Every rule in it (the
+   * deliberately offset month window, the shared axis, the aggregate ordering)
+   * lives in src/ridership/ and is unit-tested there.
+   *
+   * Kept memoised: the metrics effect below keys on JSON.stringify(byLine), and
+   * a fresh object every render would thrash it.
    */
-  const { chartDatasets, ridershipByLine } = useMemo(() => {
-    const consolidatedRidership: ConsolidatedRidership = {};
-
-    /**
-     * Group raw records by line ID, skipping any outside the selected date window.
-     * new Date(year, month) treats month as 0-based, but the data stores it as
-     * 1-based, so the comparison is effectively off by one month —
-     * preserved from the original implementation.
-     */
-    if (ridershipRecords) {
-      for (const record of ridershipRecords) {
-        const metricDate = new Date(record.year, record.month);
-        if (
-          startDate.getTime() >= metricDate.getTime() ||
-          endDate.getTime() <= metricDate.getTime()
-        )
-          continue;
-
-        if (!consolidatedRidership[record.line_name]?.ridershipRecords) {
-          /**
-           * Snapshot selected status on first encounter for this line so the
-           * dataset loop below doesn't need to search lines[] on every record.
-           */
-          consolidatedRidership[record.line_name] = {
-            selected: !!lines.find((l) => l.id === Number(record.line_name))
-              ?.selected,
-            ridershipRecords: [],
-          };
-        }
-        consolidatedRidership[record.line_name].ridershipRecords.push(record);
-      }
-    }
-
-    /**
-     * Build one Chart.js dataset per selected line. Iterating lines[] (already
-     * alphabetically sorted) rather than consolidatedRidership preserves legend
-     * order regardless of the numeric key enumeration order of the object.
-     */
-    const datasets: ChartDataset<'line', CustomChartData[]>[] = [];
-
-    lines.forEach((line) => {
-      const consolidated = consolidatedRidership[line.id];
-      if (!consolidated?.selected) return;
-
-      datasets.push({
-        data: consolidated.ridershipRecords.map((r) => ({
-          time: `${r.year} ${r.month}`,
-          stat: r[dayOfWeek],
-        })) as CustomChartData[],
-        label: getLineNames(line.id).current,
-        backgroundColor: getLineColor(line.id),
-        borderColor: getLineColor(line.id),
-      });
-    });
-
-    /**
-     * Sum every selected line's stat at each time index into a single series.
-     */
-    if (isAggregateVisible) {
-      const aggregateMap: CustomChartData[] = [];
-      datasets.forEach((dataset) => {
-        dataset.data.forEach((point, i) => {
-          if (!aggregateMap[i]) aggregateMap[i] = { time: point.time, stat: 0 };
-          aggregateMap[i].stat += point.stat;
-        });
-      });
-      datasets.push({
-        data: aggregateMap,
-        label: 'Aggregate',
-        backgroundColor: getLineColor(-1),
-        borderColor: getLineColor(-2),
-      });
-    }
-
-    return { chartDatasets: datasets, ridershipByLine: consolidatedRidership };
-  }, [
-    startDate,
-    endDate,
-    lines,
-    dayOfWeek,
-    isAggregateVisible,
-    ridershipRecords,
-  ]);
-
-  /**
-   * Pull time labels from the first dataset; all datasets share the same x-axis.
-   */
-  const monthList = useMemo(
-    () => chartDatasets[0]?.data.map((d) => d.time) ?? [],
-    [chartDatasets],
+  const { months, datasets, byLine, events } = useMemo(
+    () =>
+      buildRidershipView({
+        records: ridershipRecords,
+        lines,
+        startDate,
+        endDate,
+        dayOfWeek,
+        includeAggregate: isAggregateVisible,
+      }),
+    [ridershipRecords, lines, startDate, endDate, dayOfWeek, isAggregateVisible],
   );
 
   /**
    * Attach computed metrics (average ridership, change, etc.) to each line entry
    * so the LineSelector can display them. JSON.stringify is used as the dependency
-   * because ridershipByLine is a new object reference on every render (useMemo).
+   * because byLine is a new object reference on every render (useMemo).
    */
   useEffect(() => {
-    updateLinesWithLineMetrics(ridershipByLine);
+    updateLinesWithLineMetrics(byLine);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(ridershipByLine)]);
+  }, [JSON.stringify(byLine)]);
 
   return (
     /* Stretch full height */
@@ -187,61 +109,52 @@ function App() {
           setEndDate={setEndDate}
           dayOfWeek={dayOfWeek}
           setDayOfWeek={setDayOfWeek}
+          showContextLogs={showContextLogs}
+          toggleShowContextLogs={toggleShowContextLogs}
         />
       </div>
 
       {/* Grow to fill remaining vertical space; only one column if expanded or on mobile */}
       <div
-        className={`grow grid  gap-4 ${isLineSelectorExpanded ? 'grid-cols-[1fr]' : 'grid-cols-[1fr] lg:grid-cols-[25%_1fr]'}`}
+        className={`grow grid gap-4 ${isLineSelectorExpanded ? 'grid-cols-[1fr]' : 'grid-cols-[1fr] lg:grid-cols-[25%_1fr]'}`}
       >
+        {/* Metro lines pane */}
+        {/* Hack to match sibling height - https://www.reddit.com/r/css/comments/15qu1ml/restrict_childs_height_to_parents_height_which_is/*/}
+        <div
+          className={`pane flex flex-col gap-4 min-h-full w-0 min-w-full ${isLineSelectorExpanded ? 'h-auto' : 'h-[32rem] lg:h-0'}`}
+        >
+          <LineSelector
+            {...userDashboardInputState}
+            lines={visibleLines}
+            ridershipByLine={byLine}
+            isExpanded={isLineSelectorExpanded}
+            setIsExpanded={setIsLineSelectorExpanded}
+          />
+        </div>
+
         {/**
          * Only show right side if line selector not selected
          * TODO: Change this from conditional rendering to conditional visibility; that way it doesn't rerender every time
          */}
-
-        {isLineSelectorExpanded ? (
-          <div className={`pane flex flex-col gap-4 w-100 min-h-full min-w-0`}>
-            <LineSelector
-              {...userDashboardInputState}
-              lines={visibleLines}
-              ridershipByLine={ridershipByLine}
-              isExpanded
-              setIsExpanded={setIsLineSelectorExpanded}
-            />
-          </div>
-        ) : (
-          <>
-            {/* Metro lines pane */}
-            {/* Hack to match sibling height - https://www.reddit.com/r/css/comments/15qu1ml/restrict_childs_height_to_parents_height_which_is/*/}
-
-            <div
-              className={`pane flex flex-col grow-0 shrink-1 lg:basis-1/4 gap-4 h-[32rem] min-h-full`}
-            >
-              <LineSelector
-                {...userDashboardInputState}
-                lines={visibleLines}
-                ridershipByLine={ridershipByLine}
-                isExpanded={false}
-                setIsExpanded={setIsLineSelectorExpanded}
-              />
-            </div>
-            <Suspense
-              fallback={
-                <div className="flex flex-col gap-4 lg:min-h-[50vh]">
-                  <div className="pane flex-1 flex items-center justify-center text-sm text-stone-400">
-                    <p>Loading…</p>
-                  </div>
+        {!isLineSelectorExpanded && (
+          <Suspense
+            fallback={
+              <div className="flex flex-col gap-4 lg:min-h-[50vh]">
+                <div className="pane flex-1 flex items-center justify-center text-sm text-stone-400">
+                  <p>Loading…</p>
                 </div>
-              }
-            >
-              <OutputArea
-                chartDatasets={chartDatasets}
-                months={monthList}
-                lines={lines}
-                isLoading={isLoading}
-              />
-            </Suspense>
-          </>
+              </div>
+            }
+          >
+            <OutputArea
+              chartDatasets={datasets}
+              months={months}
+              lines={lines}
+              transitEvents={events}
+              showContextLogs={showContextLogs}
+              isLoading={isLoading}
+            />
+          </Suspense>
         )}
       </div>
 

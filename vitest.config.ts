@@ -9,6 +9,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    // Polyfills `window.matchMedia`, which jsdom does not implement — see src/test-setup.ts.
+    setupFiles: ['./src/test-setup.ts'],
     // Playwright specs under e2e/ use the @playwright/test runner, not Vitest — exclude them
     // (Vitest's default glob otherwise picks up *.spec.ts).
     // `.claude/worktrees` holds throwaway git worktrees created by Claude Code, each a full copy

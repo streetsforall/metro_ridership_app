@@ -45,6 +45,9 @@ export interface UserDashboardInputState {
   isAggregateVisible: boolean;
   toggleIsAggregateVisible: () => void;
 
+  showContextLogs: boolean;
+  toggleShowContextLogs: () => void;
+
   onToggleSelectLine: (line: Line) => void;
   clearSelections: () => void;
   updateLinesWithLineMetrics: (ridershipByLine: ConsolidatedRidership) => void;
@@ -123,6 +126,11 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     return params.get('aggregate') === '1';
   });
 
+  const [showContextLogs, setShowContextLogs] = useState<boolean>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('logs') === '1';
+  });
+
   // Sync modes → line visibility
   useEffect(() => {
     const busVis = modes.includes('bus');
@@ -153,10 +161,11 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     if (!modes.includes('bus')) params.set('buses', '0');
     if (!modes.includes('train')) params.set('trains', '0');
     if (isAggregateVisible) params.set('aggregate', '1');
+    if (showContextLogs) params.set('logs', '1');
 
     window.history.replaceState(null, '', `?${params.toString()}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate, dayOfWeek, searchText, modes, JSON.stringify(lines), isAggregateVisible]);
+  }, [startDate, endDate, dayOfWeek, searchText, modes, JSON.stringify(lines), isAggregateVisible, showContextLogs]);
 
   /**
    * Use the aggregated metrics to add additional metrics to line metadata
@@ -269,6 +278,10 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     );
   };
 
+  const toggleShowContextLogs = (): void => {
+    setShowContextLogs((prevShowContextLogs: boolean) => !prevShowContextLogs);
+  };
+
   return {
     startDate,
     setStartDate,
@@ -281,6 +294,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     visibleLines,
     isAggregateVisible,
     toggleIsAggregateVisible,
+    showContextLogs,
+    toggleShowContextLogs,
     searchText,
     setSearchText,
     modes,

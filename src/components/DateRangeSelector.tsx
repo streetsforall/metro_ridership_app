@@ -1,4 +1,6 @@
+import * as Checkbox from '@radix-ui/react-checkbox';
 import * as RadioGroup from '@radix-ui/react-radio-group';
+import checkIcon from '../assets/check.svg';
 import { daysOfWeek, type DayOfWeek } from '../hooks/useUserDashboardInput';
 import { dataMinYear, dataMaxYear } from '../utils/dataDateRange';
 
@@ -16,6 +18,9 @@ export interface DateRangeSelectorProps {
 
   dayOfWeek: DayOfWeek;
   setDayOfWeek: React.Dispatch<React.SetStateAction<DayOfWeek>>;
+
+  showContextLogs: boolean;
+  toggleShowContextLogs: () => void;
 }
 
 type IntervalEndpoint = 'start' | 'end';
@@ -27,6 +32,8 @@ export default function DateRangeSelector({
   setEndDate,
   dayOfWeek,
   setDayOfWeek,
+  showContextLogs,
+  toggleShowContextLogs,
 }: DateRangeSelectorProps) {
   const getDateSetter = (
     intervalEndpoint: IntervalEndpoint,
@@ -161,6 +168,34 @@ export default function DateRangeSelector({
             );
           })}
         </RadioGroup.Root>
+      </fieldset>
+
+      {/* Panel visibility */}
+      <fieldset>
+        <legend>Panel Visibility</legend>
+
+        <div className="flex items-center">
+          <Checkbox.Root
+            id="context-logs"
+            onClick={toggleShowContextLogs}
+            checked={showContextLogs}
+            className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
+          >
+            <Checkbox.Indicator>
+              <img
+                src={checkIcon}
+                height={20}
+                width={20}
+                alt="Check"
+                className="recolor-white"
+              />
+            </Checkbox.Indicator>
+          </Checkbox.Root>
+
+          <label className="pl-2" htmlFor="context-logs">
+            Context Logs
+          </label>
+        </div>
       </fieldset>
     </div>
   );
