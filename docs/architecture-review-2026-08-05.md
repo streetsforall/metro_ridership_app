@@ -25,23 +25,32 @@ opens the PR. Letters run in one series and are never reused. Batch prefix:
 | Letter | Candidate | Session does | Status |
 | --- | --- | --- | --- |
 | A | 1 — ridership view module | grill → spec → tickets | **done** — #100 (+ #101, #102, #103, #104) |
-| B | 1 — ridership view module | implement → PR | **ready** — work #101 → #102 → #103 |
-| C | 2 — derived metrics off state | grill → spec → tickets | blocked by B |
+| B | 1 — ridership view module | implement → PR | **done** — #105, #106, #107, #108 |
+| C | 2 — derived metrics off state | grill → spec → tickets | **ready** |
 | D | 2 — derived metrics off state | implement → PR | blocked by C |
-| E | 3 — collapse `calc.ts` | grill → spec → tickets | blocked by B |
+| E | 3 — collapse `calc.ts` | grill → spec → tickets | **ready** |
 | F | 3 — collapse `calc.ts` | implement → PR | blocked by E |
-| G | 4 — a `Month` module | grill → spec → tickets | blocked by B |
+| G | 4 — a `Month` module | grill → spec → tickets | **ready** |
 | H | 4 — a `Month` module | implement → PR | blocked by G |
 | — | 5 — URL contract · 6 — CSV seam | unscheduled | letters assigned when picked up |
 
-Candidate 1 is the frozen contract: it defines the module that 2, 3 and 4 all attach to, so it
-lands alone before anything else starts.
+Candidate 1 was the frozen contract: it defines the module that 2, 3 and 4 all attach to, so it
+landed alone before anything else started. It is now on `main`, which is what unblocked C, E and
+G — they are independent of each other and can run in any order, or in parallel.
 
-A's outputs are on branch `claude/agitated-nash-d3e284`: `CONTEXT.md` (the repo's first glossary),
-`docs/adr/0001`–`0003`, and `src/plans/ridership-view-module.md`. C, E and G should read those
-before grilling — in particular ADR-0001, which settles the deliberate month-window offset, and
-ADR-0003, which settles why `src/ridership/` is the only domain folder. #104 (duplicated test-data
-factories) came out of A but is independent of the module and of every other letter.
+A's outputs are on `main`: `CONTEXT.md` (the repo's first glossary), `docs/adr/0001`–`0003`, and
+`src/plans/ridership-view-module.md`. C, E and G should read those before grilling — in
+particular ADR-0001, which settles the deliberate month-window offset, and ADR-0003, which
+settles why `src/ridership/` is the only domain folder. #104 (duplicated test-data factories)
+came out of A but is independent of the module and of every other letter.
+
+What B actually landed, since the later letters attach to it: `buildRidershipView` in
+`src/ridership/`, whose entire public surface is that one function; `chartData.ts` demoted to
+implementation inside the folder; `App.tsx` down to markup and wiring; and the month-window
+boundaries plus the transit-event filter under unit test for the first time. Two things B
+deliberately did **not** touch, because they belong to later letters:
+`updateLinesWithLineMetrics` and its `JSON.stringify` dependency are untouched for C, and
+`src/utils/calc.ts` is untouched for E.
 
 ---
 
