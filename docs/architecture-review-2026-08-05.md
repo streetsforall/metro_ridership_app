@@ -42,7 +42,9 @@ A's outputs are on `main`: `CONTEXT.md` (the repo's first glossary), `docs/adr/0
 `src/plans/ridership-view-module.md`. C, E and G should read those before grilling — in
 particular ADR-0001, which settles the deliberate month-window offset, and ADR-0003, which
 settles why `src/ridership/` is the only domain folder. #104 (duplicated test-data factories)
-came out of A but is independent of the module and of every other letter.
+came out of A but is independent of the module and of every other letter; it landed in #110,
+which closed #100 and with it candidate 1. The suite's fixtures now come from
+`src/test/builders.ts` — C, E and G should build on those rather than declaring their own.
 
 What B actually landed, since the later letters attach to it: `buildRidershipView` in
 `src/ridership/`, whose entire public surface is that one function; `chartData.ts` demoted to
