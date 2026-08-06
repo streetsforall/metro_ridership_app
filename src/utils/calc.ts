@@ -16,19 +16,36 @@ function calcAvg(metrics: RidershipRecord[], dayOfWeek: DayOfWeek): number {
 }
 
 /**
- * Calculates absolute change in daily ridership over a series of metrics for a presumed line
- * @param metrics Array of Metric objects from source JSON
- * @param dayOfWeek Day of week enum in question
- * @returns Calculated difference in daily ridership
+ * Chronological copy of a line's records.
+ *
+ * Copies before sorting: the array handed in is the live `ridershipRecords` array
+ * inside `ridershipByLine`, which also feeds the row sparklines and the CSV export —
+ * sorting it in place reorders data other callers are reading.
+ *
+ * These metrics describe the span the line itself covers, which is not necessarily the
+ * selected window: a line whose data starts mid-window reports its own first and last
+ * record, not the window's endpoints. See `buildCoverageByLine` in `src/ridership/`,
+ * which labels that difference in the UI.
  */
-function calcAbsChange(metrics: RidershipRecord[], dayOfWeek: DayOfWeek): number {
-  const sorted = metrics.sort((a, b) => {
+function sortChronologically(metrics: RidershipRecord[]): RidershipRecord[] {
+  return [...metrics].sort((a, b) => {
     if (a.year === b.year) {
       return a.month - b.month;
     } else {
       return a.year - b.year;
     }
   });
+}
+
+/**
+ * Calculates absolute change in daily ridership over a series of metrics for a presumed line
+ * @param metrics Array of Metric objects from source JSON
+ * @param dayOfWeek Day of week enum in question
+ * @returns Calculated difference in daily ridership, or 0 for an empty series
+ */
+function calcAbsChange(metrics: RidershipRecord[], dayOfWeek: DayOfWeek): number {
+  const sorted = sortChronologically(metrics);
+  if (sorted.length === 0) return 0;
 
   const first = sorted[0];
   const last = sorted[sorted.length - 1];
@@ -37,13 +54,8 @@ function calcAbsChange(metrics: RidershipRecord[], dayOfWeek: DayOfWeek): number
 }
 
 function calcEnd(metrics: RidershipRecord[], dayOfWeek: DayOfWeek): number {
-  const sorted = metrics.sort((a, b) => {
-    if (a.year === b.year) {
-      return a.month - b.month;
-    } else {
-      return a.year - b.year;
-    }
-  });
+  const sorted = sortChronologically(metrics);
+  if (sorted.length === 0) return 0;
 
   const last = sorted[sorted.length - 1];
 
@@ -51,13 +63,8 @@ function calcEnd(metrics: RidershipRecord[], dayOfWeek: DayOfWeek): number {
 }
 
 function calcStart(metrics: RidershipRecord[], dayOfWeek: DayOfWeek): number {
-  const sorted = metrics.sort((a, b) => {
-    if (a.year === b.year) {
-      return a.month - b.month;
-    } else {
-      return a.year - b.year;
-    }
-  });
+  const sorted = sortChronologically(metrics);
+  if (sorted.length === 0) return 0;
 
   const first = sorted[0];
   return first[dayOfWeek] ?? 0;

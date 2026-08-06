@@ -2,9 +2,16 @@ import { describe, it, expect } from 'vitest';
 import {
   alignToMonthAxis,
   buildAggregateSeries,
+  buildCoverageByLine,
   buildMonthAxis,
+  buildWindowMonthAxis,
+  formatMonthKey,
+  timeKey,
 } from './chartData';
-import type { RidershipRecord } from '../@types/metrics.types';
+import type {
+  ConsolidatedRidership,
+  RidershipRecord,
+} from '../@types/metrics.types';
 
 const record = (
   year: number,
@@ -118,6 +125,138 @@ describe('alignToMonthAxis', () => {
     expect(
       alignToMonthAxis(records, months, 'est_sun_ridership')[2].stat,
     ).toBe(200);
+  });
+});
+
+describe('timeKey / formatMonthKey', () => {
+  it('builds the Chart.js category label the axis has always used', () => {
+    expect(timeKey(2025, 9)).toBe('2025 9');
+  });
+
+  it('renders a key for display in the same shape as the URL month params', () => {
+    expect(formatMonthKey('2025 9')).toBe('2025-09');
+    expect(formatMonthKey('2025 12')).toBe('2025-12');
+  });
+});
+
+describe('buildWindowMonthAxis / buildCoverageByLine', () => {
+  // The D Line (805) only reports from 2025-09; the E Line (804) reaches back years.
+  // Coverage is read off the records, never off the selected start/end dates — App's
+  // date filter is off by one on purpose, so recomputed bounds would disagree with the
+  // records already grouped into ConsolidatedRidership.
+  const mixedCoverage = (): ConsolidatedRidership => ({
+    804: {
+      selected: true,
+      ridershipRecords: [
+        record(2020, 7),
+        record(2020, 8),
+        record(2025, 9),
+        record(2025, 10),
+      ],
+    },
+    805: {
+      selected: true,
+      ridershipRecords: [record(2025, 9), record(2025, 10)],
+    },
+  });
+
+  it('spans the union of the months every line reports', () => {
+    expect(buildWindowMonthAxis(mixedCoverage())).toEqual([
+      '2020 7',
+      '2020 8',
+      '2025 9',
+      '2025 10',
+    ]);
+  });
+
+  it('returns an empty axis for an empty window', () => {
+    expect(buildWindowMonthAxis({})).toEqual([]);
+  });
+
+  it('marks a line that starts after the window as partial', () => {
+    const coverage = buildCoverageByLine(mixedCoverage());
+
+    expect(coverage[805]).toEqual({
+      coveredFrom: '2025-09',
+      coveredTo: '2025-10',
+      isPartialCoverage: true,
+    });
+  });
+
+  it('does not mark a line that spans the whole window', () => {
+    const coverage = buildCoverageByLine(mixedCoverage());
+
+    expect(coverage[804]).toEqual({
+      coveredFrom: '2020-07',
+      coveredTo: '2025-10',
+      isPartialCoverage: false,
+    });
+  });
+
+  it('marks a line that ends before the window does', () => {
+    const retired = buildCoverageByLine({
+      804: {
+        selected: true,
+        ridershipRecords: [record(2020, 7), record(2025, 9)],
+      },
+      805: { selected: true, ridershipRecords: [record(2020, 7)] },
+    });
+
+    expect(retired[805].isPartialCoverage).toBe(true);
+    expect(retired[805].coveredTo).toBe('2020-07');
+  });
+
+  it('treats a line covering an interior gap by its endpoints, not its month count', () => {
+    // 804 reports 2020-07 and 2025-09 but nothing between; it still starts and ends
+    // with the window, so it is not partial — the gap shows up in the sparkline.
+    const coverage = buildCoverageByLine({
+      804: {
+        selected: true,
+        ridershipRecords: [record(2020, 7), record(2025, 9)],
+      },
+      805: {
+        selected: true,
+        ridershipRecords: [record(2020, 7), record(2022, 3), record(2025, 9)],
+      },
+    });
+
+    expect(coverage[804].isPartialCoverage).toBe(false);
+    expect(coverage[805].isPartialCoverage).toBe(false);
+  });
+
+  it('is not partial when every line covers the same single month', () => {
+    const coverage = buildCoverageByLine({
+      804: { selected: true, ridershipRecords: [record(2026, 3)] },
+      805: { selected: true, ridershipRecords: [record(2026, 3)] },
+    });
+
+    expect(coverage[804].isPartialCoverage).toBe(false);
+    expect(coverage[804].coveredFrom).toBe('2026-03');
+    expect(coverage[804].coveredTo).toBe('2026-03');
+  });
+
+  it('omits lines with no records rather than reporting an empty range', () => {
+    const coverage = buildCoverageByLine({
+      804: { selected: true, ridershipRecords: [record(2025, 9)] },
+      805: { selected: true, ridershipRecords: [] },
+    });
+
+    expect(coverage[805]).toBeUndefined();
+    expect(Object.keys(coverage)).toEqual(['804']);
+  });
+
+  it('sorts on the month ordinal when deciding the window edges', () => {
+    // '2025 10' precedes '2025 9' as a string; a lexicographic span would call the
+    // line covering 2025-09..2025-10 partial.
+    const coverage = buildCoverageByLine({
+      804: {
+        selected: true,
+        ridershipRecords: [record(2025, 9), record(2025, 10)],
+      },
+    });
+
+    expect(coverage[804].isPartialCoverage).toBe(false);
+    expect(coverage[804].coveredTo).toBe('2025-10');
   });
 });
 

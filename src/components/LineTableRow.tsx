@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import type { ChartOptions, ChartDataset } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
 import * as Checkbox from '@radix-ui/react-checkbox';
+import { alignToMonthAxis } from '../ridership';
 import { getLineColor } from '../utils/lines';
 import type { CustomChartData } from '../@types/chart.types';
 import type { Line } from '../@types/lines.types';
-import type { RidershipRecord } from '../@types/metrics.types';
+import type { DayOfWeek, RidershipRecord } from '../@types/metrics.types';
 import checkIcon from '../assets/check.svg';
 
 interface MetroLineTableRowProps {
@@ -15,6 +16,12 @@ interface MetroLineTableRowProps {
   id: number;
   dayOfWeek: string;
   lineMetrics: RidershipRecord[];
+  /**
+   * The window's shared month axis, from `buildWindowMonthAxis`. Every row's sparkline
+   * is drawn against it so a 9-month series and a 17-year one no longer fill the same
+   * cell width as though their scales matched.
+   */
+  monthAxis: string[];
 }
 
 export default function MetroLineTableRow({
@@ -24,6 +31,7 @@ export default function MetroLineTableRow({
   dayOfWeek,
   id,
   lineMetrics,
+  monthAxis,
 }: MetroLineTableRowProps) {
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [data, setData] = useState<ChartDataset<'line', CustomChartData[]>[]>(
@@ -40,7 +48,8 @@ export default function MetroLineTableRow({
 
     events: [],
     animation: false,
-    spanGaps: true,
+    // No spanGaps: months this line doesn't report are genuinely absent, and bridging
+    // them draws a straight line through data that was never collected.
     normalized: true,
     scales: {
       x: {
@@ -75,11 +84,7 @@ export default function MetroLineTableRow({
     if (lineMetrics) {
       chartDataset.push({
         borderColor: getLineColor(Number(line.id)),
-        data: lineMetrics.map((metric) => ({
-          time: metric.year + ' ' + metric.month,
-          //@ts-expect-error: No index signature with a parameter of type 'string'
-          stat: metric[dayOfWeek] as number,
-        })),
+        data: alignToMonthAxis(lineMetrics, monthAxis, dayOfWeek as DayOfWeek),
       });
     }
 
@@ -88,6 +93,9 @@ export default function MetroLineTableRow({
   }, [
     line.averageRidership,
     dayOfWeek,
+    // `monthAxis` is memoised by LineSelector, so the reference is stable between
+    // renders and doesn't need the JSON.stringify treatment the others get.
+    monthAxis,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(lineMetrics),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -131,6 +139,32 @@ export default function MetroLineTableRow({
                 className={`block visible h-auto ${line.former && 'group-hover:invisible group-hover:h-0'}`}
               >
                 {line.name}
+
+                {/**
+                 * Rows whose data starts after — or ends before — the window does. The
+                 * figures beside them are still each line's own first-to-last record,
+                 * so the marker says which period those figures actually describe.
+                 *
+                 * Beside the name rather than beneath it. Roughly half the network is
+                 * partial over a multi-year window (a line discontinued or introduced
+                 * mid-window counts), so a second line per row would add ~1200px to the
+                 * table; inline it costs no height and the column absorbs the width.
+                 *
+                 * Expanded view only — the collapsed list renders no metric columns, so
+                 * there is nothing there to qualify.
+                 */}
+                {isExpanded &&
+                  line.isPartialCoverage &&
+                  line.coveredFrom &&
+                  line.coveredTo && (
+                    <span
+                      data-qa={`coverage-${line.id}`}
+                      title={`Partial coverage: this line only reports ${line.coveredFrom} to ${line.coveredTo} of the selected period, so its figures cover a shorter span than fully covered lines.`}
+                      className="ml-2 cursor-help text-xs text-stone-400"
+                    >
+                      {line.coveredFrom} → {line.coveredTo}
+                    </span>
+                  )}
               </span>
               <span
                 className={`block invisible h-0 ${line.former && 'group-hover:visible group-hover:h-auto'}`}
