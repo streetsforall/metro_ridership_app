@@ -11,14 +11,3 @@ export {
   type RidershipViewInput,
   type LineSelection,
 } from './buildRidershipView';
-
-/**
- * Transitional — `App.tsx` still calls the chart helpers directly. Dropped in
- * #103, once App is wired to `buildRidershipView` and `chartData` becomes
- * implementation reachable only from within this folder.
- */
-export {
-  buildMonthAxis,
-  alignToMonthAxis,
-  buildAggregateSeries,
-} from './chartData';
