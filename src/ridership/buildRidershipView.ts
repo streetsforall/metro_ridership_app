@@ -71,8 +71,15 @@ export interface RidershipView {
  * appear for a given URL.
  */
 export function buildRidershipView(input: RidershipViewInput): RidershipView {
-  const { records, lines, startDate, endDate, dayOfWeek, includeAggregate } =
-    input;
+  const {
+    records,
+    lines,
+    startDate,
+    endDate,
+    dayOfWeek,
+    includeAggregate,
+    events: inputEvents,
+  } = input;
 
   const consolidatedRidership: ConsolidatedRidership = {};
 
@@ -159,7 +166,7 @@ export function buildRidershipView(input: RidershipViewInput): RidershipView {
     });
   }
 
-  const allEvents = input.events ?? (transitEventsData as TransitEvent[]);
+  const allEvents = inputEvents ?? (transitEventsData as TransitEvent[]);
 
   /**
    * The Event Window: inclusive on both ends and 1-based, unlike the Month
