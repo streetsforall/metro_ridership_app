@@ -515,9 +515,9 @@ describe('buildRidershipView — event selection filtering', () => {
       includeAggregate: false,
     });
 
-    // The K Line's Regional Connector opening (2023-06) is in the bundled data
-    // and inside this window.
-    expect(events.length).toBeGreaterThan(0);
+    // k-line-opening (2022-10, line_ids [807]) is the bundled event this window
+    // admits.
+    expect(events.map((e) => e.id)).toContain('k-line-opening');
     for (const event of events)
       expect(
         event.line_ids.length === 0 || event.line_ids.includes(807),
