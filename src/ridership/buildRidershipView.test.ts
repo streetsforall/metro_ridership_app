@@ -211,7 +211,7 @@ describe('buildRidershipView — the Month Window', () => {
   });
 
   it('produces no dataset for a selected line with no records in the window', () => {
-    const { datasets, byLine } = build({
+    const { datasets, consolidated } = build({
       lines: [K],
       startDate: month(2023, 6),
       endDate: month(2024, 6),
@@ -220,7 +220,7 @@ describe('buildRidershipView — the Month Window', () => {
     expect(datasets).toHaveLength(0);
     // The line is absent from the grouping entirely, so there is no Selection
     // Snapshot for the dataset loop to filter on.
-    expect(byLine[807]).toBeUndefined();
+    expect(consolidated[807]).toBeUndefined();
   });
 
   /**
@@ -375,13 +375,13 @@ describe('buildRidershipView — data point shape', () => {
 
 describe('buildRidershipView — Consolidated Ridership', () => {
   it('groups records by line and records the Selection Snapshot', () => {
-    const { byLine } = build({ lines: [K, { id: 806, selected: false }] });
+    const { consolidated } = build({ lines: [K, { id: 806, selected: false }] });
 
-    expect(byLine[807].selected).toBe(true);
-    expect(byLine[807].ridershipRecords).toHaveLength(3);
+    expect(consolidated[807].selected).toBe(true);
+    expect(consolidated[807].ridershipRecords).toHaveLength(3);
     // Grouped even when unselected — the snapshot is what the dataset loop reads.
-    expect(byLine[806].selected).toBe(false);
-    expect(byLine[806].ridershipRecords).toHaveLength(1);
+    expect(consolidated[806].selected).toBe(false);
+    expect(consolidated[806].ridershipRecords).toHaveLength(1);
   });
 });
 
@@ -526,12 +526,12 @@ describe('buildRidershipView — event selection filtering', () => {
 });
 
 describe('buildRidershipView — the empty view', () => {
-  it('yields empty months, datasets and byLine while records are null', () => {
-    const { months, datasets, byLine } = build({ records: null, lines: [K, L] });
+  it('yields empty months, datasets and consolidated while records are null', () => {
+    const { months, datasets, consolidated } = build({ records: null, lines: [K, L] });
 
     expect(months).toEqual([]);
     expect(datasets).toEqual([]);
-    expect(byLine).toEqual({});
+    expect(consolidated).toEqual({});
   });
 
   it('still filters and returns events while records are null', () => {

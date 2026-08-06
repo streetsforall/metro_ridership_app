@@ -161,13 +161,18 @@ export interface RidershipView {
   /** One dataset per selected line in `lines` order; the Aggregate Series last, if requested. */
   datasets: ChartDataset<'line', CustomChartData[]>[];
   /** Records grouped by line, each carrying its Selection Snapshot. */
-  byLine: ConsolidatedRidership;
+  consolidated: ConsolidatedRidership;
   /** Transit Events inside the Event Window that apply to the selection, chronologically. */
   events: TransitEvent[];
 }
 
 export function buildRidershipView(input: RidershipViewInput): RidershipView;
 ```
+
+> **Naming (issue #114):** this plan originally called the third field `byLine`, which is the
+> synonym `CONTEXT.md:84-87` lists under _Avoid_ for **Consolidated Ridership**. Per the glossary's
+> precedence rule (`CONTEXT.md:8-9`) the term wins and the plan was the out-of-date document, so the
+> field is `consolidated` here and in the source.
 
 The body is the two `App.tsx` memos, moved. Specifically:
 
@@ -180,7 +185,7 @@ worked-out rule:
 > `docs/adr/0001-ridership-month-window-is-deliberately-offset.md`.
 
 **4b — Select, axis, align.** Lift L117–148 verbatim. `selected` is `lines.filter(line =>
-byLine[line.id]?.selected)` — note it filters on the **Selection Snapshot**, not on
+consolidated[line.id]?.selected)` — note it filters on the **Selection Snapshot**, not on
 `line.selected`, so a line selected but with no records in the window produces no dataset.
 
 **4c — Aggregate.** Lift L150–163, gated on `includeAggregate` instead of `isAggregateVisible`.
@@ -196,7 +201,7 @@ snapshot. That differs from 4b and is not an oversight: an event on a line with 
 window still shows. Preserve it, and say so in a comment.
 
 **4e — The empty view.** When `records` is `null`, the grouping loop simply does not run, so
-`byLine` is `{}`, `selected` is empty, `months` is `[]` and `datasets` is `[]`. Events are **still
+`consolidated` is `{}`, `selected` is empty, `months` is `[]` and `datasets` is `[]`. Events are **still
 filtered and returned** — they do not depend on records. Confirm this matches today: in `App.tsx`
 the events memo does not depend on `ridershipRecords`, so it already returns events during loading.
 Preserve that.
@@ -268,7 +273,7 @@ Cases to cover:
 
 **New — the empty view:**
 
-- `records: null` → `{ months: [], datasets: [], byLine: {} }`
+- `records: null` → `{ months: [], datasets: [], consolidated: {} }`
 - `records: null` still returns the filtered events
 
 ### Step 6 — Point the index at the module
@@ -296,7 +301,7 @@ PR is behaviour drift** — that is the whole reason it is its own PR.
 ### Step 7 — Replace both memos in `App.tsx`
 
 ```tsx
-const { months, datasets, byLine, events } = useMemo(
+const { months, datasets, consolidated, events } = useMemo(
   () =>
     buildRidershipView({
       records: ridershipRecords,
@@ -319,15 +324,15 @@ unused, `transitEventsData` and the `TransitEvent` / `ConsolidatedRidership` / `
 `CustomChartData` type imports if now unused, and both memo bodies. Verify with `npm run lint`.
 
 Rename at the call sites: `chartDatasets` → `datasets`, `monthList` → `months`, `ridershipByLine` →
-`byLine`, `transitEvents` → `events`. **`OutputArea` and `LineSelector` prop names do not change** —
+`consolidated`, `transitEvents` → `events`. **`OutputArea` and `LineSelector` prop names do not change** —
 only the local variable bound to them:
 
 ```tsx
-<LineSelector ... ridershipByLine={byLine} />
+<LineSelector ... ridershipByLine={consolidated} />
 <OutputArea chartDatasets={datasets} months={months} lines={lines} transitEvents={events} ... />
 ```
 
-`updateLinesWithLineMetrics(byLine)` and its `JSON.stringify` dependency stay exactly as they are —
+`updateLinesWithLineMetrics(consolidated)` and its `JSON.stringify` dependency stay exactly as they are —
 unwinding that write-back loop is candidate 2, not this work.
 
 ### Step 8 — Drop the chart-helper exports from the index
