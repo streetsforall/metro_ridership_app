@@ -4,6 +4,10 @@ import useUserDashboardInput, { daysOfWeek } from './useUserDashboardInput';
 import { dataDefaultEndDate } from '../utils/dataDateRange';
 import { formatMonthParam } from '../utils/queryParams';
 import type { ConsolidatedRidership } from '../@types/metrics.types';
+import {
+  makeConsolidatedRidership,
+  makeRidershipRecord,
+} from '../test/builders';
 
 // Reset URL and replaceState spy before each test
 beforeEach(() => {
@@ -317,21 +321,22 @@ describe('line initialisation', () => {
 });
 
 describe('updateLinesWithLineMetrics', () => {
-  const makeRidership = (lineId: number, wkday: number): ConsolidatedRidership => ({
-    [lineId]: {
-      selected: true,
-      ridershipRecords: [
-        {
-          year: 2022,
-          month: 1,
+  const makeRidership = (
+    lineId: number,
+    wkday: number,
+  ): ConsolidatedRidership =>
+    makeConsolidatedRidership(
+      lineId,
+      [
+        makeRidershipRecord({
           line_name: lineId,
           est_wkday_ridership: wkday,
           est_sat_ridership: null,
           est_sun_ridership: null,
-        },
+        }),
       ],
-    },
-  });
+      { selected: true },
+    );
 
   it('sets ridersPerMile on a line that has distanceMiles', () => {
     const { result } = renderHook(() => useUserDashboardInput());

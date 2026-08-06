@@ -5,18 +5,12 @@ import {
   lineNameSortFunction,
   generateCSV,
 } from './lines';
-import type { Line } from '../@types/lines.types';
 import type { ConsolidatedRidership } from '../@types/metrics.types';
-
-const makeLine = (overrides: Partial<Line>): Line => ({
-  id: 1,
-  name: 'Line 1',
-  mode: 'Bus',
-  provider: 'DO',
-  selected: false,
-  visible: true,
-  ...overrides,
-});
+import {
+  makeConsolidatedRidership,
+  makeLine,
+  makeRidershipRecord,
+} from '../test/builders';
 
 describe('getLineColor', () => {
   it('returns the defined color for the A Line (801)', () => {
@@ -143,21 +137,17 @@ describe('generateCSV', () => {
   });
 
   it('includes rows for selected lines', () => {
-    const ridership: ConsolidatedRidership = {
-      '801': {
-        selected: true,
-        ridershipRecords: [
-          {
-            year: 2022,
-            month: 1,
-            line_name: 801,
-            est_wkday_ridership: 5000,
-            est_sat_ridership: 3000,
-            est_sun_ridership: 2000,
-          },
-        ],
-      },
-    };
+    const ridership: ConsolidatedRidership = makeConsolidatedRidership(
+      801,
+      [
+        makeRidershipRecord({
+          est_wkday_ridership: 5000,
+          est_sat_ridership: 3000,
+          est_sun_ridership: 2000,
+        }),
+      ],
+      { selected: true },
+    );
     const csv = decodeURI(generateCSV(ridership));
     expect(csv).toContain('A Line');
     expect(csv).toContain('2022');
@@ -165,70 +155,56 @@ describe('generateCSV', () => {
   });
 
   it('excludes rows for unselected lines', () => {
-    const ridership: ConsolidatedRidership = {
-      '801': {
-        selected: false,
-        ridershipRecords: [
-          {
-            year: 2022,
-            month: 1,
-            line_name: 801,
-            est_wkday_ridership: 5000,
-            est_sat_ridership: 3000,
-            est_sun_ridership: 2000,
-          },
-        ],
-      },
-    };
+    const ridership: ConsolidatedRidership = makeConsolidatedRidership(801, [
+      makeRidershipRecord({
+        est_wkday_ridership: 5000,
+        est_sat_ridership: 3000,
+        est_sun_ridership: 2000,
+      }),
+    ]);
     const csv = decodeURI(generateCSV(ridership));
     expect(csv).not.toContain('5000');
   });
 
   it('uses the friendly line name in the CSV row', () => {
-    const ridership: ConsolidatedRidership = {
-      '802': {
-        selected: true,
-        ridershipRecords: [
-          {
-            year: 2023,
-            month: 6,
-            line_name: 802,
-            est_wkday_ridership: 12000,
-            est_sat_ridership: 8000,
-            est_sun_ridership: 6000,
-          },
-        ],
-      },
-    };
+    const ridership: ConsolidatedRidership = makeConsolidatedRidership(
+      802,
+      [
+        makeRidershipRecord({
+          year: 2023,
+          month: 6,
+          line_name: 802,
+          est_wkday_ridership: 12000,
+          est_sat_ridership: 8000,
+          est_sun_ridership: 6000,
+        }),
+      ],
+      { selected: true },
+    );
     const csv = decodeURI(generateCSV(ridership));
     expect(csv).toContain('B Line');
     expect(csv).not.toContain('802');
   });
 
   it('includes multiple records for the same line', () => {
-    const ridership: ConsolidatedRidership = {
-      '801': {
-        selected: true,
-        ridershipRecords: [
-          {
-            year: 2022,
-            month: 1,
-            line_name: 801,
-            est_wkday_ridership: 1000,
-            est_sat_ridership: null,
-            est_sun_ridership: null,
-          },
-          {
-            year: 2022,
-            month: 2,
-            line_name: 801,
-            est_wkday_ridership: 2000,
-            est_sat_ridership: null,
-            est_sun_ridership: null,
-          },
-        ],
-      },
-    };
+    const ridership: ConsolidatedRidership = makeConsolidatedRidership(
+      801,
+      [
+        makeRidershipRecord({
+          month: 1,
+          est_wkday_ridership: 1000,
+          est_sat_ridership: null,
+          est_sun_ridership: null,
+        }),
+        makeRidershipRecord({
+          month: 2,
+          est_wkday_ridership: 2000,
+          est_sat_ridership: null,
+          est_sun_ridership: null,
+        }),
+      ],
+      { selected: true },
+    );
     const csv = decodeURI(generateCSV(ridership));
     expect(csv).toContain('1000');
     expect(csv).toContain('2000');
