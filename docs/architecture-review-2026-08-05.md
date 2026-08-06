@@ -60,7 +60,7 @@ deliberately did **not** touch, because they belong to later letters:
 
 **Strong** · in-process
 
-**Files** — `src/App.tsx` (L84–186) · `src/utils/chartData.ts` · `src/data/transit-events.json`
+**Files** — `src/App.tsx` (L84–186) · `src/ridership/chartData.ts` · `src/data/transit-events.json`
 
 **Problem.** The whole consolidation pipeline is inline in App's render, so every rule in it —
 the deliberate off-by-one window, the selection snapshot, the shared month axis — is only
@@ -192,7 +192,7 @@ coverage-awareness gets exactly one place to land.
 
 **Strong** · in-process
 
-**Files** — `src/App.tsx` · `src/utils/chartData.ts` (`timeKey`) ·
+**Files** — `src/App.tsx` · `src/ridership/chartData.ts` (`timeKey`) ·
 `src/components/OutputArea.tsx` (`eventMarkers`, `formatMonthLabel`) · `src/utils/queryParams.ts`
 · `src/utils/dataDateRange.ts`
 
