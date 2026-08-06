@@ -11,7 +11,7 @@ import {
   alignToMonthAxis,
   buildAggregateSeries,
   buildMonthAxis,
-} from './utils/chartData';
+} from './ridership';
 import { getLineColor, getLineNames } from './utils/lines';
 import { decodeRidership, type ColumnarRidership } from './utils/ridershipData';
 import type { CustomChartData } from './@types/chart.types';
