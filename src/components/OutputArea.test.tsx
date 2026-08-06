@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import OutputArea from './OutputArea';
 import { Chart as ChartJS, type ChartOptions } from 'chart.js';
 import type { Line } from '../@types/lines.types';
+import { makeLine } from '../test/builders';
 import type { TransitEvent } from '../@types/events.types';
 
 let capturedOptions: ChartOptions<'line'> | undefined;
@@ -19,16 +20,6 @@ vi.mock('./Map', () => ({
     <div data-testid="map" data-line-count={String(lines.length)} />
   ),
 }));
-
-const makeLine = (overrides: Partial<Line>): Line => ({
-  id: 801,
-  name: 'A Line',
-  mode: 'Rail',
-  provider: 'DO',
-  selected: false,
-  visible: true,
-  ...overrides,
-});
 
 const emptyProps = {
   chartDatasets: [],

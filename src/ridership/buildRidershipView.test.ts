@@ -1,40 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildRidershipView, type LineSelection } from './buildRidershipView';
 import type { DayOfWeek, RidershipRecord } from '../@types/metrics.types';
-import type { TransitEvent } from '../@types/events.types';
-
-/**
- * Local fixture helpers. Deliberately not shared builders — consolidating the
- * suite's six near-identical factories is #104, kept separate so these diffs stay
- * skimmable for behaviour drift.
- */
-const makeRecord = (
-  year: number,
-  month: number,
-  line_name: number,
-  overrides: Partial<RidershipRecord> = {},
-): RidershipRecord => ({
-  year,
-  month,
-  line_name,
-  est_wkday_ridership: 1000,
-  est_sat_ridership: 600,
-  est_sun_ridership: 400,
-  ...overrides,
-});
-
-const makeEvent = (
-  id: string,
-  date: string,
-  line_ids: number[],
-): TransitEvent => ({
-  id,
-  date,
-  line_ids,
-  title: id,
-  description: id,
-  category: 'service_change',
-});
+import { makeRidershipRecord, makeTransitEvent } from '../test/builders';
 
 /**
  * Same shape as `App.test.tsx`'s fixture, so the assertions migrated from there
@@ -48,52 +15,82 @@ const makeEvent = (
  *                  scramble the x-axis.
  */
 const RECORDS: RidershipRecord[] = [
-  makeRecord(2019, 1, 807, {
+  makeRidershipRecord({
+    year: 2019,
+    month: 1,
+    line_name: 807,
     est_wkday_ridership: 1000,
     est_sat_ridership: 600,
     est_sun_ridership: 400,
   }),
-  makeRecord(2020, 8, 804, {
+  makeRidershipRecord({
+    year: 2020,
+    month: 8,
+    line_name: 804,
     est_wkday_ridership: 4000,
     est_sat_ridership: 2000,
     est_sun_ridership: 1000,
   }),
-  makeRecord(2022, 1, 807, {
+  makeRidershipRecord({
+    year: 2022,
+    month: 1,
+    line_name: 807,
     est_wkday_ridership: 5000,
     est_sat_ridership: 3000,
     est_sun_ridership: 2000,
   }),
-  makeRecord(2022, 1, 806, {
+  makeRidershipRecord({
+    year: 2022,
+    month: 1,
+    line_name: 806,
     est_wkday_ridership: 8000,
     est_sat_ridership: 5000,
     est_sun_ridership: 3000,
   }),
-  makeRecord(2022, 1, 804, {
+  makeRidershipRecord({
+    year: 2022,
+    month: 1,
+    line_name: 804,
     est_wkday_ridership: 4400,
     est_sat_ridership: 2200,
     est_sun_ridership: 1100,
   }),
-  makeRecord(2025, 7, 804, {
+  makeRidershipRecord({
+    year: 2025,
+    month: 7,
+    line_name: 804,
     est_wkday_ridership: 4800,
     est_sat_ridership: 2400,
     est_sun_ridership: 1200,
   }),
-  makeRecord(2025, 7, 805, {
+  makeRidershipRecord({
+    year: 2025,
+    month: 7,
+    line_name: 805,
     est_wkday_ridership: 700,
     est_sat_ridership: 350,
     est_sun_ridership: 175,
   }),
-  makeRecord(2026, 1, 807, {
+  makeRidershipRecord({
+    year: 2026,
+    month: 1,
+    line_name: 807,
     est_wkday_ridership: 9000,
     est_sat_ridership: 7000,
     est_sun_ridership: 5000,
   }),
-  makeRecord(2026, 1, 804, {
+  makeRidershipRecord({
+    year: 2026,
+    month: 1,
+    line_name: 804,
     est_wkday_ridership: 5200,
     est_sat_ridership: 2600,
     est_sun_ridership: 1300,
   }),
-  makeRecord(2026, 1, 805, {
+  makeRidershipRecord({
+    year: 2026,
+    month: 1,
+    line_name: 805,
     est_wkday_ridership: 900,
     est_sat_ridership: 450,
     est_sun_ridership: 225,
@@ -236,7 +233,13 @@ describe('buildRidershipView — the Month Window', () => {
   describe('boundaries (start 2022-01, end 2024-01)', () => {
     const windowed = (year: number, monthOfYear: number) =>
       buildRidershipView({
-        records: [makeRecord(year, monthOfYear, 807)],
+        records: [
+          makeRidershipRecord({
+            year,
+            month: monthOfYear,
+            line_name: 807,
+          }),
+        ],
         lines: [K],
         startDate: month(2022, 1),
         endDate: month(2024, 1),
@@ -397,7 +400,7 @@ describe('buildRidershipView — the Event Window', () => {
   it('includes an event exactly at the start month', () => {
     const { events } = build({
       ...eventWindow,
-      events: [makeEvent('at-start', '2022-01', [807])],
+      events: [makeTransitEvent({ id: 'at-start', date: '2022-01', line_ids: [807] })],
     });
 
     expect(events.map((e) => e.id)).toEqual(['at-start']);
@@ -406,8 +409,12 @@ describe('buildRidershipView — the Event Window', () => {
   it('includes an event exactly at the end month — unlike the Month Window', () => {
     const { events, datasets } = build({
       ...eventWindow,
-      records: [makeRecord(2024, 1, 807)],
-      events: [makeEvent('at-end', '2024-01', [807])],
+      records: [
+        makeRidershipRecord({ year: 2024, month: 1, line_name: 807 }),
+      ],
+      events: [
+        makeTransitEvent({ id: 'at-end', date: '2024-01', line_ids: [807] }),
+      ],
     });
 
     expect(events.map((e) => e.id)).toEqual(['at-end']);
@@ -419,7 +426,7 @@ describe('buildRidershipView — the Event Window', () => {
   it('excludes an event one month before the start', () => {
     const { events } = build({
       ...eventWindow,
-      events: [makeEvent('before', '2021-12', [807])],
+      events: [makeTransitEvent({ id: 'before', date: '2021-12', line_ids: [807] })],
     });
 
     expect(events).toEqual([]);
@@ -428,7 +435,7 @@ describe('buildRidershipView — the Event Window', () => {
   it('excludes an event one month after the end', () => {
     const { events } = build({
       ...eventWindow,
-      events: [makeEvent('after', '2024-02', [807])],
+      events: [makeTransitEvent({ id: 'after', date: '2024-02', line_ids: [807] })],
     });
 
     expect(events).toEqual([]);
@@ -446,7 +453,7 @@ describe('buildRidershipView — event selection filtering', () => {
     const { events } = build({
       ...inWindow,
       lines: [{ id: 807, selected: false }],
-      events: [makeEvent('system-wide', '2022-06', [])],
+      events: [makeTransitEvent({ id: 'system-wide', date: '2022-06', line_ids: [] })],
     });
 
     expect(events.map((e) => e.id)).toEqual(['system-wide']);
@@ -456,8 +463,8 @@ describe('buildRidershipView — event selection filtering', () => {
     const { events } = build({
       ...inWindow,
       events: [
-        makeEvent('mine', '2022-06', [807, 806]),
-        makeEvent('not-mine', '2022-07', [806]),
+        makeTransitEvent({ id: 'mine', date: '2022-06', line_ids: [807, 806] }),
+        makeTransitEvent({ id: 'not-mine', date: '2022-07', line_ids: [806] }),
       ],
     });
 
@@ -468,9 +475,9 @@ describe('buildRidershipView — event selection filtering', () => {
     const { events } = build({
       ...inWindow,
       events: [
-        makeEvent('third', '2023-05', [807]),
-        makeEvent('first', '2022-02', [807]),
-        makeEvent('second', '2022-11', [807]),
+        makeTransitEvent({ id: 'third', date: '2023-05', line_ids: [807] }),
+        makeTransitEvent({ id: 'first', date: '2022-02', line_ids: [807] }),
+        makeTransitEvent({ id: 'second', date: '2022-11', line_ids: [807] }),
       ],
     });
 
@@ -482,8 +489,16 @@ describe('buildRidershipView — event selection filtering', () => {
     // datasets filter on. A line with nothing to draw still gets its events.
     const { datasets, events } = build({
       ...inWindow,
-      records: [makeRecord(2019, 1, 807)],
-      events: [makeEvent('still-shows', '2022-06', [807])],
+      records: [
+        makeRidershipRecord({ year: 2019, month: 1, line_name: 807 }),
+      ],
+      events: [
+        makeTransitEvent({
+          id: 'still-shows',
+          date: '2022-06',
+          line_ids: [807],
+        }),
+      ],
     });
 
     expect(datasets).toHaveLength(0);
@@ -528,8 +543,8 @@ describe('buildRidershipView — the empty view', () => {
       startDate: month(2022, 1),
       endDate: month(2024, 1),
       events: [
-        makeEvent('in-window', '2022-06', [807]),
-        makeEvent('out-of-window', '2030-01', [807]),
+        makeTransitEvent({ id: 'in-window', date: '2022-06', line_ids: [807] }),
+        makeTransitEvent({ id: 'out-of-window', date: '2030-01', line_ids: [807] }),
       ],
     });
 
