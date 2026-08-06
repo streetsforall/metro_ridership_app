@@ -17,29 +17,57 @@ recorded decision. The spec sessions below create them lazily as terms and decis
 
 ## Status
 
-Each candidate runs as a letter pair — a spec session that grills to a settled interface, writes
-the domain docs and files tickets; then an implementation session that works those tickets and
-opens the PR. Letters run in one series and are never reused. Batch prefix:
+Each candidate runs as a letter **triple** — a spec session that grills to a settled interface,
+writes the domain docs and files tickets; an implementation session that works those tickets and
+opens the PR; then a review session in a fresh context that reviews that PR. Letters run in one
+series and are never reused. Batch prefix:
 `Metro Ridership Architecture / <letter> — <short name>`.
 
-| Letter | Candidate | Session does | Status |
-| --- | --- | --- | --- |
-| A | 1 — ridership view module | grill → spec → tickets | **done** — #100 (+ #101, #102, #103, #104) |
-| B | 1 — ridership view module | implement → PR | **done** — #105, #106, #107, #108 |
-| C | 2 — derived metrics off state | grill → spec → tickets | **ready** |
-| D | 2 — derived metrics off state | implement → PR | blocked by C |
-| E | 3 — collapse `calc.ts` | grill → spec → tickets | **ready** — read PR #93 first |
-| F | 3 — collapse `calc.ts` | implement → PR | blocked by E |
-| G | 4 — a `Month` module | grill → spec → tickets | **ready** |
-| H | 4 — a `Month` module | implement → PR | blocked by G |
-| — | 5 — URL contract · 6 — CSV seam | unscheduled | letters assigned when picked up |
+| Letter | Candidate | Session does | ADR reserved | Status |
+| --- | --- | --- | --- | --- |
+| A | 1 — ridership view module | grill → spec → tickets | 0001–0003 | **done** — #100 (+ #101, #102, #103, #104) |
+| B | 1 — ridership view module | implement → PR | — | **done** — #105, #106, #107, #108 |
+| C | 2 — derived metrics off state | grill → spec → tickets | 0005 | **ready** |
+| D | 2 — derived metrics off state | implement → PR | — | blocked by C |
+| P | 2 — derived metrics off state | review D's PR | — | blocked by D |
+| E | 3 — collapse `calc.ts` | grill → spec → tickets | 0004 | **ready** |
+| F | 3 — collapse `calc.ts` | implement → PR | — | blocked by E |
+| O | 3 — collapse `calc.ts` | review F's PR | — | blocked by F |
+| G | 4 — a `Month` module | grill → spec → tickets | 0006 | **ready** |
+| H | 4 — a `Month` module | implement → PR | — | blocked by G |
+| Q | 4 — a `Month` module | review H's PR | — | blocked by H |
+| — | 5 — URL contract · 6 — CSV seam | unscheduled | — | letters assigned when picked up |
+
+**ADR numbers are pre-assigned deliberately.** E claims 0004, C claims 0005, G claims 0006 —
+fixed up front rather than "next free at write time". That is what lets one candidate's grill
+session run concurrently with a *different* candidate's implement session without the two
+colliding on `docs/adr/` numbering. Do not renumber, and do not create an ADR for a letter that
+isn't yours.
 
 Candidate 1 was the frozen contract: it defines the module that 2, 3 and 4 all attach to, so it
 landed alone before anything else started. It is now on `main`, which is what unblocked C, E and
 G — they are independent of each other and can run in any order, but **not in parallel**. Each
-appends to `CONTEXT.md` and claims the next `docs/adr/NNNN` number (0004 is next free), so
-concurrent sessions collide on both; and all three are interactive grill sessions, which
-serialise on the user's attention regardless of file fencing.
+appends to `CONTEXT.md`, so concurrent sessions collide there (the ADR numbers no longer collide,
+because they are reserved in advance — see the table); and all three are interactive grill
+sessions, which serialise on the user's attention regardless of file fencing.
+
+**The implement chips can't run in parallel either.** D, F and H all land in overlapping
+territory:
+
+- **D vs F is a direct textual conflict.** D deletes `updateLinesWithLineMetrics`
+  (`useUserDashboardInput.ts:175-242`) outright, while F rewrites the five `calc` call sites
+  *inside that same function body* (`:211-232`). There is no ordering of those two edits that
+  doesn't conflict in the file.
+- **D vs H overlap across five files** in `src/ridership/` and `src/components/` — D re-points
+  the metric consumers, H re-points the month encodings, and they touch the same modules.
+- **F vs H are nearly disjoint**, since `calc.ts` holds no month encoding at all: it compares
+  `year`/`month` fields directly rather than encoding them.
+
+**The agreed order is F → D → H.** F first, because running D first deletes the very caller F
+exists to simplify — `updateLinesWithLineMetrics` is where all five `calc` calls live, so once
+it's gone F's premise is gone with it. Collapsing `calc.ts` into a single `lineMetrics` call
+*first* also means D has one call to relocate instead of five. H goes last, on the settled shape
+of both.
 
 A's outputs are on `main`: `CONTEXT.md` (the repo's first glossary), `docs/adr/0001`–`0003`, and
 `src/plans/ridership-view-module.md`. C, E and G should read those before grilling — in
@@ -55,7 +83,8 @@ implementation inside the folder; `App.tsx` down to markup and wiring; and the m
 boundaries plus the transit-event filter under unit test for the first time. Two things B
 deliberately did **not** touch, because they belong to later letters:
 `updateLinesWithLineMetrics` and its `JSON.stringify` dependency are untouched for C, and
-`src/utils/calc.ts` is untouched for E.
+`src/utils/calc.ts` was left for E. `calc.ts` has since changed anyway — PR #93 landed there
+after B; see the note under candidate 3 for what that leaves E to decide.
 
 ---
 
@@ -118,7 +147,17 @@ under test.
 **Strong** · in-process
 
 **Files** — `src/hooks/useUserDashboardInput.ts` (`updateLinesWithLineMetrics`, `isVisibleLine`,
-`visibleLines`) · `src/App.tsx` (L193–196)
+`visibleLines`) · `src/App.tsx` (L88–96 — the effect that calls it)
+
+The four UI consumers that read the derived fields this candidate strips off `Line`, and so have
+to be re-pointed at whatever replaces them: `src/components/LineSelector.tsx:66` (the
+`averageRidership` sort column) · `src/components/LineTableRow.tsx:94, 157–165` (sparkline
+dependency and the partial-coverage label) · `src/components/SummaryData.tsx:23` (sums
+`averageRidership` across the selection) · `src/@types/lines.types.ts:15-34`, which now carries
+**eight** derived fields — `averageRidership`, `changeInRidership`, `startingRidership`,
+`endingRidership`, `ridersPerMile`, plus `coveredFrom`/`coveredTo`/`isPartialCoverage` added by
+#93. Eight fields is the size of the problem: each one is a write-back into the state it was
+derived from.
 
 **Problem.** Derived metrics are stored back into the same state they were derived from, so
 `lines` means two things at once — and a line is invisible until the round trip lands
@@ -163,44 +202,70 @@ Four `JSON.stringify` dependency arrays exist to keep that cycle from spinning.
 **Strong** · in-process
 
 **Files** — `src/utils/calc.ts` · `src/utils/calc.test.ts` ·
-`src/hooks/useUserDashboardInput.ts` (L193–213)
+`src/hooks/useUserDashboardInput.ts` (L211–232 — the five calc calls plus the distance
+conditional)
 
-> **Read PR #93 before grilling E.** It is open against this exact territory and closes #88.
-> It already fixes the in-place `metrics.sort()` mutation and the unguarded `sorted[0]`, and it
-> takes a deliberate policy decision — *label, don't redefine* — that the "coverage-aware"
-> column below assumes rather than argues: metrics keep estimating from each line's own first
-> and last record, and the UI stops claiming they all describe the same period. Re-anchoring
-> them to the window endpoints is explicitly deferred there as its own decision. E should either
-> build on that policy or reopen it on purpose, not rediscover it.
+> **PR #93 has merged** — as `249de8f`, the current tip of `main`. It rebased itself onto the
+> candidate 1 work on the way in, so the rebase-ordering question this note used to raise is
+> resolved; E has nothing to sequence against. What it changed under E's feet:
 >
-> Two mechanical notes: #93 predates the candidate 1 work, so it edits `src/utils/chartData.ts`,
-> which #106 moved to `src/ridership/`, and it touches `SummaryData.test.tsx` and
-> `useUserDashboardInput.test.ts`, whose fixtures #110 rewrote. It needs a rebase before either
-> it or E can land. Whichever goes second absorbs that cost — worth deciding the order up front.
+> - **`sortChronologically` is extracted** (`calc.ts:30-38`) and copies before sorting, so the
+>   in-place `metrics.sort()` mutation no longer crosses the seam. The mutation win below is
+>   already banked.
+> - **Empty-array guards are in**, fixing the unguarded `sorted[0]` in `calcAbsChange`,
+>   `calcStart` and `calcEnd`.
+> - **Issue #88 is closed** by a deliberate policy decision — *label, don't redefine*. Metrics
+>   keep estimating from each line's own first and last record; the UI stops claiming they all
+>   describe the same period. Re-anchoring them to the window endpoints is explicitly deferred
+>   there as its own decision.
+>
+> The crucial placement detail: that policy is implemented as a labelling layer in
+> `src/ridership/chartData.ts` (`buildCoverageByLine`, `formatMonthKey`), **not** in `calc.ts`.
+> Coverage-awareness deliberately does not live in the metrics module — so "#88 lands in
+> `calc.ts`" is no longer part of this candidate's job. E should either build on that policy or
+> reopen it on purpose, not rediscover it.
 
-**Problem.** Five exports that always fire together, each re-sorting the caller's array **in
-place**, and the caller must know to skip `calcRidersPerMile` when distance is missing. The
+**Problem.** Five exports that always fire together, each re-sorting a copy of the caller's array
+independently, and the caller must know to skip `calcRidersPerMile` when distance is missing. The
 module is shallow — its interface is nearly as complex as its implementation.
 
-`metrics.sort()` mutates the caller's `ridershipRecords`, which is the same array the chart
-reads. That is the mutation leaking across the seam.
+Since #93 the sort is a copy-then-sort inside `sortChronologically`, so it no longer mutates the
+caller's `ridershipRecords`. The cost that remains is redundancy, not corruption: one call site
+that wants all five metrics for one line triggers three separate copy-and-sorts of the same
+records (`useUserDashboardInput.ts:215`, `:220`, `:225`).
 
 **Solution.** One function, `lineMetrics(records, dayOfWeek) → LineMetrics`. Sorts once on a
-copy; the ordering, the null handling and the missing-distance rule move inside. Issue #88's
-coverage-awareness gets exactly one place to land.
+copy; the ordering, the null handling and the missing-distance rule move inside.
 
 | | Before | After |
 | --- | --- | --- |
 | interface | 5 exports | 1 export |
-| implementation | ~50 lines, sorts 4× | sorts once, coverage-aware |
+| implementation | ~77 lines, 3 copy-and-sorts per line | one copy-and-sort per line |
 | depth | shallow | deep |
+| return type | five loose `number`s | a named `LineMetrics` |
+
+**What #93 already banked, and what is left.** The mutation-across-the-seam win and the
+`sorted[0]` guards are done; #88 is closed, and its coverage-awareness landed in
+`src/ridership/chartData.ts` rather than here, so it is no longer this candidate's to place.
+What remains for candidate 3 is exactly four things:
+
+1. **Five exports → one.** `calcAvg`, `calcAbsChange`, `calcStart`, `calcEnd`,
+   `calcRidersPerMile` collapse behind `lineMetrics`.
+2. **One sort instead of three.** The hook still triggers three copy-and-sorts per line per
+   render (`useUserDashboardInput.ts:215/220/225`); one call sorts once and reads both endpoints
+   off the same array.
+3. **Absorb the `distanceMiles` conditional** (`useUserDashboardInput.ts:230-232`) — the
+   missing-distance rule becomes the module's, not the caller's.
+4. **Define a `LineMetrics` type**, so the five fields travel as one named shape instead of five
+   separate assignments onto `Line`. This is also the type candidate 2 (letters C/D) needs to
+   return metrics *as* rather than write back into state — worth agreeing its shape across both.
 
 **Wins**
 
 - Interface 5 → 1
-- Mutation stops crossing the seam
-- Issue #88 lands in one module
+- Three redundant sorts per line → one
 - Caller loses a conditional
+- A named return type both this candidate and candidate 2 can hold onto
 
 ---
 
@@ -208,21 +273,29 @@ coverage-awareness gets exactly one place to land.
 
 **Strong** · in-process
 
-**Files** — `src/App.tsx` · `src/ridership/chartData.ts` (`timeKey`) ·
-`src/components/OutputArea.tsx` (`eventMarkers`, `formatMonthLabel`) · `src/utils/queryParams.ts`
-· `src/utils/dataDateRange.ts`
+**Files** — `src/ridership/buildRidershipView.ts` (L94, L186–187) · `src/ridership/chartData.ts`
+(`timeKey`, `formatMonthKey`) · `src/components/OutputArea.tsx` (`eventMarkers`,
+`formatMonthLabel`) · `src/utils/queryParams.ts` · `src/utils/dataDateRange.ts`
 
-**Problem.** A month is encoded five ways, and the chart-label format is re-derived independently
+`src/App.tsx` is **not** on this list: candidate 1 moved both of its month encodings into
+`buildRidershipView.ts`, and App now contains no month arithmetic at all.
+
+**Problem.** A month is encoded six ways, and the chart-label format is re-derived independently
 in `OutputArea` — if `timeKey` ever changes, the event markers silently stop matching.
 
 | Site | Encoding |
 | --- | --- |
-| `App.tsx` date filter | `new Date(y, m)` — 0-based |
-| `App.tsx` event filter | `y * 100 + m` — inclusive |
+| `buildRidershipView.ts:94` date filter | `new Date(y, m)` — 0-based |
+| `buildRidershipView.ts:186-187` event filter | `y * 100 + m` — inclusive |
 | `chartData.timeKey` | `"YYYY M"` |
+| `chartData.formatMonthKey` (added by #93) | `"YYYY M"` → `"YYYY-MM"` |
 | `chartData` axis sort | `y * 12 + m` |
 | `transit-events.json` | `"YYYY-MM"` |
 | `queryParams` | `"YYYY-MM"` → `Date` |
+
+`formatMonthKey` is the newest arrival and the clearest argument for the candidate: it exists only
+to translate one of these encodings into another, which is the shape of problem a `Month` module
+removes rather than adds a converter for.
 
 **Solution.** A `Month` module owning the ordinal, the chart label, both parse formats, and
 window containment.
@@ -230,8 +303,8 @@ window containment.
 ```mermaid
 flowchart TB
   M["Month<br/>ordinal · label · parse · window"]
-  A["App"] --> M
-  C["chart view"] --> M
+  A["buildRidershipView"] --> M
+  C["chart data"] --> M
   O["OutputArea markers"] --> M
   Q["query params"] --> M
   B["data bounds"] --> M
@@ -244,7 +317,7 @@ flowchart TB
 - Label format stops being duplicated
 - Off-by-one stated once, tested once
 - New event types can't drift (#95)
-- Leverage: 5 call sites, 1 interface
+- Leverage: 6 encodings, 1 interface
 
 The exclusive-end / off-by-one convention becomes a stated rule with a test, instead of a comment
 repeated in three files.
