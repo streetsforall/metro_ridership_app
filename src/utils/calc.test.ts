@@ -108,6 +108,57 @@ describe('calcEnd', () => {
   });
 });
 
+describe('empty series', () => {
+  // These read sorted[0] / sorted[length - 1]; an empty window used to throw.
+  it('calcAbsChange returns 0 rather than throwing', () => {
+    expect(calcAbsChange([], 'est_wkday_ridership')).toBe(0);
+  });
+
+  it('calcStart returns 0 rather than throwing', () => {
+    expect(calcStart([], 'est_wkday_ridership')).toBe(0);
+  });
+
+  it('calcEnd returns 0 rather than throwing', () => {
+    expect(calcEnd([], 'est_wkday_ridership')).toBe(0);
+  });
+});
+
+describe('input is not mutated', () => {
+  // The array handed in is the live ridershipRecords array inside ridershipByLine,
+  // which also backs the row sparklines and the CSV export — sorting it in place
+  // reorders data other callers are reading.
+  const unsorted = () => [
+    makeRecord(2022, 3, 1000),
+    makeRecord(2022, 1, 2000),
+    makeRecord(2022, 6, 3000),
+  ];
+
+  it('calcAbsChange leaves the caller order intact', () => {
+    const input = unsorted();
+    calcAbsChange(input, 'est_wkday_ridership');
+    expect(input.map((r) => r.month)).toEqual([3, 1, 6]);
+  });
+
+  it('calcStart leaves the caller order intact', () => {
+    const input = unsorted();
+    calcStart(input, 'est_wkday_ridership');
+    expect(input.map((r) => r.month)).toEqual([3, 1, 6]);
+  });
+
+  it('calcEnd leaves the caller order intact', () => {
+    const input = unsorted();
+    calcEnd(input, 'est_wkday_ridership');
+    expect(input.map((r) => r.month)).toEqual([3, 1, 6]);
+  });
+
+  it('still returns the chronological endpoints from an unsorted input', () => {
+    const input = unsorted();
+    expect(calcStart(input, 'est_wkday_ridership')).toBe(2000);
+    expect(calcEnd(input, 'est_wkday_ridership')).toBe(3000);
+    expect(calcAbsChange(input, 'est_wkday_ridership')).toBe(1000);
+  });
+});
+
 describe('calcRidersPerMile', () => {
   it('divides average ridership by distance', () => {
     expect(calcRidersPerMile(10000, 20)).toBe(500);

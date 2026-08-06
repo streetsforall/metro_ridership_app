@@ -140,8 +140,9 @@ export default function SummaryData({ lines }: SummaryDataProps) {
               />
               <p>
                 Ridership numbers represent daily rider counts averaged over a
-                given month. Averages and changes represent calculations across
-                the current selected time period.
+                given month. Averages and changes are calculated over each
+                line&rsquo;s own available months within the selected period,
+                which can differ from line to line.
               </p>
             </div>
           </div>
