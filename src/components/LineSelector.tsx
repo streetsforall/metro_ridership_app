@@ -366,12 +366,12 @@ export default function LineSelector(props: LineSelectorProps) {
 
             <tbody>
               {sortedLines.map((line, id) => {
-                const lineMetrics: ConsolidatedRecord =
+                const consolidatedRecord: ConsolidatedRecord =
                   ridershipByLine[line.id];
 
                 return (
                   <LineTableRow
-                    lineMetrics={lineMetrics?.ridershipRecords}
+                    ridershipRecords={consolidatedRecord?.ridershipRecords}
                     monthAxis={monthAxis}
                     key={line.id}
                     id={id}

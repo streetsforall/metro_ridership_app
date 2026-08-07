@@ -15,7 +15,7 @@ interface MetroLineTableRowProps {
   line: Line;
   id: number;
   dayOfWeek: string;
-  lineMetrics: RidershipRecord[];
+  ridershipRecords: RidershipRecord[];
   /**
    * The window's shared month axis, from `buildWindowMonthAxis`. Every row's sparkline
    * is drawn against it so a 9-month series and a 17-year one no longer fill the same
@@ -30,7 +30,7 @@ export default function MetroLineTableRow({
   isExpanded,
   dayOfWeek,
   id,
-  lineMetrics,
+  ridershipRecords,
   monthAxis,
 }: MetroLineTableRowProps) {
   const [isMounted, setIsMounted] = useState<boolean>(false);
@@ -81,10 +81,10 @@ export default function MetroLineTableRow({
 
   // Fires on change
   useEffect(() => {
-    if (lineMetrics) {
+    if (ridershipRecords) {
       chartDataset.push({
         borderColor: getLineColor(Number(line.id)),
-        data: alignToMonthAxis(lineMetrics, monthAxis, dayOfWeek as DayOfWeek),
+        data: alignToMonthAxis(ridershipRecords, monthAxis, dayOfWeek as DayOfWeek),
       });
     }
 
@@ -97,14 +97,14 @@ export default function MetroLineTableRow({
     // renders and doesn't need the JSON.stringify treatment the others get.
     monthAxis,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    JSON.stringify(lineMetrics),
+    JSON.stringify(ridershipRecords),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(chartDataset),
   ]);
 
   return (
     <>
-      {lineMetrics && (
+      {ridershipRecords && (
         <tr className="even:bg-[rgba(0,0,0,0.05)]">
           {/* Line rank */}
           <td data-qa={`rank-${line.id}`} className="text-right text-stone-400 w-10">{id}</td>

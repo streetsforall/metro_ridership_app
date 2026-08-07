@@ -40,7 +40,7 @@ const mockLine: Line = {
   endingRidership: 5500, // distinct from averageRidership to avoid duplicate text matches
 };
 
-const mockMetrics: RidershipRecord[] = [
+const mockRidershipRecords: RidershipRecord[] = [
   {
     year: 2022,
     month: 1,
@@ -56,7 +56,7 @@ const baseProps = {
   line: mockLine,
   id: 1,
   dayOfWeek: 'est_wkday_ridership',
-  lineMetrics: mockMetrics,
+  ridershipRecords: mockRidershipRecords,
   monthAxis: ['2022 1'],
 };
 
@@ -99,11 +99,11 @@ describe('LineTableRow rendering', () => {
     expect(screen.getByRole('checkbox')).toBeTruthy();
   });
 
-  it('renders nothing when lineMetrics is falsy', () => {
+  it('renders nothing when ridershipRecords is falsy', () => {
     const { container } = render(
       <table>
         <tbody>
-          <LineTableRow {...baseProps} lineMetrics={undefined as never} />
+          <LineTableRow {...baseProps} ridershipRecords={undefined as never} />
         </tbody>
       </table>,
     );
@@ -305,7 +305,7 @@ describe('LineTableRow coverage marker', () => {
 describe('LineTableRow sparkline alignment', () => {
   const axis = ['2020 7', '2020 8', '2025 9', '2025 10'];
 
-  const metricsFor = (
+  const ridershipRecordsFor = (
     months: [number, number][],
     wkday = 500,
   ): RidershipRecord[] =>
@@ -318,13 +318,13 @@ describe('LineTableRow sparkline alignment', () => {
       est_sun_ridership: 125,
     }));
 
-  const renderRow = (lineMetrics: RidershipRecord[], monthAxis = axis) =>
+  const renderRow = (ridershipRecords: RidershipRecord[], monthAxis = axis) =>
     render(
       <table>
         <tbody>
           <LineTableRow
             {...baseProps}
-            lineMetrics={lineMetrics}
+            ridershipRecords={ridershipRecords}
             monthAxis={monthAxis}
             isExpanded
           />
@@ -333,7 +333,7 @@ describe('LineTableRow sparkline alignment', () => {
     );
 
   it('plots one point per window month, in axis order', () => {
-    renderRow(metricsFor([[2025, 9]]));
+    renderRow(ridershipRecordsFor([[2025, 9]]));
 
     expect(lastSparklinePoints().map((p) => p.time)).toEqual(axis);
   });
@@ -341,7 +341,7 @@ describe('LineTableRow sparkline alignment', () => {
   it('leaves months outside a short line’s coverage null instead of shifting it left', () => {
     // The D Line shape: a late, short series must occupy the right-hand slice of the
     // cell, not stretch across the whole width as it did on its own implicit axis.
-    renderRow(metricsFor([[2025, 9]]));
+    renderRow(ridershipRecordsFor([[2025, 9]]));
 
     expect(lastSparklinePoints().map((p) => p.stat)).toEqual([
       null,
@@ -353,7 +353,7 @@ describe('LineTableRow sparkline alignment', () => {
 
   it('renders an interior gap as a gap rather than bridging it', () => {
     renderRow(
-      metricsFor([
+      ridershipRecordsFor([
         [2020, 7],
         [2025, 10],
       ]),
@@ -369,7 +369,7 @@ describe('LineTableRow sparkline alignment', () => {
 
   it('fills every slot for a line that spans the window', () => {
     renderRow(
-      metricsFor([
+      ridershipRecordsFor([
         [2020, 7],
         [2020, 8],
         [2025, 9],
@@ -386,7 +386,7 @@ describe('LineTableRow sparkline alignment', () => {
         <tbody>
           <LineTableRow
             {...baseProps}
-            lineMetrics={metricsFor([[2025, 9]])}
+            ridershipRecords={ridershipRecordsFor([[2025, 9]])}
             monthAxis={axis}
             dayOfWeek="est_sat_ridership"
             isExpanded
