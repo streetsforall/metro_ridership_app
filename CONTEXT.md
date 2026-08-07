@@ -51,6 +51,17 @@ ordered last. A line with no record for a month contributes nothing rather than 
 line never reads as ridership collapsing.
 _Avoid_: total, sum series, combined line
 
+**Line Metrics**:
+The five summary figures one Line's Ridership Records yield for the chosen Day Of Week — average,
+absolute change, starting and ending ridership, and riders per mile. They are estimated from that
+line's own first and last record inside the Month Window, **not** from the window's endpoints, so
+two rows of the table can describe different periods; the table labels that difference rather than
+the figures being redefined. A Line reporting no records in the window has **no** Line Metrics at
+all, rather than zeroes. Riders per mile is absent, not zero or infinite, for a Line with no
+recorded route length. See
+[ADR-0004](docs/adr/0004-line-metrics-are-one-nullable-shape.md).
+_Avoid_: calc, summary stats, line stats, the metrics
+
 ### The inputs
 
 **Ridership Record**:
