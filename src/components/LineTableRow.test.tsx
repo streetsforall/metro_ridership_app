@@ -56,7 +56,7 @@ const baseProps = {
   line: mockLine,
   id: 1,
   dayOfWeek: 'est_wkday_ridership',
-  lineMetrics: mockMetrics,
+  ridershipRecords: mockMetrics,
   monthAxis: ['2022 1'],
 };
 
@@ -99,11 +99,11 @@ describe('LineTableRow rendering', () => {
     expect(screen.getByRole('checkbox')).toBeTruthy();
   });
 
-  it('renders nothing when lineMetrics is falsy', () => {
+  it('renders nothing when ridershipRecords is falsy', () => {
     const { container } = render(
       <table>
         <tbody>
-          <LineTableRow {...baseProps} lineMetrics={undefined as never} />
+          <LineTableRow {...baseProps} ridershipRecords={undefined as never} />
         </tbody>
       </table>,
     );
@@ -318,13 +318,13 @@ describe('LineTableRow sparkline alignment', () => {
       est_sun_ridership: 125,
     }));
 
-  const renderRow = (lineMetrics: RidershipRecord[], monthAxis = axis) =>
+  const renderRow = (ridershipRecords: RidershipRecord[], monthAxis = axis) =>
     render(
       <table>
         <tbody>
           <LineTableRow
             {...baseProps}
-            lineMetrics={lineMetrics}
+            ridershipRecords={ridershipRecords}
             monthAxis={monthAxis}
             isExpanded
           />
@@ -386,7 +386,7 @@ describe('LineTableRow sparkline alignment', () => {
         <tbody>
           <LineTableRow
             {...baseProps}
-            lineMetrics={metricsFor([[2025, 9]])}
+            ridershipRecords={metricsFor([[2025, 9]])}
             monthAxis={axis}
             dayOfWeek="est_sat_ridership"
             isExpanded
