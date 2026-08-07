@@ -455,8 +455,8 @@ describe('coverage metadata on lines', () => {
   });
 
   it('does not reorder the records it was handed', () => {
-    // calcStart/calcEnd/calcAbsChange used to sort ridershipRecords in place — the
-    // same array the sparklines and the CSV export read.
+    // The metric functions used to sort ridershipRecords in place — the same array
+    // the sparklines and the CSV export read. `lineMetrics` sorts a copy.
     const unsorted: ConsolidatedRidership = makeConsolidatedRidership(
       801,
       [makeRecord(801, 2025, 9), makeRecord(801, 2025, 7), makeRecord(801, 2025, 8)],
@@ -487,8 +487,8 @@ describe('line visibility', () => {
     ]);
 
   it('keeps a line whose change is exactly 0 in the table', () => {
-    // calcAbsChange returns 0 for a single record, so the old truthiness check
-    // emptied the whole table for any single-month window.
+    // `lineMetrics` returns changeInRidership 0 for a single record, so the old
+    // truthiness check emptied the whole table for any single-month window.
     const { result } = renderHook(() => useUserDashboardInput());
 
     act(() => {
@@ -534,9 +534,11 @@ describe('line visibility', () => {
     expect(result.current.visibleLines).toHaveLength(0);
   });
 
-  it('excludes a line whose average is NaN from an empty record set', () => {
-    // calcAvg divides by the record count; an empty series yields NaN, which must not
-    // reach the table as a metric.
+  it('excludes a line with an empty record set', () => {
+    // `lineMetrics` returns null for an empty series, so the derived fields are
+    // cleared to undefined. The module this replaced divided by the record count and
+    // put a NaN there instead; either way no metric reaches the table and the row is
+    // hidden. The row staying hidden is the assertion that matters here.
     const { result } = renderHook(() => useUserDashboardInput());
 
     act(() => {
@@ -546,7 +548,7 @@ describe('line visibility', () => {
     });
 
     const aLine = result.current.lines.find((l) => l.id === 801);
-    expect(Number.isNaN(aLine?.averageRidership)).toBe(true);
+    expect(aLine?.averageRidership).toBeUndefined();
     expect(result.current.visibleLines.some((l) => l.id === 801)).toBe(false);
   });
 

@@ -104,10 +104,9 @@ export interface LineCoverage {
  * does, or its last month ends before it — the D Line, whose data only begins
  * 2025-09, against rail lines reaching back to 2009.
  *
- * This *labels* the summary metrics; it does not change them. `calcAvg`,
- * `calcAbsChange`, `calcStart` and `calcEnd` still estimate from each line's own first
- * and last record. The point is that the UI stops implying they all mean the same
- * period.
+ * This *labels* the summary metrics; it does not change them. `lineMetrics` still
+ * estimates every figure from each line's own first and last record. The point is
+ * that the UI stops implying they all mean the same period.
  */
 export function buildCoverageByLine(
   ridershipByLine: ConsolidatedRidership,

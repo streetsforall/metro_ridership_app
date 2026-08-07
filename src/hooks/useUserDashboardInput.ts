@@ -1,6 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { calcAbsChange, calcAvg, calcStart, calcEnd, calcRidersPerMile } from '../utils/calc';
-import { buildCoverageByLine } from '../ridership';
+import { buildCoverageByLine, lineMetrics } from '../ridership';
 import { getLineNames, lineNameSortFunction } from '../utils/lines';
 import {
   parseMonthParam,
@@ -208,35 +207,27 @@ const useUserDashboardInput = (): UserDashboardInputState => {
           return updatedLine;
         }
 
-        // Calculate metrics for each line
-        const avgRidership = calcAvg(consolidatedRecord.ridershipRecords, dayOfWeek);
-        updatedLine.averageRidership = avgRidership;
-
-        updatedLine.changeInRidership = calcAbsChange(
-          consolidatedRecord.ridershipRecords,
+        const metrics = lineMetrics({
+          records: consolidatedRecord.ridershipRecords,
           dayOfWeek,
-        );
-
-        updatedLine.startingRidership = calcStart(
-          consolidatedRecord.ridershipRecords,
-          dayOfWeek,
-        );
-
-        updatedLine.endingRidership = calcEnd(
-          consolidatedRecord.ridershipRecords,
-          dayOfWeek,
-        );
-
-        if (updatedLine.distanceMiles) {
-          updatedLine.ridersPerMile = calcRidersPerMile(avgRidership, updatedLine.distanceMiles);
-        }
+          distanceMiles: updatedLine.distanceMiles,
+        });
 
         const coverage = coverageByLine[updatedLine.id];
-        updatedLine.coveredFrom = coverage?.coveredFrom;
-        updatedLine.coveredTo = coverage?.coveredTo;
-        updatedLine.isPartialCoverage = coverage?.isPartialCoverage;
 
-        return updatedLine;
+        return {
+          ...updatedLine,
+          ...(metrics ?? {
+            averageRidership: undefined,
+            changeInRidership: undefined,
+            startingRidership: undefined,
+            endingRidership: undefined,
+            ridersPerMile: undefined,
+          }),
+          coveredFrom: coverage?.coveredFrom,
+          coveredTo: coverage?.coveredTo,
+          isPartialCoverage: coverage?.isPartialCoverage,
+        };
       }),
     );
   };
@@ -254,15 +245,15 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     }
 
     /**
-     * Presence checks, not truthiness: `calcAbsChange` returns exactly 0 for a line
+     * Presence checks, not truthiness: `changeInRidership` is exactly 0 for a line
      * with a single record, so a truthy test dropped every line from the table
-     * whenever the window narrowed to one month. NaN is still excluded — `calcAvg`
-     * divides by the record count and returns it for an empty series.
+     * whenever the window narrowed to one month. There is no NaN case to exclude:
+     * `lineMetrics` returns null for an empty series, so the fields are cleared to
+     * undefined rather than carrying a sentinel.
      */
     return (
       line.visible &&
       line.averageRidership !== undefined &&
-      !Number.isNaN(line.averageRidership) &&
       line.changeInRidership !== undefined
     );
   };
