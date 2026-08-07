@@ -44,7 +44,7 @@ export default function SummaryData({ lines }: SummaryDataProps) {
   return (
     <div>
       {selectedLines.length > 0 && (
-        <div className="flex flex-wrap xl:flex-nowrap gap-4 items-center">
+        <div className="flex flex-wrap gap-4 items-center">
           {/* Stats */}
           {/* TODO: Refactor into component */}
           <div className="pane">
