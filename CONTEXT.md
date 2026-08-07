@@ -14,8 +14,9 @@ currently in the source, the term below wins and the source is the thing that's 
 
 **Ridership View**:
 Everything on screen that follows from one set of user choices — the month axis, the per-line
-series, the aggregate, the per-line record groups and the context-log events. It is derived, never
-stored, and recomputed whole whenever any choice changes.
+series, the aggregate, the per-line record groups, each line's summary figures and covered span,
+and the context-log events. It is derived, never stored, and recomputed whole whenever any choice
+changes.
 _Avoid_: chart data, dashboard state, the memo
 
 **Month Window**:
@@ -62,6 +63,22 @@ recorded route length. See
 [ADR-0004](docs/adr/0004-line-metrics-are-one-nullable-shape.md).
 _Avoid_: calc, summary stats, line stats, the metrics
 
+**Line Readout**:
+One Line together with everything the current Ridership View derives about it — its Line Metrics and
+the span its records cover. Derived per Month Window and thrown away; a Line never carries figures
+from one window to the next, which is why a figure from an earlier window cannot survive a change of
+window. A Line with no records in the window still has a Line Readout, just one with no figures. The
+map's hover popup and the summary panel read the same Line Readouts the table does. See
+[ADR-0005](docs/adr/0005-derived-figures-live-on-line-readouts.md).
+_Avoid_: enriched line, updated line, line with metrics, line view, the row
+
+**Listed Line**:
+A Line Readout the line table currently shows. A Line is listed when its mode is switched on, its
+name matches the search text, and it has figures for the Month Window — a Line with no records in the
+window is absent from the table rather than shown with blanks. The map and the summary panel are not
+filtered this way; they read every Line Readout and select on the user's own selection.
+_Avoid_: visible line, filtered line, matching line
+
 ### The inputs
 
 **Ridership Record**:
@@ -76,14 +93,18 @@ _Avoid_: day type, service day
 **Line**:
 A Metro bus or rail service, identified by its numeric id. Carries display name, brand colour,
 mode and route length. A Line's identity comes from metadata, not from ridership data — a Line with
-no records in the window is still a Line.
-_Avoid_: route, service
+no records in the window is still a Line. A Line carries **no** derived figures: averages, changes
+and covered spans belong to its Line Readout and last only as long as the Month Window that produced
+them.
+_Avoid_: route, service, enriched line
 
 **Line Selection**:
 The minimum a caller must state about the lines for a Ridership View to be built: each line's id,
-whether it is selected, and the order they come in. **Legend and dataset order follow this order**,
-which is alphabetical by line name — not the order the user listed them in the URL, and not the
-numeric order of line ids.
+whether it is selected, its route length, and the order they come in. **Legend and dataset order
+follow this order**, which is alphabetical by line name — not the order the user listed them in the
+URL, and not the numeric order of line ids. Route length is metadata rather than selection; it is
+stated here because riders per mile cannot be derived without it. Metadata may be stated this way;
+figures the Ridership View derives may never be handed back to it.
 _Avoid_: selected lines, line list
 
 **Transit Event**:
@@ -94,7 +115,8 @@ _Avoid_: annotation, marker, milestone
 
 **Consolidated Ridership**:
 The Ridership Records of a Month Window grouped by line, each group carrying its Selection
-Snapshot. Consumed by the line table, the summary metrics and the CSV export.
+Snapshot. Consumed by the line table's sparklines and the CSV export, and the source each line's
+Line Metrics are derived from.
 _Avoid_: grouped records, ridership by line
 
 ## Scope note
