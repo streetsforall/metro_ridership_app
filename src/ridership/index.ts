@@ -29,3 +29,13 @@ export {
   buildWindowMonthAxis,
   type LineCoverage,
 } from './chartData';
+
+/**
+ * The per-line summary figures the line table and the summary panel read.
+ * Replaces the five exports of the former `src/utils/calc.ts`.
+ */
+export {
+  lineMetrics,
+  type LineMetrics,
+  type LineMetricsInput,
+} from './lineMetrics';
