@@ -17,10 +17,6 @@ export interface Line {
   ridershipOverTime?: number;
   startingRidership?: number;
   endingRidership?: number;
-  division?: number;
-  viewMap?: string;
-  isAggregate?: boolean;
-  aggregatedLines?: number[];
   distanceMiles?: number;
   ridersPerMile?: number;
   /**
