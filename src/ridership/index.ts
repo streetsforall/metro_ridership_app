@@ -39,3 +39,17 @@ export {
   type LineMetrics,
   type LineMetricsInput,
 } from './lineMetrics';
+
+/**
+ * A Line joined to the figures this Month Window derives about it.
+ *
+ * The join lives here rather than in `buildRidershipView` because that module
+ * deliberately never receives a full `Line` — it takes `LineSelection` and returns
+ * maps keyed by line id, which is what keeps the write-back cycle structurally out
+ * of it. Assembling the readout is the caller's step.
+ */
+export {
+  buildLineReadouts,
+  type LineReadout,
+  type LineReadoutsInput,
+} from './lineReadouts';
