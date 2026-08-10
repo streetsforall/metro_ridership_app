@@ -47,9 +47,9 @@
     "date": "2020-04",
     "line_ids": [],
     "title": "COVID-19 Emergency Schedule",
-    "description": "From April 19, 2020 every Metro bus and train ran a modified Sunday schedule seven days a week — a further cut of roughly 10%. Rail operated every 12 minutes from about 6am to 6pm and every 20 minutes at all other times; weekday bus service was the usual Sunday schedule plus a handful of Rapid, Express and local lines that do not normally run on Sundays.",
+    "description": "From April 19, 2020 every Metro bus and train ran a modified Sunday schedule seven days a week. Rail operated every 12 minutes from about 6am to 6pm and every 20 minutes at all other times; weekday bus service was the usual Sunday schedule plus a handful of Rapid, Express and local lines that do not normally run on Sundays.",
     "category": "hours_change",
-    "source": "https://la.streetsblog.org/2020/04/15/covid-19-metro-operations-bus-ridership-down-65-percent-rail-down-75-percent-more-service-cuts-starting-sunday/",
+    "source": "https://la.urbanize.city/post/metro-will-switch-modified-sunday-schedule-starting-april-19",
     "shakeup": "202004",
     "details": {
       "headway_after_min": 12
@@ -60,7 +60,7 @@
     "date": "2020-12",
     "line_ids": [],
     "title": "NextGen Bus Plan Phase 1",
-    "description": "The first of three NextGen service changes took effect December 13, 2020, opening Metro's first full bus-network redesign in more than 25 years. Trips were added on higher-ridership corridors, routes were modified to speed up trips, and the lowest-performing lines were discontinued.",
+    "description": "The first of three NextGen service changes took effect December 13, 2020, opening Metro's first full bus-network redesign in more than 25 years. Trips were added on many lines to improve frequency, routes were modified to speed up trips, and a few low-ridership lines were discontinued.",
     "category": "route_change",
     "source": "https://www.metro.net/about/metro-to-begin-implementing-nextgen-bus-plan-on-dec-13-to-increase-bus-frequencies-and-modify-routes-to-better-serve-riders/",
     "shakeup": "202012"
@@ -68,11 +68,11 @@
   {
     "id": "nextgen-rapid-line-consolidation",
     "date": "2020-12",
-    "line_ids": [28, 40, 45, 105, 210, 251, 260],
+    "line_ids": [28, 40, 45, 60, 105, 210, 251, 260],
     "title": "Rapid Lines Retired into Local Service",
-    "description": "NextGen Phase 1 discontinued eight of the lowest-performing Rapid lines (705, 710, 728, 740, 745, 751, 760 and 762). The overlapping local lines that absorbed those riders — 28, 40, 45, 105, 210, 251 and 260 — gained frequency and dropped selected stops to recover part of the Rapid travel-time advantage.",
+    "description": "NextGen Phase 1 consolidated eight Metro Rapid lines into their partner locals: 705 into 105, 710 into 210, 728 into 28, 740 into 40 and 210, 745 into 45, 751 into 251, 760 into 60 and 762 into 260. The locals absorbed those riders on more frequent service, and selected stops were dropped to recover part of the Rapid travel-time advantage.",
     "category": "headway_change",
-    "source": "https://la.streetsblog.org/2020/12/18/a-look-at-phase-one-of-metro-nextgen-bus-service-reorganization",
+    "source": "https://www.metro.net/about/metro-to-begin-implementing-nextgen-bus-plan-on-dec-13-to-increase-bus-frequencies-and-modify-routes-to-better-serve-riders/",
     "shakeup": "202012"
   },
   {
@@ -80,7 +80,7 @@
     "date": "2021-06",
     "line_ids": [],
     "title": "NextGen Bus Plan Phase 2",
-    "description": "The largest NextGen phase took effect June 27, 2021: 71 bus lines gained trips every day of the week, 18 more on weekdays, 4 on Saturdays and 1 on Sundays, with stop consolidation on 8 lines and added weekday rail service on the A, C, E and L Lines.",
+    "description": "The largest NextGen phase took effect June 27, 2021: 70 bus lines gained trips every day of the week (the G Line among them), 23 more on weekdays (including the J Line), 4 on Saturdays and 1 on Sundays, with stop consolidation on 8 lines and added weekday peak rail service on the A, C, E and L Lines.",
     "category": "route_change",
     "source": "https://www.metro.net/about/metro-to-implement-phase-2-of-the-nextgen-bus-plan-launch-two-new-metro-micro-ridesharing-zones-on-sunday-june-27-to-better-serve-riders/",
     "shakeup": "202106"
@@ -90,7 +90,7 @@
     "date": "2021-10",
     "line_ids": [],
     "title": "GoPass Free Student Fares Launch",
-    "description": "Metro launched the GoPass pilot in October 2021, giving K-14 students across LA County an unlimited free transit pass — the largest fareless student program in the country at the time. The board made it permanent in April 2024.",
+    "description": "Metro launched the GoPass pilot in October 2021, giving K-14 students across LA County an unlimited free transit pass and the first phase of its Fareless System Initiative. By April 2023 more than 100 school districts and 1,400 schools had joined, and registered students had made 16.6 million boardings.",
     "category": "fare_change",
     "source": "https://www.metro.net/about/l-a-metro-extends-popular-gopass-program-that-provides-free-fares-for-l-a-county-k-14-students/"
   },
@@ -99,7 +99,7 @@
     "date": "2021-12",
     "line_ids": [],
     "title": "NextGen Bus Plan Phase 3",
-    "description": "The third and final NextGen service change landed in December 2021, completing the network restructure with more frequent all-day service on more routes and shorter waits across the bus system.",
+    "description": "The third and final NextGen service change landed in December 2021, completing the network restructure. Metro's own assessment a year later found 2.2 million more people living within a quarter mile of 10-minute-or-better weekday midday service — an increase of more than 700%.",
     "category": "route_change",
     "source": "https://www.metro-magazine.com/news/l-a-metro-assessment-of-nextgen-bus-plan",
     "shakeup": "202112"
@@ -149,7 +149,7 @@
     "date": "2023-09",
     "line_ids": [802, 805],
     "title": "B/D Line Subway Frequency Increase",
-    "description": "From September 10, 2023 the B and D Line subways ran every 12 minutes instead of every 15 for most of the day (about 8am to 7pm), on both weekdays and weekends, giving the shared Union Station–Wilshire/Vermont trunk a train every 6 minutes. This was the first meaningful rollback of the pandemic-era subway cuts in more than three years.",
+    "description": "From September 10, 2023 the B and D Line subways ran every 12 minutes instead of every 15 for most of the day — weekdays about 6am to 9pm, weekends 8:15am to 7pm — giving the shared Union Station–Wilshire/Vermont trunk a train every 6 minutes. Metro framed the increase as part of restoring service to pre-pandemic levels.",
     "category": "headway_change",
     "source": "https://thesource.metro.net/more-frequent-b-d-line-subway-service-begins-this-sunday-sept-10/",
     "details": {
@@ -177,7 +177,7 @@
     "date": "2024-11",
     "line_ids": [803, 807],
     "title": "C and K Lines Reconfigured at Aviation/Century",
-    "description": "On November 3, 2024 the new Aviation/Century station opened and the two lines were re-cut around it: the C Line ran Norwalk to Aviation/Century, while the K Line ran Expo/Crenshaw to Westchester/Veterans and, separately, Aviation/Century to Redondo Beach. Riders headed to the four westernmost former C Line stations now changed trains across the platform at Aviation/Century.",
+    "description": "On November 3, 2024 the new Aviation/Century station opened and the two lines were re-cut around it: the C Line ran Norwalk to Aviation/Century, while the K Line ran Expo/Crenshaw to Westchester/Veterans and, separately, Aviation/Century to Redondo Beach. Riders using Mariposa, El Segundo, Douglas or Redondo Beach now changed between the two lines at Aviation/Century. Both changes were temporary, pending the LAX/Metro Transit Center opening.",
     "category": "route_change",
     "source": "https://thesource.metro.net/reminder-c-and-k-lines-are-being-reconfigured-this-sunday-nov-3-and-aviation-century-station-is-opening/",
     "details": {
@@ -189,7 +189,7 @@
     "date": "2024-12",
     "line_ids": [],
     "title": "December 2024 Service Changes",
-    "description": "Schedule changes took effect December 15, 2024 across roughly 54 weekday bus lines — among them 10, 14, 20, 60, 105, 180 and 206 — plus the G Line. Several routes were also restructured: Line 96 became Line 296 terminating at Lincoln/Cypress, Lines 260 and 261 were split at Willowbrook/Rosa Parks and Artesia, and Lines 177 and 256 transferred to Pasadena Transit.",
+    "description": "Schedule changes took effect December 15, 2024, adding trips on some lines and reconfiguring others to improve connections to Metro rail. Line 96 became Line 296, terminating at the Lincoln/Cypress A Line station; Line 260 was split into two routes, 260 to Willowbrook/Rosa Parks and a new 261 to Artesia; and Lines 177 and 256 transferred to Pasadena Transit as Routes 53 and 33.",
     "category": "headway_change",
     "source": "https://www.metro.net/about/metro-bus-schedule-changes-to-improve-frequency-reliability-and-connectivity-coming-dec-15/",
     "shakeup": "202412"
@@ -220,7 +220,7 @@
     "date": "2025-07",
     "line_ids": [805],
     "title": "D Line Service Resumes",
-    "description": "D Line trains started running again at 4am on July 26, 2025 after the 70-day closure, restoring service between Union Station and Wilshire/Western ahead of the Section 1 extension opening.",
+    "description": "D Line trains started running again on July 26, 2025 after the 70-day closure, ahead of the Section 1 extension opening. Trains ran every 12 minutes from 9am to 8pm.",
     "category": "service_change",
     "source": "https://www.masstransitmag.com/rail/infrastructure/press-release/55306270/los-angeles-county-metropolitan-transportation-authority-metro-la-metro-reopens-d-line-subway-ahead-of-completion-of-phase-1-of-d-line-subway-extension-project"
   },
@@ -229,7 +229,7 @@
     "date": "2025-09",
     "line_ids": [801],
     "title": "A Line Foothill Extension to Pomona",
-    "description": "The A Line opened nine miles and four stations east to Pomona on September 19, 2025 — Glendora, San Dimas, La Verne and Pomona — making it, at 57.6 miles, the longest light rail line in the world.",
+    "description": "The A Line opened nine miles and four stations east to Pomona on September 19, 2025 — Glendora, San Dimas, La Verne and Pomona. Already the longest light rail line in the world since the 2023 Blue/Gold merge, it now runs 57.6 miles from Pomona to Long Beach.",
     "category": "extension",
     "source": "https://la.streetsblog.org/2025/09/19/metro-pomona-a-line-extension-is-open",
     "details": {
