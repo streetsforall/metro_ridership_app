@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 /**
  * Shared navigation/capture helpers for the dashboard visual suites
@@ -17,14 +17,20 @@ import { expect, type Page } from '@playwright/test';
 export const mapMask = (page: Page) => [page.locator('#lineMap')];
 
 /**
- * Navigate to the dashboard and wait for it to be interactive and fonts to be ready.
+ * Navigate to the dashboard and wait only for the app shell — no data gate.
  *
  * `search` is appended verbatim to `/`, e.g. `'?lines=801&day=wkday'`. Dashboard state is parsed
  * from the query string once, in the lazy `useState` initialisers in `useUserDashboardInput.ts`,
  * so this is the only way to drive a specific view — and the app re-serialises its own state back
  * over the URL via `history.replaceState`, so never assert on `page.url()` afterwards.
+ *
+ * This exists separately from `gotoDashboard` because that helper's data gate
+ * (`td[data-qa^="select-"]`) never resolves in two legitimate states: with both mode filters off
+ * (`?buses=0&trains=0`) no line row is ever rendered, and with the ridership fetch stalled (see
+ * `stallRidership`) none is rendered yet. A spec covering either would otherwise have to inline
+ * its own navigation and quietly drift from this one.
  */
-export async function gotoDashboard(page: Page, search = ''): Promise<void> {
+export async function gotoDashboardShell(page: Page, search = ''): Promise<void> {
   // Chart.js `responsive: true` observes its container via ResizeObserver and, during a
   // full-page capture, enters a 1px resize feedback loop that oscillates the document width
   // frame-to-frame — so the screenshot can never stabilise its dimensions. Stubbing
@@ -44,33 +50,79 @@ export async function gotoDashboard(page: Page, search = ''): Promise<void> {
   await page.goto('/' + search);
   await expect(page.locator('#expand-toggle')).toBeVisible();
 
-  // Ridership data is fetched at runtime (/ridership.json). Wait for it to land:
-  // line rows only render once per-line metrics are computed from the dataset, and
-  // #lineMap confirms the lazy-loaded OutputArea chunk has mounted. Without this the
-  // screenshot can capture the loading state instead of the populated dashboard.
-  await expect(page.locator('td[data-qa^="select-"]').first()).toBeVisible();
-  await expect(page.locator('#lineMap')).toBeVisible();
-
   await page.evaluate(async () => {
     await document.fonts.ready;
   });
 }
 
 /**
- * Screenshot the ridership chart pane on its own.
+ * Navigate to the dashboard and wait for it to be interactive, populated with data, and for
+ * fonts to be ready. The default for any spec that shoots a data-bearing view.
  *
- * The pane rather than the bare `<canvas>`: its padding and background give a stable box even if
- * the canvas resizes, and it is a named element rather than the DOM-order accident that
- * `.pane canvas` `.first()` relies on.
+ * `search` is passed through to `gotoDashboardShell`; see that helper for how query-string state
+ * reaches the app.
  */
-export async function shootChart(page: Page, name: string): Promise<void> {
+export async function gotoDashboard(page: Page, search = ''): Promise<void> {
+  await gotoDashboardShell(page, search);
+
+  // Ridership data is fetched at runtime (/ridership.json). Wait for it to land:
+  // line rows only render once per-line metrics are computed from the dataset, and
+  // #lineMap confirms the lazy-loaded OutputArea chunk has mounted. Without this the
+  // screenshot can capture the loading state instead of the populated dashboard.
+  await expect(page.locator('td[data-qa^="select-"]').first()).toBeVisible();
+  await expect(page.locator('#lineMap')).toBeVisible();
+}
+
+/**
+ * Hold `/ridership.json` open forever so the app stays in its loading state.
+ *
+ * The route is registered but never fulfilled or aborted: an abort would put the app in its
+ * error path instead, and a slow fulfil would eventually resolve and repaint mid-capture.
+ *
+ * MUST be called before navigating — a route registered after `page.goto` does not apply to a
+ * request the page has already issued. Pair it with `gotoDashboardShell`, never `gotoDashboard`:
+ * the data gate in the latter can never pass while the fetch is stalled.
+ */
+export async function stallRidership(page: Page): Promise<void> {
+  await page.route('**/ridership.json', () => {
+    // Deliberately empty: neither fulfil nor abort, so the request hangs for the run's duration.
+  });
+}
+
+/**
+ * Skip the calling spec outside the `desktop` project.
+ *
+ * Some views only exist at the desktop breakpoint, and a spec that shoots one would otherwise
+ * write a second, meaningless baseline under `mobile`. Call this at file scope, above the tests.
+ *
+ * The condition reads `test.info()` rather than a `testInfo` parameter: Playwright's
+ * `ConditionBody` takes fixtures only (`(args) => boolean`, test.d.ts), so a second argument does
+ * not type-check. Modifier callbacks run inside the test's own scope, where `test.info()` is live.
+ */
+export function desktopOnly(): void {
+  test.skip(() => test.info().project.name !== 'desktop', 'desktop-only view');
+}
+
+/**
+ * Screenshot one pane on its own.
+ *
+ * Prefer an id'd pane over an inner element: the pane's padding and background give a stable box
+ * even if its contents resize, and an id is a named element rather than the DOM-order accident
+ * that a `.pane`-plus-`.first()` selector relies on.
+ */
+export async function shootPane(page: Page, selector: string, name: string): Promise<void> {
   // hoverCrosshairPlugin draws a dashed line whenever the tooltip has active elements,
   // and interaction.intersect:false makes that trivially easy to trigger. Park the cursor.
   await page.mouse.move(0, 0);
-  await expect(page.locator('#ridership-chart')).toHaveScreenshot(name, {
-    // Tighter than the config defaults: this crop is roughly a sixth of the full-page area, so
-    // the same ratio would let a proportionally much larger chart regression through.
+  await expect(page.locator(selector)).toHaveScreenshot(name, {
+    // Tighter than the config defaults: an element crop is a fraction of the full-page area, so
+    // the same ratio would let a proportionally much larger regression through.
     threshold: 0.2,
     maxDiffPixelRatio: 0.01,
   });
+}
+
+/** Screenshot the ridership chart pane. See `shootPane`. */
+export async function shootChart(page: Page, name: string): Promise<void> {
+  await shootPane(page, '#ridership-chart', name);
 }

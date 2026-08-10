@@ -373,7 +373,10 @@ export default function OutputArea({
         </>
       ) : (
         /* Chart pane */
-        <div className="pane flex-1 flex items-center justify-center text-sm text-stone-400">
+        <div
+          id="output-placeholder"
+          className="pane flex-1 flex items-center justify-center text-sm text-stone-400"
+        >
           <p>{isLoading ? 'Loading ridership data…' : 'Please select a Metro line.'}</p>
         </div>
       )}
