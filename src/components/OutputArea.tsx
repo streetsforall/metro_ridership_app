@@ -321,8 +321,15 @@ export default function OutputArea({
     },
   };
 
+  /**
+   * `min-w-0` on the root opts this grid item out of its automatic minimum,
+   * which is otherwise its min-content width. Without it a child that refuses
+   * to wrap — the summary row below did at `xl` — hands the surrounding `1fr`
+   * track a min-content width larger than its share, and the whole page scrolls
+   * sideways.
+   */
   return (
-    <div className="flex flex-col gap-4 lg:min-h-[50vh]">
+    <div className="flex flex-col gap-4 lg:min-h-[50vh] min-w-0">
       {/* Only show chart and summary metrics if something selected */}
       {chartDatasets.length > 0 ? (
         <>
