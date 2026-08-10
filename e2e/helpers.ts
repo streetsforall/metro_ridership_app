@@ -29,6 +29,9 @@ export const mapMask = (page: Page) => [page.locator('#lineMap')];
  * (`?buses=0&trains=0`) no line row is ever rendered, and with the ridership fetch stalled (see
  * `stallRidership`) none is rendered yet. A spec covering either would otherwise have to inline
  * its own navigation and quietly drift from this one.
+ *
+ * The `document.fonts.ready` await here settles the shell's own faces. A caller that goes on to
+ * wait for later-mounting content must await it again afterwards — see `gotoDashboard`.
  */
 export async function gotoDashboardShell(page: Page, search = ''): Promise<void> {
   // Chart.js `responsive: true` observes its container via ResizeObserver and, during a
@@ -71,6 +74,15 @@ export async function gotoDashboard(page: Page, search = ''): Promise<void> {
   // screenshot can capture the loading state instead of the populated dashboard.
   await expect(page.locator('td[data-qa^="select-"]').first()).toBeVisible();
   await expect(page.locator('#lineMap')).toBeVisible();
+
+  // Re-awaited after the data gates, not just inside the shell helper. `document.fonts.ready`
+  // resolves against the faces pending when it is called, and the build ships several Overpass
+  // subsets while the chart lives in the lazily-loaded OutputArea chunk that mounts after the
+  // shell — so a face first exercised by the populated view can still be loading. Chart.js draws
+  // its axis labels into canvas, where a late font swap repaints with no layout shift to wait on.
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+  });
 }
 
 /**
