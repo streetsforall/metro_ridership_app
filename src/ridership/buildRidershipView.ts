@@ -2,8 +2,11 @@ import { type ChartDataset } from 'chart.js';
 import {
   alignToMonthAxis,
   buildAggregateSeries,
+  buildCoverageByLine,
   buildMonthAxis,
+  type LineCoverage,
 } from './chartData';
+import { lineMetrics, type LineMetrics } from './lineMetrics';
 import { getLineColor, getLineNames } from '../utils/lines';
 import transitEventsData from '../data/transit-events.json';
 import type { CustomChartData } from '../@types/chart.types';
@@ -16,13 +19,19 @@ import type {
 
 /**
  * The minimum a caller must state about the lines. `Line` satisfies this
- * structurally, so callers pass `lines` unchanged — but this module cannot reach
- * the derived metrics written back onto `Line`, which is what keeps that
- * write-back cycle out of here.
+ * structurally, so callers pass `lines` unchanged.
+ *
+ * Metadata may cross this boundary; **derived figures may not**. `distanceMiles`
+ * is here because riders per mile cannot be derived without it, and it comes from
+ * `line_distances.json` by line id — it is never written back from ridership.
+ * Nothing this module derives is ever read back in through here. See
+ * `docs/adr/0005-derived-figures-live-on-line-readouts.md`.
  */
 export interface LineSelection {
   id: number;
   selected: boolean;
+  /** One-way route length. Metadata, never derived. */
+  distanceMiles?: number;
 }
 
 export interface RidershipViewInput {
@@ -47,6 +56,10 @@ export interface RidershipView {
   consolidated: ConsolidatedRidership;
   /** Transit Events inside the Event Window that apply to the selection, chronologically. */
   events: TransitEvent[];
+  /** Line Metrics per line id. A Line with no records in the Month Window is absent. */
+  metrics: Record<number, LineMetrics>;
+  /** The span each Line's records cover inside the Month Window, per line id. */
+  coverage: Record<number, LineCoverage>;
 }
 
 /**
@@ -111,6 +124,29 @@ export function buildRidershipView(input: RidershipViewInput): RidershipView {
       }
       consolidatedRidership[record.line_name].ridershipRecords.push(record);
     }
+  }
+
+  const coverage = buildCoverageByLine(consolidatedRidership);
+
+  /**
+   * Iterates `lines`, not `consolidatedRidership`: a record whose `line_name` has no
+   * metadata entry produces a consolidated group but no `Line`, and the write-back
+   * this replaced — which mapped over `lines` — gave it no metrics either. Preserved.
+   *
+   * A Line with no records in the Month Window, or whose records yield no Line
+   * Metrics, is simply absent from the map. That is ADR-0004's `null` contract seen
+   * from the caller's side: no records means no metrics, not zeroes.
+   */
+  const metrics: Record<number, LineMetrics> = {};
+  for (const line of lines) {
+    const group = consolidatedRidership[line.id];
+    if (!group) continue;
+    const figures = lineMetrics({
+      records: group.ridershipRecords,
+      dayOfWeek,
+      distanceMiles: line.distanceMiles,
+    });
+    if (figures) metrics[line.id] = figures;
   }
 
   /**
@@ -201,5 +237,7 @@ export function buildRidershipView(input: RidershipViewInput): RidershipView {
     datasets,
     consolidated: consolidatedRidership,
     events,
+    metrics,
+    coverage,
   };
 }

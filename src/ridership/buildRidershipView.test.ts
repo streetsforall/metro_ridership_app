@@ -385,6 +385,187 @@ describe('buildRidershipView — Consolidated Ridership', () => {
   });
 });
 
+/**
+ * Ported from the write-back's hook tests (`useUserDashboardInput.test.ts:341-375`,
+ * `:457-474`), which is where these guarantees were only ever asserted through the
+ * `Line` mutation. They are properties of the derivation, so they belong here.
+ */
+describe('buildRidershipView — Line Metrics', () => {
+  // 8000 then 12000 → an average of 10000, so riders-per-mile is checkable by hand.
+  const METRIC_RECORDS: RidershipRecord[] = [
+    makeRidershipRecord({
+      year: 2025,
+      month: 7,
+      line_name: 805,
+      est_wkday_ridership: 8000,
+      est_sat_ridership: null,
+      est_sun_ridership: null,
+    }),
+    makeRidershipRecord({
+      year: 2025,
+      month: 8,
+      line_name: 805,
+      est_wkday_ridership: 12000,
+      est_sat_ridership: null,
+      est_sun_ridership: null,
+    }),
+  ];
+
+  // Pinned explicitly: `dataDefaultEndDate` tracks the live ridership.json, so a
+  // window left to a default would drift with the data.
+  const metricsWindow = { startDate: month(2025, 1), endDate: month(2025, 12) };
+
+  const withDistance = (distanceMiles?: number) =>
+    build({
+      records: METRIC_RECORDS,
+      lines: [{ id: 805, selected: true, distanceMiles }],
+      ...metricsWindow,
+    }).metrics;
+
+  it('sets ridersPerMile on a line that has distanceMiles', () => {
+    expect(withDistance(20)[805].ridersPerMile).toBeGreaterThan(0);
+  });
+
+  it('computes ridersPerMile as averageRidership divided by distanceMiles', () => {
+    const figures = withDistance(20)[805];
+
+    expect(figures.ridersPerMile).toBeCloseTo(figures.averageRidership / 20, 5);
+    expect(figures.averageRidership).toBe(10000);
+    expect(figures.ridersPerMile).toBe(500);
+  });
+
+  it('yields no ridersPerMile for a falsy distanceMiles — never Infinity, never NaN', () => {
+    // The rule lives inside `lineMetrics` (ADR-0004); asserted here because this is
+    // the interface the app will read it through.
+    for (const distance of [undefined, 0]) {
+      const figures = withDistance(distance)[805];
+
+      expect(figures.ridersPerMile).toBeUndefined();
+      expect(figures.averageRidership).toBe(10000);
+    }
+  });
+
+  it("reports the endpoints and the change across the line's own records", () => {
+    const figures = withDistance(20)[805];
+
+    expect(figures.startingRidership).toBe(8000);
+    expect(figures.endingRidership).toBe(12000);
+    expect(figures.changeInRidership).toBe(4000);
+  });
+
+  it('keys metrics by line id', () => {
+    expect(Object.keys(withDistance(20))).toEqual(['805']);
+  });
+
+  it('omits a line with no records in the Month Window', () => {
+    // Was: `ridersPerMile` left undefined on the row. No records means no metrics,
+    // not zeroes — ADR-0004's null contract seen from the caller's side.
+    const { consolidated, metrics } = build({
+      records: METRIC_RECORDS,
+      lines: [
+        { id: 805, selected: true, distanceMiles: 20 },
+        { id: 807, selected: true, distanceMiles: 20 },
+      ],
+      ...metricsWindow,
+    });
+
+    expect(consolidated[807]).toBeUndefined();
+    expect(metrics[807]).toBeUndefined();
+    expect(metrics[805]).toBeDefined();
+  });
+
+  it('omits a record whose line_name has no entry in lines', () => {
+    // The orphan case: a group with no `Line` behind it. The write-back this
+    // replaces mapped over `lines`, so it gave such a group no metrics either.
+    const { consolidated, coverage, metrics } = build({
+      records: [
+        ...METRIC_RECORDS,
+        makeRidershipRecord({ year: 2025, month: 7, line_name: 999 }),
+      ],
+      lines: [{ id: 805, selected: true, distanceMiles: 20 }],
+      ...metricsWindow,
+    });
+
+    expect(consolidated[999]).toBeDefined();
+    expect(coverage[999]).toBeDefined();
+    expect(metrics[999]).toBeUndefined();
+    expect(Object.keys(metrics)).toEqual(['805']);
+  });
+
+  it('yields no metrics while records are null', () => {
+    expect(build({ records: null, lines: [K, L] }).metrics).toEqual({});
+  });
+
+  it('does not reorder the records it was handed', () => {
+    // PR #93: the metric functions used to sort ridershipRecords in place — the same
+    // array the sparklines and the CSV export read. `lineMetrics` sorts a copy.
+    const unsorted: RidershipRecord[] = [
+      makeRidershipRecord({ year: 2025, month: 9, line_name: 805 }),
+      makeRidershipRecord({ year: 2025, month: 7, line_name: 805 }),
+      makeRidershipRecord({ year: 2025, month: 8, line_name: 805 }),
+    ];
+
+    const { consolidated } = build({
+      records: unsorted,
+      lines: [{ id: 805, selected: true, distanceMiles: 20 }],
+      ...metricsWindow,
+    });
+
+    expect(unsorted.map((r) => r.month)).toEqual([9, 7, 8]);
+    expect(consolidated[805].ridershipRecords.map((r) => r.month)).toEqual([
+      9, 7, 8,
+    ]);
+  });
+});
+
+describe('buildRidershipView — coverage', () => {
+  // 801 spans the window, 805 only its tail — the D Line shape from #86.
+  const COVERAGE_RECORDS: RidershipRecord[] = [
+    makeRidershipRecord({ year: 2025, month: 7, line_name: 801 }),
+    makeRidershipRecord({ year: 2025, month: 8, line_name: 801 }),
+    makeRidershipRecord({ year: 2025, month: 9, line_name: 801 }),
+    makeRidershipRecord({ year: 2025, month: 9, line_name: 805 }),
+  ];
+
+  const mixed = () =>
+    build({
+      records: COVERAGE_RECORDS,
+      lines: [
+        { id: 801, selected: true },
+        { id: 805, selected: true },
+      ],
+      startDate: month(2025, 1),
+      endDate: month(2025, 12),
+    });
+
+  it('flags the short-coverage line and records its range', () => {
+    const { coverage } = mixed();
+
+    expect(coverage[805].isPartialCoverage).toBe(true);
+    expect(coverage[805].coveredFrom).toBe('2025-09');
+    expect(coverage[805].coveredTo).toBe('2025-09');
+  });
+
+  it('does not flag a line that spans the whole window', () => {
+    const { coverage } = mixed();
+
+    expect(coverage[801].isPartialCoverage).toBe(false);
+    expect(coverage[801].coveredFrom).toBe('2025-07');
+    expect(coverage[801].coveredTo).toBe('2025-09');
+  });
+
+  it('covers every line in consolidated, keyed by line id', () => {
+    // Same lines `buildCoverageByLine(consolidated)` covered when the hook called it.
+    const { consolidated, coverage } = mixed();
+
+    expect(Object.keys(coverage)).toEqual(Object.keys(consolidated));
+  });
+
+  it('yields no coverage while records are null', () => {
+    expect(build({ records: null, lines: [K, L] }).coverage).toEqual({});
+  });
+});
+
 describe('buildRidershipView — the Event Window', () => {
   // The Event Window is inclusive on both ends and correctly 1-based. It
   // genuinely disagrees with the Month Window pinned above — with the same
