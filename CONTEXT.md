@@ -90,6 +90,15 @@ Which of the three reported figures — weekday, Saturday or Sunday — a Riders
 Choosing one does not filter records; it selects which field of each Ridership Record is used.
 _Avoid_: day type, service day
 
+**Month**:
+A calendar month — a year and a month number, nothing finer. The unit everything here is measured
+in: a Ridership Record covers one, the Month Axis is a sequence of them, the Month Window is a pair.
+Months are counted from 1, matching the data, the URL and the events file. A month is never
+represented as a point in time, because a timestamp carries a day and a timezone that a month does
+not have, and two timestamps for the same month can disagree about which month it is. See
+[ADR-0006](docs/adr/0006-a-month-is-a-year-and-a-month-not-a-date.md).
+_Avoid_: date, timestamp, period, calling one a `Date`
+
 **Line**:
 A Metro bus or rail service, identified by its numeric id. Carries display name, brand colour,
 mode and route length. A Line's identity comes from metadata, not from ridership data — a Line with
