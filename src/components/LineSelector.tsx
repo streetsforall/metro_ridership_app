@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import lodash from 'lodash';
 import LineFilters from './LineFilters';
 import LineTableRow from './LineTableRow';
-import { buildWindowMonthAxis } from '../ridership';
+import { buildWindowMonthAxis, type LineReadout } from '../ridership';
 import { generateCSV } from '../utils/lines';
 import type { Line } from '../@types/lines.types';
 import type {
@@ -19,11 +19,15 @@ import tableIcon from '../assets/table.svg';
 
 type SortDirection = 'asc' | 'desc' | false;
 
-type LineKey = keyof Line;
+/**
+ * `ridershipOverTime` is not a field on anything — it is the sparkline column's
+ * identity for sort-state bookkeeping only, and sorting by it is a no-op.
+ */
+type ColumnKey = keyof LineReadout | 'ridershipOverTime';
 
 interface ColumnHeaderState {
   label: string;
-  key: LineKey;
+  key: ColumnKey;
   align?: 'center' | 'left' | 'right' | 'inherit' | 'justify';
   sortDirection: SortDirection;
   /** Hover text, used to qualify the period the metric columns are measured over. */
@@ -133,7 +137,11 @@ const toggleSortDirection = (sortDirection: SortDirection): SortDirection => {
 
 interface LineSelectorProps {
   ridershipByLine: ConsolidatedRidership;
-  lines: Line[];
+  lines: LineReadout[];
+  /**
+   * The Line state setter. Still `Line[]`: readouts are derived per Month Window
+   * and thrown away, so there is nothing to set them back into.
+   */
   setLines: React.Dispatch<React.SetStateAction<Line[]>>;
   onToggleSelectLine: (line: Line) => void;
   isExpanded: boolean;
@@ -191,7 +199,7 @@ export default function LineSelector(props: LineSelectorProps) {
    * Only changes header column states
    * @param key
    */
-  const onSortLabelClick = (key: LineKey): void => {
+  const onSortLabelClick = (key: ColumnKey): void => {
     setColumnHeaderStates((prevColumnHeaderStates: ColumnHeaderState[]) => {
       let latestColumnHeaderStates: ColumnHeaderState[] = [
         ...prevColumnHeaderStates,
@@ -244,7 +252,7 @@ export default function LineSelector(props: LineSelectorProps) {
     });
   };
 
-  const sortedLines: Line[] = useMemo(() => {
+  const sortedLines: LineReadout[] = useMemo(() => {
     // Get column headers that have a sort direction (ex: asc, desc)
     const sortableColumnHeaders: ColumnHeaderState[] =
       columnHeaderStates.filter(
@@ -258,7 +266,7 @@ export default function LineSelector(props: LineSelectorProps) {
     }
 
     // Get values needed to sort lines via lodash
-    const sortKeys: LineKey[] = sortableColumnHeaders.map(
+    const sortKeys: ColumnKey[] = sortableColumnHeaders.map(
       (columnHeaderState: ColumnHeaderState) => columnHeaderState.key,
     );
     const sortDirections: SortDirection[] = sortableColumnHeaders.map(

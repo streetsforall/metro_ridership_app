@@ -17,13 +17,13 @@ import colors from 'tailwindcss/colors';
 import SummaryData from './SummaryData';
 import Map from './Map';
 import type { CustomChartData } from '../@types/chart.types';
-import type { Line } from '../@types/lines.types';
+import type { LineReadout } from '../ridership';
 import type { TransitEvent } from '../@types/events.types';
 
 interface OutputAreaProps {
   chartDatasets: ChartDataset<'line', CustomChartData[]>[];
   months: string[];
-  lines: Line[];
+  lines: LineReadout[];
   transitEvents: TransitEvent[];
   /** Whether the context-log panel is enabled from the filter bar. */
   showContextLogs: boolean;

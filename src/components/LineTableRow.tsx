@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { ChartOptions, ChartDataset } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
 import * as Checkbox from '@radix-ui/react-checkbox';
-import { alignToMonthAxis } from '../ridership';
+import { alignToMonthAxis, type LineReadout } from '../ridership';
 import { getLineColor } from '../utils/lines';
 import type { CustomChartData } from '../@types/chart.types';
 import type { Line } from '../@types/lines.types';
@@ -12,7 +12,7 @@ import checkIcon from '../assets/check.svg';
 interface MetroLineTableRowProps {
   onToggleSelectLine: (line: Line) => void;
   isExpanded?: boolean;
-  line: Line;
+  line: LineReadout;
   id: number;
   dayOfWeek: string;
   ridershipRecords: RidershipRecord[];

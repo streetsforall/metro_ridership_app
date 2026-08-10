@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import LineTableRow from './LineTableRow';
-import type { Line } from '../@types/lines.types';
+import type { LineReadout } from '../ridership';
+import { makeLineReadout } from '../test/builders';
 import type { CustomChartData } from '../@types/chart.types';
 import type { RidershipRecord } from '../@types/metrics.types';
 
@@ -26,19 +27,13 @@ vi.mock('react-chartjs-2', () => ({
 const lastSparklinePoints = (): CustomChartData[] =>
   (sparklineSpy.mock.calls.at(-1)?.[0] ?? []) as CustomChartData[];
 
-const mockLine: Line = {
-  id: 801,
-  name: 'A Line',
+const mockLine: LineReadout = makeLineReadout({
   former: 'Blue Line',
-  mode: 'Rail',
-  provider: 'DO',
-  selected: false,
-  visible: true,
   averageRidership: 5000,
   changeInRidership: 1000,
   startingRidership: 4000,
   endingRidership: 5500, // distinct from averageRidership to avoid duplicate text matches
-};
+});
 
 const mockRidershipRecords: RidershipRecord[] = [
   {
@@ -230,7 +225,7 @@ describe('LineTableRow expanded view', () => {
 });
 
 describe('LineTableRow coverage marker', () => {
-  const partialLine: Line = {
+  const partialLine: LineReadout = {
     ...mockLine,
     id: 805,
     name: 'D Line',
@@ -240,7 +235,7 @@ describe('LineTableRow coverage marker', () => {
     isPartialCoverage: true,
   };
 
-  const renderRow = (line: Line) =>
+  const renderRow = (line: LineReadout) =>
     render(
       <table>
         <tbody>
@@ -400,7 +395,7 @@ describe('LineTableRow sparkline alignment', () => {
 });
 
 describe('LineTableRow — zero ridership values', () => {
-  const renderExpanded = (lineOverride: Partial<Line>) =>
+  const renderExpanded = (lineOverride: Partial<LineReadout>) =>
     render(
       <table>
         <tbody>
