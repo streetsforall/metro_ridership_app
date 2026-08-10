@@ -20,9 +20,9 @@ import { desktopOnly, gotoDashboard, gotoDashboardShell, shootPane } from './hel
  *   no ridership figures, but *which rows exist* still depends on the window: `isVisibleLine`
  *   drops any line with no metrics over it. A closed past window cannot gain records, so appends
  *   to `ridership.json` cannot move these baselines.
- * - **Line 805 is never named.** Its coverage bounds advance with every monthly refresh. It is
- *   still one row among the rail lines in the `?buses=0` shot — unavoidable when the filter is
- *   "all trains" — but in a closed historical window that row is as fixed as its neighbours.
+ * - **Line 805 is never named**, and does not appear at all: its coverage bounds advance with
+ *   every monthly refresh, and the `?buses=0` window happens to leave it without metrics, so the
+ *   rail rows are A, B, C, E, K, L. A closed window fixes that set either way.
  *
  * Captures go through `shootPane`, which parks the mouse at (0,0) first. Without that, a cursor
  * left over a row triggers the `group-hover` swap in `LineTableRow` that replaces a line's name
