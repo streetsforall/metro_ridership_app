@@ -4,8 +4,10 @@ import {
   getLineNames,
   lineNameSortFunction,
   generateCSV,
+  listedReadouts,
 } from './lines';
 import type { ConsolidatedRidership } from '../@types/metrics.types';
+import type { LineReadout } from '../ridership';
 import {
   makeConsolidatedRidership,
   makeLine,
@@ -214,5 +216,202 @@ describe('generateCSV', () => {
     const csv = decodeURI(generateCSV({}));
     const lines = csv.split('\r\n').filter(Boolean);
     expect(lines).toHaveLength(1); // just the header line
+  });
+});
+
+describe('listedReadouts', () => {
+  const figures = {
+    averageRidership: 1000,
+    changeInRidership: 200,
+    startingRidership: 900,
+    endingRidership: 1100,
+    ridersPerMile: 50,
+  };
+
+  const railWithFigures: LineReadout = {
+    ...makeLine({ id: 801, name: 'A Line', mode: 'Rail' }),
+    ...figures,
+  };
+
+  const busWithFigures: LineReadout = {
+    ...makeLine({ id: 2, name: 'Line 2', mode: 'Bus' }),
+    ...figures,
+  };
+
+  const bothModes = ['bus', 'train'];
+
+  it('drops a Bus line when modes excludes "bus"', () => {
+    const listed = listedReadouts({
+      readouts: [busWithFigures, railWithFigures],
+      searchText: '',
+      modes: ['train'],
+    });
+
+    expect(listed.map((readout) => readout.id)).toEqual([801]);
+  });
+
+  it('drops a Rail line when modes excludes "train"', () => {
+    const listed = listedReadouts({
+      readouts: [busWithFigures, railWithFigures],
+      searchText: '',
+      modes: ['bus'],
+    });
+
+    expect(listed.map((readout) => readout.id)).toEqual([2]);
+  });
+
+  it('lists both modes when both are switched on', () => {
+    const listed = listedReadouts({
+      readouts: [busWithFigures, railWithFigures],
+      searchText: '',
+      modes: bothModes,
+    });
+
+    expect(listed.map((readout) => readout.id)).toEqual([2, 801]);
+  });
+
+  it('lists nothing when no mode is switched on', () => {
+    expect(
+      listedReadouts({
+        readouts: [busWithFigures, railWithFigures],
+        searchText: '',
+        modes: [],
+      }),
+    ).toEqual([]);
+  });
+
+  it('changes the listed set when modes changes', () => {
+    const readouts = [busWithFigures, railWithFigures];
+
+    expect(
+      listedReadouts({ readouts, searchText: '', modes: bothModes }),
+    ).toHaveLength(2);
+    expect(
+      listedReadouts({ readouts, searchText: '', modes: ['train'] }),
+    ).toHaveLength(1);
+  });
+
+  it('lists a line whose change is exactly 0', () => {
+    // `lineMetrics` yields changeInRidership 0 for a single record, so a truthy
+    // check emptied the whole table for any single-month window (PR #93).
+    const zeroChange: LineReadout = {
+      ...railWithFigures,
+      changeInRidership: 0,
+    };
+
+    expect(
+      listedReadouts({
+        readouts: [zeroChange],
+        searchText: '',
+        modes: bothModes,
+      }),
+    ).toHaveLength(1);
+  });
+
+  it('lists a line whose average ridership is 0', () => {
+    const zeroAverage: LineReadout = {
+      ...railWithFigures,
+      averageRidership: 0,
+    };
+
+    expect(
+      listedReadouts({
+        readouts: [zeroAverage],
+        searchText: '',
+        modes: bothModes,
+      }),
+    ).toHaveLength(1);
+  });
+
+  it('does not list a line with no figures at all', () => {
+    // A line with no records in the Month Window gets no figure keys, so it is
+    // absent from the table rather than shown with blanks.
+    const noFigures: LineReadout = makeLine({ id: 801, mode: 'Rail' });
+
+    expect(
+      listedReadouts({
+        readouts: [noFigures],
+        searchText: '',
+        modes: bothModes,
+      }),
+    ).toEqual([]);
+  });
+
+  it('does not list a line carrying only an average', () => {
+    const halfFigures: LineReadout = {
+      ...makeLine({ id: 801, mode: 'Rail' }),
+      averageRidership: 1000,
+    };
+
+    expect(
+      listedReadouts({
+        readouts: [halfFigures],
+        searchText: '',
+        modes: bothModes,
+      }),
+    ).toEqual([]);
+  });
+
+  it('does not list a line whose mode is switched off even with figures', () => {
+    expect(
+      listedReadouts({
+        readouts: [railWithFigures],
+        searchText: '',
+        modes: ['bus'],
+      }),
+    ).toEqual([]);
+  });
+
+  it('matches the search text case-insensitively', () => {
+    expect(
+      listedReadouts({
+        readouts: [busWithFigures, railWithFigures],
+        searchText: 'a lIne',
+        modes: bothModes,
+      }).map((readout) => readout.id),
+    ).toEqual([801]);
+  });
+
+  it('lists nothing when the search text matches no name', () => {
+    expect(
+      listedReadouts({
+        readouts: [busWithFigures, railWithFigures],
+        searchText: 'zzz',
+        modes: bothModes,
+      }),
+    ).toEqual([]);
+  });
+
+  it('filters nothing on an empty search text', () => {
+    expect(
+      listedReadouts({
+        readouts: [busWithFigures, railWithFigures],
+        searchText: '',
+        modes: bothModes,
+      }),
+    ).toHaveLength(2);
+  });
+
+  it('preserves the order of readouts', () => {
+    const other: LineReadout = {
+      ...makeLine({ id: 10, name: 'Line 10', mode: 'Bus' }),
+      ...figures,
+    };
+    const listed = listedReadouts({
+      readouts: [railWithFigures, other, busWithFigures],
+      searchText: '',
+      modes: bothModes,
+    });
+
+    expect(listed.map((readout) => readout.id)).toEqual([801, 10, 2]);
+  });
+
+  it('does not mutate the readouts it is given', () => {
+    const readouts = [busWithFigures, railWithFigures];
+    const snapshot = readouts.map((readout) => ({ ...readout }));
+
+    listedReadouts({ readouts, searchText: 'a line', modes: ['train'] });
+
+    expect(readouts).toEqual(snapshot);
   });
 });

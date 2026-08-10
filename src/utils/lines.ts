@@ -1,5 +1,8 @@
 import type { Line } from '../@types/lines.types';
 import type { ConsolidatedRidership } from '../@types/metrics.types';
+// Type-only, so this leaves no runtime edge back into `src/ridership` — which
+// imports this module for line names and colors.
+import type { LineReadout } from '../ridership';
 
 const definedLines = [
   {
@@ -104,6 +107,46 @@ export const lineNameSortFunction = (a: Line, b: Line) => {
   // Names must be equal
   return 0;
 };
+
+export interface ListedReadoutsInput {
+  readouts: readonly LineReadout[];
+  searchText: string;
+  modes: readonly string[];
+}
+
+/**
+ * The Line Readouts the line table shows.
+ *
+ * Three clauses, all of which must hold: the line's mode is switched on, its name
+ * matches the search text, and it has figures for this Month Window. That last one
+ * is why a line with no records in the window is absent from the table rather than
+ * shown with blanks.
+ *
+ * Presence checks, not truthiness: `changeInRidership` is legitimately exactly `0`
+ * for a single-record line, so a truthy test dropped every line from the table
+ * whenever the window narrowed to one month (PR #93).
+ *
+ * The map and the summary panel are **not** filtered this way — they read every
+ * Line Readout and select on the user's own selection.
+ */
+export function listedReadouts({
+  readouts,
+  searchText,
+  modes,
+}: ListedReadoutsInput): LineReadout[] {
+  const busVisible = modes.includes('bus');
+  const trainVisible = modes.includes('train');
+  const search = searchText.toLocaleLowerCase();
+
+  return readouts.filter((readout) => {
+    if (readout.mode === 'Bus' ? !busVisible : !trainVisible) return false;
+    if (search && !readout.name.toLocaleLowerCase().includes(search)) return false;
+    return (
+      readout.averageRidership !== undefined &&
+      readout.changeInRidership !== undefined
+    );
+  });
+}
 
 /**
  * From https://stackoverflow.com/a/14966131.
