@@ -373,4 +373,193 @@ describe('updateLinesWithLineMetrics', () => {
     const aLine = result.current.lines.find((l) => l.id === 801);
     expect(aLine?.ridersPerMile).toBeUndefined();
   });
+
+  it('clears every derived metric when a line drops out of the window', () => {
+    // The no-record branch used to clear only averageRidership and changeInRidership,
+    // leaving the previous window's starting/ending/riders-per-mile on the row.
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.updateLinesWithLineMetrics(makeRidership(801, 10000));
+    });
+
+    const populated = result.current.lines.find((l) => l.id === 801);
+    expect(populated?.startingRidership).toBe(10000);
+    expect(populated?.endingRidership).toBe(10000);
+    expect(populated?.ridersPerMile).toBeGreaterThan(0);
+    expect(populated?.coveredFrom).toBe('2022-01');
+
+    act(() => {
+      result.current.updateLinesWithLineMetrics({});
+    });
+
+    const cleared = result.current.lines.find((l) => l.id === 801);
+    expect(cleared?.averageRidership).toBeUndefined();
+    expect(cleared?.changeInRidership).toBeUndefined();
+    expect(cleared?.startingRidership).toBeUndefined();
+    expect(cleared?.endingRidership).toBeUndefined();
+    expect(cleared?.ridersPerMile).toBeUndefined();
+    expect(cleared?.coveredFrom).toBeUndefined();
+    expect(cleared?.coveredTo).toBeUndefined();
+    expect(cleared?.isPartialCoverage).toBeUndefined();
+  });
+});
+
+describe('coverage metadata on lines', () => {
+  const makeRecord = (lineId: number, year: number, month: number) =>
+    makeRidershipRecord({
+      year,
+      month,
+      line_name: lineId,
+      est_wkday_ridership: 5000,
+      est_sat_ridership: null,
+      est_sun_ridership: null,
+    });
+
+  // 801 spans the window, 805 only its tail — the D Line shape from #86.
+  const mixedCoverage: ConsolidatedRidership = {
+    ...makeConsolidatedRidership(
+      801,
+      [makeRecord(801, 2025, 7), makeRecord(801, 2025, 8), makeRecord(801, 2025, 9)],
+      { selected: true },
+    ),
+    ...makeConsolidatedRidership(805, [makeRecord(805, 2025, 9)], {
+      selected: true,
+    }),
+  };
+
+  it('flags the short-coverage line and records its range', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.updateLinesWithLineMetrics(mixedCoverage);
+    });
+
+    const dLine = result.current.lines.find((l) => l.id === 805);
+    expect(dLine?.isPartialCoverage).toBe(true);
+    expect(dLine?.coveredFrom).toBe('2025-09');
+    expect(dLine?.coveredTo).toBe('2025-09');
+  });
+
+  it('does not flag a line that spans the whole window', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.updateLinesWithLineMetrics(mixedCoverage);
+    });
+
+    const aLine = result.current.lines.find((l) => l.id === 801);
+    expect(aLine?.isPartialCoverage).toBe(false);
+    expect(aLine?.coveredFrom).toBe('2025-07');
+    expect(aLine?.coveredTo).toBe('2025-09');
+  });
+
+  it('does not reorder the records it was handed', () => {
+    // The metric functions used to sort ridershipRecords in place — the same array
+    // the sparklines and the CSV export read. `lineMetrics` sorts a copy.
+    const unsorted: ConsolidatedRidership = makeConsolidatedRidership(
+      801,
+      [makeRecord(801, 2025, 9), makeRecord(801, 2025, 7), makeRecord(801, 2025, 8)],
+      { selected: true },
+    );
+
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.updateLinesWithLineMetrics(unsorted);
+    });
+
+    expect(unsorted[801].ridershipRecords.map((r) => r.month)).toEqual([9, 7, 8]);
+  });
+});
+
+describe('line visibility', () => {
+  const singleMonth = (lineId: number, wkday: number): ConsolidatedRidership =>
+    makeConsolidatedRidership(lineId, [
+      makeRidershipRecord({
+        year: 2026,
+        month: 3,
+        line_name: lineId,
+        est_wkday_ridership: wkday,
+        est_sat_ridership: null,
+        est_sun_ridership: null,
+      }),
+    ]);
+
+  it('keeps a line whose change is exactly 0 in the table', () => {
+    // `lineMetrics` returns changeInRidership 0 for a single record, so the old
+    // truthiness check emptied the whole table for any single-month window.
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.updateLinesWithLineMetrics(singleMonth(801, 10000));
+    });
+
+    const aLine = result.current.lines.find((l) => l.id === 801);
+    expect(aLine?.changeInRidership).toBe(0);
+    expect(result.current.visibleLines.some((l) => l.id === 801)).toBe(true);
+  });
+
+  it('keeps a line whose average ridership is 0 in the table', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.updateLinesWithLineMetrics(singleMonth(801, 0));
+    });
+
+    expect(result.current.visibleLines.some((l) => l.id === 801)).toBe(true);
+  });
+
+  it('selectAllVisibleLines selects a zero-change line too', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.updateLinesWithLineMetrics(singleMonth(801, 10000));
+    });
+
+    act(() => {
+      result.current.selectAllVisibleLines();
+    });
+
+    expect(result.current.lines.find((l) => l.id === 801)?.selected).toBe(true);
+  });
+
+  it('excludes a line with no metrics at all', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.updateLinesWithLineMetrics({});
+    });
+
+    expect(result.current.visibleLines).toHaveLength(0);
+  });
+
+  it('excludes a line with an empty record set', () => {
+    // `lineMetrics` returns null for an empty series, so the derived fields are
+    // cleared to undefined. The module this replaced divided by the record count and
+    // put a NaN there instead; either way no metric reaches the table and the row is
+    // hidden. The row staying hidden is the assertion that matters here.
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.updateLinesWithLineMetrics({
+        801: { selected: false, ridershipRecords: [] },
+      });
+    });
+
+    const aLine = result.current.lines.find((l) => l.id === 801);
+    expect(aLine?.averageRidership).toBeUndefined();
+    expect(result.current.visibleLines.some((l) => l.id === 801)).toBe(false);
+  });
+
+  it('excludes a hidden line even when it has metrics', () => {
+    window.history.replaceState({}, '', '?trains=0');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.updateLinesWithLineMetrics(singleMonth(801, 10000));
+    });
+
+    expect(result.current.visibleLines.some((l) => l.id === 801)).toBe(false);
+  });
 });
