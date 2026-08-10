@@ -326,10 +326,18 @@ export default function LineSelector(props: LineSelectorProps) {
         toggleIsAggregateVisible={toggleIsAggregateVisible}
       />
 
+      {/**
+       * Scroll container for the row list. Collapsed, the pane itself is capped
+       * (`h-[32rem]` in App.tsx) and this just scrolls inside it. Expanded, the pane is
+       * `h-auto`, so below `lg` the cap has to live here instead: every mode is visible by
+       * default, which is ~180 rows, and an uncapped table runs the page past 9,000px on a
+       * phone. `sticky top-0` on the thead keeps the column headers in view once this
+       * element is the scroller. Desktop keeps page-level scrolling — the table is the
+       * whole view there, so a nested scrollbar would only get in the way.
+       */}
       {sortedLines.length ? (
-        /* Overflow scroll container for non-expanded view */
         <div
-          className={`${isExpanded ? 'overflow-x-auto lg:overflow-visible' : 'overflow-y-auto'}`}
+          className={`${isExpanded ? 'overflow-x-auto max-h-[70vh] lg:max-h-none lg:overflow-visible' : 'overflow-y-auto'}`}
         >
           <table className="text-sm w-full">
             {/* Only show table header when line selector is expanded */}
