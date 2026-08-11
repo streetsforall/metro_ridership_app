@@ -60,7 +60,7 @@
     "date": "2020-12",
     "line_ids": [],
     "title": "NextGen Bus Plan Phase 1",
-    "description": "The first of three NextGen service changes took effect December 13, 2020, opening Metro's first full bus-network redesign in more than 25 years. Trips were added on many lines to improve frequency, routes were modified to speed up trips, and a few low-ridership lines were discontinued.",
+    "description": "The first phase of NextGen bus service changes took effect December 13, 2020, opening Metro's first full bus-network redesign in more than 25 years. Trips were added on many lines to improve frequency, routes were modified to speed up trips, and a few low-ridership lines were discontinued.",
     "category": "route_change",
     "source": "https://www.metro.net/about/metro-to-begin-implementing-nextgen-bus-plan-on-dec-13-to-increase-bus-frequencies-and-modify-routes-to-better-serve-riders/",
     "shakeup": "202012"
@@ -99,7 +99,7 @@
     "date": "2021-12",
     "line_ids": [],
     "title": "NextGen Bus Plan Phase 3",
-    "description": "The third and final NextGen service change landed in December 2021, completing the network restructure. Metro's own assessment a year later found 2.2 million more people living within a quarter mile of 10-minute-or-better weekday midday service — an increase of more than 700%.",
+    "description": "The NextGen Bus Plan was fully implemented in December 2021, completing the first comprehensive review of Metro's bus network. Metro's own assessment a year later found 2.2 million more people living within a quarter mile of 10-minute-or-better weekday midday service — an increase of more than 700%.",
     "category": "route_change",
     "source": "https://www.metro-magazine.com/news/l-a-metro-assessment-of-nextgen-bus-plan",
     "shakeup": "202112"
