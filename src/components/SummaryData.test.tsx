@@ -1,17 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import SummaryData from './SummaryData';
-import type { Line } from '../@types/lines.types';
-
-const makeLine = (overrides: Partial<Line>): Line => ({
-  id: 801,
-  name: 'A Line',
-  mode: 'Rail',
-  provider: 'DO',
-  selected: false,
-  visible: true,
-  ...overrides,
-});
+import { makeLine } from '../test/builders';
 
 describe('SummaryData with no selected lines', () => {
   it('renders nothing when the lines array is empty', () => {
@@ -183,6 +173,41 @@ describe('SummaryData with selected lines', () => {
     ];
     render(<SummaryData lines={lines} />);
     expect(screen.getByText('3,000')).toBeTruthy();
+  });
+
+  it('attributes averages and changes to each line’s own available months', () => {
+    // The footnote used to claim the figures spanned "the current selected time
+    // period", which is false for any line whose data starts mid-window (issue #88).
+    render(
+      <SummaryData
+        lines={[makeLine({ selected: true, averageRidership: 5000 })]}
+      />,
+    );
+    expect(
+      screen.getByText(
+        /calculated over each line’s own available months within the selected period/,
+      ),
+    ).toBeTruthy();
+  });
+
+  it('says the period can differ between lines', () => {
+    render(
+      <SummaryData
+        lines={[makeLine({ selected: true, averageRidership: 5000 })]}
+      />,
+    );
+    expect(screen.getByText(/which can differ from line to line/)).toBeTruthy();
+  });
+
+  it('no longer claims a single uniform period across lines', () => {
+    render(
+      <SummaryData
+        lines={[makeLine({ selected: true, averageRidership: 5000 })]}
+      />,
+    );
+    expect(
+      screen.queryByText(/calculations across the current selected time period/),
+    ).toBeNull();
   });
 
   it('shows the Selected label with selected line names', () => {

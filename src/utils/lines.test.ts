@@ -4,19 +4,15 @@ import {
   getLineNames,
   lineNameSortFunction,
   generateCSV,
+  listedReadouts,
 } from './lines';
-import type { Line } from '../@types/lines.types';
 import type { ConsolidatedRidership } from '../@types/metrics.types';
-
-const makeLine = (overrides: Partial<Line>): Line => ({
-  id: 1,
-  name: 'Line 1',
-  mode: 'Bus',
-  provider: 'DO',
-  selected: false,
-  visible: true,
-  ...overrides,
-});
+import type { LineReadout } from '../ridership';
+import {
+  makeConsolidatedRidership,
+  makeLine,
+  makeRidershipRecord,
+} from '../test/builders';
 
 describe('getLineColor', () => {
   it('returns the defined color for the A Line (801)', () => {
@@ -143,21 +139,17 @@ describe('generateCSV', () => {
   });
 
   it('includes rows for selected lines', () => {
-    const ridership: ConsolidatedRidership = {
-      '801': {
-        selected: true,
-        ridershipRecords: [
-          {
-            year: 2022,
-            month: 1,
-            line_name: 801,
-            est_wkday_ridership: 5000,
-            est_sat_ridership: 3000,
-            est_sun_ridership: 2000,
-          },
-        ],
-      },
-    };
+    const ridership: ConsolidatedRidership = makeConsolidatedRidership(
+      801,
+      [
+        makeRidershipRecord({
+          est_wkday_ridership: 5000,
+          est_sat_ridership: 3000,
+          est_sun_ridership: 2000,
+        }),
+      ],
+      { selected: true },
+    );
     const csv = decodeURI(generateCSV(ridership));
     expect(csv).toContain('A Line');
     expect(csv).toContain('2022');
@@ -165,70 +157,56 @@ describe('generateCSV', () => {
   });
 
   it('excludes rows for unselected lines', () => {
-    const ridership: ConsolidatedRidership = {
-      '801': {
-        selected: false,
-        ridershipRecords: [
-          {
-            year: 2022,
-            month: 1,
-            line_name: 801,
-            est_wkday_ridership: 5000,
-            est_sat_ridership: 3000,
-            est_sun_ridership: 2000,
-          },
-        ],
-      },
-    };
+    const ridership: ConsolidatedRidership = makeConsolidatedRidership(801, [
+      makeRidershipRecord({
+        est_wkday_ridership: 5000,
+        est_sat_ridership: 3000,
+        est_sun_ridership: 2000,
+      }),
+    ]);
     const csv = decodeURI(generateCSV(ridership));
     expect(csv).not.toContain('5000');
   });
 
   it('uses the friendly line name in the CSV row', () => {
-    const ridership: ConsolidatedRidership = {
-      '802': {
-        selected: true,
-        ridershipRecords: [
-          {
-            year: 2023,
-            month: 6,
-            line_name: 802,
-            est_wkday_ridership: 12000,
-            est_sat_ridership: 8000,
-            est_sun_ridership: 6000,
-          },
-        ],
-      },
-    };
+    const ridership: ConsolidatedRidership = makeConsolidatedRidership(
+      802,
+      [
+        makeRidershipRecord({
+          year: 2023,
+          month: 6,
+          line_name: 802,
+          est_wkday_ridership: 12000,
+          est_sat_ridership: 8000,
+          est_sun_ridership: 6000,
+        }),
+      ],
+      { selected: true },
+    );
     const csv = decodeURI(generateCSV(ridership));
     expect(csv).toContain('B Line');
     expect(csv).not.toContain('802');
   });
 
   it('includes multiple records for the same line', () => {
-    const ridership: ConsolidatedRidership = {
-      '801': {
-        selected: true,
-        ridershipRecords: [
-          {
-            year: 2022,
-            month: 1,
-            line_name: 801,
-            est_wkday_ridership: 1000,
-            est_sat_ridership: null,
-            est_sun_ridership: null,
-          },
-          {
-            year: 2022,
-            month: 2,
-            line_name: 801,
-            est_wkday_ridership: 2000,
-            est_sat_ridership: null,
-            est_sun_ridership: null,
-          },
-        ],
-      },
-    };
+    const ridership: ConsolidatedRidership = makeConsolidatedRidership(
+      801,
+      [
+        makeRidershipRecord({
+          month: 1,
+          est_wkday_ridership: 1000,
+          est_sat_ridership: null,
+          est_sun_ridership: null,
+        }),
+        makeRidershipRecord({
+          month: 2,
+          est_wkday_ridership: 2000,
+          est_sat_ridership: null,
+          est_sun_ridership: null,
+        }),
+      ],
+      { selected: true },
+    );
     const csv = decodeURI(generateCSV(ridership));
     expect(csv).toContain('1000');
     expect(csv).toContain('2000');
@@ -238,5 +216,202 @@ describe('generateCSV', () => {
     const csv = decodeURI(generateCSV({}));
     const lines = csv.split('\r\n').filter(Boolean);
     expect(lines).toHaveLength(1); // just the header line
+  });
+});
+
+describe('listedReadouts', () => {
+  const figures = {
+    averageRidership: 1000,
+    changeInRidership: 200,
+    startingRidership: 900,
+    endingRidership: 1100,
+    ridersPerMile: 50,
+  };
+
+  const railWithFigures: LineReadout = {
+    ...makeLine({ id: 801, name: 'A Line', mode: 'Rail' }),
+    ...figures,
+  };
+
+  const busWithFigures: LineReadout = {
+    ...makeLine({ id: 2, name: 'Line 2', mode: 'Bus' }),
+    ...figures,
+  };
+
+  const bothModes = ['bus', 'train'];
+
+  it('drops a Bus line when modes excludes "bus"', () => {
+    const listed = listedReadouts({
+      readouts: [busWithFigures, railWithFigures],
+      searchText: '',
+      modes: ['train'],
+    });
+
+    expect(listed.map((readout) => readout.id)).toEqual([801]);
+  });
+
+  it('drops a Rail line when modes excludes "train"', () => {
+    const listed = listedReadouts({
+      readouts: [busWithFigures, railWithFigures],
+      searchText: '',
+      modes: ['bus'],
+    });
+
+    expect(listed.map((readout) => readout.id)).toEqual([2]);
+  });
+
+  it('lists both modes when both are switched on', () => {
+    const listed = listedReadouts({
+      readouts: [busWithFigures, railWithFigures],
+      searchText: '',
+      modes: bothModes,
+    });
+
+    expect(listed.map((readout) => readout.id)).toEqual([2, 801]);
+  });
+
+  it('lists nothing when no mode is switched on', () => {
+    expect(
+      listedReadouts({
+        readouts: [busWithFigures, railWithFigures],
+        searchText: '',
+        modes: [],
+      }),
+    ).toEqual([]);
+  });
+
+  it('changes the listed set when modes changes', () => {
+    const readouts = [busWithFigures, railWithFigures];
+
+    expect(
+      listedReadouts({ readouts, searchText: '', modes: bothModes }),
+    ).toHaveLength(2);
+    expect(
+      listedReadouts({ readouts, searchText: '', modes: ['train'] }),
+    ).toHaveLength(1);
+  });
+
+  it('lists a line whose change is exactly 0', () => {
+    // `lineMetrics` yields changeInRidership 0 for a single record, so a truthy
+    // check emptied the whole table for any single-month window (PR #93).
+    const zeroChange: LineReadout = {
+      ...railWithFigures,
+      changeInRidership: 0,
+    };
+
+    expect(
+      listedReadouts({
+        readouts: [zeroChange],
+        searchText: '',
+        modes: bothModes,
+      }),
+    ).toHaveLength(1);
+  });
+
+  it('lists a line whose average ridership is 0', () => {
+    const zeroAverage: LineReadout = {
+      ...railWithFigures,
+      averageRidership: 0,
+    };
+
+    expect(
+      listedReadouts({
+        readouts: [zeroAverage],
+        searchText: '',
+        modes: bothModes,
+      }),
+    ).toHaveLength(1);
+  });
+
+  it('does not list a line with no figures at all', () => {
+    // A line with no records in the Month Window gets no figure keys, so it is
+    // absent from the table rather than shown with blanks.
+    const noFigures: LineReadout = makeLine({ id: 801, mode: 'Rail' });
+
+    expect(
+      listedReadouts({
+        readouts: [noFigures],
+        searchText: '',
+        modes: bothModes,
+      }),
+    ).toEqual([]);
+  });
+
+  it('does not list a line carrying only an average', () => {
+    const halfFigures: LineReadout = {
+      ...makeLine({ id: 801, mode: 'Rail' }),
+      averageRidership: 1000,
+    };
+
+    expect(
+      listedReadouts({
+        readouts: [halfFigures],
+        searchText: '',
+        modes: bothModes,
+      }),
+    ).toEqual([]);
+  });
+
+  it('does not list a line whose mode is switched off even with figures', () => {
+    expect(
+      listedReadouts({
+        readouts: [railWithFigures],
+        searchText: '',
+        modes: ['bus'],
+      }),
+    ).toEqual([]);
+  });
+
+  it('matches the search text case-insensitively', () => {
+    expect(
+      listedReadouts({
+        readouts: [busWithFigures, railWithFigures],
+        searchText: 'a lIne',
+        modes: bothModes,
+      }).map((readout) => readout.id),
+    ).toEqual([801]);
+  });
+
+  it('lists nothing when the search text matches no name', () => {
+    expect(
+      listedReadouts({
+        readouts: [busWithFigures, railWithFigures],
+        searchText: 'zzz',
+        modes: bothModes,
+      }),
+    ).toEqual([]);
+  });
+
+  it('filters nothing on an empty search text', () => {
+    expect(
+      listedReadouts({
+        readouts: [busWithFigures, railWithFigures],
+        searchText: '',
+        modes: bothModes,
+      }),
+    ).toHaveLength(2);
+  });
+
+  it('preserves the order of readouts', () => {
+    const other: LineReadout = {
+      ...makeLine({ id: 10, name: 'Line 10', mode: 'Bus' }),
+      ...figures,
+    };
+    const listed = listedReadouts({
+      readouts: [railWithFigures, other, busWithFigures],
+      searchText: '',
+      modes: bothModes,
+    });
+
+    expect(listed.map((readout) => readout.id)).toEqual([801, 10, 2]);
+  });
+
+  it('does not mutate the readouts it is given', () => {
+    const readouts = [busWithFigures, railWithFigures];
+    const snapshot = readouts.map((readout) => ({ ...readout }));
+
+    listedReadouts({ readouts, searchText: 'a line', modes: ['train'] });
+
+    expect(readouts).toEqual(snapshot);
   });
 });

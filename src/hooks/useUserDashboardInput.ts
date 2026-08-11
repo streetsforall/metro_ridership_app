@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { calcAbsChange, calcAvg, calcStart, calcEnd, calcRidersPerMile } from '../utils/calc';
+import { buildCoverageByLine, lineMetrics } from '../ridership';
 import { getLineNames, lineNameSortFunction } from '../utils/lines';
 import {
   parseMonthParam,
@@ -174,6 +174,15 @@ const useUserDashboardInput = (): UserDashboardInputState => {
   const updateLinesWithLineMetrics = (
     ridershipByLine: ConsolidatedRidership,
   ): void => {
+    /**
+     * Which slice of the window each line actually reports. Lines no longer all cover
+     * the same span — the D Line's data starts 2025-09 while most rail reaches back to
+     * 2009 — so the metrics below, which read each line's own first and last record,
+     * measure different periods per row. Stamping the covered range onto the line lets
+     * the table say so instead of implying a uniform period.
+     */
+    const coverageByLine = buildCoverageByLine(ridershipByLine);
+
     setLines((prevLines: Line[]): Line[] =>
       prevLines.map((prevLine: Line) => {
         const updatedLine: Line = { ...prevLine };
@@ -183,36 +192,42 @@ const useUserDashboardInput = (): UserDashboardInputState => {
           ridershipByLine[updatedLine.id];
 
         if (!consolidatedRecord) {
+          // Clear every derived field, not just the two the table filters on —
+          // otherwise a line with no records in the new window keeps rendering the
+          // previous window's starting/ending/riders-per-mile figures.
           updatedLine.averageRidership = undefined;
           updatedLine.changeInRidership = undefined;
+          updatedLine.startingRidership = undefined;
+          updatedLine.endingRidership = undefined;
+          updatedLine.ridersPerMile = undefined;
+          updatedLine.coveredFrom = undefined;
+          updatedLine.coveredTo = undefined;
+          updatedLine.isPartialCoverage = undefined;
 
           return updatedLine;
         }
 
-        // Calculate metrics for each line
-        const avgRidership = calcAvg(consolidatedRecord.ridershipRecords, dayOfWeek);
-        updatedLine.averageRidership = avgRidership;
-
-        updatedLine.changeInRidership = calcAbsChange(
-          consolidatedRecord.ridershipRecords,
+        const metrics = lineMetrics({
+          records: consolidatedRecord.ridershipRecords,
           dayOfWeek,
-        );
+          distanceMiles: updatedLine.distanceMiles,
+        });
 
-        updatedLine.startingRidership = calcStart(
-          consolidatedRecord.ridershipRecords,
-          dayOfWeek,
-        );
+        const coverage = coverageByLine[updatedLine.id];
 
-        updatedLine.endingRidership = calcEnd(
-          consolidatedRecord.ridershipRecords,
-          dayOfWeek,
-        );
-
-        if (updatedLine.distanceMiles) {
-          updatedLine.ridersPerMile = calcRidersPerMile(avgRidership, updatedLine.distanceMiles);
-        }
-
-        return updatedLine;
+        return {
+          ...updatedLine,
+          ...(metrics ?? {
+            averageRidership: undefined,
+            changeInRidership: undefined,
+            startingRidership: undefined,
+            endingRidership: undefined,
+            ridersPerMile: undefined,
+          }),
+          coveredFrom: coverage?.coveredFrom,
+          coveredTo: coverage?.coveredTo,
+          isPartialCoverage: coverage?.isPartialCoverage,
+        };
       }),
     );
   };
@@ -229,7 +244,18 @@ const useUserDashboardInput = (): UserDashboardInputState => {
       }
     }
 
-    return !!line.averageRidership && !!line.changeInRidership && line.visible;
+    /**
+     * Presence checks, not truthiness: `changeInRidership` is exactly 0 for a line
+     * with a single record, so a truthy test dropped every line from the table
+     * whenever the window narrowed to one month. There is no NaN case to exclude:
+     * `lineMetrics` returns null for an empty series, so the fields are cleared to
+     * undefined rather than carrying a sentinel.
+     */
+    return (
+      line.visible &&
+      line.averageRidership !== undefined &&
+      line.changeInRidership !== undefined
+    );
   };
 
   const visibleLines = useMemo(

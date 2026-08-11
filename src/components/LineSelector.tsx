@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import lodash from 'lodash';
 import LineFilters from './LineFilters';
 import LineTableRow from './LineTableRow';
+import { buildWindowMonthAxis } from '../ridership';
 import { generateCSV } from '../utils/lines';
 import type { Line } from '../@types/lines.types';
 import type {
@@ -25,7 +26,18 @@ interface ColumnHeaderState {
   key: LineKey;
   align?: 'center' | 'left' | 'right' | 'inherit' | 'justify';
   sortDirection: SortDirection;
+  /** Hover text, used to qualify the period the metric columns are measured over. */
+  title?: string;
 }
+
+/**
+ * Every metric column is derived from each line's own first and last record inside the
+ * window, not from the window's endpoints — so two rows can be measured over quite
+ * different periods, and sorting ranks them against each other regardless. Rows whose
+ * coverage is narrower than the window carry a range under the line name.
+ */
+const perLinePeriodNote =
+  'Measured over this line’s own available months within the selected period, which can differ from line to line.';
 
 const columnStates: ColumnHeaderState[] = [
   {
@@ -45,30 +57,36 @@ const columnStates: ColumnHeaderState[] = [
     label: 'Line',
     key: 'name',
     sortDirection: false,
+    title:
+      'A date range beside a line name means its data covers only that part of the selected period.',
   },
   {
     align: 'right',
     label: 'Avg. Ridership',
     key: 'averageRidership',
     sortDirection: false,
+    title: perLinePeriodNote,
   },
   {
     align: 'right',
     label: 'Change',
     key: 'changeInRidership',
     sortDirection: false,
+    title: perLinePeriodNote,
   },
   {
     align: 'right',
     label: 'Starting Ridership',
     key: 'startingRidership',
     sortDirection: false,
+    title: perLinePeriodNote,
   },
   {
     align: 'right',
     label: 'Ending Ridership',
     key: 'endingRidership',
     sortDirection: false,
+    title: perLinePeriodNote,
   },
   // {
   //   label: 'Division',,
@@ -151,6 +169,17 @@ export default function LineSelector(props: LineSelectorProps) {
     isAggregateVisible,
     toggleIsAggregateVisible,
   } = props;
+
+  /**
+   * One shared x-axis for every row's sparkline: the months that exist anywhere in the
+   * current window. Without it each row plots against its own implicit axis, so a
+   * 9-month line and a 17-year line span the same cell width with no cue that the
+   * scales differ.
+   */
+  const monthAxis: string[] = useMemo(
+    () => buildWindowMonthAxis(ridershipByLine),
+    [ridershipByLine],
+  );
 
   const onExpandClick = (): void => {
     setIsExpanded((prevIsExpanded: boolean) => {
@@ -297,10 +326,18 @@ export default function LineSelector(props: LineSelectorProps) {
         toggleIsAggregateVisible={toggleIsAggregateVisible}
       />
 
+      {/**
+       * Scroll container for the row list. Collapsed, the pane itself is capped
+       * (`h-[32rem]` in App.tsx) and this just scrolls inside it. Expanded, the pane is
+       * `h-auto`, so below `lg` the cap has to live here instead: every mode is visible by
+       * default, which is ~180 rows, and an uncapped table runs the page past 9,000px on a
+       * phone. `sticky top-0` on the thead keeps the column headers in view once this
+       * element is the scroller. Desktop keeps page-level scrolling — the table is the
+       * whole view there, so a nested scrollbar would only get in the way.
+       */}
       {sortedLines.length ? (
-        /* Overflow scroll container for non-expanded view */
         <div
-          className={`${isExpanded ? 'overflow-x-auto lg:overflow-visible' : 'overflow-y-auto'}`}
+          className={`${isExpanded ? 'overflow-x-auto max-h-[70vh] lg:max-h-none lg:overflow-visible' : 'overflow-y-auto'}`}
         >
           <table className="text-sm w-full">
             {/* Only show table header when line selector is expanded */}
@@ -320,6 +357,7 @@ export default function LineSelector(props: LineSelectorProps) {
                       return (
                         <th
                           key={columnHeaderState.key}
+                          title={columnHeaderState.title}
                           className={`bg-stone-300 cursor-pointer p-2 max-w-24 uppercase text-${columnHeaderState.align} ${sortClass}`}
                           onClick={(): void =>
                             onSortLabelClick(columnHeaderState.key)
@@ -336,12 +374,13 @@ export default function LineSelector(props: LineSelectorProps) {
 
             <tbody>
               {sortedLines.map((line, id) => {
-                const lineMetrics: ConsolidatedRecord =
+                const consolidatedRecord: ConsolidatedRecord =
                   ridershipByLine[line.id];
 
                 return (
                   <LineTableRow
-                    lineMetrics={lineMetrics?.ridershipRecords}
+                    ridershipRecords={consolidatedRecord?.ridershipRecords}
+                    monthAxis={monthAxis}
                     key={line.id}
                     id={id}
                     onToggleSelectLine={onToggleSelectLine}

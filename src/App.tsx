@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
-import { type ChartDataset } from 'chart.js';
 import DateRangeSelector from './components/DateRangeSelector';
 import Footer from './components/Footer';
 import Header from './components/Header';
@@ -7,20 +6,9 @@ import LineSelector from './components/LineSelector';
 import useUserDashboardInput, {
   type UserDashboardInputState,
 } from './hooks/useUserDashboardInput';
-import {
-  alignToMonthAxis,
-  buildAggregateSeries,
-  buildMonthAxis,
-} from './utils/chartData';
-import { getLineColor, getLineNames } from './utils/lines';
+import { buildRidershipView } from './ridership';
 import { decodeRidership, type ColumnarRidership } from './utils/ridershipData';
-import type { CustomChartData } from './@types/chart.types';
-import type {
-  ConsolidatedRidership,
-  RidershipRecord,
-} from './@types/metrics.types';
-import transitEventsData from './data/transit-events.json';
-import type { TransitEvent } from './@types/events.types';
+import type { RidershipRecord } from './@types/metrics.types';
 
 /**
  * OutputArea pulls in Chart.js and MapLibre GL. Lazy-loading it keeps MapLibre (the
@@ -76,124 +64,36 @@ function App() {
   const isLoading = ridershipRecords === null;
 
   /**
-   * Computes chartDatasets, monthList and ridershipByLine together in a single pass
-   * over ridershipRecords since all three are derived from the same filtered view of
-   * the data. Until the data loads (`ridershipRecords` is null) this yields empty
-   * results.
+   * The whole derived view — month axis, per-line datasets, records grouped by
+   * line, and the context-log events — in one pass. Every rule in it (the
+   * deliberately offset month window, the shared axis, the aggregate ordering)
+   * lives in src/ridership/ and is unit-tested there.
+   *
+   * Kept memoised: the metrics effect below keys on JSON.stringify(consolidated), and
+   * a fresh object every render would thrash it.
    */
-  const { chartDatasets, monthList, ridershipByLine } = useMemo(() => {
-    const consolidatedRidership: ConsolidatedRidership = {};
-
-    /**
-     * Group raw records by line ID, skipping any outside the selected date window.
-     * new Date(year, month) treats month as 0-based, but the data stores it as
-     * 1-based, so the comparison is effectively off by one month —
-     * preserved from the original implementation.
-     */
-    if (ridershipRecords) {
-      for (const record of ridershipRecords) {
-        const metricDate = new Date(record.year, record.month);
-        if (
-          startDate.getTime() >= metricDate.getTime() ||
-          endDate.getTime() <= metricDate.getTime()
-        )
-          continue;
-
-        if (!consolidatedRidership[record.line_name]?.ridershipRecords) {
-          /**
-           * Snapshot selected status on first encounter for this line so the
-           * dataset loop below doesn't need to search lines[] on every record.
-           */
-          consolidatedRidership[record.line_name] = {
-            selected: !!lines.find((l) => l.id === Number(record.line_name))
-              ?.selected,
-            ridershipRecords: [],
-          };
-        }
-        consolidatedRidership[record.line_name].ridershipRecords.push(record);
-      }
-    }
-
-    /**
-     * Collect the selected lines in lines[] order (already alphabetically sorted)
-     * rather than consolidatedRidership order, so the legend ordering is stable
-     * regardless of the numeric key enumeration order of the object.
-     */
-    const selected = lines.filter(
-      (line) => consolidatedRidership[line.id]?.selected,
-    );
-
-    /**
-     * One shared x-axis for every dataset: the chronologically sorted union of the
-     * months the selected lines cover. Selected lines can cover different spans (a
-     * line added mid-window has far fewer months), and Chart.js appends any label
-     * missing from `labels` to the end of the axis — so deriving the axis from one
-     * dataset scrambles the ordering of the rest.
-     */
-    const months = buildMonthAxis(
-      selected.map((line) => consolidatedRidership[line.id].ridershipRecords),
-    );
-
-    const datasets: ChartDataset<'line', CustomChartData[]>[] = selected.map(
-      (line) => ({
-        data: alignToMonthAxis(
-          consolidatedRidership[line.id].ridershipRecords,
-          months,
-          dayOfWeek,
-        ),
-        label: getLineNames(line.id).current,
-        backgroundColor: getLineColor(line.id),
-        borderColor: getLineColor(line.id),
+  const { months, datasets, consolidated, events } = useMemo(
+    () =>
+      buildRidershipView({
+        records: ridershipRecords,
+        lines,
+        startDate,
+        endDate,
+        dayOfWeek,
+        includeAggregate: isAggregateVisible,
       }),
-    );
-
-    /**
-     * Sum every selected line's stat at each month into a single series.
-     */
-    if (isAggregateVisible) {
-      datasets.push({
-        data: buildAggregateSeries(
-          datasets.map((dataset) => dataset.data),
-          months,
-        ),
-        label: 'Aggregate',
-        backgroundColor: getLineColor(-1),
-        borderColor: getLineColor(-2),
-      });
-    }
-
-    return {
-      chartDatasets: datasets,
-      monthList: months,
-      ridershipByLine: consolidatedRidership,
-    };
-  }, [startDate, endDate, lines, dayOfWeek, isAggregateVisible, ridershipRecords]);
-
-  const transitEvents = useMemo(() => {
-    const selectedLineIds = new Set(lines.filter((l) => l.selected).map((l) => l.id));
-    const startYYYYMM = startDate.getFullYear() * 100 + (startDate.getMonth() + 1);
-    const endYYYYMM = endDate.getFullYear() * 100 + (endDate.getMonth() + 1);
-
-    return (transitEventsData as TransitEvent[])
-      .filter((event) => {
-        const [year, month] = event.date.split('-').map(Number);
-        const eventYYYYMM = year * 100 + month;
-        if (eventYYYYMM < startYYYYMM || eventYYYYMM > endYYYYMM) return false;
-        if (event.line_ids.length === 0) return true;
-        return event.line_ids.some((id) => selectedLineIds.has(id));
-      })
-      .sort((a, b) => a.date.localeCompare(b.date));
-  }, [startDate, endDate, lines]);
+    [ridershipRecords, lines, startDate, endDate, dayOfWeek, isAggregateVisible],
+  );
 
   /**
    * Attach computed metrics (average ridership, change, etc.) to each line entry
    * so the LineSelector can display them. JSON.stringify is used as the dependency
-   * because ridershipByLine is a new object reference on every render (useMemo).
+   * because consolidated is a new object reference on every render (useMemo).
    */
   useEffect(() => {
-    updateLinesWithLineMetrics(ridershipByLine);
+    updateLinesWithLineMetrics(consolidated);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(ridershipByLine)]);
+  }, [JSON.stringify(consolidated)]);
 
   return (
     /* Stretch full height */
@@ -216,17 +116,18 @@ function App() {
 
       {/* Grow to fill remaining vertical space; only one column if expanded or on mobile */}
       <div
-        className={`grow grid flex-col gap-4 ${isLineSelectorExpanded ? 'lg:grid-cols-[1fr]' : 'grid-cols-[1fr] lg:grid-cols-[25%_1fr]'}`}
+        className={`grow grid gap-4 ${isLineSelectorExpanded ? 'grid-cols-[1fr]' : 'grid-cols-[1fr] lg:grid-cols-[25%_1fr]'}`}
       >
         {/* Metro lines pane */}
         {/* Hack to match sibling height - https://www.reddit.com/r/css/comments/15qu1ml/restrict_childs_height_to_parents_height_which_is/*/}
         <div
-          className={`pane flex flex-col gap-4 h-[32rem] min-h-full w-0 min-w-full ${isLineSelectorExpanded ? 'lg:h-auto' : 'lg:h-0'}`}
+          id="line-selector-pane"
+          className={`pane flex flex-col gap-4 min-h-full w-0 min-w-full ${isLineSelectorExpanded ? 'h-auto' : 'h-[32rem] lg:h-0'}`}
         >
           <LineSelector
             {...userDashboardInputState}
             lines={visibleLines}
-            ridershipByLine={ridershipByLine}
+            ridershipByLine={consolidated}
             isExpanded={isLineSelectorExpanded}
             setIsExpanded={setIsLineSelectorExpanded}
           />
@@ -247,10 +148,10 @@ function App() {
             }
           >
             <OutputArea
-              chartDatasets={chartDatasets}
-              months={monthList}
+              chartDatasets={datasets}
+              months={months}
               lines={lines}
-              transitEvents={transitEvents}
+              transitEvents={events}
               showContextLogs={showContextLogs}
               isLoading={isLoading}
             />

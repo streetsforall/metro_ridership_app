@@ -6,6 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Client-side React + Vite app (Streets for All Data/Dev Team) for visualizing LA Metro bus/rail ridership data. There is no backend. Small metadata JSON (line metadata, distances) is bundled into the build; the large ridership dataset is served as a separate columnar asset **fetched at runtime** (see the `ridership-data` Vite plugin) so it stays out of the JS bundle. The app may move to full-stack if data processing gets too heavy.
 
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on `streetsforall/metro_ridership_app`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles map onto existing repo labels where they exist (`needs-info` → `question`, `ready-for-human` → `help wanted`, `wontfix` → `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — one `CONTEXT.md` + `docs/adr/` at the repo root (neither exists yet; created lazily). See `docs/agents/domain.md`.
+
 ## Commands
 
 ```bash
@@ -46,7 +60,7 @@ CI runs lint → test → build on every push/PR to `main` ([.github/workflows/c
 The app transforms flat ridership records into per-line consolidated structures, then derives summary metrics. Understanding this pipeline is key:
 
 1. **Lines are built from metadata** — `createLinesData()` in [src/hooks/useUserDashboardInput.ts](src/hooks/useUserDashboardInput.ts) reads `metro_line_metadata_current.json`, attaches display names/colors (via `getLineNames`/`getLineColor`), distance from `line_distances.json`, and sorts with `lineNameSortFunction` (lettered lines first, then numbered).
-2. **Records are consolidated by line** — [src/App.tsx](src/App.tsx) fetches `/ridership.json` at runtime (a columnar blob decoded by [src/utils/ridershipData.ts](src/utils/ridershipData.ts)), then a single `useMemo` filters it to the selected date window and groups records by `line_name` into `ConsolidatedRidership`, while deriving the shared month axis and Chart.js datasets in the same pass (via [src/utils/chartData.ts](src/utils/chartData.ts)). The memo yields empty results until the fetch resolves.
+2. **Records are consolidated by line** — [src/App.tsx](src/App.tsx) fetches `/ridership.json` at runtime (a columnar blob decoded by [src/utils/ridershipData.ts](src/utils/ridershipData.ts)), then hands it to one `buildRidershipView(...)` call in a `useMemo` and destructures `{ months, datasets, consolidated, events }`. The derivation itself — filtering to the selected date window, grouping records by `line_name` into `ConsolidatedRidership`, and building the shared month axis, Chart.js datasets and event list — lives in [src/ridership/buildRidershipView.ts](src/ridership/buildRidershipView.ts); the module's only public surface is [src/ridership/index.ts](src/ridership/index.ts). It yields an empty view until the fetch resolves.
 3. **Summary metrics are attached back to lines** — `updateLinesWithLineMetrics()` (in the hook) runs from a `useEffect` in App and computes average/change/start/end ridership and riders-per-mile per line using helpers in [src/utils/calc.ts](src/utils/calc.ts). The `LineSelector`/`SummaryData` components read these.
 
 Type definitions for these shapes live in [src/@types/metrics.types.ts](src/@types/metrics.types.ts) (`RidershipRecord`, `ConsolidatedRidership`) and [src/@types/lines.types.ts](src/@types/lines.types.ts) (`LineJson` from disk vs. enriched `Line`).
@@ -59,7 +73,7 @@ Type definitions for these shapes live in [src/@types/metrics.types.ts](src/@typ
 - **The ridership dataset is fetched, not bundled** — `src/data/ridership.json` remains the canonical record-format source (the Python pipeline reads/writes it), but the app fetches `/ridership.json` at runtime as a minified columnar `{cols,rows}` blob emitted by the `ridership-data` Vite plugin ([vite/ridership-data-plugin.ts](vite/ridership-data-plugin.ts)) and decodes it via [src/utils/ridershipData.ts](src/utils/ridershipData.ts). The selectable date bounds come from the plugin's `virtual:ridership-bounds` module, so the full dataset never enters the JS bundle. The plugin is registered in both `vite.config.ts` and `vitest.config.ts`. Run `ANALYZE=1 npm run build` for a bundle treemap at `dist/stats.html`. `OutputArea` (Chart.js + MapLibre GL) is lazy-loaded to keep MapLibre out of the entry chunk.
 - **Month indexing is off by one on purpose** in App.tsx's date filter (`new Date(year, month)` treats month as 0-based while data is 1-based) — preserved from the original implementation; don't silently change it.
 - **Date range bounds are derived from the data, not hardcoded** — [src/utils/dataDateRange.ts](src/utils/dataDateRange.ts) computes `dataMinYear`/`dataMaxYear` (the year `<option>`s in `DateRangeSelector`) and `dataDefaultEndDate` (the default end of the window) from `ridership.json` at module load, so the newest month is always selectable without code changes. `dataDefaultEndDate` is deliberately one month past the latest record to satisfy the exclusive, off-by-one end filter above.
-- **Lines cover different date ranges** — a line added mid-history has far fewer records than its neighbours (the D Line starts 2025-09; most rail starts 2009). Chart.js `CategoryScale` **appends** any label missing from `labels` to the end of the axis, so every dataset must be drawn against one shared axis: [src/utils/chartData.ts](src/utils/chartData.ts) builds the chronologically sorted union of months (`buildMonthAxis`), pads each line onto it with `null` for months it doesn't cover (`alignToMonthAxis`), and sums the aggregate by month rather than by array index (`buildAggregateSeries`). Never derive the axis from a single dataset, and don't set `spanGaps` — the gaps are meaningful. The per-line metrics in [src/utils/calc.ts](src/utils/calc.ts) are **not** coverage-aware (see issue #88).
+- **Lines cover different date ranges** — a line added mid-history has far fewer records than its neighbours (the D Line starts 2025-09; most rail starts 2009). Chart.js `CategoryScale` **appends** any label missing from `labels` to the end of the axis, so every dataset must be drawn against one shared axis: [src/ridership/chartData.ts](src/ridership/chartData.ts) builds the chronologically sorted union of months (`buildMonthAxis`), pads each line onto it with `null` for months it doesn't cover (`alignToMonthAxis`), and sums the aggregate by month rather than by array index (`buildAggregateSeries`). Those three are module-private helpers of `src/ridership/`, not general-purpose utilities — reach them through `buildRidershipView`, since importing `src/ridership/chartData` from outside the folder is a seam violation (see [docs/adr/0003-one-domain-folder-not-a-repo-wide-reorganisation.md](docs/adr/0003-one-domain-folder-not-a-repo-wide-reorganisation.md)). Never derive the axis from a single dataset, and don't set `spanGaps` — the gaps are meaningful. The per-line metrics in [src/utils/calc.ts](src/utils/calc.ts) are **not** coverage-aware (see issue #88).
 - **Line colors**: official rail/BRT lines have hardcoded brand colors in `definedLines` ([src/utils/lines.ts](src/utils/lines.ts)); all other bus lines get a deterministic golden-angle HSL hue so the chart and map agree.
 
 ## Map
