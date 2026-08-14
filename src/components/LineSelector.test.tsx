@@ -24,7 +24,7 @@ const defaultProps = {
   modes: ['bus', 'train'],
   setModes: vi.fn(),
   clearSelections: vi.fn(),
-  selectAllVisibleLines: vi.fn(),
+  selectAllListedLines: vi.fn(),
   isAggregateVisible: false,
   toggleIsAggregateVisible: vi.fn(),
 };

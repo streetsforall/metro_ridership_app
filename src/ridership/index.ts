@@ -25,7 +25,6 @@ export {
  */
 export {
   alignToMonthAxis,
-  buildCoverageByLine,
   buildWindowMonthAxis,
   type LineCoverage,
 } from './chartData';

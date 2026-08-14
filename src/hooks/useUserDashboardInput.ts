@@ -1,5 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
-import { buildCoverageByLine, lineMetrics } from '../ridership';
+import { useState, useEffect } from 'react';
 import { getLineNames, lineNameSortFunction } from '../utils/lines';
 import {
   parseMonthParam,
@@ -9,12 +8,7 @@ import {
   parseModesFromParams,
 } from '../utils/queryParams';
 import type { Line, LineJson } from '../@types/lines.types';
-import {
-  daysOfWeek,
-  type DayOfWeek,
-  type ConsolidatedRecord,
-  type ConsolidatedRidership,
-} from '../@types/metrics.types';
+import { daysOfWeek, type DayOfWeek } from '../@types/metrics.types';
 
 export { daysOfWeek, type DayOfWeek };
 import LineJsonData from '../data/metro_line_metadata_current.json';
@@ -40,8 +34,6 @@ export interface UserDashboardInputState {
   modes: string[];
   setModes: React.Dispatch<React.SetStateAction<string[]>>;
 
-  visibleLines: Line[];
-
   isAggregateVisible: boolean;
   toggleIsAggregateVisible: () => void;
 
@@ -50,8 +42,7 @@ export interface UserDashboardInputState {
 
   onToggleSelectLine: (line: Line) => void;
   clearSelections: () => void;
-  updateLinesWithLineMetrics: (ridershipByLine: ConsolidatedRidership) => void;
-  selectAllVisibleLines: () => void;
+  selectAllListedLines: (ids: number[]) => void;
 }
 
 
@@ -61,23 +52,15 @@ export interface UserDashboardInputState {
 const DefaultStartDate: Date = new Date(2020, 6);
 const DefaultEndDate: Date = dataDefaultEndDate;
 
-const createLinesData = (selectedLineIds: number[], modes: string[]): Line[] => {
-  const busVis = modes.includes('bus');
-  const trainVis = modes.includes('train');
-
+const createLinesData = (selectedLineIds: number[]): Line[] => {
   return (LineJsonData as LineJson[])
     .map((line: LineJson) => {
-      let visible = false;
-      if (line.mode === 'Bus') visible = busVis;
-      else if (line.mode === 'Rail') visible = trainVis;
-
       return {
         ...line,
         id: line.line,
         name: getLineNames(line.line).current,
         former: getLineNames(line.line).former,
         selected: selectedLineIds.includes(line.line),
-        visible,
         distanceMiles: (LineDistances as Record<string, number>)[String(line.line)],
       } as Line;
     })
@@ -118,7 +101,7 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     const selectedIds = linesStr
       ? linesStr.split(',').map(Number).filter((id) => !isNaN(id))
       : [];
-    return createLinesData(selectedIds, parseModesFromParams(params));
+    return createLinesData(selectedIds);
   });
 
   const [isAggregateVisible, setIsAggregateVisible] = useState<boolean>(() => {
@@ -130,21 +113,6 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     const params = new URLSearchParams(window.location.search);
     return params.get('logs') === '1';
   });
-
-  // Sync modes → line visibility
-  useEffect(() => {
-    const busVis = modes.includes('bus');
-    const trainVis = modes.includes('train');
-
-    setLines((prevLines) =>
-      prevLines.map((prevLine) => {
-        let visible = false;
-        if (prevLine.mode === 'Bus') visible = busVis;
-        else if (prevLine.mode === 'Rail') visible = trainVis;
-        return { ...prevLine, visible };
-      }),
-    );
-  }, [modes]);
 
   // Sync state → URL query params
   useEffect(() => {
@@ -164,114 +132,21 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     if (showContextLogs) params.set('logs', '1');
 
     window.history.replaceState(null, '', `?${params.toString()}`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate, dayOfWeek, searchText, modes, JSON.stringify(lines), isAggregateVisible, showContextLogs]);
+  }, [startDate, endDate, dayOfWeek, searchText, modes, lines, isAggregateVisible, showContextLogs]);
 
   /**
-   * Use the aggregated metrics to add additional metrics to line metadata
-   * @param ridershipByLine
+   * Select every row the table is currently showing, on top of whatever is already
+   * selected. The hook cannot re-derive which rows those are — the rule needs Line
+   * Readouts, which live in App — so it takes the displayed ids instead.
    */
-  const updateLinesWithLineMetrics = (
-    ridershipByLine: ConsolidatedRidership,
-  ): void => {
-    /**
-     * Which slice of the window each line actually reports. Lines no longer all cover
-     * the same span — the D Line's data starts 2025-09 while most rail reaches back to
-     * 2009 — so the metrics below, which read each line's own first and last record,
-     * measure different periods per row. Stamping the covered range onto the line lets
-     * the table say so instead of implying a uniform period.
-     */
-    const coverageByLine = buildCoverageByLine(ridershipByLine);
-
-    setLines((prevLines: Line[]): Line[] =>
-      prevLines.map((prevLine: Line) => {
-        const updatedLine: Line = { ...prevLine };
-
-        // Check if ridership metrics exist for line
-        const consolidatedRecord: ConsolidatedRecord | undefined =
-          ridershipByLine[updatedLine.id];
-
-        if (!consolidatedRecord) {
-          // Clear every derived field, not just the two the table filters on —
-          // otherwise a line with no records in the new window keeps rendering the
-          // previous window's starting/ending/riders-per-mile figures.
-          updatedLine.averageRidership = undefined;
-          updatedLine.changeInRidership = undefined;
-          updatedLine.startingRidership = undefined;
-          updatedLine.endingRidership = undefined;
-          updatedLine.ridersPerMile = undefined;
-          updatedLine.coveredFrom = undefined;
-          updatedLine.coveredTo = undefined;
-          updatedLine.isPartialCoverage = undefined;
-
-          return updatedLine;
-        }
-
-        const metrics = lineMetrics({
-          records: consolidatedRecord.ridershipRecords,
-          dayOfWeek,
-          distanceMiles: updatedLine.distanceMiles,
-        });
-
-        const coverage = coverageByLine[updatedLine.id];
-
-        return {
-          ...updatedLine,
-          ...(metrics ?? {
-            averageRidership: undefined,
-            changeInRidership: undefined,
-            startingRidership: undefined,
-            endingRidership: undefined,
-            ridersPerMile: undefined,
-          }),
-          coveredFrom: coverage?.coveredFrom,
-          coveredTo: coverage?.coveredTo,
-          isPartialCoverage: coverage?.isPartialCoverage,
-        };
-      }),
+  const selectAllListedLines = (ids: number[]): void => {
+    const listed = new Set(ids);
+    setLines((prevLines) =>
+      prevLines.map((prevLine) => ({
+        ...prevLine,
+        selected: listed.has(prevLine.id) || prevLine.selected,
+      })),
     );
-  };
-
-  const isVisibleLine = (line: Line): boolean => {
-    if (searchText) {
-      const searchTextLower = searchText.toLocaleLowerCase();
-      const visible: boolean = line.name
-        .toLocaleLowerCase()
-        .includes(searchTextLower);
-
-      if (!visible) {
-        return false;
-      }
-    }
-
-    /**
-     * Presence checks, not truthiness: `changeInRidership` is exactly 0 for a line
-     * with a single record, so a truthy test dropped every line from the table
-     * whenever the window narrowed to one month. There is no NaN case to exclude:
-     * `lineMetrics` returns null for an empty series, so the fields are cleared to
-     * undefined rather than carrying a sentinel.
-     */
-    return (
-      line.visible &&
-      line.averageRidership !== undefined &&
-      line.changeInRidership !== undefined
-    );
-  };
-
-  const visibleLines = useMemo(
-    () => lines.filter(isVisibleLine),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(lines), searchText],
-  );
-
-  const selectAllVisibleLines = (): void => {
-    setLines((prevLines: Line[]) => {
-      return prevLines.map((prevLine: Line) => {
-        const isLineVisible: boolean = isVisibleLine(prevLine);
-
-        return { ...prevLine, selected: isLineVisible || prevLine.selected };
-      });
-    });
   };
 
   const onToggleSelectLine = (line: Line): void => {
@@ -317,7 +192,6 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     setDayOfWeek,
     lines,
     setLines,
-    visibleLines,
     isAggregateVisible,
     toggleIsAggregateVisible,
     showContextLogs,
@@ -328,8 +202,7 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     setModes,
     onToggleSelectLine,
     clearSelections,
-    updateLinesWithLineMetrics,
-    selectAllVisibleLines,
+    selectAllListedLines,
   };
 };
 
