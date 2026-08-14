@@ -48,39 +48,25 @@ box here.
 
 ```mermaid
 flowchart TB
-  subgraph ext["External — outside the repo"]
-    direction LR
-    metroXlsx["LA Metro ridership<br/>workbooks"]
-    metroGis["Metro GIS<br/>route geometry"]
-    announce["Service-change<br/>announcements"]
-  end
+  ext["External — outside the repo<br/>LA Metro ridership workbooks · Metro GIS route geometry<br/>service-change announcements"]
 
   subgraph authoring["Authoring — by hand, never in CI"]
-    direction LR
     raw[/"data/raw/"/]
     py["Python pipeline<br/>scripts/*.py"]
     raw --> py
   end
 
-  subgraph committed["Committed data — the repo is the database"]
-    direction LR
-    canonical[("ridership.json<br/>~7 MB, canonical")]
-    meta[("line metadata<br/>distances · events")]
-    geo[("metro_lines.geojson")]
-  end
+  committed[("Committed data — the repo is the database<br/>ridership.json ~7 MB · line metadata · distances<br/>transit events · metro_lines.geojson")]
 
   subgraph build["Build — Vite 6"]
-    direction LR
-    plugin["ridership-data-plugin"]
-    columnar[/"dist/ridership.json<br/>columnar"/]
-    chunks[/"entry chunk<br/>+ lazy OutputArea"/]
-    plugin --> columnar
+    plugin["ridership-data-plugin<br/>re-encodes the dataset"]
+    dist[/"dist/ — entry chunk · lazy OutputArea<br/>columnar ridership.json · geojson"/]
+    plugin --> dist
   end
 
   host["Static host — dist/ only<br/>there is no backend"]
 
   subgraph browser["Browser runtime"]
-    direction LR
     hook["useUserDashboardInput<br/>the only store"]
     view["buildRidershipView<br/>the derived view, one pass"]
     ui["chart · table · summary<br/>map · context log"]
@@ -92,21 +78,11 @@ flowchart TB
   tiles["Basemap tiles<br/>OpenFreeMap or MapTiler"]
   ci["GitHub Actions<br/>lint · test · build · visual regression"]
 
-  metroXlsx --> raw
-  metroGis --> py
-  announce --> py
-  py --> canonical
-  py --> meta
-  py --> geo
-
-  canonical --> plugin
-  meta --> chunks
-  columnar --> host
-  chunks --> host
-  geo --> host
-
-  host --> hook
-  host -- "fetch /ridership.json" --> view
+  ext --> raw
+  py --> committed
+  committed --> plugin
+  dist --> host
+  host -- "serves the app and /ridership.json" --> hook
   tiles --> ui
 
   ui --> user
@@ -114,7 +90,7 @@ flowchart TB
   hook <--> urlbar
   urlbar -- "shareable link" --> user
 
-  chunks -.-> ci
+  dist -.-> ci
 
   classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
   classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
@@ -225,12 +201,6 @@ flowchart LR
     sources --> checkEvents --> events
   end
 
-  tests["scripts/test_*.py<br/>one sibling per script, 6 in all"]
-
-  process -.-> tests
-  fetchLines -.-> tests
-  checkEvents -.-> tests
-
   classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
   class ridJson,geojson,distJson,events surface
 ```
@@ -264,8 +234,7 @@ flowchart TB
 
   subgraph hooks["Plugin hooks"]
     direction TB
-    configureServer["configureServer<br/>dev middleware on /ridership.json"]
-    generateBundle["generateBundle<br/>emitFile asset"]
+    serveOrEmit["configureServer — dev middleware on /ridership.json<br/>generateBundle — emitFile asset<br/>two paths, one identical blob"]
     resolveLoad["resolveId + load<br/>virtual:ridership-bounds"]
   end
 
@@ -289,13 +258,11 @@ flowchart TB
   registered["Registered in vite.config.ts<br/>AND vitest.config.ts"]
 
   canonical --> encode
-  blob --> configureServer
-  blob --> generateBundle
+  blob --> serveOrEmit
   bounds --> resolveLoad
 
-  generateBundle --> ridAsset
-  configureServer -- "dev" --> appFetch
-  ridAsset -- "preview / static host" --> appFetch
+  serveOrEmit --> ridAsset
+  ridAsset -- "dev middleware, or preview / static host" --> appFetch
   resolveLoad --> dateRange
 
   swc --> entryChunk
@@ -322,51 +289,38 @@ iterates `lines`, not the consolidated groups: a record whose `line_name` has no
 produces a group but no `Line`, and therefore no figures.
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph loading["Loading — App.tsx:34-44"]
-    direction TB
     fetchCall["fetch('/ridership.json')<br/>AbortController"]
     decode["decodeRidership()"]
     records["RidershipRecord[] | null<br/>null IS the loading state"]
     fetchCall --> decode --> records
   end
 
-  subgraph inputs["The other inputs"]
-    direction TB
-    hook["useUserDashboardInput<br/>lines · window · dayOfWeek · aggregate"]
-    eventsJson[("transit-events.json<br/>bundled at import")]
-  end
+  inputs["The other inputs<br/>useUserDashboardInput — lines · window · dayOfWeek · aggregate<br/>transit-events.json, bundled at import"]
 
   subgraph derive["buildRidershipView — one pass, useMemo'd"]
-    direction TB
-    group["group by line<br/>Month Window filter<br/>+ Selection Snapshot"]
-    cover["buildCoverageByLine"]
-    metricsLoop["lineMetrics per line<br/>iterates lines, not groups"]
-    axis["buildMonthAxis<br/>union of selected lines' months"]
+    group["group by line<br/>Month Window filter + Selection Snapshot<br/>→ consolidated"]
+    cover["buildCoverageByLine<br/>→ coverage"]
+    metricsLoop["lineMetrics per line<br/>iterates lines, not groups<br/>→ metrics"]
+    axis["buildMonthAxis<br/>union of the selected lines' months<br/>→ months"]
     align["alignToMonthAxis<br/>a gap, never a zero"]
-    agg["buildAggregateSeries<br/>ordered last"]
-    evfilter["Event Window filter<br/>reads the LIVE selection"]
+    agg["buildAggregateSeries<br/>ordered last<br/>→ datasets"]
+    evfilter["Event Window filter — off the same inputs,<br/>not off the grouping. Inclusive, and reads the<br/>LIVE selection rather than the snapshot.<br/>→ events"]
 
     group --> cover
     group --> metricsLoop
     group --> axis --> align --> agg
   end
 
-  view["RidershipView<br/>months · datasets · consolidated<br/>events · metrics · coverage"]
-
   records --> group
-  hook --> group
-  hook --> evfilter
-  eventsJson --> evfilter
+  inputs --> group
 
-  cover --> view
-  metricsLoop --> view
-  align --> view
-  agg --> view
-  evfilter --> view
+  returns["The six keys go to diagram 06,<br/>which is where anything reads them."]
+  agg --> returns
 
   classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
-  class view key
+  class returns key
 ```
 
 ---
@@ -391,17 +345,13 @@ sparkline for every *visible* line while the chart covers only the *selected* on
 flowchart TB
   view["RidershipView<br/>months · datasets · consolidated<br/>events · metrics · coverage"]
 
-  subgraph rendering["What renders from it"]
-    direction TB
-    outputArea["OutputArea<br/>chart · summary · context log"]
-    mapCmp["Map<br/>selection filter"]
-    lineSelector["LineSelector<br/>buildWindowMonthAxis over consolidated —<br/>a wider axis than RidershipView.months"]
-  end
+  outputArea["OutputArea<br/>chart · summary · context log"]
+  lineSelector["LineSelector<br/>builds its own wider axis from consolidated —<br/>the table draws every VISIBLE line,<br/>the chart only the SELECTED ones"]
+  mapCmp["Map<br/>selection filter"]
 
   subgraph loop["The write-back cycle"]
-    direction TB
     writeback["updateLinesWithLineMetrics(consolidated)<br/>useEffect keyed on JSON.stringify"]
-    stamp["stamps 8 derived fields<br/>onto every Line"]
+    stamp["stamps 8 derived fields onto every Line"]
     fresh["a new lines array<br/>re-enters the same useMemo"]
     writeback --> stamp --> fresh
   end
@@ -409,7 +359,6 @@ flowchart TB
   hook["useUserDashboardInput<br/>holds lines"]
 
   subgraph replacement["ADR-0005's replacement — built, not wired in"]
-    direction TB
     readouts["buildLineReadouts(lines, metrics, coverage)"]
     listed["listedReadouts(readouts, searchText, modes)"]
     readouts --> listed
@@ -418,11 +367,12 @@ flowchart TB
   view -- "datasets · months · events" --> outputArea
   view -- "consolidated" --> lineSelector
   view -- "consolidated" --> writeback
+  view -. "metrics + coverage, already returned" .-> readouts
+
   fresh --> hook
   hook --> mapCmp
   hook --> view
 
-  view -. "metrics + coverage, already returned" .-> readouts
   listed -. "would replace the stamped fields" .-> lineSelector
 
   classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
@@ -573,9 +523,7 @@ above.
 flowchart TB
   subgraph mutators["Mutators the hook returns"]
     direction LR
-    toggleLine["onToggleSelectLine(line)"]
-    clear["clearSelections()"]
-    selectAll["selectAllVisibleLines()"]
+    selectionMutators["onToggleSelectLine(line)<br/>clearSelections()<br/>selectAllVisibleLines()"]
     updateMetrics["updateLinesWithLineMetrics(consolidated)"]
     setters["the eight setters —<br/>dates · dayOfWeek · search · modes<br/>aggregate · context logs"]
   end
@@ -600,9 +548,7 @@ flowchart TB
     mapLocal["Map<br/>refs only, never state"]
   end
 
-  toggleLine --> lines
-  clear --> lines
-  selectAll --> lines
+  selectionMutators --> lines
   updateMetrics --> lines
   setters --> otherSlices
 
@@ -831,51 +777,26 @@ a sparkline for every **visible** line and needs the wider union across all of `
 
 ```mermaid
 flowchart TB
-  subgraph outside["Outside the seam"]
-    direction TB
-    app["src/App.tsx"]
-    hook["src/hooks/useUserDashboardInput.ts"]
-    lineSel["src/components/LineSelector.tsx"]
-    utilsLines["src/utils/lines.ts<br/>import type only — no runtime edge back in"]
-  end
+  importers["Outside the seam<br/>App.tsx · useUserDashboardInput.ts · LineSelector.tsx"]
+  utilsLines["src/utils/lines.ts<br/>import type only — no runtime edge back in"]
 
   idx["src/ridership/index.ts<br/>THE ENTIRE PUBLIC SURFACE"]
 
-  subgraph exported["What it exports"]
-    direction TB
-    brv["buildRidershipView<br/>+ RidershipView · RidershipViewInput · LineSelection"]
-    axisExports["alignToMonthAxis · buildCoverageByLine<br/>buildWindowMonthAxis · LineCoverage"]
-    lm["lineMetrics + LineMetrics"]
-    readouts["buildLineReadouts + LineReadout"]
-  end
+  stable["Exported<br/>buildRidershipView + its input and view types<br/>alignToMonthAxis · buildCoverageByLine · buildWindowMonthAxis<br/>lineMetrics"]
+  readouts["Exported, no caller yet<br/>buildLineReadouts + LineReadout"]
 
-  subgraph private["Module-private implementation"]
-    direction TB
-    brvImpl["buildRidershipView.ts"]
-    lmImpl["lineMetrics.ts"]
-    lrImpl["lineReadouts.ts"]
-    chartData["chartData.ts<br/>timeKey · buildMonthAxis · buildAggregateSeries"]
-  end
+  impl["Module-private implementation<br/>buildRidershipView.ts · lineMetrics.ts · lineReadouts.ts"]
+  chartData["chartData.ts — also module-private<br/>timeKey · buildMonthAxis · buildAggregateSeries"]
 
   bad["import '../ridership/chartData'<br/>— visibly past the seam, ADR-0003"]
 
-  app --> idx
-  hook --> idx
-  lineSel --> idx
+  importers --> idx
   utilsLines -.-> idx
-
-  idx --> brv
-  idx --> axisExports
-  idx --> lm
+  idx --> stable
   idx --> readouts
-
-  brv --- brvImpl
-  lm --- lmImpl
-  readouts --- lrImpl
-  axisExports --- chartData
-  brvImpl --> chartData
-  brvImpl --> lmImpl
-
+  stable --- impl
+  readouts --- impl
+  impl --> chartData
   bad -.-> chartData
 
   classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c

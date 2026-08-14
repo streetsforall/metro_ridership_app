@@ -1,37 +1,23 @@
 flowchart TB
-  subgraph ext["External — outside the repo"]
-    direction LR
-    metroXlsx["LA Metro ridership<br/>workbooks"]
-    metroGis["Metro GIS<br/>route geometry"]
-    announce["Service-change<br/>announcements"]
-  end
+  ext["External — outside the repo<br/>LA Metro ridership workbooks · Metro GIS route geometry<br/>service-change announcements"]
 
   subgraph authoring["Authoring — by hand, never in CI"]
-    direction LR
     raw[/"data/raw/"/]
     py["Python pipeline<br/>scripts/*.py"]
     raw --> py
   end
 
-  subgraph committed["Committed data — the repo is the database"]
-    direction LR
-    canonical[("ridership.json<br/>~7 MB, canonical")]
-    meta[("line metadata<br/>distances · events")]
-    geo[("metro_lines.geojson")]
-  end
+  committed[("Committed data — the repo is the database<br/>ridership.json ~7 MB · line metadata · distances<br/>transit events · metro_lines.geojson")]
 
   subgraph build["Build — Vite 6"]
-    direction LR
-    plugin["ridership-data-plugin"]
-    columnar[/"dist/ridership.json<br/>columnar"/]
-    chunks[/"entry chunk<br/>+ lazy OutputArea"/]
-    plugin --> columnar
+    plugin["ridership-data-plugin<br/>re-encodes the dataset"]
+    dist[/"dist/ — entry chunk · lazy OutputArea<br/>columnar ridership.json · geojson"/]
+    plugin --> dist
   end
 
   host["Static host — dist/ only<br/>there is no backend"]
 
   subgraph browser["Browser runtime"]
-    direction LR
     hook["useUserDashboardInput<br/>the only store"]
     view["buildRidershipView<br/>the derived view, one pass"]
     ui["chart · table · summary<br/>map · context log"]
@@ -43,21 +29,11 @@ flowchart TB
   tiles["Basemap tiles<br/>OpenFreeMap or MapTiler"]
   ci["GitHub Actions<br/>lint · test · build · visual regression"]
 
-  metroXlsx --> raw
-  metroGis --> py
-  announce --> py
-  py --> canonical
-  py --> meta
-  py --> geo
-
-  canonical --> plugin
-  meta --> chunks
-  columnar --> host
-  chunks --> host
-  geo --> host
-
-  host --> hook
-  host -- "fetch /ridership.json" --> view
+  ext --> raw
+  py --> committed
+  committed --> plugin
+  dist --> host
+  host -- "serves the app and /ridership.json" --> hook
   tiles --> ui
 
   ui --> user
@@ -65,7 +41,7 @@ flowchart TB
   hook <--> urlbar
   urlbar -- "shareable link" --> user
 
-  chunks -.-> ci
+  dist -.-> ci
 
   classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
   classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c

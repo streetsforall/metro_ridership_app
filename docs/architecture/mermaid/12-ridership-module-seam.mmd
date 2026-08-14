@@ -1,49 +1,24 @@
 flowchart TB
-  subgraph outside["Outside the seam"]
-    direction TB
-    app["src/App.tsx"]
-    hook["src/hooks/useUserDashboardInput.ts"]
-    lineSel["src/components/LineSelector.tsx"]
-    utilsLines["src/utils/lines.ts<br/>import type only — no runtime edge back in"]
-  end
+  importers["Outside the seam<br/>App.tsx · useUserDashboardInput.ts · LineSelector.tsx"]
+  utilsLines["src/utils/lines.ts<br/>import type only — no runtime edge back in"]
 
   idx["src/ridership/index.ts<br/>THE ENTIRE PUBLIC SURFACE"]
 
-  subgraph exported["What it exports"]
-    direction TB
-    brv["buildRidershipView<br/>+ RidershipView · RidershipViewInput · LineSelection"]
-    axisExports["alignToMonthAxis · buildCoverageByLine<br/>buildWindowMonthAxis · LineCoverage"]
-    lm["lineMetrics + LineMetrics"]
-    readouts["buildLineReadouts + LineReadout"]
-  end
+  stable["Exported<br/>buildRidershipView + its input and view types<br/>alignToMonthAxis · buildCoverageByLine · buildWindowMonthAxis<br/>lineMetrics"]
+  readouts["Exported, no caller yet<br/>buildLineReadouts + LineReadout"]
 
-  subgraph private["Module-private implementation"]
-    direction TB
-    brvImpl["buildRidershipView.ts"]
-    lmImpl["lineMetrics.ts"]
-    lrImpl["lineReadouts.ts"]
-    chartData["chartData.ts<br/>timeKey · buildMonthAxis · buildAggregateSeries"]
-  end
+  impl["Module-private implementation<br/>buildRidershipView.ts · lineMetrics.ts · lineReadouts.ts"]
+  chartData["chartData.ts — also module-private<br/>timeKey · buildMonthAxis · buildAggregateSeries"]
 
   bad["import '../ridership/chartData'<br/>— visibly past the seam, ADR-0003"]
 
-  app --> idx
-  hook --> idx
-  lineSel --> idx
+  importers --> idx
   utilsLines -.-> idx
-
-  idx --> brv
-  idx --> axisExports
-  idx --> lm
+  idx --> stable
   idx --> readouts
-
-  brv --- brvImpl
-  lm --- lmImpl
-  readouts --- lrImpl
-  axisExports --- chartData
-  brvImpl --> chartData
-  brvImpl --> lmImpl
-
+  stable --- impl
+  readouts --- impl
+  impl --> chartData
   bad -.-> chartData
 
   classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c

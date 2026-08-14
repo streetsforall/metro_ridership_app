@@ -35,11 +35,5 @@ flowchart LR
     sources --> checkEvents --> events
   end
 
-  tests["scripts/test_*.py<br/>one sibling per script, 6 in all"]
-
-  process -.-> tests
-  fetchLines -.-> tests
-  checkEvents -.-> tests
-
   classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
   class ridJson,geojson,distJson,events surface

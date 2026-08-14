@@ -1,9 +1,7 @@
 flowchart TB
   subgraph mutators["Mutators the hook returns"]
     direction LR
-    toggleLine["onToggleSelectLine(line)"]
-    clear["clearSelections()"]
-    selectAll["selectAllVisibleLines()"]
+    selectionMutators["onToggleSelectLine(line)<br/>clearSelections()<br/>selectAllVisibleLines()"]
     updateMetrics["updateLinesWithLineMetrics(consolidated)"]
     setters["the eight setters —<br/>dates · dayOfWeek · search · modes<br/>aggregate · context logs"]
   end
@@ -28,9 +26,7 @@ flowchart TB
     mapLocal["Map<br/>refs only, never state"]
   end
 
-  toggleLine --> lines
-  clear --> lines
-  selectAll --> lines
+  selectionMutators --> lines
   updateMetrics --> lines
   setters --> otherSlices
 

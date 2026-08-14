@@ -12,8 +12,7 @@ flowchart TB
 
   subgraph hooks["Plugin hooks"]
     direction TB
-    configureServer["configureServer<br/>dev middleware on /ridership.json"]
-    generateBundle["generateBundle<br/>emitFile asset"]
+    serveOrEmit["configureServer — dev middleware on /ridership.json<br/>generateBundle — emitFile asset<br/>two paths, one identical blob"]
     resolveLoad["resolveId + load<br/>virtual:ridership-bounds"]
   end
 
@@ -37,13 +36,11 @@ flowchart TB
   registered["Registered in vite.config.ts<br/>AND vitest.config.ts"]
 
   canonical --> encode
-  blob --> configureServer
-  blob --> generateBundle
+  blob --> serveOrEmit
   bounds --> resolveLoad
 
-  generateBundle --> ridAsset
-  configureServer -- "dev" --> appFetch
-  ridAsset -- "preview / static host" --> appFetch
+  serveOrEmit --> ridAsset
+  ridAsset -- "dev middleware, or preview / static host" --> appFetch
   resolveLoad --> dateRange
 
   swc --> entryChunk
