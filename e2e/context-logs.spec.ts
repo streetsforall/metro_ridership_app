@@ -17,11 +17,14 @@ import { gotoDashboard, shootPane } from './helpers';
  *
  * Two different windows are in play, and they disagree deliberately (ADR-0001):
  *
- * - **Event Window** — inclusive, 1-based: `201906 <= event <= 202012`. Of the seven entries in
- *   `src/data/transit-events.json` (2012-04, 2016-03, 2016-05, 2020-03, 2022-10, 2023-06,
- *   2026-05), exactly one lands inside: **2020-03, "COVID-19 Service Reductions"**. Its
- *   `line_ids` is `[]`, so it applies to any selection. A future data PR only rebases these
- *   baselines if it adds an event between 2019-06 and 2020-12.
+ * - **Event Window** — inclusive, 1-based: `201906 <= event <= 202012`. Four entries in
+ *   `src/data/transit-events.json` land inside, and three of them render here:
+ *   **2020-03 "COVID-19 Service Reductions"**, **2020-04 "COVID-19 Emergency Schedule"** and
+ *   **2020-12 "NextGen Bus Plan Phase 1"** — each has `line_ids: []`, so it applies to any
+ *   selection. The fourth, 2020-12 "Rapid Lines Retired into Local Service", is scoped to eight
+ *   bus lines that exclude 801, which is why the count below is 3 and not 4. A future data PR
+ *   only rebases these baselines if it adds an event between 2019-06 and 2020-12 that either
+ *   carries an empty `line_ids` or names line 801.
  * - **Month Window** — a record at ordinal `R` is kept when `S <= R <= E - 2`, so these params
  *   render **2019-06 through 2020-10** on the chart axis. That is what drives
  *   `chartDatasets.length > 0`; line 801 has all 17 months in that span.
@@ -37,7 +40,7 @@ test('context log panel renders its events', async ({ page }) => {
   // snapshot nothing and Playwright would fail on a missing element rather than a wrong view.
   const panel = page.locator('#context-log-panel');
   await expect(panel).toBeVisible();
-  await expect(panel.locator('ol > li')).toHaveCount(1);
+  await expect(panel.locator('ol > li')).toHaveCount(3);
 
   await shootPane(page, '#context-log-panel', 'context-log-panel-open.png');
 });
