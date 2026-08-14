@@ -17,7 +17,7 @@ classDiagram
     +selected: boolean
     +visible: boolean
     +distanceMiles?: number
-    --derived, written back — ADR-0005 says these do not belong here--
+    --derived, still written back — ADR-0005 says these do not belong here--
     +averageRidership?: number
     +changeInRidership?: number
     +startingRidership?: number
@@ -65,7 +65,9 @@ classDiagram
 
   class LineReadout {
     <<Line & Partial~LineMetrics~ & Partial~LineCoverage~>>
-    built and tested, no production caller
+    what every consumer now reads —
+    LineSelector · LineTableRow
+    SummaryData · Map · mapPopup
   }
 
   class TransitEvent {

@@ -290,7 +290,7 @@ produces a group but no `Line`, and therefore no figures.
 
 ```mermaid
 flowchart TB
-  subgraph loading["Loading — App.tsx:34-44"]
+  subgraph loading["Loading — App.tsx:35-45"]
     fetchCall["fetch('/ridership.json')<br/>AbortController"]
     decode["decodeRidership()"]
     records["RidershipRecord[] | null<br/>null IS the loading state"]
@@ -330,13 +330,22 @@ flowchart TB
 The second half, and the one live design problem in the app.
 
 `buildRidershipView` already returns `metrics` and `coverage` keyed by line id — everything a
-caller needs — yet `App.tsx:94` still calls `updateLinesWithLineMetrics`, which writes eight
+caller needs — yet `App.tsx:114` still calls `updateLinesWithLineMetrics`, which writes eight
 derived fields back onto every `Line`. That mints a new `lines` array, which re-enters the memo it
 came from; the `JSON.stringify` dependency keys exist to keep the loop from thrashing. It settles
 only because the second pass produces figures identical to the first.
 
-ADR-0005 accepted removing it. `buildLineReadouts` and `listedReadouts` are the replacement —
-written, unit-tested, and imported by nothing that renders.
+**ADR-0005 is now half landed.** #154 wired the replacement in: `App.tsx:98` builds `readouts` with
+`buildLineReadouts`, `:103` narrows them with `listedReadouts`, and `LineSelector`, `LineTableRow`,
+`SummaryData`, `Map` and `mapPopup` all take `LineReadout` rather than `Line`. What the ADR also
+asked for — deleting the write-back — did not happen, so the consumers moved but the round trip
+did not.
+
+The stamped fields are consequently no longer what the screen renders: `buildLineReadouts` spreads
+`metrics[line.id]` and `coverage[line.id]` *over* the `Line`, so this window's figures win. They are
+still load-bearing, though, and that is the reason the effect cannot simply be deleted —
+`isVisibleLine` in the hook gates on `line.averageRidership !== undefined`, and
+`selectAllVisibleLines` behind the line table's *Select all* button runs through it.
 
 `LineSelector` reads `consolidated` directly and builds its own axis, because the table draws a
 sparkline for every *visible* line while the chart covers only the *selected* ones.
@@ -345,22 +354,22 @@ sparkline for every *visible* line while the chart covers only the *selected* on
 flowchart TB
   view["RidershipView<br/>months · datasets · consolidated<br/>events · metrics · coverage"]
 
-  outputArea["OutputArea<br/>chart · summary · context log"]
+  outputArea["OutputArea<br/>chart · summary · context log · map"]
   lineSelector["LineSelector<br/>builds its own wider axis from consolidated —<br/>the table draws every VISIBLE line,<br/>the chart only the SELECTED ones"]
-  mapCmp["Map<br/>selection filter"]
+  mapCmp["Map<br/>selection filter · mapPopup"]
 
-  subgraph loop["The write-back cycle"]
-    writeback["updateLinesWithLineMetrics(consolidated)<br/>useEffect keyed on JSON.stringify"]
+  subgraph loop["The write-back cycle — still running"]
+    writeback["updateLinesWithLineMetrics(consolidated)<br/>useEffect keyed on JSON.stringify — App.tsx:113-116"]
     stamp["stamps 8 derived fields onto every Line"]
     fresh["a new lines array<br/>re-enters the same useMemo"]
     writeback --> stamp --> fresh
   end
 
-  hook["useUserDashboardInput<br/>holds lines"]
+  hook["useUserDashboardInput — holds lines.<br/>isVisibleLine still reads the stamped fields,<br/>which is what keeps the cycle load-bearing."]
 
-  subgraph replacement["ADR-0005's replacement — built, not wired in"]
-    readouts["buildLineReadouts(lines, metrics, coverage)"]
-    listed["listedReadouts(readouts, searchText, modes)"]
+  subgraph replacement["ADR-0005's Line Readout — the consumers moved onto it (#154)"]
+    readouts["buildLineReadouts(lines, metrics, coverage)<br/>App.tsx:98"]
+    listed["listedReadouts(readouts, searchText, modes)<br/>App.tsx:103"]
     readouts --> listed
   end
 
@@ -370,17 +379,16 @@ flowchart TB
   view -. "metrics + coverage, already returned" .-> readouts
 
   fresh --> hook
-  hook --> mapCmp
   hook --> view
 
-  listed -. "would replace the stamped fields" .-> lineSelector
+  readouts -- "lines={readouts}" --> outputArea
+  listed -- "lines={listed}" --> lineSelector
+  outputArea --> mapCmp
 
   classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
   classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
-  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
-  class view key
+  class view,readouts,listed key
   class writeback,stamp,fresh cycle
-  class readouts,listed pending
 ```
 
 ---
@@ -394,7 +402,7 @@ than its props list suggests.
 `OutputArea` is `React.lazy` on purpose: it pulls in Chart.js and MapLibre, and keeping them out of
 the entry chunk lets the header and line table paint first. Note the gate — expanding the line
 selector *unmounts* `OutputArea` rather than hiding it, so the chart and map rebuild from scratch
-on collapse. `App.tsx:136-138` flags this.
+on collapse. `App.tsx:156-159` flags this.
 
 ```mermaid
 flowchart TB
@@ -413,7 +421,7 @@ flowchart TB
   end
 
   gate{"isLineSelectorExpanded?"}
-  unmounted["nothing rendered —<br/>OutputArea unmounts entirely<br/>(TODO at App.tsx:136-138)"]
+  unmounted["nothing rendered —<br/>OutputArea unmounts entirely<br/>(TODO at App.tsx:156-159)"]
   susp["Suspense fallback"]
 
   subgraph rightPane["OutputArea — React.lazy chunk"]
@@ -457,7 +465,10 @@ slice is seeded once from the URL in a lazy `useState` initialiser, so a shared 
 the view before the first render rather than after it.
 
 `visibleLines` is the only derived value in the store, and its memo key is
-`JSON.stringify(lines)` rather than `lines` — see the next diagram for why.
+`JSON.stringify(lines)` rather than `lines` — see the next diagram for why. Since #154 nothing in
+`src/` reads it but the hook's own spec; `listedReadouts` computes the same rule over readouts
+instead. The rule it encodes is still live, though — `selectAllVisibleLines` shares
+`isVisibleLine` with it.
 
 ```mermaid
 flowchart TB
@@ -510,7 +521,7 @@ flowchart TB
 Everything that writes. Four of the five mutators touch `lines`, which is why that one array is the
 hinge the whole store turns on.
 
-The `JSON.stringify` dependency keys at `App.tsx:96`, `useUserDashboardInput.ts:168` and `:264` are
+The `JSON.stringify` dependency keys at `App.tsx:116`, `useUserDashboardInput.ts:168` and `:264` are
 load-bearing, not sloppiness: `lines` is a fresh array on every derivation, so reference equality
 would fire these effects forever. `CLAUDE.md` asks you not to "fix" them. The real fix is removing
 the write-back that mints the array (ADR-0005), not changing the keys.
@@ -537,7 +548,7 @@ flowchart TB
     urlSync["state → history.replaceState<br/>deps include JSON.stringify(lines)"]
   end
 
-  keys["Three JSON.stringify dependency keys —<br/>App.tsx:96 · hook :168 · hook :264.<br/>Load-bearing: `lines` is a fresh array every derivation,<br/>so reference equality would fire these forever."]
+  keys["Three JSON.stringify dependency keys —<br/>App.tsx:116 · hook :168 · hook :264.<br/>Load-bearing: `lines` is a fresh array every derivation,<br/>so reference equality would fire these forever."]
 
   subgraph local["Component-local state — deliberately not in the store"]
     direction LR
@@ -642,9 +653,12 @@ same information minus that block — it is what `buildRidershipView` actually a
 satisfies it structurally, which is what keeps derived figures from being handed back into the
 module that produced them.
 
-`LineReadout` is the intended destination: `Line & Partial<LineMetrics> & Partial<LineCoverage>`,
-derived per window and thrown away. `Month` is ADR-0006's replacement for the seven encodings a
-month currently has. Both exist; neither is wired in.
+`LineReadout` is the destination, and since #154 it is where every consumer reads from:
+`Line & Partial<LineMetrics> & Partial<LineCoverage>`, derived per window and thrown away. The
+optional block on `Line` survives anyway, because the write-back that fills it is still running —
+so both shapes carry the figures today, and only one of them is what renders. `Month` is
+ADR-0006's replacement for the seven encodings a month currently has; it exists with a full spec
+and still has no production caller.
 
 ```mermaid
 classDiagram
@@ -666,7 +680,7 @@ classDiagram
     +selected: boolean
     +visible: boolean
     +distanceMiles?: number
-    --derived, written back — ADR-0005 says these do not belong here--
+    --derived, still written back — ADR-0005 says these do not belong here--
     +averageRidership?: number
     +changeInRidership?: number
     +startingRidership?: number
@@ -714,7 +728,9 @@ classDiagram
 
   class LineReadout {
     <<Line & Partial~LineMetrics~ & Partial~LineCoverage~>>
-    built and tested, no production caller
+    what every consumer now reads —
+    LineSelector · LineTableRow
+    SummaryData · Map · mapPopup
   }
 
   class TransitEvent {
@@ -777,13 +793,12 @@ a sparkline for every **visible** line and needs the wider union across all of `
 
 ```mermaid
 flowchart TB
-  importers["Outside the seam<br/>App.tsx · useUserDashboardInput.ts · LineSelector.tsx"]
-  utilsLines["src/utils/lines.ts<br/>import type only — no runtime edge back in"]
+  importers["Outside the seam<br/>App.tsx · useUserDashboardInput.ts · LineSelector.tsx<br/>LineTableRow.tsx · OutputArea.tsx · SummaryData.tsx · Map.tsx"]
+  utilsLines["src/utils/lines.ts · src/utils/mapPopup.ts<br/>import type only — no runtime edge back in"]
 
   idx["src/ridership/index.ts<br/>THE ENTIRE PUBLIC SURFACE"]
 
-  stable["Exported<br/>buildRidershipView + its input and view types<br/>alignToMonthAxis · buildCoverageByLine · buildWindowMonthAxis<br/>lineMetrics"]
-  readouts["Exported, no caller yet<br/>buildLineReadouts + LineReadout"]
+  stable["Exported<br/>buildRidershipView + its input and view types<br/>alignToMonthAxis · buildCoverageByLine · buildWindowMonthAxis<br/>lineMetrics · buildLineReadouts + LineReadout"]
 
   impl["Module-private implementation<br/>buildRidershipView.ts · lineMetrics.ts · lineReadouts.ts"]
   chartData["chartData.ts — also module-private<br/>timeKey · buildMonthAxis · buildAggregateSeries"]
@@ -793,18 +808,14 @@ flowchart TB
   importers --> idx
   utilsLines -.-> idx
   idx --> stable
-  idx --> readouts
   stable --- impl
-  readouts --- impl
   impl --> chartData
   bad -.-> chartData
 
   classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
   classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
-  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
   class idx surface
   class bad cycle
-  class readouts pending
 ```
 
 ---
@@ -1222,9 +1233,11 @@ Which document governs what, and where the code has not caught up. `CONTEXT.md` 
 by its own rule — where a term there conflicts with a name in the code, the code is what's out of
 date.
 
-All six ADRs are accepted, but two are only half-landed: 0005's `buildLineReadouts` and 0006's
-`month.ts` both exist with full test coverage and no production caller. That gap is the most
-actionable thing in this whole set.
+All six ADRs are accepted, but two are only half-landed, and differently. 0006's `month.ts` exists
+with a full spec and no production caller at all. 0005 got its consumers in #154 — the line table,
+summary panel, map and popup all read a Line Readout now — but not its deletion: the write-back
+still stamps eight figures onto every `Line` on every derivation. Finishing it is the most
+actionable thing in this whole set, and the remaining work is subtraction rather than addition.
 
 ```mermaid
 flowchart TB
@@ -1245,10 +1258,10 @@ flowchart TB
     a4["0004 — one nullable Line Metrics shape<br/>→ lineMetrics.ts"]
   end
 
-  subgraph half["Accepted, machinery landed, no production caller"]
+  subgraph half["Accepted, only half landed"]
     direction TB
-    a5["0005 — figures live on a Line Readout.<br/>buildLineReadouts and listedReadouts are<br/>written and tested; App.tsx:94 still writes back."]
-    a6["0006 — a month is {year, month}.<br/>utils/month.ts has both rules and its own spec;<br/>the filters still do Date arithmetic."]
+    a5["0005 — figures live on a Line Readout.<br/>#154 moved every consumer onto readouts;<br/>App.tsx:114 still stamps the eight fields onto Line."]
+    a6["0006 — a month is {year, month}.<br/>utils/month.ts has both rules and its own spec,<br/>and no production caller; the filters still do Date arithmetic."]
   end
 
   subgraph planning["Planning — intent, not decisions"]

@@ -15,7 +15,7 @@ flowchart TB
     urlSync["state → history.replaceState<br/>deps include JSON.stringify(lines)"]
   end
 
-  keys["Three JSON.stringify dependency keys —<br/>App.tsx:96 · hook :168 · hook :264.<br/>Load-bearing: `lines` is a fresh array every derivation,<br/>so reference equality would fire these forever."]
+  keys["Three JSON.stringify dependency keys —<br/>App.tsx:116 · hook :168 · hook :264.<br/>Load-bearing: `lines` is a fresh array every derivation,<br/>so reference equality would fire these forever."]
 
   subgraph local["Component-local state — deliberately not in the store"]
     direction LR

@@ -16,10 +16,10 @@ flowchart TB
     a4["0004 — one nullable Line Metrics shape<br/>→ lineMetrics.ts"]
   end
 
-  subgraph half["Accepted, machinery landed, no production caller"]
+  subgraph half["Accepted, only half landed"]
     direction TB
-    a5["0005 — figures live on a Line Readout.<br/>buildLineReadouts and listedReadouts are<br/>written and tested; App.tsx:94 still writes back."]
-    a6["0006 — a month is {year, month}.<br/>utils/month.ts has both rules and its own spec;<br/>the filters still do Date arithmetic."]
+    a5["0005 — figures live on a Line Readout.<br/>#154 moved every consumer onto readouts;<br/>App.tsx:114 still stamps the eight fields onto Line."]
+    a6["0006 — a month is {year, month}.<br/>utils/month.ts has both rules and its own spec,<br/>and no production caller; the filters still do Date arithmetic."]
   end
 
   subgraph planning["Planning — intent, not decisions"]
