@@ -1,0 +1,40 @@
+flowchart TB
+  choice["One user choice: start = 2025-01, end = 2025-06"]
+
+  subgraph monthWindow["Month Window — records, chart, metrics"]
+    mwRule["S ≤ R ≤ E − 2<br/>start included; end month AND the month before it excluded"]
+    mwMonths["2025-01 · 02 · 03 · 04<br/>2025-05 and 2025-06 excluded"]
+    mwCode["new Date(record.year, record.month) compared against<br/>new Date(year, month − 1) — 1-based data vs 0-based Date"]
+  end
+
+  subgraph eventWindow["Event Window — context log"]
+    ewRule["S ≤ R ≤ E<br/>inclusive on both ends, correctly 1-based"]
+    ewMonths["2025-01 · 02 · 03 · 04 · 05 · 06"]
+    ewCode["year * 100 + month, compared numerically"]
+  end
+
+  disagree["The two windows disagree by two months, from the same user choice."]
+  keep["Preserved, not reconciled: the app has always behaved this way,<br/>users have shared URLs against it, and e2e/chart-content.spec.ts renders<br/>windows through it into committed PNG baselines. — ADR-0001"]
+
+  subgraph axis["Month Axis — derived after filtering"]
+    axisDef["chronological union of the months the SELECTED lines cover"]
+    axisGap["a month a line does not report is a GAP (null), never a zero"]
+    axisWhy["one axis shared by every series — Chart.js appends any label missing<br/>from `labels` to the end, so a per-series axis scrambles the others"]
+    axisTwo["buildMonthAxis → RidershipView.months (selected lines)<br/>buildWindowMonthAxis → the line table's wider axis (all consolidated)"]
+  end
+
+  onePlace["src/utils/month.ts encodes both rules once —<br/>contains() and containsOffset() over an ordinal.<br/>Landed and tested; the production path still uses the Date arithmetic. ADR-0006"]
+
+  choice --> monthWindow
+  choice --> eventWindow
+  monthWindow --> disagree
+  eventWindow --> disagree
+  disagree --> keep
+  mwMonths --> axis
+  monthWindow -.-> onePlace
+  eventWindow -.-> onePlace
+
+  classDef warn fill:#fef3c7,stroke:#b45309,color:#111827
+  classDef keepc fill:#fee2e2,stroke:#b91c1c,color:#111827
+  class onePlace warn
+  class keep,disagree keepc

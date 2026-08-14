@@ -1,0 +1,125 @@
+classDiagram
+  direction TB
+
+  class LineJson {
+    <<on disk>>
+    +line: number
+    +mode: string
+    +provider: string
+  }
+
+  class Line {
+    <<identity + metadata>>
+    +id: number
+    +name: string
+    +former?: string
+    +mode: Bus | Rail
+    +provider: DO | PT
+    +selected: boolean
+    +visible: boolean
+    +distanceMiles?: number
+    --derived, written back — ADR-0005 says these do not belong here--
+    +averageRidership?: number
+    +changeInRidership?: number
+    +startingRidership?: number
+    +endingRidership?: number
+    +ridersPerMile?: number
+    +ridershipOverTime?: number
+    +coveredFrom?: string
+    +coveredTo?: string
+    +isPartialCoverage?: boolean
+  }
+
+  class LineSelection {
+    <<the module's real input>>
+    +id: number
+    +selected: boolean
+    +distanceMiles?: number
+  }
+
+  class RidershipRecord {
+    +year: number
+    +month: number
+    +line_name: number
+    +est_wkday_ridership: number | null
+    +est_sat_ridership: number | null
+    +est_sun_ridership: number | null
+  }
+
+  class ConsolidatedRecord {
+    +selected: boolean
+    +ridershipRecords: RidershipRecord[]
+  }
+
+  class ConsolidatedRidership {
+    <<Record~lineId, ConsolidatedRecord~>>
+  }
+
+  class LineMetrics {
+    +averageRidership: number
+    +changeInRidership: number
+    +startingRidership: number
+    +endingRidership: number
+    +ridersPerMile: number | undefined
+  }
+
+  class LineCoverage {
+    +coveredFrom: string
+    +coveredTo: string
+    +isPartialCoverage: boolean
+  }
+
+  class LineReadout {
+    <<Line & Partial~LineMetrics~ & Partial~LineCoverage~>>
+    built, not yet wired in
+  }
+
+  class TransitEvent {
+    +id: string
+    +date: string
+    +line_ids: number[]
+    +title: string
+    +description: string
+    +category: EventCategory
+    +source?: string
+    +shakeup?: string
+    +details?: object
+  }
+
+  class CustomChartData {
+    +time: string
+    +stat: number | null
+  }
+
+  class RidershipView {
+    +months: string[]
+    +datasets: ChartDataset
+    +consolidated: ConsolidatedRidership
+    +events: TransitEvent[]
+    +metrics: Record~number, LineMetrics~
+    +coverage: Record~number, LineCoverage~
+  }
+
+  class Month {
+    <<src/utils/month.ts — unwired>>
+    +year: number
+    +month: number 1-based
+  }
+
+  LineJson --> Line : createLinesData enriches
+  Line ..|> LineSelection : satisfies structurally
+  RidershipRecord --* ConsolidatedRecord
+  ConsolidatedRecord --* ConsolidatedRidership
+  ConsolidatedRecord --> LineMetrics : lineMetrics(), null for an empty series
+  ConsolidatedRidership --> LineCoverage : buildCoverageByLine()
+  RidershipRecord --> CustomChartData : alignToMonthAxis()
+  CustomChartData --* RidershipView
+  ConsolidatedRidership --* RidershipView
+  LineMetrics --* RidershipView
+  LineCoverage --* RidershipView
+  TransitEvent --* RidershipView
+  Line --> LineReadout
+  LineMetrics --> LineReadout
+  LineCoverage --> LineReadout
+  LineMetrics ..> Line : write-back today (the cycle)
+  RidershipRecord ..|> Month : is structurally one

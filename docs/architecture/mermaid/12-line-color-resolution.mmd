@@ -1,0 +1,50 @@
+flowchart TB
+  getColor["getLineColor(lineId) — src/utils/lines.ts"]
+  lookup{"lineId in definedLines?"}
+
+  subgraph defined["definedLines — 9 hardcoded brand colours"]
+    rail["801 A/Blue #0072bc · 802 B/Red #eb131b<br/>803 C/Green #58a738 · 804 E/Expo #fdb913<br/>805 D/Purple #a05da5 · 806 L/Gold #f9a825<br/>807 K #e56db1"]
+    brt["901 G #fc4c02 · 910 J/Silver #adb8bf"]
+  end
+
+  golden["busLineColor(lineId)<br/>hue = round(lineId × 137.508 mod 360)<br/>hsl(hue, 75%, 45%)"]
+
+  names["getLineNames(lineId)<br/>defined → 'A Line' (+ former 'Blue Line')<br/>otherwise → 'Line 720'"]
+
+  subgraph consumers["TypeScript consumers — all read getLineColor"]
+    chartDs["buildRidershipView datasets<br/>backgroundColor + borderColor"]
+    sparkline["LineTableRow sparkline"]
+    aggregate["Aggregate Series<br/>getLineColor(-1) fill · getLineColor(-2) stroke —<br/>negative ids fall through to the golden-angle branch"]
+  end
+
+  subgraph pyside["The map takes a different path"]
+    pyFn["scripts/fetch_metro_lines.py:39-41<br/>bus_line_color() — the SAME formula, written a second time<br/>docstring: 'Must match lines.ts'"]
+    pyRail["RAIL_COLORS — a second copy of the brand table"]
+    geoProp["baked into metro_lines.geojson<br/>as a per-feature `color` property"]
+    mapLayer["MapLibre 'lines-selected'<br/>paint: line-color = ['get', 'color']"]
+  end
+
+  pyFn --> geoProp
+  pyRail --> geoProp
+  geoProp --> mapLayer
+
+  sort["lineNameSortFunction<br/>lettered lines first, then numbered by id.<br/>This order fixes legend, dataset AND table order."]
+
+  getColor --> lookup
+  lookup -- yes --> defined
+  lookup -- no --> golden
+  defined --> consumers
+  golden --> consumers
+  names --> chartDs
+  names --> sort
+
+  why["Deterministic by construction, so a bus line gets the same colour on every render."]
+  why -.- golden
+
+  dup["Chart and map agree because the formula is implemented twice and kept in step by hand.<br/>Nothing tests the two against each other; a change to one silently desynchronises the map<br/>until metro_lines.geojson is regenerated."]
+  dup -.- pyFn
+
+  classDef warn fill:#fef3c7,stroke:#b45309,color:#111827
+  classDef risk fill:#fee2e2,stroke:#b91c1c,color:#111827
+  class aggregate warn
+  class dup risk

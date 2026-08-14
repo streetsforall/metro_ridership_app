@@ -1,0 +1,59 @@
+flowchart TB
+  subgraph authority["Authority order"]
+    ctx["CONTEXT.md — the ubiquitous language.<br/>'Where a term below conflicts with a name in the source, the term wins.'"]
+    adrs["docs/adr/ — decisions, all six accepted"]
+    claude["CLAUDE.md — working notes for agents"]
+    readme["README.md — data coverage, screenshots, CI runbook"]
+  end
+
+  subgraph decided["ADRs, and what each governs"]
+    a1["0001 — the Month Window offset is deliberate"]
+    a2["0002 — the view returns Chart.js dataset types"]
+    a3["0003 — src/ridership/ is one domain folder"]
+    a4["0004 — Line Metrics are one nullable shape"]
+    a5["0005 — derived figures live on a Line Readout"]
+    a6["0006 — a month is {year, month}, not a Date"]
+  end
+
+  subgraph code["Modules"]
+    m1["buildRidershipView.ts + utils/month.ts"]
+    m2["RidershipView.datasets"]
+    m3["src/ridership/index.ts — the seam"]
+    m4["lineMetrics.ts"]
+    m5["lineReadouts.ts + utils/lines.ts listedReadouts"]
+    m6["utils/month.ts"]
+  end
+
+  subgraph gap["Accepted, machinery landed, NOT yet in the render path"]
+    g5["buildLineReadouts and listedReadouts exist and are unit-tested,<br/>but nothing in src/ imports them. App.tsx:94 still calls<br/>updateLinesWithLineMetrics, so figures are still written onto Line."]
+    g6["month.ts exists with contains/containsOffset and its own spec,<br/>but the only reference outside its test is a plan document.<br/>The production filters still do Date and YYYYMM arithmetic."]
+  end
+
+  subgraph planning["Planning docs — intent, not decisions"]
+    review["docs/architecture-review-2026-08-05.md<br/>six deepening candidates; 1 landed, 5 (URL contract) and 6 (CSV seam) unscheduled"]
+    plans["src/plans/ — 7 per-feature design notes"]
+    agents["docs/agents/ — domain.md · issue-tracker.md · triage-labels.md"]
+    perf["perf/BASELINE.md"]
+  end
+
+  stale["CLAUDE.md still names src/utils/calc.ts,<br/>which ADR-0004 deleted. The doc is out of date, not the code."]
+
+  ctx --> adrs --> claude --> readme
+  a1 --> m1
+  a2 --> m2
+  a3 --> m3
+  a4 --> m4
+  a5 --> m5
+  a6 --> m6
+  a5 -.-> g5
+  a6 -.-> g6
+  review --> adrs
+  plans --> review
+  claude -.- stale
+
+  classDef pending fill:#fef3c7,stroke:#b45309,color:#111827
+  classDef risk fill:#fee2e2,stroke:#b91c1c,color:#111827
+  classDef auth fill:#dcfce7,stroke:#15803d,color:#111827
+  class g5,g6,gap pending
+  class stale risk
+  class ctx auth

@@ -1,0 +1,59 @@
+flowchart TB
+  canonical[("src/data/ridership.json<br/>pretty-printed array, keys repeated per row")]
+
+  subgraph pluginBox["vite/ridership-data-plugin.ts — one encode(), cached"]
+    encode["encode()<br/>read once, walk records once"]
+    blob["columnar blob<br/>cols + rows, JSON.stringify with no spacing"]
+    bounds["bounds<br/>minYear · maxYear · maxMonth"]
+  end
+
+  subgraph hooksBox["Vite plugin hooks"]
+    resolveId["resolveId<br/>virtual:ridership-bounds"]
+    load["load<br/>emits three const exports"]
+    configureServer["configureServer<br/>dev middleware on /ridership.json"]
+    generateBundle["generateBundle<br/>emitFile asset ridership.json"]
+  end
+
+  subgraph consumers["Consumers"]
+    dateRange["src/utils/dataDateRange.ts<br/>dataMinYear · dataMaxYear · dataDefaultEndDate"]
+    appFetch["src/App.tsx<br/>fetch('/ridership.json')"]
+  end
+
+  subgraph registered["Registered in both configs"]
+    viteCfg["vite.config.ts<br/>dev + build"]
+    vitestCfg["vitest.config.ts<br/>so the virtual module resolves under the test runner"]
+  end
+
+  subgraph otherPlugins["Other Vite plugins"]
+    swc["@vitejs/plugin-react-swc"]
+    ssl["@vitejs/plugin-basic-ssl<br/>command === 'serve' only"]
+    vis["rollup-plugin-visualizer<br/>opt-in via ANALYZE=1"]
+  end
+
+  subgraph out["dist/"]
+    indexHtml[/"index.html"/]
+    entryChunk[/"entry chunk"/]
+    lazyChunk[/"OutputArea-*.js + .css<br/>Chart.js + MapLibre"/]
+    ridAsset[/"ridership.json"/]
+    geoAsset[/"metro_lines.geojson<br/>copied from public/"/]
+  end
+
+  canonical --> encode
+  encode --> blob
+  encode --> bounds
+  bounds --> load
+  resolveId --> load
+  load --> dateRange
+  blob --> configureServer
+  blob --> generateBundle
+  configureServer -- "dev server" --> appFetch
+  generateBundle --> ridAsset
+  ridAsset -- "vite preview / static host" --> appFetch
+
+  registered --- pluginBox
+  otherPlugins --> out
+  swc --> entryChunk
+  entryChunk -. "React.lazy import" .-> lazyChunk
+
+  classDef key fill:#e0f2fe,stroke:#0369a1,color:#111827
+  class blob,bounds key

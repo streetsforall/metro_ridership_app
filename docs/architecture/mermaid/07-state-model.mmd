@@ -1,0 +1,69 @@
+flowchart TB
+  subgraph store["useUserDashboardInput — the whole store. No Redux, Zustand or Context anywhere."]
+    subgraph windowSlice["Month Window"]
+      startDate["startDate — default new Date(2020, 6)"]
+      endDate["endDate — default dataDefaultEndDate"]
+      dow["dayOfWeek — Weekday | Sat | Sun"]
+    end
+    subgraph linesSlice["Lines"]
+      lines["lines: Line[]<br/>createLinesData(), sorted by lineNameSortFunction"]
+      visible["visibleLines — useMemo<br/>key: JSON.stringify(lines) + searchText"]
+    end
+    subgraph filterSlice["Filters"]
+      search["searchText"]
+      modes["modes: string[] — 'bus' | 'train'"]
+    end
+    subgraph toggleSlice["Toggles"]
+      aggregate["isAggregateVisible"]
+      logs["showContextLogs"]
+    end
+  end
+
+  subgraph mutators["Mutators returned by the hook"]
+    toggleLine["onToggleSelectLine(line)"]
+    clear["clearSelections()"]
+    selectAll["selectAllVisibleLines()"]
+    updateMetrics["updateLinesWithLineMetrics(consolidated)"]
+    setters["setStartDate · setEndDate · setDayOfWeek<br/>setSearchText · setModes · setLines<br/>toggleIsAggregateVisible · toggleShowContextLogs"]
+  end
+
+  subgraph effects["Effects inside the hook"]
+    modeSync["modes → per-line visible<br/>useEffect on [modes]"]
+    urlSync["state → history.replaceState<br/>useEffect, JSON.stringify(lines) in the deps"]
+  end
+
+  subgraph local["Component-local state — deliberately not in the store"]
+    appLocal["App: isLineSelectorExpanded · ridershipRecords"]
+    lsLocal["LineSelector: columnHeaderStates · isCopied"]
+    oaLocal["OutputArea: isContextLogOpen"]
+    ltrLocal["LineTableRow: isMounted · data"]
+    mapLocal["Map: mapContainer · map · isStyleLoaded · linesRef (refs, not state)"]
+  end
+
+  bundledMeta[("metro_line_metadata_current.json<br/>+ line_distances.json")]
+  urlIn["URL query string<br/>read once in lazy useState initialisers"]
+
+  bundledMeta --> lines
+  urlIn --> windowSlice
+  urlIn --> linesSlice
+  urlIn --> filterSlice
+  urlIn --> toggleSlice
+
+  modes --> modeSync --> lines
+  lines --> visible
+  search --> visible
+  store --> urlSync
+
+  toggleLine --> lines
+  clear --> lines
+  selectAll --> lines
+  updateMetrics --> lines
+  setters --> store
+
+  note["Three JSON.stringify dependency keys are load-bearing<br/>(App.tsx:96, hook :168, :264). CLAUDE.md: do not 'fix' these."]
+  note -.- visible
+
+  classDef warn fill:#fef3c7,stroke:#b45309,color:#111827
+  classDef cycle fill:#fee2e2,stroke:#b91c1c,color:#111827
+  class note warn
+  class updateMetrics cycle

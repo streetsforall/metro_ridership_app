@@ -1,0 +1,61 @@
+flowchart TB
+  subgraph outside["Outside the seam — may import only from src/ridership (the index)"]
+    app["src/App.tsx"]
+    hook["src/hooks/useUserDashboardInput.ts"]
+    lineSel["src/components/LineSelector.tsx"]
+    utilsLines["src/utils/lines.ts<br/>type-only import of LineReadout —<br/>no runtime edge back in"]
+  end
+
+  subgraph folder["src/ridership/ — one domain folder (ADR-0003)"]
+    idx["index.ts<br/>THE ENTIRE PUBLIC SURFACE"]
+
+    subgraph exported["Exported"]
+      brv["buildRidershipView<br/>+ RidershipView · RidershipViewInput · LineSelection"]
+      align["alignToMonthAxis"]
+      coverage["buildCoverageByLine + LineCoverage"]
+      winAxis["buildWindowMonthAxis"]
+      lm["lineMetrics + LineMetrics · LineMetricsInput"]
+      readouts["buildLineReadouts + LineReadout · LineReadoutsInput"]
+    end
+
+    subgraph private["Module-private — importing these from outside is the violation"]
+      chartData["chartData.ts<br/>timeKey · formatMonthKey · buildMonthAxis · buildAggregateSeries"]
+      brvImpl["buildRidershipView.ts internals"]
+      lmImpl["lineMetrics.ts internals"]
+      lrImpl["lineReadouts.ts internals"]
+    end
+  end
+
+  app --> idx
+  hook --> idx
+  lineSel --> idx
+  utilsLines -. "import type only" .-> idx
+
+  idx --> brv
+  idx --> align
+  idx --> coverage
+  idx --> winAxis
+  idx --> lm
+  idx --> readouts
+
+  brv --- brvImpl
+  lm --- lmImpl
+  readouts --- lrImpl
+  align --- chartData
+  coverage --- chartData
+  winAxis --- chartData
+  brvImpl --> chartData
+  brvImpl --> lmImpl
+
+  bad["import from '../ridership/chartData'"]
+  bad -. "visibly reaching past the seam — ADR-0003" .-> chartData
+
+  why["The three axis/coverage exports are a deliberate second entry point,<br/>not a leak: buildRidershipView derives the CHART, over SELECTED lines only.<br/>The table draws every VISIBLE line and needs the wider union across consolidated."]
+  why -.- winAxis
+
+  classDef forbidden fill:#fee2e2,stroke:#b91c1c,color:#111827
+  classDef surface fill:#dcfce7,stroke:#15803d,color:#111827
+  classDef pending fill:#fef3c7,stroke:#b45309,color:#111827
+  class bad,private forbidden
+  class idx surface
+  class readouts pending

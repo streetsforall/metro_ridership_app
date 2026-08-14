@@ -1,0 +1,31 @@
+flowchart LR
+  root(["metro_ridership_app/"])
+
+  root --- srcN["src/<br/>the application"]
+  root --- dataN["data/raw/<br/>source workbooks, input to the pipeline"]
+  root --- scriptsN["scripts/<br/>Python pipeline + its tests"]
+  root --- nbN["notebooks/<br/>Jupyter scrapers"]
+  root --- viteN["vite/<br/>ridership-data-plugin.ts"]
+  root --- publicN["public/<br/>favicon, metro_lines.geojson"]
+  root --- e2eN["e2e/<br/>Playwright visual regression + baselines"]
+  root --- docsN["docs/<br/>adr/ · agents/ · architecture/ · review"]
+  root --- ghN[".github/workflows/ci.yml"]
+  root --- perfN["perf/BASELINE.md"]
+  root --- cfgN["configs<br/>vite · vitest · playwright · eslint · tailwind · tsconfig×4"]
+  root --- prose["CLAUDE.md · CONTEXT.md · README.md"]
+
+  srcN --- cmp["components/<br/>8 components, 7 specs"]
+  srcN --- hooks["hooks/<br/>useUserDashboardInput — the store"]
+  srcN --- rid["ridership/<br/>the one domain folder (ADR-0003)"]
+  srcN --- utils["utils/<br/>lines · month · queryParams · ridershipData · dataDateRange · mapPopup"]
+  srcN --- types["@types/<br/>domain types + ambient decls"]
+  srcN --- dataDir["data/<br/>bundled JSON + the canonical dataset"]
+  srcN --- assets["assets/<br/>SVG icons, logo"]
+  srcN --- plans["plans/<br/>7 per-feature design notes"]
+  srcN --- testDir["test/builders.ts<br/>fixture builders"]
+  srcN --- rootFiles["App.tsx · main.tsx · index.css · test-setup.ts"]
+
+  classDef domain fill:#e0f2fe,stroke:#0369a1,color:#111827
+  classDef gen fill:#f1f5f9,stroke:#64748b,color:#111827
+  class rid,hooks domain
+  class docsN gen

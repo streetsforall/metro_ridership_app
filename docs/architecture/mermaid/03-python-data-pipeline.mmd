@@ -1,0 +1,50 @@
+flowchart TB
+  subgraph inputs["Inputs"]
+    xlsx[/"data/raw/*.xlsx<br/>monthly bus workbooks"/]
+    zips[/"data/raw/Rail *.zip"/]
+    gisapi["Metro GIS endpoint"]
+    sources["Published service-change<br/>announcements"]
+  end
+
+  subgraph ridershipChain["Ridership chain"]
+    convert["convert_excel_ridership.py<br/>npm run load-ridership"]
+    process["process_ridership.py<br/>normalise, dedupe, type"]
+    update["update_ridership.py<br/>merge a new month into the canonical file"]
+  end
+
+  subgraph sideChains["Side chains"]
+    fetchLines["fetch_metro_lines.py<br/>npm run fetch-lines"]
+    distances["compute_line_distances.py"]
+    checkEvents["check_transit_events.py<br/>npm run check-transit-events"]
+  end
+
+  subgraph outputs["Committed outputs"]
+    ridJson[("src/data/ridership.json")]
+    geojson[("public/metro_lines.geojson")]
+    distJson[("src/data/line_distances.json")]
+    events[("src/data/transit-events.json")]
+  end
+
+  tests["scripts/test_*.py<br/>one sibling per script, 6 in all"]
+
+  xlsx --> convert
+  zips --> convert
+  convert --> process
+  process --> ridJson
+  update --> ridJson
+  xlsx -. "a newly published month" .-> update
+
+  gisapi --> fetchLines --> geojson
+  geojson --> distances --> distJson
+  sources --> checkEvents --> events
+
+  ridershipChain -.-> tests
+  sideChains -.-> tests
+
+  note["Run by hand. CI never runs the pipeline —<br/>it consumes the committed JSON."]
+  note -.- outputs
+
+  classDef out fill:#dcfce7,stroke:#15803d,color:#111827
+  classDef warn fill:#fef3c7,stroke:#b45309,color:#111827
+  class ridJson,geojson,distJson,events out
+  class note warn

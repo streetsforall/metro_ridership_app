@@ -1,0 +1,45 @@
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant Row as LineTableRow
+  participant Hook as useUserDashboardInput
+  participant App as App
+  participant View as buildRidershipView
+  participant OA as OutputArea
+  participant Map as Map
+  participant URL as window.history
+
+  U->>Row: check the box for the D Line (805)
+  Row->>Hook: onToggleSelectLine(line)
+  Hook->>Hook: setLines — new array, one line's `selected` flipped
+
+  Note over Hook,URL: URL effect fires on JSON.stringify(lines)
+  Hook->>URL: replaceState('?start=…&lines=805&day=weekday')
+
+  Hook-->>App: new state object, re-render
+  App->>View: useMemo — records, lines, window, dayOfWeek, includeAggregate
+
+  activate View
+  View->>View: group records by line under the Month Window,<br/>snapshotting `selected` once per line
+  View->>View: buildCoverageByLine
+  View->>View: lineMetrics per line — absent, not zeroed, when no records
+  View->>View: buildMonthAxis over the selected lines' months
+  View->>View: alignToMonthAxis per line — gaps stay null
+  View->>View: buildAggregateSeries, ordered last (if enabled)
+  View->>View: Event Window filter against the LIVE selection
+  View-->>App: months · datasets · consolidated · events · metrics · coverage
+  deactivate View
+
+  par Render
+    App->>OA: chartDatasets, months, lines, transitEvents
+    OA->>OA: Chart.js redraws — the event markers plugin reads transitEvents
+    OA->>Map: lines
+    Map->>Map: setFilter 'lines-selected' → the D Line lights up in brand purple
+  and Write-back
+    App->>Hook: updateLinesWithLineMetrics(consolidated)<br/>useEffect keyed on JSON.stringify(consolidated)
+    Hook->>Hook: setLines — stamps 8 derived fields onto every Line
+    Note right of Hook: This mints a NEW lines array, which re-enters<br/>the useMemo above. The cycle settles because the<br/>second pass produces identical figures, so the<br/>stringified key stops changing. ADR-0005 removes it.
+  end
+
+  Note over App,Map: The line table now lists the D Line with its figures<br/>and a partial-coverage label — its data begins 2025-09.
+  URL-->>U: the address bar is a shareable link to exactly this view

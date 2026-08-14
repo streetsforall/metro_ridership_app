@@ -137,6 +137,16 @@ npm run lint
 
 Uses ESLint with TypeScript, React hooks, and React refresh plugins. Fix lint errors before opening a pull request.
 
+### Architecture diagrams
+
+```bash
+npm run docs:architecture
+```
+
+[`docs/architecture/`](docs/architecture/) holds a whole-system diagram plus one per subsystem — data flow, state, the URL contract, the `src/ridership/` seam, the month windows, test topology, CI. Read them as [`diagrams.md`](docs/architecture/diagrams.md) on GitHub, or open the generated `architecture.html` / `architecture.pdf`.
+
+Edit the mermaid source in [`docs/architecture/mermaid/`](docs/architecture/mermaid/) or the prose in `captions.md`, then re-run the command — all three outputs are generated and committed. It is not wired into CI, and the build is reproducible, so a rebuild with no source change produces no diff.
+
 ## Continuous integration
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request and every push to `main`, as two jobs:
