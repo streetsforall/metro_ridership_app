@@ -14,7 +14,6 @@ export interface Line {
   visible: boolean;
   averageRidership?: number;
   changeInRidership?: number;
-  ridershipOverTime?: number;
   startingRidership?: number;
   endingRidership?: number;
   distanceMiles?: number;

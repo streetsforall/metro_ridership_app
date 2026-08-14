@@ -6,7 +6,8 @@ import LineSelector from './components/LineSelector';
 import useUserDashboardInput, {
   type UserDashboardInputState,
 } from './hooks/useUserDashboardInput';
-import { buildRidershipView } from './ridership';
+import { buildLineReadouts, buildRidershipView } from './ridership';
+import { listedReadouts } from './utils/lines';
 import { decodeRidership, type ColumnarRidership } from './utils/ridershipData';
 import type { RidershipRecord } from './@types/metrics.types';
 
@@ -55,7 +56,8 @@ function App() {
     endDate,
     setEndDate,
     updateLinesWithLineMetrics,
-    visibleLines,
+    searchText,
+    modes,
     isAggregateVisible,
     showContextLogs,
     toggleShowContextLogs,
@@ -72,7 +74,7 @@ function App() {
    * Kept memoised: the metrics effect below keys on JSON.stringify(consolidated), and
    * a fresh object every render would thrash it.
    */
-  const { months, datasets, consolidated, events } = useMemo(
+  const { months, datasets, consolidated, events, metrics, coverage } = useMemo(
     () =>
       buildRidershipView({
         records: ridershipRecords,
@@ -83,6 +85,24 @@ function App() {
         includeAggregate: isAggregateVisible,
       }),
     [ridershipRecords, lines, startDate, endDate, dayOfWeek, isAggregateVisible],
+  );
+
+  /**
+   * Each Line with the figures this window derives for it. Rebuilt whole whenever
+   * the view changes, so a figure from a previous window cannot survive.
+   *
+   * No JSON.stringify in the dependency array: `metrics` and `coverage` come out of
+   * the already-memoised `buildRidershipView` above, so their identity is stable per
+   * view.
+   */
+  const readouts = useMemo(
+    () => buildLineReadouts({ lines, metrics, coverage }),
+    [lines, metrics, coverage],
+  );
+
+  const listed = useMemo(
+    () => listedReadouts({ readouts, searchText, modes }),
+    [readouts, searchText, modes],
   );
 
   /**
@@ -126,7 +146,7 @@ function App() {
         >
           <LineSelector
             {...userDashboardInputState}
-            lines={visibleLines}
+            lines={listed}
             ridershipByLine={consolidated}
             isExpanded={isLineSelectorExpanded}
             setIsExpanded={setIsLineSelectorExpanded}
@@ -150,7 +170,7 @@ function App() {
             <OutputArea
               chartDatasets={datasets}
               months={months}
-              lines={lines}
+              lines={readouts}
               transitEvents={events}
               showContextLogs={showContextLogs}
               isLoading={isLoading}

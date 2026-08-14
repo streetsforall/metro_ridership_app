@@ -1,14 +1,14 @@
 import { Fragment } from 'react';
-import type { Line } from '../@types/lines.types';
+import type { LineReadout } from '../ridership';
 import infoIcon from '../assets/info.svg';
 
 interface SummaryDataProps {
-  lines: Line[];
+  lines: LineReadout[];
 }
 
 export default function SummaryData({ lines }: SummaryDataProps) {
   const selectedLines = lines.filter(
-    (visibleLine: Line) => visibleLine.selected,
+    (visibleLine: LineReadout) => visibleLine.selected,
   );
 
   const changeInRidership = selectedLines
@@ -128,7 +128,7 @@ export default function SummaryData({ lines }: SummaryDataProps) {
               <span className="font-bold mr-1">Selected:</span>
 
               {selectedLines.length > 0 &&
-                selectedLines.map((visibleLine: Line, index: number) => {
+                selectedLines.map((visibleLine: LineReadout, index: number) => {
                   const { name, id } = visibleLine;
 
                   return (

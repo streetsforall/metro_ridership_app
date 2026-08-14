@@ -19,6 +19,7 @@
  *   rather than inherited from a default.
  */
 import type { Line } from '../@types/lines.types';
+import type { LineReadout } from '../ridership';
 import type {
   ConsolidatedRecord,
   ConsolidatedRidership,
@@ -39,6 +40,18 @@ export const makeLine = (overrides: Partial<Line> = {}): Line => ({
   provider: 'DO',
   selected: false,
   visible: true,
+  ...overrides,
+});
+
+/**
+ * A Line Readout: a Line plus the figures one Month Window derives for it. Separate
+ * from `makeLine` on purpose — a test that wants a bare Line should get one, so it
+ * cannot accidentally assert figures on something the app types as a `Line`.
+ */
+export const makeLineReadout = (
+  overrides: Partial<LineReadout> = {},
+): LineReadout => ({
+  ...makeLine(),
   ...overrides,
 });
 
