@@ -34,6 +34,39 @@ const mermaidLib = path.join(repoRoot, 'node_modules', 'mermaid', 'dist', 'merma
 const DOC_TITLE = 'metro_ridership_app — architecture';
 const GENERATED_BY = 'scripts/build_architecture_docs.mjs';
 
+/**
+ * The dashboard's own palette, lifted from `src/index.css`.
+ *
+ * The diagrams describe this app, so they are drawn in its colours rather than a
+ * generic diagramming default. Per-diagram accents (the amber "accepted but not wired
+ * in", the red write-back cycle, and so on) come from the Metro brand colours in
+ * `definedLines` and live as `classDef` lines inside each `.mmd` — GitHub renders
+ * `diagrams.md` with its own mermaid config, so anything set only here would be
+ * invisible in the copy most people read.
+ */
+const PALETTE = {
+  page: '#f3eee2', // body background
+  surface: '#f8f6f1', // .pane
+  text: '#44403c', // text-stone-700
+  accent: '#0fada8', // link colour
+  deep: '#033056', // buttons, active toggle
+  node: '#ffffff',
+  nodeBorder: '#b9b1a2',
+  cluster: '#efe9db',
+  clusterBorder: '#ded6c5',
+  edge: '#78716c',
+};
+
+/** Latin subset of the app's body font, embedded so the page stays offline-complete. */
+const FONT_FILE = path.join(
+  repoRoot,
+  'node_modules',
+  '@fontsource-variable',
+  'overpass-mono',
+  'files',
+  'overpass-mono-latin-wght-normal.woff2',
+);
+
 function fail(message) {
   console.error(`\n  build_architecture_docs: ${message}\n`);
   process.exit(1);
@@ -125,7 +158,7 @@ async function renderAll(diagrams) {
     await page.setContent('<!doctype html><html><body></body></html>');
     await page.addScriptTag({ path: mermaidLib });
 
-    await page.evaluate(async () => {
+    await page.evaluate(async (PALETTE) => {
       /**
        * Mermaid sizes every node by measuring its rendered label, so the layout — and
        * therefore the path geometry in the SVG — depends on which font is actually
@@ -153,14 +186,21 @@ async function renderAll(diagrams) {
         deterministicIds: true,
         deterministicIDSeed: 'metro-arch',
         fontFamily: 'ui-sans-serif, system-ui, "Segoe UI", Helvetica, Arial, sans-serif',
+        // The app's own palette — see PALETTE below. Per-diagram accents are `classDef`
+        // lines inside each .mmd rather than theme CSS here, so GitHub's own mermaid
+        // renders diagrams.md with the same colours.
         themeVariables: {
-          background: '#ffffff',
-          primaryColor: '#f8fafc',
-          primaryTextColor: '#111827',
-          primaryBorderColor: '#94a3b8',
-          lineColor: '#475569',
-          secondaryColor: '#eef2ff',
-          tertiaryColor: '#f1f5f9',
+          background: PALETTE.surface,
+          primaryColor: PALETTE.node,
+          primaryTextColor: PALETTE.text,
+          primaryBorderColor: PALETTE.nodeBorder,
+          lineColor: PALETTE.edge,
+          secondaryColor: PALETTE.cluster,
+          tertiaryColor: PALETTE.cluster,
+          clusterBkg: PALETTE.cluster,
+          clusterBorder: PALETTE.clusterBorder,
+          titleColor: PALETTE.text,
+          edgeLabelBackground: PALETTE.surface,
           fontSize: '17px',
         },
         /**
@@ -176,10 +216,10 @@ async function renderAll(diagrams) {
           rankSpacing: 52,
           padding: 10,
         },
-        sequence: { useMaxWidth: true, wrap: true, width: 200 },
+        sequence: { useMaxWidth: true, wrap: true, width: 190 },
         class: { useMaxWidth: true },
       });
-    });
+    }, PALETTE);
 
     const rendered = [];
     for (const diagram of diagrams) {
@@ -204,7 +244,7 @@ async function renderAll(diagrams) {
 }
 
 /** Widest a diagram may be scaled down to before the figure scrolls instead. */
-const MIN_RENDER_WIDTH = 2100;
+const MIN_RENDER_WIDTH = 1900;
 
 /**
  * Let CSS size the SVG, but put a floor under how far it may shrink.
@@ -221,15 +261,20 @@ const MIN_RENDER_WIDTH = 2100;
 function normaliseSvg(svg) {
   const viewBox = /viewBox="[-\d.]+ [-\d.]+ ([\d.]+) [\d.]+"/.exec(svg);
   const natural = viewBox ? Math.round(Number(viewBox[1])) : 0;
-  // Only the oversized few get a floor. Anything narrower simply scales down to fit,
-  // which for most of these is a mild reduction that stays perfectly readable.
-  const floorStyle = natural > MIN_RENDER_WIDTH ? ` style="min-width:${MIN_RENDER_WIDTH}px"` : '';
+
+  // Two bounds, both against the diagram's natural width:
+  //   max — never scale a narrow diagram *up*. A tall thin graph stretched to the column
+  //         gets billboard-sized labels next to a normal one.
+  //   min — only the oversized few get a floor, so they scroll rather than shrink past
+  //         reading size. Everything between simply fits.
+  const bounds = [`max-width:${natural}px`];
+  if (natural > MIN_RENDER_WIDTH) bounds.push(`min-width:${MIN_RENDER_WIDTH}px`);
 
   return svg
     .replace(/<svg([^>]*?)\sstyle="[^"]*"/, '<svg$1')
     .replace(/<svg([^>]*?)\swidth="[^"]*"/, '<svg$1')
     .replace(/<svg([^>]*?)\sheight="[^"]*"/, '<svg$1')
-    .replace(/<svg /, `<svg${floorStyle} `)
+    .replace(/<svg /, `<svg style="${bounds.join(';')}" `)
     .replace(/<br\s*>/g, '<br/>');
 }
 
@@ -270,7 +315,7 @@ function slug(title) {
     .replace(/\s+/g, '-');
 }
 
-function buildHtml(diagrams) {
+function buildHtml(diagrams, fontBase64) {
   const toc = diagrams
     .map((d, i) => `<li><a href="#${d.stem}"><span class="num">${String(i + 1).padStart(2, '0')}</span>${inlineMarkdown(d.title)}</a></li>`)
     .join('\n          ');
@@ -296,24 +341,35 @@ function buildHtml(diagrams) {
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>${escapeHtml(DOC_TITLE)}</title>
 <style>
+  /* The app's body font, embedded rather than linked so the page needs no network. */
+  @font-face {
+    font-family: 'Overpass Mono Doc';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url(data:font/woff2;base64,${fontBase64}) format('woff2');
+  }
   :root {
-    --bg: #ffffff;
-    --fg: #1f2937;
-    --muted: #6b7280;
-    --rule: #e5e7eb;
-    --accent: #0369a1;
-    --card: #ffffff;
-    --card-rule: #e5e7eb;
+    /* Light: the dashboard's own colours, unchanged. */
+    --bg: ${PALETTE.page};
+    --fg: ${PALETTE.text};
+    --muted: #857f77;
+    --rule: #ddd5c5;
+    --accent: ${PALETTE.deep};
+    --card: ${PALETTE.surface};
+    --card-rule: ${PALETTE.clusterBorder};
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0b1220;
-      --fg: #e5e7eb;
-      --muted: #9ca3af;
-      --rule: #1f2937;
-      --accent: #7dd3fc;
-      --card: #f8fafc;
-      --card-rule: #cbd5e1;
+      /* Chrome follows the reader. The diagram card deliberately does not — it keeps
+         painting the app's cream so the diagrams read the same in either scheme. */
+      --bg: #1c1917;
+      --fg: #e7e5e4;
+      --muted: #a8a29e;
+      --rule: #44403c;
+      --accent: ${PALETTE.accent};
+      --card: ${PALETTE.surface};
+      --card-rule: ${PALETTE.clusterBorder};
     }
   }
   * { box-sizing: border-box; }
@@ -321,7 +377,7 @@ function buildHtml(diagrams) {
     margin: 0;
     background: var(--bg);
     color: var(--fg);
-    font: 16px/1.6 ui-sans-serif, system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+    font: 15px/1.65 'Overpass Mono Doc', ui-monospace, "Cascadia Code", Consolas, monospace;
     -webkit-font-smoothing: antialiased;
   }
   .wrap { max-width: 1280px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
@@ -338,13 +394,21 @@ function buildHtml(diagrams) {
   section.diagram:first-of-type { border-top: 0; margin-top: 0; }
   h2 { font-size: 1.35rem; letter-spacing: -0.01em; margin: 0 0 .75rem; }
   p { max-width: 74ch; }
-  code { font: .88em/1.4 ui-monospace, "Cascadia Code", Consolas, monospace; background: rgba(127,127,127,.16); padding: .1em .35em; border-radius: 4px; }
-  figure { margin: 1.75rem 0 0; background: var(--card); border: 1px solid var(--card-rule); border-radius: 10px; padding: 1.25rem; overflow-x: auto; }
-  figure svg { display: block; width: 100%; height: auto; max-width: 100%; }
-  figcaption { color: #64748b; font: .75rem ui-monospace, Consolas, monospace; margin-top: .75rem; text-align: right; }
+  code { background: rgba(3,48,86,.09); padding: .1em .35em; border-radius: 4px; }
+  /* Legend swatches in the header, using the same three accents the diagrams do. */
+  .sw { padding: .05em .4em; border-radius: 4px; border: 1px solid; color: ${PALETTE.text}; }
+  .sw-green { background: #e8f3e2; border-color: #58a738; }
+  .sw-amber { background: #fdf2d6; border-color: #fdb913; }
+  .sw-red { background: #fbe0e1; border-color: #eb131b; }
+  @media (prefers-color-scheme: dark) { code { background: rgba(231,229,228,.12); } }
+  figure { margin: 1.75rem 0 0; background: var(--card); border: 1px solid var(--card-rule); border-radius: 8px; padding: 1.5rem; overflow-x: auto; }
+  /* Diagram labels are proportional, not the page's mono: monospace inflates every node
+     ~15-20% and pushes the wider diagrams past the point where they fit the page. */
+  figure svg { display: block; width: 100%; height: auto; margin: 0 auto; font-family: ui-sans-serif, system-ui, "Segoe UI", Helvetica, Arial, sans-serif; }
+  figcaption { color: #8a8378; font-size: .72rem; margin-top: 1rem; text-align: right; }
   footer { color: var(--muted); font-size: .85rem; border-top: 1px solid var(--rule); margin-top: 3.5rem; padding-top: 1.25rem; }
   @media print {
-    :root { --bg: #fff; --fg: #111827; --rule: #d1d5db; --card: #fff; --card-rule: #d1d5db; }
+    :root { --bg: ${PALETTE.page}; --fg: ${PALETTE.text}; --rule: #ddd5c5; --card: ${PALETTE.surface}; --card-rule: ${PALETTE.clusterBorder}; }
     body { font-size: 11pt; }
     .wrap { max-width: none; padding: 0; }
     nav { break-after: page; }
@@ -353,7 +417,7 @@ function buildHtml(diagrams) {
     figure { break-inside: avoid; overflow: visible; }
     /* Drop the on-screen scroll floor and cap by height as well as width, so a tall or
        wide diagram scales to the page instead of being clipped at the margin. */
-    figure svg { min-width: 0 !important; max-height: 17cm; width: auto; max-width: 100%; margin: 0 auto; }
+    figure svg { min-width: 0 !important; max-width: 100% !important; max-height: 17cm; width: auto; margin: 0 auto; }
   }
 </style>
 </head>
@@ -362,8 +426,11 @@ function buildHtml(diagrams) {
     <header>
       <h1>${escapeHtml(DOC_TITLE)}</h1>
       <p>A whole-system view plus one diagram per subsystem, generated from the mermaid
-      sources in <code>docs/architecture/mermaid/</code>. Diagrams sit on a light card in
-      both themes so the rendered colours stay legible.</p>
+      sources in <code>docs/architecture/mermaid/</code>. Drawn in the dashboard's own
+      palette, with accents taken from the Metro line colours in <code>definedLines</code>:
+      <b class="sw sw-green">green</b> a public surface, <b class="sw sw-amber">amber</b>
+      accepted but not yet wired in, <b class="sw sw-red">red</b> a cycle or a duplication
+      risk. The diagram card keeps that palette in a dark theme too.</p>
     </header>
     <nav>
       <h2>Contents</h2>
@@ -427,7 +494,8 @@ console.log(`\n  ${diagrams.length} diagrams\n`);
 const rendered = await renderAll(diagrams);
 
 await writeFile(path.join(archDir, 'diagrams.md'), buildMarkdown(rendered), 'utf8');
-const html = buildHtml(rendered);
+const fontBase64 = (await readFile(FONT_FILE)).toString('base64');
+const html = buildHtml(rendered, fontBase64);
 await writeFile(path.join(archDir, 'architecture.html'), html, 'utf8');
 await writePdf(html);
 

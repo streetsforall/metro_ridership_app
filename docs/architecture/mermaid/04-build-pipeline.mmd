@@ -1,59 +1,56 @@
 flowchart TB
-  canonical[("src/data/ridership.json<br/>pretty-printed array, keys repeated per row")]
+  canonical[("src/data/ridership.json<br/>~42K rows, keys repeated")]
 
-  subgraph pluginBox["vite/ridership-data-plugin.ts — one encode(), cached"]
-    encode["encode()<br/>read once, walk records once"]
-    blob["columnar blob<br/>cols + rows, JSON.stringify with no spacing"]
+  subgraph plugin["vite/ridership-data-plugin.ts — one cached encode()"]
+    direction TB
+    encode["encode()<br/>read once, walk once"]
+    blob["columnar blob<br/>cols + rows, minified"]
     bounds["bounds<br/>minYear · maxYear · maxMonth"]
+    encode --> blob
+    encode --> bounds
   end
 
-  subgraph hooksBox["Vite plugin hooks"]
-    resolveId["resolveId<br/>virtual:ridership-bounds"]
-    load["load<br/>emits three const exports"]
+  subgraph hooks["Plugin hooks"]
+    direction TB
     configureServer["configureServer<br/>dev middleware on /ridership.json"]
-    generateBundle["generateBundle<br/>emitFile asset ridership.json"]
-  end
-
-  subgraph consumers["Consumers"]
-    dateRange["src/utils/dataDateRange.ts<br/>dataMinYear · dataMaxYear · dataDefaultEndDate"]
-    appFetch["src/App.tsx<br/>fetch('/ridership.json')"]
-  end
-
-  subgraph registered["Registered in both configs"]
-    viteCfg["vite.config.ts<br/>dev + build"]
-    vitestCfg["vitest.config.ts<br/>so the virtual module resolves under the test runner"]
-  end
-
-  subgraph otherPlugins["Other Vite plugins"]
-    swc["@vitejs/plugin-react-swc"]
-    ssl["@vitejs/plugin-basic-ssl<br/>command === 'serve' only"]
-    vis["rollup-plugin-visualizer<br/>opt-in via ANALYZE=1"]
+    generateBundle["generateBundle<br/>emitFile asset"]
+    resolveLoad["resolveId + load<br/>virtual:ridership-bounds"]
   end
 
   subgraph out["dist/"]
-    indexHtml[/"index.html"/]
+    direction TB
+    ridAsset[/"ridership.json"/]
     entryChunk[/"entry chunk"/]
     lazyChunk[/"OutputArea-*.js + .css<br/>Chart.js + MapLibre"/]
-    ridAsset[/"ridership.json"/]
-    geoAsset[/"metro_lines.geojson<br/>copied from public/"/]
+    geoAsset[/"metro_lines.geojson"/]
   end
 
+  subgraph consumers["Consumers"]
+    direction TB
+    appFetch["App.tsx — fetch('/ridership.json')"]
+    dateRange["utils/dataDateRange.ts<br/>selectable window"]
+  end
+
+  swc["plugin-react-swc"]
+  ssl["plugin-basic-ssl<br/>serve only"]
+  vis["visualizer<br/>ANALYZE=1"]
+  registered["Registered in vite.config.ts<br/>AND vitest.config.ts"]
+
   canonical --> encode
-  encode --> blob
-  encode --> bounds
-  bounds --> load
-  resolveId --> load
-  load --> dateRange
   blob --> configureServer
   blob --> generateBundle
-  configureServer -- "dev server" --> appFetch
+  bounds --> resolveLoad
+
   generateBundle --> ridAsset
-  ridAsset -- "vite preview / static host" --> appFetch
+  configureServer -- "dev" --> appFetch
+  ridAsset -- "preview / static host" --> appFetch
+  resolveLoad --> dateRange
 
-  registered --- pluginBox
-  otherPlugins --> out
   swc --> entryChunk
-  entryChunk -. "React.lazy import" .-> lazyChunk
+  entryChunk -. "React.lazy" .-> lazyChunk
+  ssl --> out
+  vis --> out
+  registered -.-> encode
 
-  classDef key fill:#e0f2fe,stroke:#0369a1,color:#111827
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
   class blob,bounds key

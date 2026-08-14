@@ -1,0 +1,54 @@
+flowchart TB
+  subgraph outside["Outside the seam"]
+    direction TB
+    app["src/App.tsx"]
+    hook["src/hooks/useUserDashboardInput.ts"]
+    lineSel["src/components/LineSelector.tsx"]
+    utilsLines["src/utils/lines.ts<br/>import type only — no runtime edge back in"]
+  end
+
+  idx["src/ridership/index.ts<br/>THE ENTIRE PUBLIC SURFACE"]
+
+  subgraph exported["What it exports"]
+    direction TB
+    brv["buildRidershipView<br/>+ RidershipView · RidershipViewInput · LineSelection"]
+    axisExports["alignToMonthAxis · buildCoverageByLine<br/>buildWindowMonthAxis · LineCoverage"]
+    lm["lineMetrics + LineMetrics"]
+    readouts["buildLineReadouts + LineReadout"]
+  end
+
+  subgraph private["Module-private implementation"]
+    direction TB
+    brvImpl["buildRidershipView.ts"]
+    lmImpl["lineMetrics.ts"]
+    lrImpl["lineReadouts.ts"]
+    chartData["chartData.ts<br/>timeKey · buildMonthAxis · buildAggregateSeries"]
+  end
+
+  bad["import '../ridership/chartData'<br/>— visibly past the seam, ADR-0003"]
+
+  app --> idx
+  hook --> idx
+  lineSel --> idx
+  utilsLines -.-> idx
+
+  idx --> brv
+  idx --> axisExports
+  idx --> lm
+  idx --> readouts
+
+  brv --- brvImpl
+  lm --- lmImpl
+  readouts --- lrImpl
+  axisExports --- chartData
+  brvImpl --> chartData
+  brvImpl --> lmImpl
+
+  bad -.-> chartData
+
+  classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
+  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class idx surface
+  class bad cycle
+  class readouts pending

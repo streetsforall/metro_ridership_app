@@ -15,19 +15,23 @@ A whole-system view plus one diagram per subsystem. GitHub renders the fences be
 2. [Repository map](#repository-map)
 3. [The Python data pipeline](#the-python-data-pipeline)
 4. [The build pipeline](#the-build-pipeline)
-5. [Runtime data flow](#runtime-data-flow)
-6. [Component tree](#component-tree)
-7. [State model](#state-model)
-8. [The URL contract](#the-url-contract)
-9. [Domain type model](#domain-type-model)
-10. [The `src/ridership/` seam](#the-srcridership-seam)
-11. [Month Window, Event Window, Month Axis](#month-window-event-window-month-axis)
-12. [Line colour resolution](#line-colour-resolution)
-13. [The map subsystem](#the-map-subsystem)
-14. [Test topology](#test-topology)
-15. [CI pipeline](#ci-pipeline)
-16. [Selecting a line, end to end](#selecting-a-line-end-to-end)
-17. [Documentation and decision map](#documentation-and-decision-map)
+5. [Loading and deriving](#loading-and-deriving)
+6. [Consuming the view, and the write-back](#consuming-the-view-and-the-write-back)
+7. [Component tree](#component-tree)
+8. [State slices](#state-slices)
+9. [Mutators, effects, and local state](#mutators-effects-and-local-state)
+10. [The URL contract](#the-url-contract)
+11. [Domain type model](#domain-type-model)
+12. [The `src/ridership/` seam](#the-srcridership-seam)
+13. [Month Window, Event Window, Month Axis](#month-window-event-window-month-axis)
+14. [Line colour resolution](#line-colour-resolution)
+15. [Map lifecycle](#map-lifecycle)
+16. [Map interaction and the test seam](#map-interaction-and-the-test-seam)
+17. [Unit and Python suites](#unit-and-python-suites)
+18. [Visual regression](#visual-regression)
+19. [CI pipeline](#ci-pipeline)
+20. [Selecting a line, end to end](#selecting-a-line-end-to-end)
+21. [Documentation and decision map](#documentation-and-decision-map)
 
 ---
 
@@ -35,91 +39,87 @@ A whole-system view plus one diagram per subsystem. GitHub renders the fences be
 
 The one view that contains everything else. Three stages, and the boundaries between them are
 what matter: a **Python pipeline** that runs by hand and writes JSON into the repo, a **Vite
-build** that re-encodes that JSON into a wire format, and a **browser** that fetches it and
-derives everything on screen from one set of user choices.
+build** that re-encodes that JSON into a wire format, and a **browser** that derives everything on
+screen from one set of user choices.
 
 There is no backend. The repository *is* the database, `dist/` is the whole deployment, and the
-URL query string is the only thing that survives a page reload. Every remaining diagram drills
-into one box here.
+URL query string is the only thing that survives a reload. Every remaining diagram drills into one
+box here.
 
 ```mermaid
 flowchart TB
-  user(["User"])
-
   subgraph ext["External — outside the repo"]
-    metroXlsx["LA Metro ridership workbooks<br/>.xlsx / .zip, published periodically"]
+    direction LR
+    metroXlsx["LA Metro ridership<br/>workbooks"]
     metroGis["Metro GIS<br/>route geometry"]
     announce["Service-change<br/>announcements"]
-    tiles["Basemap tiles<br/>OpenFreeMap positron<br/>or MapTiler if VITE_MAPTILER_KEY"]
   end
 
-  subgraph authoring["Authoring — run by hand, never in CI"]
+  subgraph authoring["Authoring — by hand, never in CI"]
+    direction LR
     raw[/"data/raw/"/]
     py["Python pipeline<br/>scripts/*.py"]
-    nb["notebooks/<br/>scrapers and updaters"]
+    raw --> py
   end
 
   subgraph committed["Committed data — the repo is the database"]
-    canonical[("src/data/ridership.json<br/>canonical records, ~7 MB")]
-    meta[("src/data/<br/>metro_line_metadata_current.json<br/>line_distances.json<br/>transit-events.json")]
-    geo[("public/metro_lines.geojson<br/>2.3 MB route geometry")]
+    direction LR
+    canonical[("ridership.json<br/>~7 MB, canonical")]
+    meta[("line metadata<br/>distances · events")]
+    geo[("metro_lines.geojson")]
   end
 
   subgraph build["Build — Vite 6"]
-    plugin["vite/ridership-data-plugin.ts"]
-    entry["Entry chunk<br/>App, hook, line table"]
-    lazychunk["Lazy chunk<br/>OutputArea + Chart.js + MapLibre"]
-    columnar[/"dist/ridership.json<br/>columnar cols + rows, minified"/]
+    direction LR
+    plugin["ridership-data-plugin"]
+    columnar[/"dist/ridership.json<br/>columnar"/]
+    chunks[/"entry chunk<br/>+ lazy OutputArea"/]
+    plugin --> columnar
   end
 
-  host["Static host<br/>dist/ only — there is no backend"]
+  host["Static host — dist/ only<br/>there is no backend"]
 
   subgraph browser["Browser runtime"]
+    direction LR
     hook["useUserDashboardInput<br/>the only store"]
-    view["buildRidershipView<br/>the whole derived view, one pass"]
-    ui["Chart · line table · summary · map · context log"]
-    urlbar["URL query string<br/>the only persistence layer"]
+    view["buildRidershipView<br/>the derived view, one pass"]
+    ui["chart · table · summary<br/>map · context log"]
+    hook --> view --> ui
   end
 
-  ci["GitHub Actions CI<br/>lint · unit tests · build · visual regression"]
+  urlbar["URL query string<br/>the only persistence"]
+  user(["User"])
+  tiles["Basemap tiles<br/>OpenFreeMap or MapTiler"]
+  ci["GitHub Actions<br/>lint · test · build · visual regression"]
 
   metroXlsx --> raw
   metroGis --> py
   announce --> py
-  raw --> py
-  nb --> py
   py --> canonical
   py --> meta
   py --> geo
 
   canonical --> plugin
-  plugin --> columnar
-  meta --> entry
-  geo --> host
-  entry --> host
-  lazychunk --> host
+  meta --> chunks
   columnar --> host
-  entry -. "React.lazy, on demand" .-> lazychunk
+  chunks --> host
+  geo --> host
 
-  host -- "fetch /ridership.json" --> view
   host --> hook
-  geo -. "fetch at map init" .-> ui
-  tiles -. "fetch at map init" .-> ui
+  host -- "fetch /ridership.json" --> view
+  tiles --> ui
 
-  user -- "picks lines, months, day of week" --> hook
-  hook --> view
-  view --> ui
   ui --> user
+  user -- "picks lines, months, day" --> hook
   hook <--> urlbar
   urlbar -- "shareable link" --> user
 
-  committed --> ci
-  build --> ci
+  chunks -.-> ci
 
-  classDef unbuilt fill:#fef3c7,stroke:#b45309,color:#111827
-  classDef seam fill:#e0f2fe,stroke:#0369a1,color:#111827
-  class view seam
-  class urlbar unbuilt
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class view key
+  class urlbar pending
 ```
 
 ---
@@ -128,7 +128,7 @@ flowchart TB
 
 What lives where. Two things are worth noticing. `src/` is flat — `components/`, `hooks/`,
 `utils/`, `data/`, `@types/` — with exactly one domain folder, `src/ridership/`, and ADR-0003 says
-that is deliberate and not the first step of a reorganisation. And the repo carries an unusual
+that is deliberate rather than the first step of a reorganisation. And the repo carries an unusual
 amount of prose: `CONTEXT.md`, six ADRs, an architecture review, seven design plans. That is the
 system's memory; read it before changing behaviour that looks wrong.
 
@@ -136,98 +136,103 @@ system's memory; read it before changing behaviour that looks wrong.
 flowchart LR
   root(["metro_ridership_app/"])
 
-  root --- srcN["src/<br/>the application"]
-  root --- dataN["data/raw/<br/>source workbooks, input to the pipeline"]
-  root --- scriptsN["scripts/<br/>Python pipeline + its tests"]
-  root --- nbN["notebooks/<br/>Jupyter scrapers"]
-  root --- viteN["vite/<br/>ridership-data-plugin.ts"]
-  root --- publicN["public/<br/>favicon, metro_lines.geojson"]
-  root --- e2eN["e2e/<br/>Playwright visual regression + baselines"]
-  root --- docsN["docs/<br/>adr/ · agents/ · architecture/ · review"]
-  root --- ghN[".github/workflows/ci.yml"]
-  root --- perfN["perf/BASELINE.md"]
-  root --- cfgN["configs<br/>vite · vitest · playwright · eslint · tailwind · tsconfig×4"]
-  root --- prose["CLAUDE.md · CONTEXT.md · README.md"]
+  app["The application<br/><b>src/</b>"]
+  pipeline["Data authoring"]
+  tooling["Build and verification"]
+  writing["Prose — the system's memory"]
 
-  srcN --- cmp["components/<br/>8 components, 7 specs"]
-  srcN --- hooks["hooks/<br/>useUserDashboardInput — the store"]
-  srcN --- rid["ridership/<br/>the one domain folder (ADR-0003)"]
-  srcN --- utils["utils/<br/>lines · month · queryParams · ridershipData · dataDateRange · mapPopup"]
-  srcN --- types["@types/<br/>domain types + ambient decls"]
-  srcN --- dataDir["data/<br/>bundled JSON + the canonical dataset"]
-  srcN --- assets["assets/<br/>SVG icons, logo"]
-  srcN --- plans["plans/<br/>7 per-feature design notes"]
-  srcN --- testDir["test/builders.ts<br/>fixture builders"]
-  srcN --- rootFiles["App.tsx · main.tsx · index.css · test-setup.ts"]
+  root --> app
+  root --> pipeline
+  root --> tooling
+  root --> writing
 
-  classDef domain fill:#e0f2fe,stroke:#0369a1,color:#111827
-  classDef gen fill:#f1f5f9,stroke:#64748b,color:#111827
-  class rid,hooks domain
-  class docsN gen
+  app --> cmp["components/ — 8 components, 7 specs"]
+  app --> hooks["hooks/ — the only store"]
+  app --> rid["ridership/ — the one domain folder"]
+  app --> utils["utils/ — lines · month · queryParams<br/>ridershipData · dataDateRange · mapPopup"]
+  app --> types["@types/ — domain types"]
+  app --> dataDir["data/ — bundled JSON + the dataset"]
+  app --> misc["assets/ · plans/ · test/<br/>App.tsx · main.tsx · index.css"]
+
+  pipeline --> dataN["data/raw/ — source workbooks"]
+  pipeline --> scriptsN["scripts/ — pipeline + 6 Python specs"]
+  pipeline --> nbN["notebooks/ — Jupyter scrapers"]
+  pipeline --> publicN["public/ — geojson, favicon"]
+
+  tooling --> viteN["vite/ — ridership-data-plugin.ts"]
+  tooling --> e2eN["e2e/ — Playwright specs + baselines"]
+  tooling --> ghN[".github/workflows/ci.yml"]
+  tooling --> cfgN["configs — vite · vitest · playwright<br/>eslint · tailwind · tsconfig ×4"]
+
+  writing --> ctxN["CONTEXT.md — the ubiquitous language"]
+  writing --> adrN["docs/adr/ — six decisions"]
+  writing --> archN["docs/architecture/ — these diagrams"]
+  writing --> otherN["docs/agents/ · architecture review<br/>CLAUDE.md · README.md · perf/"]
+
+  classDef structural fill:#dce9f4,stroke:#0072bc,stroke-width:1.5px,color:#44403c
+  classDef authority fill:#f0e5f1,stroke:#a05da5,stroke-width:1.5px,color:#44403c
+  class rid,hooks structural
+  class ctxN authority
 ```
 
 ---
 
 ## The Python data pipeline
 
-How data gets into the repo. Nothing here runs in CI — a human runs these scripts and commits
-the result, which is why `src/data/ridership.json` is a checked-in 7 MB file rather than a build
-artifact.
+How data gets into the repo: three independent chains, left to right. Nothing here runs in CI — a
+human runs these scripts and commits the result, which is why `src/data/ridership.json` is a
+checked-in 7 MB file rather than a build artifact.
 
-The ridership chain is the main line; three side chains produce the geometry, the per-line route
-lengths, and the transit-events file. Every script has a `test_*.py` sibling.
+`update_ridership.py` is the incremental path: when Metro publishes a single new month, it merges
+that month into the canonical file instead of rebuilding it from every workbook. Every script has
+a `test_*.py` sibling — six in all.
 
 ```mermaid
-flowchart TB
-  subgraph inputs["Inputs"]
+flowchart LR
+  subgraph ridershipChain["Ridership chain — the main line"]
+    direction LR
     xlsx[/"data/raw/*.xlsx<br/>monthly bus workbooks"/]
     zips[/"data/raw/Rail *.zip"/]
-    gisapi["Metro GIS endpoint"]
-    sources["Published service-change<br/>announcements"]
-  end
-
-  subgraph ridershipChain["Ridership chain"]
-    convert["convert_excel_ridership.py<br/>npm run load-ridership"]
-    process["process_ridership.py<br/>normalise, dedupe, type"]
-    update["update_ridership.py<br/>merge a new month into the canonical file"]
-  end
-
-  subgraph sideChains["Side chains"]
-    fetchLines["fetch_metro_lines.py<br/>npm run fetch-lines"]
-    distances["compute_line_distances.py"]
-    checkEvents["check_transit_events.py<br/>npm run check-transit-events"]
-  end
-
-  subgraph outputs["Committed outputs"]
+    convert["convert_excel_ridership.py"]
+    process["process_ridership.py<br/>normalise · dedupe · type"]
+    update["update_ridership.py<br/>merge one new month"]
     ridJson[("src/data/ridership.json")]
+
+    xlsx --> convert
+    zips --> convert
+    convert --> process
+    process --> ridJson
+    update --> ridJson
+  end
+
+  subgraph geometry["Geometry chain"]
+    direction LR
+    gisapi["Metro GIS endpoint"]
+    fetchLines["fetch_metro_lines.py"]
     geojson[("public/metro_lines.geojson")]
+    distances["compute_line_distances.py"]
     distJson[("src/data/line_distances.json")]
+
+    gisapi --> fetchLines --> geojson --> distances --> distJson
+  end
+
+  subgraph eventsChain["Events chain"]
+    direction LR
+    sources["Published<br/>service-change notices"]
+    checkEvents["check_transit_events.py"]
     events[("src/data/transit-events.json")]
+
+    sources --> checkEvents --> events
   end
 
   tests["scripts/test_*.py<br/>one sibling per script, 6 in all"]
 
-  xlsx --> convert
-  zips --> convert
-  convert --> process
-  process --> ridJson
-  update --> ridJson
-  xlsx -. "a newly published month" .-> update
+  process -.-> tests
+  fetchLines -.-> tests
+  checkEvents -.-> tests
 
-  gisapi --> fetchLines --> geojson
-  geojson --> distances --> distJson
-  sources --> checkEvents --> events
-
-  ridershipChain -.-> tests
-  sideChains -.-> tests
-
-  note["Run by hand. CI never runs the pipeline —<br/>it consumes the committed JSON."]
-  note -.- outputs
-
-  classDef out fill:#dcfce7,stroke:#15803d,color:#111827
-  classDef warn fill:#fef3c7,stroke:#b45309,color:#111827
-  class ridJson,geojson,distJson,events out
-  class note warn
+  classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
+  class ridJson,geojson,distJson,events surface
 ```
 
 ---
@@ -237,7 +242,7 @@ flowchart TB
 `vite/ridership-data-plugin.ts` is the interesting part. The canonical JSON repeats six field
 names on every one of ~42K rows and, imported normally, would inline about 6.6 MB of object
 literal into the entry chunk. The plugin reads it once and produces two things from that single
-pass: a minified columnar blob served at `/ridership.json`, and a `virtual:ridership-bounds`
+cached pass: a minified columnar blob served at `/ridership.json`, and a `virtual:ridership-bounds`
 module carrying just the min/max year and latest month.
 
 The blob reaches the app two different ways — dev middleware in `configureServer`, an emitted
@@ -246,145 +251,186 @@ in `vitest.config.ts` as well, or the virtual module would not resolve under the
 
 ```mermaid
 flowchart TB
-  canonical[("src/data/ridership.json<br/>pretty-printed array, keys repeated per row")]
+  canonical[("src/data/ridership.json<br/>~42K rows, keys repeated")]
 
-  subgraph pluginBox["vite/ridership-data-plugin.ts — one encode(), cached"]
-    encode["encode()<br/>read once, walk records once"]
-    blob["columnar blob<br/>cols + rows, JSON.stringify with no spacing"]
+  subgraph plugin["vite/ridership-data-plugin.ts — one cached encode()"]
+    direction TB
+    encode["encode()<br/>read once, walk once"]
+    blob["columnar blob<br/>cols + rows, minified"]
     bounds["bounds<br/>minYear · maxYear · maxMonth"]
+    encode --> blob
+    encode --> bounds
   end
 
-  subgraph hooksBox["Vite plugin hooks"]
-    resolveId["resolveId<br/>virtual:ridership-bounds"]
-    load["load<br/>emits three const exports"]
+  subgraph hooks["Plugin hooks"]
+    direction TB
     configureServer["configureServer<br/>dev middleware on /ridership.json"]
-    generateBundle["generateBundle<br/>emitFile asset ridership.json"]
-  end
-
-  subgraph consumers["Consumers"]
-    dateRange["src/utils/dataDateRange.ts<br/>dataMinYear · dataMaxYear · dataDefaultEndDate"]
-    appFetch["src/App.tsx<br/>fetch('/ridership.json')"]
-  end
-
-  subgraph registered["Registered in both configs"]
-    viteCfg["vite.config.ts<br/>dev + build"]
-    vitestCfg["vitest.config.ts<br/>so the virtual module resolves under the test runner"]
-  end
-
-  subgraph otherPlugins["Other Vite plugins"]
-    swc["@vitejs/plugin-react-swc"]
-    ssl["@vitejs/plugin-basic-ssl<br/>command === 'serve' only"]
-    vis["rollup-plugin-visualizer<br/>opt-in via ANALYZE=1"]
+    generateBundle["generateBundle<br/>emitFile asset"]
+    resolveLoad["resolveId + load<br/>virtual:ridership-bounds"]
   end
 
   subgraph out["dist/"]
-    indexHtml[/"index.html"/]
+    direction TB
+    ridAsset[/"ridership.json"/]
     entryChunk[/"entry chunk"/]
     lazyChunk[/"OutputArea-*.js + .css<br/>Chart.js + MapLibre"/]
-    ridAsset[/"ridership.json"/]
-    geoAsset[/"metro_lines.geojson<br/>copied from public/"/]
+    geoAsset[/"metro_lines.geojson"/]
   end
 
+  subgraph consumers["Consumers"]
+    direction TB
+    appFetch["App.tsx — fetch('/ridership.json')"]
+    dateRange["utils/dataDateRange.ts<br/>selectable window"]
+  end
+
+  swc["plugin-react-swc"]
+  ssl["plugin-basic-ssl<br/>serve only"]
+  vis["visualizer<br/>ANALYZE=1"]
+  registered["Registered in vite.config.ts<br/>AND vitest.config.ts"]
+
   canonical --> encode
-  encode --> blob
-  encode --> bounds
-  bounds --> load
-  resolveId --> load
-  load --> dateRange
   blob --> configureServer
   blob --> generateBundle
-  configureServer -- "dev server" --> appFetch
+  bounds --> resolveLoad
+
   generateBundle --> ridAsset
-  ridAsset -- "vite preview / static host" --> appFetch
+  configureServer -- "dev" --> appFetch
+  ridAsset -- "preview / static host" --> appFetch
+  resolveLoad --> dateRange
 
-  registered --- pluginBox
-  otherPlugins --> out
   swc --> entryChunk
-  entryChunk -. "React.lazy import" .-> lazyChunk
+  entryChunk -. "React.lazy" .-> lazyChunk
+  ssl --> out
+  vis --> out
+  registered -.-> encode
 
-  classDef key fill:#e0f2fe,stroke:#0369a1,color:#111827
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
   class blob,bounds key
 ```
 
 ---
 
-## Runtime data flow
+## Loading and deriving
 
-The core architecture. Records are fetched (never bundled), decoded, and handed with the user's
-choices to a single `buildRidershipView` call that produces the whole derived view in one pass.
+The core architecture, first half. Records are fetched rather than bundled, decoded from the
+columnar blob, and handed with the user's choices to a single `buildRidershipView` call that
+produces the whole derived view in one pass.
 
-Two things stand out. `buildRidershipView` already returns `metrics` and `coverage` keyed by line
-id — everything a caller needs — yet `App.tsx:94` still calls `updateLinesWithLineMetrics`, which
-writes eight derived fields back onto every `Line`. That write-back mints a new `lines` array,
-which re-enters the memo it came from; the four `JSON.stringify` dependency keys exist to keep
-that loop from thrashing. ADR-0005 accepted removing it, and `buildLineReadouts` is the
-replacement — built, tested, and not yet imported by anything that renders.
+`null` is the loading state, not an empty array — the distinction is what lets the app filter and
+show context-log events while the ridership data is still in flight. Note that the metrics loop
+iterates `lines`, not the consolidated groups: a record whose `line_name` has no metadata entry
+produces a group but no `Line`, and therefore no figures.
+
+```mermaid
+flowchart LR
+  subgraph loading["Loading — App.tsx:34-44"]
+    direction TB
+    fetchCall["fetch('/ridership.json')<br/>AbortController"]
+    decode["decodeRidership()"]
+    records["RidershipRecord[] | null<br/>null IS the loading state"]
+    fetchCall --> decode --> records
+  end
+
+  subgraph inputs["The other inputs"]
+    direction TB
+    hook["useUserDashboardInput<br/>lines · window · dayOfWeek · aggregate"]
+    eventsJson[("transit-events.json<br/>bundled at import")]
+  end
+
+  subgraph derive["buildRidershipView — one pass, useMemo'd"]
+    direction TB
+    group["group by line<br/>Month Window filter<br/>+ Selection Snapshot"]
+    cover["buildCoverageByLine"]
+    metricsLoop["lineMetrics per line<br/>iterates lines, not groups"]
+    axis["buildMonthAxis<br/>union of selected lines' months"]
+    align["alignToMonthAxis<br/>a gap, never a zero"]
+    agg["buildAggregateSeries<br/>ordered last"]
+    evfilter["Event Window filter<br/>reads the LIVE selection"]
+
+    group --> cover
+    group --> metricsLoop
+    group --> axis --> align --> agg
+  end
+
+  view["RidershipView<br/>months · datasets · consolidated<br/>events · metrics · coverage"]
+
+  records --> group
+  hook --> group
+  hook --> evfilter
+  eventsJson --> evfilter
+
+  cover --> view
+  metricsLoop --> view
+  align --> view
+  agg --> view
+  evfilter --> view
+
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  class view key
+```
+
+---
+
+## Consuming the view, and the write-back
+
+The second half, and the one live design problem in the app.
+
+`buildRidershipView` already returns `metrics` and `coverage` keyed by line id — everything a
+caller needs — yet `App.tsx:94` still calls `updateLinesWithLineMetrics`, which writes eight
+derived fields back onto every `Line`. That mints a new `lines` array, which re-enters the memo it
+came from; the `JSON.stringify` dependency keys exist to keep the loop from thrashing. It settles
+only because the second pass produces figures identical to the first.
+
+ADR-0005 accepted removing it. `buildLineReadouts` and `listedReadouts` are the replacement —
+written, unit-tested, and imported by nothing that renders.
+
+`LineSelector` reads `consolidated` directly and builds its own axis, because the table draws a
+sparkline for every *visible* line while the chart covers only the *selected* ones.
 
 ```mermaid
 flowchart TB
-  subgraph load["Loading the dataset — App.tsx:34-44"]
-    fetchCall["fetch('/ridership.json')<br/>AbortController, cancelled on unmount"]
-    decode["decodeRidership(data)<br/>src/utils/ridershipData.ts"]
-    records["ridershipRecords: RidershipRecord[] | null<br/>null IS the loading state"]
-  end
+  view["RidershipView<br/>months · datasets · consolidated<br/>events · metrics · coverage"]
 
-  subgraph bundled["Bundled at import time"]
-    lineMeta[("metro_line_metadata_current.json")]
-    lineDist[("line_distances.json")]
-    eventsJson[("transit-events.json")]
-  end
-
-  hook["useUserDashboardInput()<br/>lines · startDate · endDate · dayOfWeek<br/>searchText · modes · isAggregateVisible · showContextLogs"]
-
-  subgraph derive["buildRidershipView — one pass, useMemo'd (App.tsx:75-86)"]
-    group["group records by line<br/>Month Window filter, Selection Snapshot"]
-    cover["buildCoverageByLine"]
-    metricsLoop["lineMetrics per line<br/>iterates lines, not the groups"]
-    axis["buildMonthAxis<br/>union of the selected lines' months"]
-    align["alignToMonthAxis per line<br/>a missing month is a gap, never a zero"]
-    agg["buildAggregateSeries<br/>always ordered last"]
-    evfilter["Event Window filter<br/>inclusive, reads the LIVE selection"]
-  end
-
-  view["RidershipView<br/>months · datasets · consolidated · events · metrics · coverage"]
-
-  subgraph consumers["Consumers"]
-    outputArea["OutputArea<br/>chart · summary · context log · map"]
+  subgraph rendering["What renders from it"]
+    direction TB
+    outputArea["OutputArea<br/>chart · summary · context log"]
+    mapCmp["Map<br/>selection filter"]
     lineSelector["LineSelector<br/>buildWindowMonthAxis over consolidated —<br/>a wider axis than RidershipView.months"]
   end
 
-  writeback["updateLinesWithLineMetrics(consolidated)<br/>useEffect keyed on JSON.stringify(consolidated)<br/>stamps 8 derived fields back onto every Line"]
+  subgraph loop["The write-back cycle"]
+    direction TB
+    writeback["updateLinesWithLineMetrics(consolidated)<br/>useEffect keyed on JSON.stringify"]
+    stamp["stamps 8 derived fields<br/>onto every Line"]
+    fresh["a new lines array<br/>re-enters the same useMemo"]
+    writeback --> stamp --> fresh
+  end
 
-  readouts["buildLineReadouts + listedReadouts<br/>the ADR-0005 replacement — built, tested,<br/>NOT yet wired into the render path"]
+  hook["useUserDashboardInput<br/>holds lines"]
 
-  fetchCall --> decode --> records --> group
-  lineMeta --> hook
-  lineDist --> hook
-  hook -- "lines, window, dayOfWeek" --> group
-  eventsJson --> evfilter
-  hook -- "live selection" --> evfilter
+  subgraph replacement["ADR-0005's replacement — built, not wired in"]
+    direction TB
+    readouts["buildLineReadouts(lines, metrics, coverage)"]
+    listed["listedReadouts(readouts, searchText, modes)"]
+    readouts --> listed
+  end
 
-  group --> cover
-  group --> metricsLoop
-  group --> axis --> align --> agg
-  cover --> view
-  metricsLoop --> view
-  agg --> view
-  align --> view
-  evfilter --> view
-
-  view --> outputArea
-  view --> lineSelector
+  view -- "datasets · months · events" --> outputArea
+  view -- "consolidated" --> lineSelector
   view -- "consolidated" --> writeback
-  writeback -- "new lines array → re-derive" --> hook
-  view -. "metrics + coverage, already returned" .-> readouts
+  fresh --> hook
+  hook --> mapCmp
+  hook --> view
 
-  classDef cycle fill:#fee2e2,stroke:#b91c1c,color:#111827
-  classDef pending fill:#fef3c7,stroke:#b45309,color:#111827
-  classDef out fill:#dcfce7,stroke:#15803d,color:#111827
-  class writeback cycle
-  class readouts pending
-  class view out
+  view -. "metrics + coverage, already returned" .-> readouts
+  listed -. "would replace the stamped fields" .-> lineSelector
+
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class view key
+  class writeback,stamp,fresh cycle
+  class readouts,listed pending
 ```
 
 ---
@@ -392,146 +438,183 @@ flowchart TB
 ## Component tree
 
 Eight components, no router, no context providers. `App` spreads the entire hook state into
-`LineSelector` with `{...userDashboardInputState}`, so that component's real interface is much
-wider than its props list suggests.
+`LineSelector` with `{...userDashboardInputState}`, so that component's real interface is far wider
+than its props list suggests.
 
-`OutputArea` is `React.lazy` on purpose: it pulls in Chart.js and MapLibre, and keeping them out
-of the entry chunk lets the header and line table paint first. Note the branch on
-`isLineSelectorExpanded` — expanding the selector *unmounts* `OutputArea` entirely rather than
-hiding it, so the chart and map rebuild from scratch on collapse. `App.tsx:136-138` flags this.
+`OutputArea` is `React.lazy` on purpose: it pulls in Chart.js and MapLibre, and keeping them out of
+the entry chunk lets the header and line table paint first. Note the gate — expanding the line
+selector *unmounts* `OutputArea` rather than hiding it, so the chart and map rebuild from scratch
+on collapse. `App.tsx:136-138` flags this.
 
 ```mermaid
 flowchart TB
-  main["main.tsx<br/>createRoot → StrictMode"]
-  app["App<br/>container · no router · no context providers"]
-
-  header["Header — leaf"]
-  drs["DateRangeSelector — leaf<br/>Radix RadioGroup + Checkbox"]
-  footer["Footer — leaf"]
+  main["main.tsx — createRoot, StrictMode"]
+  app["App — container<br/>no router, no context providers"]
+  header["Header"]
+  drs["DateRangeSelector<br/>Radix RadioGroup + Checkbox"]
 
   subgraph leftPane["#line-selector-pane — always mounted"]
-    ls["LineSelector — container, 428L<br/>sorting · CSV · share · expand toggle"]
-    lf["LineFilters — leaf<br/>search · bus/train ToggleGroup · aggregate"]
-    ltr["LineTableRow × N — leaf<br/>Radix Checkbox + per-row Chart.js sparkline"]
+    direction TB
+    ls["LineSelector — container<br/>sort · CSV · share · expand"]
+    lf["LineFilters<br/>search · mode toggle · aggregate"]
+    ltr["LineTableRow × N<br/>checkbox + Chart.js sparkline"]
+    ls --> lf
+    ls --> ltr
   end
 
-  suspense{{"isLineSelectorExpanded ?"}}
-  susp["Suspense fallback<br/>'Loading…' pane"]
+  gate{"isLineSelectorExpanded?"}
+  unmounted["nothing rendered —<br/>OutputArea unmounts entirely<br/>(TODO at App.tsx:136-138)"]
+  susp["Suspense fallback"]
 
   subgraph rightPane["OutputArea — React.lazy chunk"]
-    oa["OutputArea — container, 416L"]
-    chart["LineChart (react-chartjs-2)<br/>#ridership-chart"]
-    summary["SummaryData — leaf"]
-    ctxlog["context-log panel<br/>#context-log-panel, inline JSX"]
-    map["Map — leaf<br/>#lineMap, imperative MapLibre"]
+    direction TB
+    oa["OutputArea — container"]
+    chart["LineChart — #ridership-chart"]
+    summary["SummaryData"]
+    ctxlog["context-log panel"]
+    mapCmp["Map — #lineMap"]
+    oa --> chart
+    oa --> summary
+    oa --> ctxlog
+    oa --> mapCmp
   end
+
+  footer["Footer"]
 
   main --> app
   app --> header
   app --> drs
   app --> leftPane
-  app --> suspense
-  suspense -- "true → OutputArea unmounted entirely" --> none["nothing rendered<br/>TODO at App.tsx:136-138"]
-  suspense -- "false" --> susp --> oa
+  app --> gate
+  gate -- "true" --> unmounted
+  gate -- "false" --> susp --> oa
   app --> footer
 
-  ls --> lf
-  ls --> ltr
-  oa --> chart
-  oa --> summary
-  oa --> ctxlog
-  oa --> map
+  app -. "spreads the whole hook state<br/>{...userDashboardInputState}" .-> ls
 
-  app -. "spreads the entire hook state:<br/>{...userDashboardInputState}" .-> ls
-
-  classDef lazy fill:#ede9fe,stroke:#6d28d9,color:#111827
-  classDef warn fill:#fef3c7,stroke:#b45309,color:#111827
-  class oa,chart,summary,ctxlog,map lazy
-  class none warn
+  classDef structural fill:#dce9f4,stroke:#0072bc,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class oa,chart,summary,ctxlog,mapCmp structural
+  class unmounted pending
 ```
 
 ---
 
-## State model
+## State slices
 
-All shared state lives in one custom hook. No Redux, no Zustand, no Context — four slices
-(window, lines, filters, toggles), a set of mutators, and two effects.
+All shared state lives in one custom hook: four slices, no Redux, no Zustand, no Context. Each
+slice is seeded once from the URL in a lazy `useState` initialiser, so a shared link reconstructs
+the view before the first render rather than after it.
 
-The `JSON.stringify` dependency keys at `App.tsx:96`, `useUserDashboardInput.ts:168` and `:264`
-are load-bearing, not sloppiness: `lines` is a fresh array on every derivation, so reference
-equality would fire these effects forever. `CLAUDE.md` asks you not to "fix" them. The real fix
-is removing the write-back that mints the array (ADR-0005), not changing the keys.
+`visibleLines` is the only derived value in the store, and its memo key is
+`JSON.stringify(lines)` rather than `lines` — see the next diagram for why.
 
 ```mermaid
 flowchart TB
-  subgraph store["useUserDashboardInput — the whole store. No Redux, Zustand or Context anywhere."]
+  urlIn["URL query string<br/>read once, in lazy useState initialisers"]
+  bundledMeta[("line metadata + line_distances.json<br/>bundled at import")]
+
+  subgraph store["useUserDashboardInput — the whole store, four slices"]
+    direction LR
+
     subgraph windowSlice["Month Window"]
-      startDate["startDate — default new Date(2020, 6)"]
-      endDate["endDate — default dataDefaultEndDate"]
-      dow["dayOfWeek — Weekday | Sat | Sun"]
+      direction TB
+      startDate["startDate<br/>default 2020-07"]
+      endDate["endDate<br/>dataDefaultEndDate"]
+      dow["dayOfWeek<br/>Weekday | Sat | Sun"]
     end
+
     subgraph linesSlice["Lines"]
-      lines["lines: Line[]<br/>createLinesData(), sorted by lineNameSortFunction"]
-      visible["visibleLines — useMemo<br/>key: JSON.stringify(lines) + searchText"]
+      direction TB
+      lines["lines: Line[]<br/>createLinesData()<br/>sorted by name"]
     end
+
     subgraph filterSlice["Filters"]
+      direction TB
       search["searchText"]
-      modes["modes: string[] — 'bus' | 'train'"]
+      modes["modes<br/>'bus' | 'train'"]
     end
+
     subgraph toggleSlice["Toggles"]
+      direction TB
       aggregate["isAggregateVisible"]
       logs["showContextLogs"]
     end
   end
 
-  subgraph mutators["Mutators returned by the hook"]
+  visible["visibleLines — the store's one derived value<br/>useMemo keyed on JSON.stringify(lines) + searchText"]
+  consumer["buildRidershipView · LineSelector · OutputArea<br/>all read these nine values and nothing else"]
+
+  urlIn --> store
+  bundledMeta --> linesSlice
+  store --> visible --> consumer
+
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  class visible key
+```
+
+---
+
+## Mutators, effects, and local state
+
+Everything that writes. Four of the five mutators touch `lines`, which is why that one array is the
+hinge the whole store turns on.
+
+The `JSON.stringify` dependency keys at `App.tsx:96`, `useUserDashboardInput.ts:168` and `:264` are
+load-bearing, not sloppiness: `lines` is a fresh array on every derivation, so reference equality
+would fire these effects forever. `CLAUDE.md` asks you not to "fix" them. The real fix is removing
+the write-back that mints the array (ADR-0005), not changing the keys.
+
+What is *not* in the store matters too. Expansion, the fetched records, sort state, the context-log
+disclosure and every MapLibre handle stay local, so none of them participate in the derivation
+above.
+
+```mermaid
+flowchart TB
+  subgraph mutators["Mutators the hook returns"]
+    direction LR
     toggleLine["onToggleSelectLine(line)"]
     clear["clearSelections()"]
     selectAll["selectAllVisibleLines()"]
     updateMetrics["updateLinesWithLineMetrics(consolidated)"]
-    setters["setStartDate · setEndDate · setDayOfWeek<br/>setSearchText · setModes · setLines<br/>toggleIsAggregateVisible · toggleShowContextLogs"]
+    setters["the eight setters —<br/>dates · dayOfWeek · search · modes<br/>aggregate · context logs"]
   end
 
-  subgraph effects["Effects inside the hook"]
-    modeSync["modes → per-line visible<br/>useEffect on [modes]"]
-    urlSync["state → history.replaceState<br/>useEffect, JSON.stringify(lines) in the deps"]
+  lines["lines: Line[]<br/>four of the five mutators write here"]
+  otherSlices["the window, filter and toggle slices"]
+
+  subgraph effects["The two effects inside the hook"]
+    direction LR
+    modeSync["modes → per-line `visible`<br/>useEffect([modes])"]
+    urlSync["state → history.replaceState<br/>deps include JSON.stringify(lines)"]
   end
+
+  keys["Three JSON.stringify dependency keys —<br/>App.tsx:96 · hook :168 · hook :264.<br/>Load-bearing: `lines` is a fresh array every derivation,<br/>so reference equality would fire these forever."]
 
   subgraph local["Component-local state — deliberately not in the store"]
-    appLocal["App: isLineSelectorExpanded · ridershipRecords"]
-    lsLocal["LineSelector: columnHeaderStates · isCopied"]
-    oaLocal["OutputArea: isContextLogOpen"]
-    ltrLocal["LineTableRow: isMounted · data"]
-    mapLocal["Map: mapContainer · map · isStyleLoaded · linesRef (refs, not state)"]
+    direction LR
+    appLocal["App<br/>isLineSelectorExpanded<br/>ridershipRecords"]
+    lsLocal["LineSelector<br/>column sort · isCopied"]
+    oaLocal["OutputArea<br/>isContextLogOpen"]
+    ltrLocal["LineTableRow<br/>isMounted · data"]
+    mapLocal["Map<br/>refs only, never state"]
   end
-
-  bundledMeta[("metro_line_metadata_current.json<br/>+ line_distances.json")]
-  urlIn["URL query string<br/>read once in lazy useState initialisers"]
-
-  bundledMeta --> lines
-  urlIn --> windowSlice
-  urlIn --> linesSlice
-  urlIn --> filterSlice
-  urlIn --> toggleSlice
-
-  modes --> modeSync --> lines
-  lines --> visible
-  search --> visible
-  store --> urlSync
 
   toggleLine --> lines
   clear --> lines
   selectAll --> lines
   updateMetrics --> lines
-  setters --> store
+  setters --> otherSlices
 
-  note["Three JSON.stringify dependency keys are load-bearing<br/>(App.tsx:96, hook :168, :264). CLAUDE.md: do not 'fix' these."]
-  note -.- visible
+  lines --> effects
+  otherSlices --> urlSync
+  effects --> keys
+  keys --> local
 
-  classDef warn fill:#fef3c7,stroke:#b45309,color:#111827
-  classDef cycle fill:#fee2e2,stroke:#b91c1c,color:#111827
-  class note warn
+  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
   class updateMetrics cycle
+  class keys pending
 ```
 
 ---
@@ -539,85 +622,79 @@ flowchart TB
 ## The URL contract
 
 Nine parameters, read once into lazy `useState` initialisers and written back with
-`history.replaceState` on every change. There is no router, no `localStorage` and no server, so
-this is the app's entire persistence layer — and the reason every view is a shareable link.
+`history.replaceState` on every change. No router, no `localStorage`, no server — this is the
+app's entire persistence layer, and the reason every view is a shareable link.
 
 The contract is asymmetric by design: `buses`/`trains` are written only when *off*,
-`aggregate`/`logs` only when *on*, keeping the common URL short. Malformed values fall back to
-defaults rather than throwing. Nine ad-hoc reads and one hand-built writer are what candidate 5
-of the architecture review would replace with an explicit parsed contract; it is unscheduled.
+`aggregate`/`logs` only when *on*, which keeps the common URL short. Malformed values fall back to
+defaults rather than throwing. Nine ad-hoc reads and one hand-built writer are what candidate 5 of
+the architecture review would replace with an explicit parsed contract; it is unscheduled.
 
 ```mermaid
-flowchart LR
-  subgraph params["Query parameters — the full contract"]
-    p1["start=YYYY-MM"]
-    p2["end=YYYY-MM"]
-    p3["day=weekday | saturday | sunday"]
-    p4["lines=801,802,720"]
-    p5["q=free text"]
-    p6["buses=0 — written only when OFF"]
-    p7["trains=0 — written only when OFF"]
-    p8["aggregate=1 — written only when ON"]
-    p9["logs=1 — written only when ON"]
-  end
-
-  subgraph state["State slices"]
-    s1["startDate"]
-    s2["endDate"]
-    s3["dayOfWeek"]
-    s4["lines[].selected"]
-    s5["searchText"]
-    s6["modes includes 'bus'"]
-    s7["modes includes 'train'"]
-    s8["isAggregateVisible"]
-    s9["showContextLogs"]
-  end
-
-  p1 <--> s1
-  p2 <--> s2
-  p3 <--> s3
-  p4 <--> s4
-  p5 <--> s5
-  p6 <--> s6
-  p7 <--> s7
-  p8 <--> s8
-  p9 <--> s9
-
+flowchart TB
   subgraph readPath["Read — once, on mount (hook L92-132)"]
-    lazyInit["lazy useState initialisers<br/>new URLSearchParams(window.location.search)"]
-    parsers["parseMonthParam · paramToDayOfWeek<br/>parseModesFromParams — src/utils/queryParams.ts"]
-    fallback["malformed value → the default, never a throw"]
+    direction LR
+    lazyInit["lazy useState<br/>initialisers"]
+    parsers["parseMonthParam<br/>paramToDayOfWeek<br/>parseModesFromParams"]
+    fallback["malformed → the default,<br/>never a throw"]
+    lazyInit --> parsers --> fallback
+  end
+
+  subgraph pairs["The nine parameters"]
+    direction LR
+
+    subgraph always["Always written"]
+      direction TB
+      p1["start ⟷ startDate"]
+      p2["end ⟷ endDate"]
+      p3["day ⟷ dayOfWeek"]
+    end
+
+    subgraph whenSet["Written when non-empty"]
+      direction TB
+      p4["lines ⟷ selected ids"]
+      p5["q ⟷ searchText"]
+    end
+
+    subgraph whenOff["Written only when OFF"]
+      direction TB
+      p6["buses=0"]
+      p7["trains=0"]
+    end
+
+    subgraph whenOn["Written only when ON"]
+      direction TB
+      p8["aggregate=1"]
+      p9["logs=1"]
+    end
   end
 
   subgraph writePath["Write — on every change (hook L150-168)"]
-    build["build a fresh URLSearchParams"]
-    formatters["formatMonthParam · dayOfWeekToParam"]
-    replace["history.replaceState(null, '', '?' + params)"]
+    direction LR
+    build["fresh URLSearchParams"]
+    formatters["formatMonthParam<br/>dayOfWeekToParam"]
+    replace["history.replaceState —<br/>no history entry, no reload"]
+    build --> formatters --> replace
   end
 
-  params --> lazyInit --> parsers --> fallback --> state
-  state --> build --> formatters --> replace
-  replace -- "no history entry, no reload" --> params
+  share["Share button copies window.location"]
 
-  share["Share button copies window.location —<br/>every view is a link (CLAUDE.md)"]
+  fallback --> pairs --> build
   replace --> share
 
-  note["No router, no localStorage, no server: the URL is the only persistence layer.<br/>Candidate 5 of docs/architecture-review-2026-08-05.md would make this<br/>an explicit parsed contract rather than nine ad-hoc reads. Unscheduled."]
-  note -.- writePath
-
-  classDef warn fill:#fef3c7,stroke:#b45309,color:#111827
-  class note warn
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class whenOff,whenOn pending
 ```
 
 ---
 
 ## Domain type model
 
-The types and how they relate. Read `Line` from the top down: identity and metadata first, then
-a block of optional derived figures that ADR-0005 says do not belong there. `LineSelection` is
-the same information minus the derived block — it is what `buildRidershipView` actually accepts,
-and `Line` satisfies it structurally, which is what keeps derived figures from being handed back
-into the module that produced them.
+The types and how they relate. Read `Line` from the top down: identity and metadata first, then a
+block of optional derived figures that ADR-0005 says do not belong there. `LineSelection` is the
+same information minus that block — it is what `buildRidershipView` actually accepts, and `Line`
+satisfies it structurally, which is what keeps derived figures from being handed back into the
+module that produced them.
 
 `LineReadout` is the intended destination: `Line & Partial<LineMetrics> & Partial<LineCoverage>`,
 derived per window and thrown away. `Month` is ADR-0006's replacement for the seven encodings a
@@ -638,7 +715,6 @@ classDiagram
     <<identity + metadata>>
     +id: number
     +name: string
-    +former?: string
     +mode: Bus | Rail
     +provider: DO | PT
     +selected: boolean
@@ -650,14 +726,13 @@ classDiagram
     +startingRidership?: number
     +endingRidership?: number
     +ridersPerMile?: number
-    +ridershipOverTime?: number
     +coveredFrom?: string
     +coveredTo?: string
     +isPartialCoverage?: boolean
   }
 
   class LineSelection {
-    <<the module's real input>>
+    <<what the module actually takes>>
     +id: number
     +selected: boolean
     +distanceMiles?: number
@@ -677,10 +752,6 @@ classDiagram
     +ridershipRecords: RidershipRecord[]
   }
 
-  class ConsolidatedRidership {
-    <<Record~lineId, ConsolidatedRecord~>>
-  }
-
   class LineMetrics {
     +averageRidership: number
     +changeInRidership: number
@@ -697,19 +768,15 @@ classDiagram
 
   class LineReadout {
     <<Line & Partial~LineMetrics~ & Partial~LineCoverage~>>
-    built, not yet wired in
+    built and tested, no production caller
   }
 
   class TransitEvent {
     +id: string
     +date: string
     +line_ids: number[]
-    +title: string
-    +description: string
     +category: EventCategory
     +source?: string
-    +shakeup?: string
-    +details?: object
   }
 
   class CustomChartData {
@@ -727,104 +794,95 @@ classDiagram
   }
 
   class Month {
-    <<src/utils/month.ts — unwired>>
+    <<utils/month.ts — no production caller>>
     +year: number
     +month: number 1-based
   }
 
-  LineJson --> Line : createLinesData enriches
+  LineJson --> Line : createLinesData
   Line ..|> LineSelection : satisfies structurally
   RidershipRecord --* ConsolidatedRecord
-  ConsolidatedRecord --* ConsolidatedRidership
-  ConsolidatedRecord --> LineMetrics : lineMetrics(), null for an empty series
-  ConsolidatedRidership --> LineCoverage : buildCoverageByLine()
+  ConsolidatedRecord --> LineMetrics : lineMetrics(), null if empty
+  ConsolidatedRecord --> LineCoverage : buildCoverageByLine()
   RidershipRecord --> CustomChartData : alignToMonthAxis()
+  RidershipRecord ..|> Month : is structurally one
   CustomChartData --* RidershipView
-  ConsolidatedRidership --* RidershipView
   LineMetrics --* RidershipView
   LineCoverage --* RidershipView
   TransitEvent --* RidershipView
   Line --> LineReadout
   LineMetrics --> LineReadout
   LineCoverage --> LineReadout
-  LineMetrics ..> Line : write-back today (the cycle)
-  RidershipRecord ..|> Month : is structurally one
+  LineMetrics ..> Line : the write-back today
 ```
 
 ---
 
 ## The `src/ridership/` seam
 
-`index.ts` is the module's entire public surface. Everything else in the folder is
-implementation, so an import of `../ridership/chartData` from outside is *visibly* reaching past
-a seam — which is the whole point of the folder existing (ADR-0003). A flat
-`src/utils/ridershipView.ts` could only have asked for that in a comment.
+`index.ts` is the module's entire public surface. Everything else in the folder is implementation,
+so an import of `../ridership/chartData` from outside is *visibly* reaching past a seam — which is
+the whole point of the folder existing (ADR-0003). A flat `src/utils/ridershipView.ts` could only
+have asked for that in a comment.
 
-The three month-axis and coverage exports are a deliberate second entry point rather than a leak.
+The month-axis and coverage exports are a deliberate second entry point rather than a leak.
 `buildRidershipView` derives the **chart**, over the **selected** lines only; the line table draws
 a sparkline for every **visible** line and needs the wider union across all of `consolidated`.
 
 ```mermaid
 flowchart TB
-  subgraph outside["Outside the seam — may import only from src/ridership (the index)"]
+  subgraph outside["Outside the seam"]
+    direction TB
     app["src/App.tsx"]
     hook["src/hooks/useUserDashboardInput.ts"]
     lineSel["src/components/LineSelector.tsx"]
-    utilsLines["src/utils/lines.ts<br/>type-only import of LineReadout —<br/>no runtime edge back in"]
+    utilsLines["src/utils/lines.ts<br/>import type only — no runtime edge back in"]
   end
 
-  subgraph folder["src/ridership/ — one domain folder (ADR-0003)"]
-    idx["index.ts<br/>THE ENTIRE PUBLIC SURFACE"]
+  idx["src/ridership/index.ts<br/>THE ENTIRE PUBLIC SURFACE"]
 
-    subgraph exported["Exported"]
-      brv["buildRidershipView<br/>+ RidershipView · RidershipViewInput · LineSelection"]
-      align["alignToMonthAxis"]
-      coverage["buildCoverageByLine + LineCoverage"]
-      winAxis["buildWindowMonthAxis"]
-      lm["lineMetrics + LineMetrics · LineMetricsInput"]
-      readouts["buildLineReadouts + LineReadout · LineReadoutsInput"]
-    end
-
-    subgraph private["Module-private — importing these from outside is the violation"]
-      chartData["chartData.ts<br/>timeKey · formatMonthKey · buildMonthAxis · buildAggregateSeries"]
-      brvImpl["buildRidershipView.ts internals"]
-      lmImpl["lineMetrics.ts internals"]
-      lrImpl["lineReadouts.ts internals"]
-    end
+  subgraph exported["What it exports"]
+    direction TB
+    brv["buildRidershipView<br/>+ RidershipView · RidershipViewInput · LineSelection"]
+    axisExports["alignToMonthAxis · buildCoverageByLine<br/>buildWindowMonthAxis · LineCoverage"]
+    lm["lineMetrics + LineMetrics"]
+    readouts["buildLineReadouts + LineReadout"]
   end
+
+  subgraph private["Module-private implementation"]
+    direction TB
+    brvImpl["buildRidershipView.ts"]
+    lmImpl["lineMetrics.ts"]
+    lrImpl["lineReadouts.ts"]
+    chartData["chartData.ts<br/>timeKey · buildMonthAxis · buildAggregateSeries"]
+  end
+
+  bad["import '../ridership/chartData'<br/>— visibly past the seam, ADR-0003"]
 
   app --> idx
   hook --> idx
   lineSel --> idx
-  utilsLines -. "import type only" .-> idx
+  utilsLines -.-> idx
 
   idx --> brv
-  idx --> align
-  idx --> coverage
-  idx --> winAxis
+  idx --> axisExports
   idx --> lm
   idx --> readouts
 
   brv --- brvImpl
   lm --- lmImpl
   readouts --- lrImpl
-  align --- chartData
-  coverage --- chartData
-  winAxis --- chartData
+  axisExports --- chartData
   brvImpl --> chartData
   brvImpl --> lmImpl
 
-  bad["import from '../ridership/chartData'"]
-  bad -. "visibly reaching past the seam — ADR-0003" .-> chartData
+  bad -.-> chartData
 
-  why["The three axis/coverage exports are a deliberate second entry point,<br/>not a leak: buildRidershipView derives the CHART, over SELECTED lines only.<br/>The table draws every VISIBLE line and needs the wider union across consolidated."]
-  why -.- winAxis
-
-  classDef forbidden fill:#fee2e2,stroke:#b91c1c,color:#111827
-  classDef surface fill:#dcfce7,stroke:#15803d,color:#111827
-  classDef pending fill:#fef3c7,stroke:#b45309,color:#111827
-  class bad,private forbidden
+  classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
+  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
   class idx surface
+  class bad cycle
   class readouts pending
 ```
 
@@ -833,60 +891,59 @@ flowchart TB
 ## Month Window, Event Window, Month Axis
 
 The single most surprising thing in the codebase. One user choice produces two windows that
-disagree by two months: records use `S ≤ R ≤ E − 2` (the start month is in; the end month **and
-the month before it** are out), while the context log uses an ordinary inclusive range.
+disagree by two months: records use `S ≤ R ≤ E − 2` — the start month is in, the end month **and
+the month before it** are out — while the context log uses an ordinary inclusive range.
 
 This reads like an off-by-one and is not. It is long-standing behaviour, users have shared URLs
 against it, and `e2e/chart-content.spec.ts` renders windows through it into committed PNG
-baselines — normalising it would change what every existing link shows. ADR-0001 accepts it and
-`src/utils/month.ts` now encodes both rules once, as `containsOffset` and `contains`, though the
-production filters still do the original `Date` and `YYYYMM` arithmetic.
+baselines, so normalising it would change what every existing link shows. ADR-0001 accepts it.
 
 The Month Axis is derived after filtering: one shared axis for every series, because Chart.js
-appends any label missing from `labels` to the end and a per-series axis scrambles the rest. A
-month a line does not report is a gap, never a zero.
+appends any label missing from `labels` to the end and a per-series axis scrambles the rest.
 
 ```mermaid
 flowchart TB
-  choice["One user choice: start = 2025-01, end = 2025-06"]
+  choice["One user choice — start 2025-01, end 2025-06"]
 
   subgraph monthWindow["Month Window — records, chart, metrics"]
-    mwRule["S ≤ R ≤ E − 2<br/>start included; end month AND the month before it excluded"]
-    mwMonths["2025-01 · 02 · 03 · 04<br/>2025-05 and 2025-06 excluded"]
-    mwCode["new Date(record.year, record.month) compared against<br/>new Date(year, month − 1) — 1-based data vs 0-based Date"]
+    direction TB
+    mwRule["S ≤ R ≤ E − 2"]
+    mwMeaning["start included · end month AND<br/>the month before it excluded"]
+    mwMonths["2025-01 · 02 · 03 · 04"]
+    mwRule --> mwMeaning --> mwMonths
   end
 
   subgraph eventWindow["Event Window — context log"]
-    ewRule["S ≤ R ≤ E<br/>inclusive on both ends, correctly 1-based"]
+    direction TB
+    ewRule["S ≤ R ≤ E"]
+    ewMeaning["inclusive both ends, correctly 1-based"]
     ewMonths["2025-01 · 02 · 03 · 04 · 05 · 06"]
-    ewCode["year * 100 + month, compared numerically"]
+    ewRule --> ewMeaning --> ewMonths
   end
 
-  disagree["The two windows disagree by two months, from the same user choice."]
-  keep["Preserved, not reconciled: the app has always behaved this way,<br/>users have shared URLs against it, and e2e/chart-content.spec.ts renders<br/>windows through it into committed PNG baselines. — ADR-0001"]
+  keep["Two months apart, from the same choice.<br/>Preserved, not reconciled — shared URLs and the<br/>committed chart baselines both depend on it. ADR-0001"]
 
   subgraph axis["Month Axis — derived after filtering"]
-    axisDef["chronological union of the months the SELECTED lines cover"]
-    axisGap["a month a line does not report is a GAP (null), never a zero"]
-    axisWhy["one axis shared by every series — Chart.js appends any label missing<br/>from `labels` to the end, so a per-series axis scrambles the others"]
-    axisTwo["buildMonthAxis → RidershipView.months (selected lines)<br/>buildWindowMonthAxis → the line table's wider axis (all consolidated)"]
+    direction TB
+    axisDef["chronological union of the<br/>selected lines' months"]
+    axisGap["a month a line does not report<br/>is a gap (null), never a zero"]
+    axisTwo["buildMonthAxis → the chart's axis<br/>buildWindowMonthAxis → the table's wider axis"]
+    axisDef --> axisGap --> axisTwo
   end
 
-  onePlace["src/utils/month.ts encodes both rules once —<br/>contains() and containsOffset() over an ordinal.<br/>Landed and tested; the production path still uses the Date arithmetic. ADR-0006"]
+  onePlace["utils/month.ts — containsOffset() and contains()<br/>encode both rules once. Landed and tested;<br/>the production path still does Date arithmetic. ADR-0006"]
 
   choice --> monthWindow
   choice --> eventWindow
-  monthWindow --> disagree
-  eventWindow --> disagree
-  disagree --> keep
-  mwMonths --> axis
-  monthWindow -.-> onePlace
-  eventWindow -.-> onePlace
+  mwMonths --> keep
+  ewMonths --> keep
+  keep --> axis
+  keep --> onePlace
 
-  classDef warn fill:#fef3c7,stroke:#b45309,color:#111827
-  classDef keepc fill:#fee2e2,stroke:#b91c1c,color:#111827
-  class onePlace warn
-  class keep,disagree keepc
+  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class keep cycle
+  class onePlace pending
 ```
 
 ---
@@ -895,398 +952,401 @@ flowchart TB
 
 Nine rail and BRT lines carry hardcoded brand colours; every other line gets a deterministic
 golden-angle hue, so a bus line looks the same on every render without anything being stored.
+These are the colours this document is drawn in.
 
-The honest part of this diagram is the right-hand branch. The map does **not** call
-`getLineColor` — MapLibre paints from a `color` property baked into `metro_lines.geojson` by
+The honest part of the diagram is the right-hand branch. The map does **not** call `getLineColor`
+— MapLibre paints from a `color` property baked into `metro_lines.geojson` by
 `scripts/fetch_metro_lines.py`, which reimplements the same formula and the same brand table in
-Python with a docstring reading "Must match lines.ts". Nothing tests the two against each other,
-so changing one desynchronises the map until the geojson is regenerated.
+Python with a docstring reading "Must match lines.ts". Changing one desynchronises the map until
+the geojson is regenerated, and no test would catch it.
 
 ```mermaid
-flowchart TB
-  getColor["getLineColor(lineId) — src/utils/lines.ts"]
-  lookup{"lineId in definedLines?"}
-
-  subgraph defined["definedLines — 9 hardcoded brand colours"]
-    rail["801 A/Blue #0072bc · 802 B/Red #eb131b<br/>803 C/Green #58a738 · 804 E/Expo #fdb913<br/>805 D/Purple #a05da5 · 806 L/Gold #f9a825<br/>807 K #e56db1"]
-    brt["901 G #fc4c02 · 910 J/Silver #adb8bf"]
+flowchart LR
+  subgraph tsSide["TypeScript — src/utils/lines.ts"]
+    direction TB
+    getColor["getLineColor(lineId)"]
+    lookup{"in definedLines?"}
+    defined["9 brand colours<br/>801 A · 802 B · 803 C · 804 E<br/>805 D · 806 L · 807 K · 901 G · 910 J"]
+    golden["busLineColor()<br/>hue = lineId × 137.508 mod 360<br/>hsl(hue, 75%, 45%)"]
+    getColor --> lookup
+    lookup -- yes --> defined
+    lookup -- no --> golden
   end
 
-  golden["busLineColor(lineId)<br/>hue = round(lineId × 137.508 mod 360)<br/>hsl(hue, 75%, 45%)"]
-
-  names["getLineNames(lineId)<br/>defined → 'A Line' (+ former 'Blue Line')<br/>otherwise → 'Line 720'"]
-
-  subgraph consumers["TypeScript consumers — all read getLineColor"]
-    chartDs["buildRidershipView datasets<br/>backgroundColor + borderColor"]
+  subgraph tsUses["What reads it"]
+    direction TB
+    chartDs["chart datasets<br/>background + border"]
     sparkline["LineTableRow sparkline"]
-    aggregate["Aggregate Series<br/>getLineColor(-1) fill · getLineColor(-2) stroke —<br/>negative ids fall through to the golden-angle branch"]
+    aggregate["Aggregate Series<br/>ids −1 and −2 fall through<br/>to the golden-angle branch"]
   end
 
-  subgraph pyside["The map takes a different path"]
-    pyFn["scripts/fetch_metro_lines.py:39-41<br/>bus_line_color() — the SAME formula, written a second time<br/>docstring: 'Must match lines.ts'"]
-    pyRail["RAIL_COLORS — a second copy of the brand table"]
-    geoProp["baked into metro_lines.geojson<br/>as a per-feature `color` property"]
-    mapLayer["MapLibre 'lines-selected'<br/>paint: line-color = ['get', 'color']"]
+  subgraph pySide["Python — scripts/fetch_metro_lines.py"]
+    direction TB
+    pyRail["RAIL_COLORS<br/>a second copy of the brand table"]
+    pyFn["bus_line_color()<br/>the same formula, written again<br/>docstring: 'Must match lines.ts'"]
+    geoProp["baked into metro_lines.geojson<br/>as a per-feature `color`"]
+    pyRail --> geoProp
+    pyFn --> geoProp
   end
 
-  pyFn --> geoProp
-  pyRail --> geoProp
+  mapLayer["MapLibre 'lines-selected'<br/>line-color = ['get', 'color']"]
+  risk["Chart and map agree only because the rule is<br/>implemented twice and kept in step by hand.<br/>Nothing tests one against the other."]
+
+  defined --> tsUses
+  golden --> tsUses
   geoProp --> mapLayer
+  pyFn --> risk
 
-  sort["lineNameSortFunction<br/>lettered lines first, then numbered by id.<br/>This order fixes legend, dataset AND table order."]
-
-  getColor --> lookup
-  lookup -- yes --> defined
-  lookup -- no --> golden
-  defined --> consumers
-  golden --> consumers
-  names --> chartDs
-  names --> sort
-
-  why["Deterministic by construction, so a bus line gets the same colour on every render."]
-  why -.- golden
-
-  dup["Chart and map agree because the formula is implemented twice and kept in step by hand.<br/>Nothing tests the two against each other; a change to one silently desynchronises the map<br/>until metro_lines.geojson is regenerated."]
-  dup -.- pyFn
-
-  classDef warn fill:#fef3c7,stroke:#b45309,color:#111827
-  classDef risk fill:#fee2e2,stroke:#b91c1c,color:#111827
-  class aggregate warn
-  class dup risk
+  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class risk cycle
+  class aggregate pending
 ```
 
 ---
 
-## The map subsystem
+## Map lifecycle
 
 The one imperative corner of an otherwise declarative app. MapLibre owns its own canvas, so
-`Map.tsx` holds everything in refs and never re-renders: one `useEffect([])` builds the map, a
-second `useEffect([lines])` syncs the selection filter.
+`Map.tsx` holds everything in refs and the component never re-renders on map state: one
+`useEffect([])` builds the map, adds the two layers once the style has loaded, and tears it all
+down on unmount.
 
-Two details are load-bearing. The hover handler reads `linesRef.current` rather than the `lines`
-closure, because the handler is installed inside the `load` callback and would otherwise capture
-the mount-time array forever. And `window.__metroMap` exists purely so `e2e/map.spec.ts` has
-something to await — a WebGL canvas offers the DOM no signal that it has finished drawing.
+Layer order is load-bearing — `lines-all` paints every route dimmed underneath, `lines-selected`
+paints the chosen ones on top in brand colour, so selection reads as emphasis rather than as the
+only thing on the map.
 
 ```mermaid
 sequenceDiagram
   autonumber
   participant OA as OutputArea
   participant M as Map.tsx
-  participant ML as MapLibre GL instance
-  participant Tiles as Basemap host
-  participant Geo as /metro_lines.geojson
-  participant W as window.__metroMap
-  participant Spec as e2e/map.spec.ts
+  participant ML as MapLibre
+  participant Net as Network
 
-  OA->>M: render, lines prop
-
+  OA->>M: render with `lines`
   Note over M: refs only — mapContainer, map,<br/>isStyleLoaded, linesRef. No React state.
 
-  M->>M: useEffect([]) — guard: return if map.current != null
-  M->>ML: new maplibregl.Map(container, STYLE_URL, center LA, zoom 10, min 8 max 16)
-  Note over M,ML: STYLE_URL = MapTiler if VITE_MAPTILER_KEY,<br/>else OpenFreeMap positron
-  M->>W: window.__metroMap = map.current
-  Note over W: test seam only — MapLibre draws into a WebGL canvas,<br/>so a spec has no DOM handle to wait on. Inert in the app.
-  ML->>Tiles: fetch style + tiles
-  M->>ML: addControl(NavigationControl, top-right)
+  M->>M: useEffect([]) — return early if map.current exists
+  M->>ML: new Map(container, STYLE_URL, LA centre, zoom 10)
+  Note over M,ML: MapTiler when VITE_MAPTILER_KEY is set,<br/>otherwise OpenFreeMap positron
+  ML->>Net: fetch style + basemap tiles
+  M->>ML: addControl(NavigationControl)
 
   ML-->>M: 'load'
   M->>M: isStyleLoaded.current = true
-  M->>ML: addSource 'metro-lines' (geojson, generateId)
-  ML->>Geo: fetch
-  M->>ML: addLayer 'lines-all' — grey, opacity 0.15, below
-  M->>ML: addLayer 'lines-selected' — line-color ['get','color'],<br/>width 5 when feature-state hover else 3
-  M->>ML: on mousemove / mouseleave over 'lines-selected'
-  M->>ML: setFilter 'lines-selected' to the initial selection
+  M->>ML: addSource 'metro-lines' — geojson, generateId
+  ML->>Net: fetch /metro_lines.geojson
+  M->>ML: addLayer 'lines-all' — grey, opacity 0.15
+  M->>ML: addLayer 'lines-selected' — colour from the feature,<br/>width 5 on hover else 3
+  M->>ML: setFilter to the initial selection
 
-  rect rgb(238, 242, 255)
-    Note over M,ML: Selection sync — useEffect([lines])
-    OA->>M: lines changed
-    M->>M: linesRef.current = lines
-    alt style not loaded yet
-      M-->>M: return — the 'load' handler will apply it
-    else loaded
-      M->>ML: setFilter 'lines-selected' ['in', ['get','line_id'], selectedIds]
-    end
-  end
-
-  rect rgb(240, 253, 244)
-    Note over ML,M: Hover popup
-    ML-->>M: mousemove with features
-    M->>ML: setFeatureState hover false on the previous id, true on this one
-    M->>M: linesRef.current.find(l => l.id === line_id)
-    M->>ML: popup.setHTML(buildPopupHTML(name, lineData))
-    Note over M: reads the ref, not the closure — the 'load' handler<br/>captured the mount-time lines array and would go stale
-  end
-
-  Spec->>W: await window.__metroMap idle, queryRenderedFeatures()
-  Note over Spec: own Playwright project — SwiftShader ANGLE,<br/>deviceScaleFactor 1, blank style stub
-
-  M->>ML: cleanup — remove(), null the ref, delete window.__metroMap
+  Note over M: unmount — remove(), null the ref,<br/>clear the test seam
 ```
 
 ---
 
-## Test topology
+## Map interaction and the test seam
 
-Three suites that never overlap. Vitest runs 20 co-located specs in jsdom, including one that is
-not a code test at all: `src/data/transit-events.test.ts` refuses to let an unsourced event ship.
-Playwright runs 9 visual-regression specs across three projects — the map gets its own because it
-renders identical geometry at any viewport. Six Python specs cover the pipeline.
+What happens after the map exists. Selection changes only update a layer filter; the map is never
+rebuilt.
 
-Only `-linux.png` baselines are committed; Windows and macOS shots are git-ignored per-developer
-scratch. A UI change that moves pixels therefore needs exactly one command,
-`npm run test:e2e:update:linux`, which regenerates inside the same Docker image CI uses.
+Two details are load-bearing. The hover handler reads `linesRef.current` rather than the `lines`
+closure, because it is installed inside the `load` callback and would otherwise capture the
+mount-time array forever. And `window.__metroMap` exists purely so `e2e/map.spec.ts` has something
+to await — a WebGL canvas gives the DOM no signal that it has finished drawing. Nothing in the app
+reads it; don't delete it.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant OA as OutputArea
+  participant M as Map.tsx
+  participant ML as MapLibre
+  participant Spec as e2e/map.spec.ts
+
+  rect rgb(239, 233, 219)
+    Note over OA,ML: Selection sync — useEffect([lines])
+    OA->>M: lines changed
+    M->>M: linesRef.current = lines
+    alt style not loaded yet
+      M-->>M: return — the 'load' handler applies it
+    else loaded
+      M->>ML: setFilter 'lines-selected' to the selected ids
+    end
+  end
+
+  rect rgb(232, 243, 226)
+    Note over ML,M: Hover popup
+    ML-->>M: mousemove with features
+    M->>ML: setFeatureState hover false on the old id, true on the new
+    M->>M: linesRef.current.find(l => l.id === line_id)
+    M->>ML: popup.setHTML(buildPopupHTML(name, lineData))
+    Note over M: reads the ref, not the closure — the handler was<br/>installed inside 'load' and captured the mount-time array
+    ML-->>M: mouseleave
+    M->>ML: clear hover state, remove popup
+  end
+
+  rect rgb(253, 242, 214)
+    Note over M,Spec: The test seam
+    M->>M: window.__metroMap = map.current
+    Spec->>M: await __metroMap idle, queryRenderedFeatures()
+    Note over Spec: its own Playwright project — SwiftShader ANGLE,<br/>deviceScaleFactor 1, blank style stub
+  end
+```
+
+---
+
+## Unit and Python suites
+
+Vitest runs 20 co-located specs in jsdom. One of them is not a code test at all:
+`src/data/transit-events.test.ts` refuses to let an event ship without a source URL — the type
+makes `source` optional so fixtures stay cheap, and the guardrail closes the gap.
+
+The Python side mirrors the pipeline exactly, one spec per script.
 
 ```mermaid
 flowchart TB
-  subgraph unit["Vitest — jsdom, globals, 20 specs co-located with the source"]
+  subgraph config["Vitest setup"]
+    direction TB
+    env["jsdom · globals · single config"]
     setup["src/test-setup.ts<br/>polyfills window.matchMedia"]
     builders["src/test/builders.ts<br/>fixture builders"]
-    uDomain["src/ridership/<br/>buildRidershipView · chartData · lineMetrics · lineReadouts"]
-    uUtils["src/utils/<br/>lines · month · queryParams · ridershipData · dataDateRange · mapPopup"]
-    uHook["src/hooks/useUserDashboardInput"]
-    uComp["src/components/ — 7 specs<br/>DateRangeSelector · LineFilters · LineSelector · LineTableRow<br/>Map · OutputArea · SummaryData"]
-    uApp["src/App.test.tsx"]
-    uGuard["src/data/transit-events.test.ts<br/>a DATA guardrail: every event must carry a source URL"]
-    excl["excludes e2e/** and .claude/**"]
     virt["ridershipDataPlugin registered here too,<br/>so virtual:ridership-bounds resolves"]
+    excl["excludes e2e/** and .claude/**"]
   end
 
-  subgraph e2e["Playwright — visual regression, fullyParallel false, workers 1"]
-    subgraph projects["Projects"]
-      desktop["desktop — 1280×800<br/>testIgnore map.spec.ts"]
-      mobile["mobile — Pixel 7, 390×844<br/>testIgnore map.spec.ts"]
-      mapProj["map — SwiftShader ANGLE,<br/>deviceScaleFactor 1, testMatch map.spec.ts"]
-    end
-    subgraph specs["Specs — 9, with committed -linux.png baselines"]
-      s1["visual.spec.ts — 6"]
-      s2["chart-content.spec.ts — 10, scoped to #ridership-chart"]
-      s3["line-filters.spec.ts — 5"]
-      s4["summary-tiles.spec.ts — 4"]
-      s5["map.spec.ts — 3"]
-      s6["context-logs.spec.ts — 2"]
-      s7["responsive-tablet.spec.ts — 2"]
-      s8["table-view.spec.ts — 2"]
-      s9["loading.spec.ts — 1"]
-    end
-    helpers["e2e/helpers.ts — gotoDashboard, mapMask"]
-    thresholds["threshold 0.25 · maxDiffPixelRatio 0.02<br/>animations disabled · reducedMotion reduce"]
-    server["webServer: build + preview locally,<br/>preview ONLY on CI (dist/ arrives as an artifact)"]
+  subgraph specs["20 specs, co-located with the code"]
+    direction LR
+    uDomain["src/ridership/ — buildRidershipView<br/>chartData · lineMetrics · lineReadouts"]
+    uUtils["src/utils/ — lines · month · queryParams<br/>ridershipData · dataDateRange · mapPopup"]
+    uHook["src/hooks/useUserDashboardInput"]
+    uComp["src/components/ — 7 specs"]
+    uApp["src/App.test.tsx"]
   end
+
+  guard["src/data/transit-events.test.ts<br/>not a code test — a data guardrail.<br/>Every event must carry a source URL."]
 
   subgraph py["Python — 6 specs, one per pipeline script"]
-    pyT["test_convert_excel_ridership · test_process_ridership<br/>test_update_ridership · test_fetch_metro_lines<br/>test_compute_line_distances · test_check_transit_events"]
+    direction LR
+    pyRid["test_convert_excel_ridership<br/>test_process_ridership<br/>test_update_ridership"]
+    pyGeo["test_fetch_metro_lines<br/>test_compute_line_distances"]
+    pyEv["test_check_transit_events"]
   end
 
-  baselines["Only -linux.png is committed.<br/>-win32.png / -darwin.png are git-ignored per-developer scratch."]
-  regen["scripts/update_linux_snapshots.py<br/>regenerates in the same Docker image CI uses,<br/>tag resolved from package-lock.json"]
+  config --> specs
+  specs --> guard
+  guard --> py
 
-  setup --> unit
-  builders --> unit
+  classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
+  class guard surface
+```
+
+---
+
+## Visual regression
+
+Nine specs across three projects. The map gets its own because it renders identical geometry at any
+viewport, so running it twice would only double the flake surface.
+
+Only `-linux.png` baselines are committed; Windows and macOS shots are git-ignored per-developer
+scratch. A UI change that moves pixels therefore needs exactly one command,
+`npm run test:e2e:update:linux`, which regenerates inside the same Docker image CI uses — the tag
+resolved from the same `package-lock.json` the workflow reads.
+
+```mermaid
+flowchart TB
+  subgraph projects["Three Playwright projects"]
+    direction TB
+    desktop["desktop — 1280×800<br/>ignores map.spec.ts"]
+    mobile["mobile — Pixel 7, 390×844<br/>ignores map.spec.ts"]
+    mapProj["map — SwiftShader ANGLE,<br/>deviceScaleFactor 1"]
+  end
+
+  subgraph specs["Nine specs, 35 committed Linux baselines"]
+    direction TB
+    s1["visual.spec.ts — 6"]
+    s2["chart-content.spec.ts — 10<br/>scoped to #ridership-chart"]
+    s3["line-filters.spec.ts — 5"]
+    s4["summary-tiles.spec.ts — 4"]
+    s5["map.spec.ts — 3"]
+    s6["context-logs · responsive-tablet<br/>table-view · loading — 7"]
+  end
+
+  subgraph rules["The rules that keep it stable"]
+    direction TB
+    serial["fullyParallel false, workers 1 —<br/>parallel workers let canvases settle differently"]
+    motion["reducedMotion reduce + animations disabled"]
+    tol["threshold 0.25 · maxDiffPixelRatio 0.02"]
+    server["build + preview locally;<br/>preview ONLY on CI, dist/ arrives as an artifact"]
+  end
+
+  helpers["e2e/helpers.ts — gotoDashboard, mapMask"]
+  baselines["Only -linux.png is committed.<br/>-win32 / -darwin are git-ignored scratch."]
+  regen["npm run test:e2e:update:linux<br/>regenerates in the image CI uses"]
+
   projects --> specs
   helpers --> specs
-  specs --> baselines
-  baselines --> regen
+  specs --> rules
+  rules --> baselines --> regen
 
-  classDef warn fill:#fef3c7,stroke:#b45309,color:#111827
-  classDef out fill:#dcfce7,stroke:#15803d,color:#111827
-  class baselines warn
-  class uGuard out
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class baselines pending
 ```
 
 ---
 
 ## CI pipeline
 
-Two jobs. `build` lints, unit-tests, builds, and uploads `dist/`; `e2e` downloads that artifact
-and runs the visual suite against `vite preview` — the app is built exactly once per run.
+Two jobs. `build` lints, unit-tests, builds and uploads `dist/`; `e2e` downloads that artifact and
+runs the visual suite against `vite preview`, so the app is built exactly once per run.
 
-The Playwright container tag is derived from `package-lock.json` by `jq` and passed between jobs
-as an output, so the browser build that produced the committed baselines can never drift from the
-installed client. `--ipc=host` is not optional: Docker's default 64 MB `/dev/shm` crashes Chromium
-mid-screenshot.
-
-There is no deploy job and no deploy target in the repo, and CI never runs the Python pipeline.
+The Playwright container tag is derived from `package-lock.json` by `jq` and passed between jobs as
+an output, so the browser build that produced the committed baselines can never drift from the
+installed client.
 
 ```mermaid
-flowchart TB
-  trigger["push to main · pull_request to main"]
-  conc["concurrency: one in-flight run per ref<br/>PR runs are cancelled when superseded; main runs never are"]
-  perms["permissions: contents: read"]
+flowchart LR
+  trigger["push to main<br/>pull_request to main"]
+  conc["one in-flight run per ref —<br/>PR runs cancelled when superseded,<br/>main runs never are"]
 
-  subgraph buildJob["Job: build — ubuntu-latest, 15 min"]
-    co1["actions/checkout@v4"]
-    node["setup-node from .node-version (22.23.2), npm cache"]
-    ci1["npm ci"]
-    resolve["Resolve Playwright version from package-lock.json<br/>jq → job output, so the image can never drift from the client"]
-    lint["npm run lint — eslint ."]
-    test["npm run test — vitest run"]
-    build["npm run build — tsc -b && vite build<br/>tsc -b also type-checks e2e/ and playwright.config.ts"]
-    upload["upload-artifact dist/ — 1 day, if-no-files-found: error"]
+  subgraph buildJob["Job: build — ubuntu-latest"]
+    direction TB
+    setup["checkout · setup-node from .node-version · npm ci"]
+    resolve["resolve the Playwright version<br/>from package-lock.json → job output"]
+    lint["npm run lint"]
+    test["npm run test"]
+    buildStep["npm run build<br/>tsc -b also type-checks e2e/"]
+    upload["upload dist/"]
+    setup --> resolve --> lint --> test --> buildStep --> upload
   end
 
-  subgraph e2eJob["Job: e2e — needs build, 30 min"]
-    container["container mcr.microsoft.com/playwright:v{version}-noble<br/>options --ipc=host, because Docker's 64MB /dev/shm<br/>crashes Chromium on full-page screenshots"]
-    co2["actions/checkout@v4"]
-    cache["cache ~/.npm — HOME is /github/home in a container job"]
-    ci2["npm ci — for the playwright CLI and vite preview only;<br/>browsers come from the image"]
-    dl["download-artifact dist/"]
-    verify["test -s dist/index.html"]
+  subgraph e2eJob["Job: e2e — needs build"]
+    direction TB
+    container["container playwright:v{version}-noble<br/>--ipc=host — the default 64MB /dev/shm<br/>crashes Chromium mid-screenshot"]
+    prep["checkout · cache ~/.npm · npm ci<br/>browsers come from the image"]
+    download["download dist/ · verify index.html"]
     runE2e["npm run test:e2e — preview only, never rebuilds"]
-    onFail["on failure: upload playwright-report/ + test-results/<br/>(the -actual / -diff triplets and traces), 14 days"]
+    onFail["on failure: upload report + the<br/>-actual / -diff triplets and traces"]
+    container --> prep --> download --> runE2e --> onFail
   end
 
-  trigger --> conc --> buildJob
-  perms --- buildJob
-  co1 --> node --> ci1 --> resolve --> lint --> test --> build --> upload
-  buildJob -- "dist artifact + playwright-version output" --> e2eJob
-  container --- co2 --> cache --> ci2 --> dl --> verify --> runE2e --> onFail
+  noDeploy["No deploy job and no deploy target in the repo.<br/>CI never runs the Python pipeline —<br/>it consumes the committed JSON."]
 
-  note["No deploy job and no deploy target in the repo.<br/>dist/ is a plain static bundle — index.html, hashed assets,<br/>ridership.json, metro_lines.geojson."]
-  note -.- upload
+  trigger --> conc --> setup
+  upload -- "dist artifact + version output" --> container
+  onFail --> noDeploy
 
-  note2["CI never runs the Python pipeline. It consumes committed JSON."]
-  note2 -.- ci1
-
-  classDef warn fill:#fef3c7,stroke:#b45309,color:#111827
-  class note,note2 warn
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class noDeploy pending
 ```
 
 ---
 
 ## Selecting a line, end to end
 
-One click traced through every layer, to show how the pieces above compose. The user checks a
-box; the hook mints a new `lines` array; the URL is rewritten; `buildRidershipView` re-derives
-the entire view in one pass; the chart, table, summary and map all update from that one result.
+One click traced through every layer, to show how the pieces above compose. The user checks a box;
+the hook mints a new `lines` array; the URL is rewritten; `buildRidershipView` re-derives the entire
+view in one pass; chart, table, summary and map all update from that one result.
 
-The `par` block is the write-back cycle seen live: rendering and re-deriving happen alongside
-each other, and the loop settles only because the second pass produces figures identical to the
-first, so the stringified dependency key stops changing.
+The `par` block is the write-back cycle seen live: rendering and re-deriving happen alongside each
+other, and the loop settles only because the second pass produces figures identical to the first.
 
 ```mermaid
 sequenceDiagram
   autonumber
   actor U as User
-  participant Row as LineTableRow
   participant Hook as useUserDashboardInput
   participant App as App
   participant View as buildRidershipView
   participant OA as OutputArea
   participant Map as Map
-  participant URL as window.history
 
-  U->>Row: check the box for the D Line (805)
-  Row->>Hook: onToggleSelectLine(line)
-  Hook->>Hook: setLines — new array, one line's `selected` flipped
+  U->>Hook: check the D Line (805) via LineTableRow
+  Hook->>Hook: setLines — new array, one flag flipped
+  Hook->>Hook: URL effect fires on JSON.stringify(lines)
+  Note over Hook: replaceState '?start=…&lines=805&day=weekday'
 
-  Note over Hook,URL: URL effect fires on JSON.stringify(lines)
-  Hook->>URL: replaceState('?start=…&lines=805&day=weekday')
-
-  Hook-->>App: new state object, re-render
-  App->>View: useMemo — records, lines, window, dayOfWeek, includeAggregate
+  Hook-->>App: new state, re-render
+  App->>View: records · lines · window · dayOfWeek · aggregate
 
   activate View
-  View->>View: group records by line under the Month Window,<br/>snapshotting `selected` once per line
-  View->>View: buildCoverageByLine
-  View->>View: lineMetrics per line — absent, not zeroed, when no records
-  View->>View: buildMonthAxis over the selected lines' months
-  View->>View: alignToMonthAxis per line — gaps stay null
-  View->>View: buildAggregateSeries, ordered last (if enabled)
-  View->>View: Event Window filter against the LIVE selection
-  View-->>App: months · datasets · consolidated · events · metrics · coverage
+  View->>View: group under the Month Window,<br/>snapshotting `selected` once per line
+  View->>View: coverage · per-line metrics
+  View->>View: shared month axis, then align each line
+  View->>View: aggregate last, if enabled
+  View->>View: Event Window filter, against the LIVE selection
+  View-->>App: months · datasets · consolidated<br/>events · metrics · coverage
   deactivate View
 
   par Render
-    App->>OA: chartDatasets, months, lines, transitEvents
-    OA->>OA: Chart.js redraws — the event markers plugin reads transitEvents
+    App->>OA: datasets, months, events
     OA->>Map: lines
-    Map->>Map: setFilter 'lines-selected' → the D Line lights up in brand purple
+    Map->>Map: setFilter — the D Line lights up in brand purple
   and Write-back
-    App->>Hook: updateLinesWithLineMetrics(consolidated)<br/>useEffect keyed on JSON.stringify(consolidated)
-    Hook->>Hook: setLines — stamps 8 derived fields onto every Line
-    Note right of Hook: This mints a NEW lines array, which re-enters<br/>the useMemo above. The cycle settles because the<br/>second pass produces identical figures, so the<br/>stringified key stops changing. ADR-0005 removes it.
+    App->>Hook: updateLinesWithLineMetrics(consolidated)
+    Hook->>Hook: setLines — stamps 8 derived fields
+    Note right of Hook: a NEW lines array re-enters the memo above.<br/>It settles because the second pass produces<br/>identical figures. ADR-0005 removes it.
   end
 
-  Note over App,Map: The line table now lists the D Line with its figures<br/>and a partial-coverage label — its data begins 2025-09.
-  URL-->>U: the address bar is a shareable link to exactly this view
+  Note over App,Map: the table now lists the D Line with its figures<br/>and a partial-coverage label — its data begins 2025-09
+  Hook-->>U: the address bar is a link to exactly this view
 ```
 
 ---
 
 ## Documentation and decision map
 
-Which document governs what, and where the code has not caught up. `CONTEXT.md` outranks the
-source by its own rule — where a term there conflicts with a name in the code, the code is what's
-out of date.
+Which document governs what, and where the code has not caught up. `CONTEXT.md` outranks the source
+by its own rule — where a term there conflicts with a name in the code, the code is what's out of
+date.
 
 All six ADRs are accepted, but two are only half-landed: 0005's `buildLineReadouts` and 0006's
 `month.ts` both exist with full test coverage and no production caller. That gap is the most
-actionable thing in this whole set. Separately, `CLAUDE.md` still refers to `src/utils/calc.ts`,
-which ADR-0004 deleted.
+actionable thing in this whole set.
 
 ```mermaid
 flowchart TB
   subgraph authority["Authority order"]
-    ctx["CONTEXT.md — the ubiquitous language.<br/>'Where a term below conflicts with a name in the source, the term wins.'"]
-    adrs["docs/adr/ — decisions, all six accepted"]
-    claude["CLAUDE.md — working notes for agents"]
-    readme["README.md — data coverage, screenshots, CI runbook"]
+    direction TB
+    ctx["CONTEXT.md — the ubiquitous language.<br/>Where a term conflicts with a name in the<br/>source, the term wins."]
+    adrs["docs/adr/ — six decisions, all accepted"]
+    claude["CLAUDE.md — working notes"]
+    readme["README.md — runbooks"]
+    ctx --> adrs --> claude --> readme
   end
 
-  subgraph decided["ADRs, and what each governs"]
-    a1["0001 — the Month Window offset is deliberate"]
-    a2["0002 — the view returns Chart.js dataset types"]
-    a3["0003 — src/ridership/ is one domain folder"]
-    a4["0004 — Line Metrics are one nullable shape"]
-    a5["0005 — derived figures live on a Line Readout"]
-    a6["0006 — a month is {year, month}, not a Date"]
+  subgraph landed["Decided and in force"]
+    direction TB
+    a1["0001 — the offset Month Window<br/>→ buildRidershipView.ts"]
+    a2["0002 — the view returns Chart.js types<br/>→ RidershipView.datasets"]
+    a3["0003 — one domain folder<br/>→ src/ridership/index.ts"]
+    a4["0004 — one nullable Line Metrics shape<br/>→ lineMetrics.ts"]
   end
 
-  subgraph code["Modules"]
-    m1["buildRidershipView.ts + utils/month.ts"]
-    m2["RidershipView.datasets"]
-    m3["src/ridership/index.ts — the seam"]
-    m4["lineMetrics.ts"]
-    m5["lineReadouts.ts + utils/lines.ts listedReadouts"]
-    m6["utils/month.ts"]
+  subgraph half["Accepted, machinery landed, no production caller"]
+    direction TB
+    a5["0005 — figures live on a Line Readout.<br/>buildLineReadouts and listedReadouts are<br/>written and tested; App.tsx:94 still writes back."]
+    a6["0006 — a month is {year, month}.<br/>utils/month.ts has both rules and its own spec;<br/>the filters still do Date arithmetic."]
   end
 
-  subgraph gap["Accepted, machinery landed, NOT yet in the render path"]
-    g5["buildLineReadouts and listedReadouts exist and are unit-tested,<br/>but nothing in src/ imports them. App.tsx:94 still calls<br/>updateLinesWithLineMetrics, so figures are still written onto Line."]
-    g6["month.ts exists with contains/containsOffset and its own spec,<br/>but the only reference outside its test is a plan document.<br/>The production filters still do Date and YYYYMM arithmetic."]
+  subgraph planning["Planning — intent, not decisions"]
+    direction TB
+    review["architecture-review-2026-08-05.md<br/>six candidates; 1 landed,<br/>5 (URL contract) and 6 (CSV seam) unscheduled"]
+    plans["src/plans/ — 7 design notes"]
+    agents["docs/agents/ · perf/BASELINE.md"]
   end
 
-  subgraph planning["Planning docs — intent, not decisions"]
-    review["docs/architecture-review-2026-08-05.md<br/>six deepening candidates; 1 landed, 5 (URL contract) and 6 (CSV seam) unscheduled"]
-    plans["src/plans/ — 7 per-feature design notes"]
-    agents["docs/agents/ — domain.md · issue-tracker.md · triage-labels.md"]
-    perf["perf/BASELINE.md"]
-  end
+  adrs --> landed
+  adrs --> half
+  plans --> review --> adrs
 
-  stale["CLAUDE.md still names src/utils/calc.ts,<br/>which ADR-0004 deleted. The doc is out of date, not the code."]
-
-  ctx --> adrs --> claude --> readme
-  a1 --> m1
-  a2 --> m2
-  a3 --> m3
-  a4 --> m4
-  a5 --> m5
-  a6 --> m6
-  a5 -.-> g5
-  a6 -.-> g6
-  review --> adrs
-  plans --> review
-  claude -.- stale
-
-  classDef pending fill:#fef3c7,stroke:#b45309,color:#111827
-  classDef risk fill:#fee2e2,stroke:#b91c1c,color:#111827
-  classDef auth fill:#dcfce7,stroke:#15803d,color:#111827
-  class g5,g6,gap pending
-  class stale risk
-  class ctx auth
+  classDef authorityC fill:#f0e5f1,stroke:#a05da5,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
+  class ctx authorityC
+  class a5,a6 pending
+  class landed surface
 ```
 
 ---

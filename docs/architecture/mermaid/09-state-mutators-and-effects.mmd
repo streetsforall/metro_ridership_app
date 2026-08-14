@@ -1,0 +1,45 @@
+flowchart TB
+  subgraph mutators["Mutators the hook returns"]
+    direction LR
+    toggleLine["onToggleSelectLine(line)"]
+    clear["clearSelections()"]
+    selectAll["selectAllVisibleLines()"]
+    updateMetrics["updateLinesWithLineMetrics(consolidated)"]
+    setters["the eight setters —<br/>dates · dayOfWeek · search · modes<br/>aggregate · context logs"]
+  end
+
+  lines["lines: Line[]<br/>four of the five mutators write here"]
+  otherSlices["the window, filter and toggle slices"]
+
+  subgraph effects["The two effects inside the hook"]
+    direction LR
+    modeSync["modes → per-line `visible`<br/>useEffect([modes])"]
+    urlSync["state → history.replaceState<br/>deps include JSON.stringify(lines)"]
+  end
+
+  keys["Three JSON.stringify dependency keys —<br/>App.tsx:96 · hook :168 · hook :264.<br/>Load-bearing: `lines` is a fresh array every derivation,<br/>so reference equality would fire these forever."]
+
+  subgraph local["Component-local state — deliberately not in the store"]
+    direction LR
+    appLocal["App<br/>isLineSelectorExpanded<br/>ridershipRecords"]
+    lsLocal["LineSelector<br/>column sort · isCopied"]
+    oaLocal["OutputArea<br/>isContextLogOpen"]
+    ltrLocal["LineTableRow<br/>isMounted · data"]
+    mapLocal["Map<br/>refs only, never state"]
+  end
+
+  toggleLine --> lines
+  clear --> lines
+  selectAll --> lines
+  updateMetrics --> lines
+  setters --> otherSlices
+
+  lines --> effects
+  otherSlices --> urlSync
+  effects --> keys
+  keys --> local
+
+  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class updateMetrics cycle
+  class keys pending

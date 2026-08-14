@@ -1,31 +1,40 @@
 flowchart LR
   root(["metro_ridership_app/"])
 
-  root --- srcN["src/<br/>the application"]
-  root --- dataN["data/raw/<br/>source workbooks, input to the pipeline"]
-  root --- scriptsN["scripts/<br/>Python pipeline + its tests"]
-  root --- nbN["notebooks/<br/>Jupyter scrapers"]
-  root --- viteN["vite/<br/>ridership-data-plugin.ts"]
-  root --- publicN["public/<br/>favicon, metro_lines.geojson"]
-  root --- e2eN["e2e/<br/>Playwright visual regression + baselines"]
-  root --- docsN["docs/<br/>adr/ · agents/ · architecture/ · review"]
-  root --- ghN[".github/workflows/ci.yml"]
-  root --- perfN["perf/BASELINE.md"]
-  root --- cfgN["configs<br/>vite · vitest · playwright · eslint · tailwind · tsconfig×4"]
-  root --- prose["CLAUDE.md · CONTEXT.md · README.md"]
+  app["The application<br/><b>src/</b>"]
+  pipeline["Data authoring"]
+  tooling["Build and verification"]
+  writing["Prose — the system's memory"]
 
-  srcN --- cmp["components/<br/>8 components, 7 specs"]
-  srcN --- hooks["hooks/<br/>useUserDashboardInput — the store"]
-  srcN --- rid["ridership/<br/>the one domain folder (ADR-0003)"]
-  srcN --- utils["utils/<br/>lines · month · queryParams · ridershipData · dataDateRange · mapPopup"]
-  srcN --- types["@types/<br/>domain types + ambient decls"]
-  srcN --- dataDir["data/<br/>bundled JSON + the canonical dataset"]
-  srcN --- assets["assets/<br/>SVG icons, logo"]
-  srcN --- plans["plans/<br/>7 per-feature design notes"]
-  srcN --- testDir["test/builders.ts<br/>fixture builders"]
-  srcN --- rootFiles["App.tsx · main.tsx · index.css · test-setup.ts"]
+  root --> app
+  root --> pipeline
+  root --> tooling
+  root --> writing
 
-  classDef domain fill:#e0f2fe,stroke:#0369a1,color:#111827
-  classDef gen fill:#f1f5f9,stroke:#64748b,color:#111827
-  class rid,hooks domain
-  class docsN gen
+  app --> cmp["components/ — 8 components, 7 specs"]
+  app --> hooks["hooks/ — the only store"]
+  app --> rid["ridership/ — the one domain folder"]
+  app --> utils["utils/ — lines · month · queryParams<br/>ridershipData · dataDateRange · mapPopup"]
+  app --> types["@types/ — domain types"]
+  app --> dataDir["data/ — bundled JSON + the dataset"]
+  app --> misc["assets/ · plans/ · test/<br/>App.tsx · main.tsx · index.css"]
+
+  pipeline --> dataN["data/raw/ — source workbooks"]
+  pipeline --> scriptsN["scripts/ — pipeline + 6 Python specs"]
+  pipeline --> nbN["notebooks/ — Jupyter scrapers"]
+  pipeline --> publicN["public/ — geojson, favicon"]
+
+  tooling --> viteN["vite/ — ridership-data-plugin.ts"]
+  tooling --> e2eN["e2e/ — Playwright specs + baselines"]
+  tooling --> ghN[".github/workflows/ci.yml"]
+  tooling --> cfgN["configs — vite · vitest · playwright<br/>eslint · tailwind · tsconfig ×4"]
+
+  writing --> ctxN["CONTEXT.md — the ubiquitous language"]
+  writing --> adrN["docs/adr/ — six decisions"]
+  writing --> archN["docs/architecture/ — these diagrams"]
+  writing --> otherN["docs/agents/ · architecture review<br/>CLAUDE.md · README.md · perf/"]
+
+  classDef structural fill:#dce9f4,stroke:#0072bc,stroke-width:1.5px,color:#44403c
+  classDef authority fill:#f0e5f1,stroke:#a05da5,stroke-width:1.5px,color:#44403c
+  class rid,hooks structural
+  class ctxN authority

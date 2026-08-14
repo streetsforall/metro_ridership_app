@@ -1,77 +1,73 @@
 flowchart TB
-  user(["User"])
-
   subgraph ext["External — outside the repo"]
-    metroXlsx["LA Metro ridership workbooks<br/>.xlsx / .zip, published periodically"]
+    direction LR
+    metroXlsx["LA Metro ridership<br/>workbooks"]
     metroGis["Metro GIS<br/>route geometry"]
     announce["Service-change<br/>announcements"]
-    tiles["Basemap tiles<br/>OpenFreeMap positron<br/>or MapTiler if VITE_MAPTILER_KEY"]
   end
 
-  subgraph authoring["Authoring — run by hand, never in CI"]
+  subgraph authoring["Authoring — by hand, never in CI"]
+    direction LR
     raw[/"data/raw/"/]
     py["Python pipeline<br/>scripts/*.py"]
-    nb["notebooks/<br/>scrapers and updaters"]
+    raw --> py
   end
 
   subgraph committed["Committed data — the repo is the database"]
-    canonical[("src/data/ridership.json<br/>canonical records, ~7 MB")]
-    meta[("src/data/<br/>metro_line_metadata_current.json<br/>line_distances.json<br/>transit-events.json")]
-    geo[("public/metro_lines.geojson<br/>2.3 MB route geometry")]
+    direction LR
+    canonical[("ridership.json<br/>~7 MB, canonical")]
+    meta[("line metadata<br/>distances · events")]
+    geo[("metro_lines.geojson")]
   end
 
   subgraph build["Build — Vite 6"]
-    plugin["vite/ridership-data-plugin.ts"]
-    entry["Entry chunk<br/>App, hook, line table"]
-    lazychunk["Lazy chunk<br/>OutputArea + Chart.js + MapLibre"]
-    columnar[/"dist/ridership.json<br/>columnar cols + rows, minified"/]
+    direction LR
+    plugin["ridership-data-plugin"]
+    columnar[/"dist/ridership.json<br/>columnar"/]
+    chunks[/"entry chunk<br/>+ lazy OutputArea"/]
+    plugin --> columnar
   end
 
-  host["Static host<br/>dist/ only — there is no backend"]
+  host["Static host — dist/ only<br/>there is no backend"]
 
   subgraph browser["Browser runtime"]
+    direction LR
     hook["useUserDashboardInput<br/>the only store"]
-    view["buildRidershipView<br/>the whole derived view, one pass"]
-    ui["Chart · line table · summary · map · context log"]
-    urlbar["URL query string<br/>the only persistence layer"]
+    view["buildRidershipView<br/>the derived view, one pass"]
+    ui["chart · table · summary<br/>map · context log"]
+    hook --> view --> ui
   end
 
-  ci["GitHub Actions CI<br/>lint · unit tests · build · visual regression"]
+  urlbar["URL query string<br/>the only persistence"]
+  user(["User"])
+  tiles["Basemap tiles<br/>OpenFreeMap or MapTiler"]
+  ci["GitHub Actions<br/>lint · test · build · visual regression"]
 
   metroXlsx --> raw
   metroGis --> py
   announce --> py
-  raw --> py
-  nb --> py
   py --> canonical
   py --> meta
   py --> geo
 
   canonical --> plugin
-  plugin --> columnar
-  meta --> entry
-  geo --> host
-  entry --> host
-  lazychunk --> host
+  meta --> chunks
   columnar --> host
-  entry -. "React.lazy, on demand" .-> lazychunk
+  chunks --> host
+  geo --> host
 
-  host -- "fetch /ridership.json" --> view
   host --> hook
-  geo -. "fetch at map init" .-> ui
-  tiles -. "fetch at map init" .-> ui
+  host -- "fetch /ridership.json" --> view
+  tiles --> ui
 
-  user -- "picks lines, months, day of week" --> hook
-  hook --> view
-  view --> ui
   ui --> user
+  user -- "picks lines, months, day" --> hook
   hook <--> urlbar
   urlbar -- "shareable link" --> user
 
-  committed --> ci
-  build --> ci
+  chunks -.-> ci
 
-  classDef unbuilt fill:#fef3c7,stroke:#b45309,color:#111827
-  classDef seam fill:#e0f2fe,stroke:#0369a1,color:#111827
-  class view seam
-  class urlbar unbuilt
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class view key
+  class urlbar pending

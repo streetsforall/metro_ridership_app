@@ -12,7 +12,6 @@ classDiagram
     <<identity + metadata>>
     +id: number
     +name: string
-    +former?: string
     +mode: Bus | Rail
     +provider: DO | PT
     +selected: boolean
@@ -24,14 +23,13 @@ classDiagram
     +startingRidership?: number
     +endingRidership?: number
     +ridersPerMile?: number
-    +ridershipOverTime?: number
     +coveredFrom?: string
     +coveredTo?: string
     +isPartialCoverage?: boolean
   }
 
   class LineSelection {
-    <<the module's real input>>
+    <<what the module actually takes>>
     +id: number
     +selected: boolean
     +distanceMiles?: number
@@ -51,10 +49,6 @@ classDiagram
     +ridershipRecords: RidershipRecord[]
   }
 
-  class ConsolidatedRidership {
-    <<Record~lineId, ConsolidatedRecord~>>
-  }
-
   class LineMetrics {
     +averageRidership: number
     +changeInRidership: number
@@ -71,19 +65,15 @@ classDiagram
 
   class LineReadout {
     <<Line & Partial~LineMetrics~ & Partial~LineCoverage~>>
-    built, not yet wired in
+    built and tested, no production caller
   }
 
   class TransitEvent {
     +id: string
     +date: string
     +line_ids: number[]
-    +title: string
-    +description: string
     +category: EventCategory
     +source?: string
-    +shakeup?: string
-    +details?: object
   }
 
   class CustomChartData {
@@ -101,25 +91,23 @@ classDiagram
   }
 
   class Month {
-    <<src/utils/month.ts — unwired>>
+    <<utils/month.ts — no production caller>>
     +year: number
     +month: number 1-based
   }
 
-  LineJson --> Line : createLinesData enriches
+  LineJson --> Line : createLinesData
   Line ..|> LineSelection : satisfies structurally
   RidershipRecord --* ConsolidatedRecord
-  ConsolidatedRecord --* ConsolidatedRidership
-  ConsolidatedRecord --> LineMetrics : lineMetrics(), null for an empty series
-  ConsolidatedRidership --> LineCoverage : buildCoverageByLine()
+  ConsolidatedRecord --> LineMetrics : lineMetrics(), null if empty
+  ConsolidatedRecord --> LineCoverage : buildCoverageByLine()
   RidershipRecord --> CustomChartData : alignToMonthAxis()
+  RidershipRecord ..|> Month : is structurally one
   CustomChartData --* RidershipView
-  ConsolidatedRidership --* RidershipView
   LineMetrics --* RidershipView
   LineCoverage --* RidershipView
   TransitEvent --* RidershipView
   Line --> LineReadout
   LineMetrics --> LineReadout
   LineCoverage --> LineReadout
-  LineMetrics ..> Line : write-back today (the cycle)
-  RidershipRecord ..|> Month : is structurally one
+  LineMetrics ..> Line : the write-back today

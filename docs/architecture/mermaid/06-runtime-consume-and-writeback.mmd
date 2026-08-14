@@ -1,0 +1,43 @@
+flowchart TB
+  view["RidershipView<br/>months · datasets · consolidated<br/>events · metrics · coverage"]
+
+  subgraph rendering["What renders from it"]
+    direction TB
+    outputArea["OutputArea<br/>chart · summary · context log"]
+    mapCmp["Map<br/>selection filter"]
+    lineSelector["LineSelector<br/>buildWindowMonthAxis over consolidated —<br/>a wider axis than RidershipView.months"]
+  end
+
+  subgraph loop["The write-back cycle"]
+    direction TB
+    writeback["updateLinesWithLineMetrics(consolidated)<br/>useEffect keyed on JSON.stringify"]
+    stamp["stamps 8 derived fields<br/>onto every Line"]
+    fresh["a new lines array<br/>re-enters the same useMemo"]
+    writeback --> stamp --> fresh
+  end
+
+  hook["useUserDashboardInput<br/>holds lines"]
+
+  subgraph replacement["ADR-0005's replacement — built, not wired in"]
+    direction TB
+    readouts["buildLineReadouts(lines, metrics, coverage)"]
+    listed["listedReadouts(readouts, searchText, modes)"]
+    readouts --> listed
+  end
+
+  view -- "datasets · months · events" --> outputArea
+  view -- "consolidated" --> lineSelector
+  view -- "consolidated" --> writeback
+  fresh --> hook
+  hook --> mapCmp
+  hook --> view
+
+  view -. "metrics + coverage, already returned" .-> readouts
+  listed -. "would replace the stamped fields" .-> lineSelector
+
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class view key
+  class writeback,stamp,fresh cycle
+  class readouts,listed pending

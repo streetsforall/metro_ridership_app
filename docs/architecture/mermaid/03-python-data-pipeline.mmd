@@ -1,50 +1,45 @@
-flowchart TB
-  subgraph inputs["Inputs"]
+flowchart LR
+  subgraph ridershipChain["Ridership chain — the main line"]
+    direction LR
     xlsx[/"data/raw/*.xlsx<br/>monthly bus workbooks"/]
     zips[/"data/raw/Rail *.zip"/]
-    gisapi["Metro GIS endpoint"]
-    sources["Published service-change<br/>announcements"]
-  end
-
-  subgraph ridershipChain["Ridership chain"]
-    convert["convert_excel_ridership.py<br/>npm run load-ridership"]
-    process["process_ridership.py<br/>normalise, dedupe, type"]
-    update["update_ridership.py<br/>merge a new month into the canonical file"]
-  end
-
-  subgraph sideChains["Side chains"]
-    fetchLines["fetch_metro_lines.py<br/>npm run fetch-lines"]
-    distances["compute_line_distances.py"]
-    checkEvents["check_transit_events.py<br/>npm run check-transit-events"]
-  end
-
-  subgraph outputs["Committed outputs"]
+    convert["convert_excel_ridership.py"]
+    process["process_ridership.py<br/>normalise · dedupe · type"]
+    update["update_ridership.py<br/>merge one new month"]
     ridJson[("src/data/ridership.json")]
+
+    xlsx --> convert
+    zips --> convert
+    convert --> process
+    process --> ridJson
+    update --> ridJson
+  end
+
+  subgraph geometry["Geometry chain"]
+    direction LR
+    gisapi["Metro GIS endpoint"]
+    fetchLines["fetch_metro_lines.py"]
     geojson[("public/metro_lines.geojson")]
+    distances["compute_line_distances.py"]
     distJson[("src/data/line_distances.json")]
+
+    gisapi --> fetchLines --> geojson --> distances --> distJson
+  end
+
+  subgraph eventsChain["Events chain"]
+    direction LR
+    sources["Published<br/>service-change notices"]
+    checkEvents["check_transit_events.py"]
     events[("src/data/transit-events.json")]
+
+    sources --> checkEvents --> events
   end
 
   tests["scripts/test_*.py<br/>one sibling per script, 6 in all"]
 
-  xlsx --> convert
-  zips --> convert
-  convert --> process
-  process --> ridJson
-  update --> ridJson
-  xlsx -. "a newly published month" .-> update
+  process -.-> tests
+  fetchLines -.-> tests
+  checkEvents -.-> tests
 
-  gisapi --> fetchLines --> geojson
-  geojson --> distances --> distJson
-  sources --> checkEvents --> events
-
-  ridershipChain -.-> tests
-  sideChains -.-> tests
-
-  note["Run by hand. CI never runs the pipeline —<br/>it consumes the committed JSON."]
-  note -.- outputs
-
-  classDef out fill:#dcfce7,stroke:#15803d,color:#111827
-  classDef warn fill:#fef3c7,stroke:#b45309,color:#111827
-  class ridJson,geojson,distJson,events out
-  class note warn
+  classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
+  class ridJson,geojson,distJson,events surface

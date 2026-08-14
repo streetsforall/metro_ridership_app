@@ -1,0 +1,40 @@
+flowchart LR
+  subgraph tsSide["TypeScript — src/utils/lines.ts"]
+    direction TB
+    getColor["getLineColor(lineId)"]
+    lookup{"in definedLines?"}
+    defined["9 brand colours<br/>801 A · 802 B · 803 C · 804 E<br/>805 D · 806 L · 807 K · 901 G · 910 J"]
+    golden["busLineColor()<br/>hue = lineId × 137.508 mod 360<br/>hsl(hue, 75%, 45%)"]
+    getColor --> lookup
+    lookup -- yes --> defined
+    lookup -- no --> golden
+  end
+
+  subgraph tsUses["What reads it"]
+    direction TB
+    chartDs["chart datasets<br/>background + border"]
+    sparkline["LineTableRow sparkline"]
+    aggregate["Aggregate Series<br/>ids −1 and −2 fall through<br/>to the golden-angle branch"]
+  end
+
+  subgraph pySide["Python — scripts/fetch_metro_lines.py"]
+    direction TB
+    pyRail["RAIL_COLORS<br/>a second copy of the brand table"]
+    pyFn["bus_line_color()<br/>the same formula, written again<br/>docstring: 'Must match lines.ts'"]
+    geoProp["baked into metro_lines.geojson<br/>as a per-feature `color`"]
+    pyRail --> geoProp
+    pyFn --> geoProp
+  end
+
+  mapLayer["MapLibre 'lines-selected'<br/>line-color = ['get', 'color']"]
+  risk["Chart and map agree only because the rule is<br/>implemented twice and kept in step by hand.<br/>Nothing tests one against the other."]
+
+  defined --> tsUses
+  golden --> tsUses
+  geoProp --> mapLayer
+  pyFn --> risk
+
+  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class risk cycle
+  class aggregate pending
