@@ -148,6 +148,35 @@ test('map — selecting a line updates the layer filter without a reload', async
   expect(await renderedLineIds(page, 'lines-selected')).toEqual([801]);
 });
 
+/**
+ * `#lineMap` is a fixed `height: 400px; width: 100%` (src/components/Map.css), so narrowing the
+ * viewport does not change the geometry the map draws — it changes the canvas aspect ratio, and
+ * with it where MapLibre's NavigationControl and compact attribution control sit relative to the
+ * routes. That is the whole delta this baseline guards, and it is the part the 1280px shots above
+ * cannot see.
+ *
+ * `test.use` is scoped to this describe rather than declared at file level, because a file-level
+ * override would re-shoot the two existing baselines at 390px instead of adding coverage. And it
+ * stays in the `map` project rather than getting one of its own: that project is where SwiftShader
+ * and `deviceScaleFactor: 1` are pinned, which is what makes any WebGL baseline here reproducible.
+ * Only `viewport` is overridden — no touch/UA emulation — since none of that reaches a GL canvas.
+ */
+test.describe('narrow viewport', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('map — selected lines render in brand colours at phone width', async ({ page }) => {
+    await gotoMap(page, SELECTED_LINE_IDS);
+
+    // Same containment assertion as the desktop shot, and for the same reason —
+    // queryRenderedFeatures is viewport-clipped, and this viewport clips harder.
+    const selected = await renderedLineIds(page, 'lines-selected');
+    expect(selected.length).toBeGreaterThan(0);
+    expect(selected.filter((id) => !SELECTED_LINE_IDS.includes(id))).toEqual([]);
+
+    await expect(page.locator('#lineMap')).toHaveScreenshot('lines-selected-narrow.png');
+  });
+});
+
 test('map — layer stack is background, dimmed lines, then selected lines', async ({ page }) => {
   await gotoMap(page, SELECTED_LINE_IDS);
 
