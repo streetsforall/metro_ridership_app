@@ -9,8 +9,9 @@ stop/station-level with ons, offs and activity for all three day types;
 `aggregate_to_line_ridership` used to `groupby("LINE").sum()` and discard stop
 identity, offs and activity at ingest. Nothing needs to be acquired.
 
-Coverage is **2025-07 → 2026-05, 11 months, both modes**. Everything before that is
-line-level only and stays untouched.
+Coverage is **2025-07 → 2026-06, 12 months, both modes** — 11 at the time this was
+written, plus 2026-06 from #176. Everything before that is line-level only and stays
+untouched.
 
 ## The five PRs
 
@@ -42,41 +43,69 @@ Judge the gate against a **control run at the base commit**, not against the com
 file: the re-ingest must produce byte-for-byte what it produced before the change. PR 1
 does (`sha256 f03df3a9…` for both runs).
 
-#### Settled: the committed file is right, the five rows are wrong
+The five synthesised rows are gone as of the padding fix below — but the gate does not
+change, because a re-ingest still moves one value (line 602 at 2025-11, Saturday 238 →
+237, a re-derivation of the days-weighted mean). **The control run remains the baseline.**
+
+#### Settled: the committed file is right, the synthesised rows are wrong
 
 Neither answer in the original framing was correct — `ridership.json` is not stale, and
 line 106 is not missing data. **Line 106 was discontinued.** It ran normally to the end
 of 2025 (158 stops, 4,062 weekday boardings in 2025-12), is absent from every export
-from 2026-01 on — the *only* line dropped anywhere in the 11-month window — and is gone
+from 2026-01 on — the *only* line dropped anywhere in the window — and is gone
 from `public/metro_lines.geojson`, so Metro's own GTFS no longer carries it either.
 
-A zero row asserts the line ran and carried nobody. Writing five of them would draw
-line 106 plunging from 4,062 to a five-month flatline along the axis, which reads as a
-ridership collapse rather than a line that ended. `CLAUDE.md` already has the words for
-this: *a month a line doesn't report is a gap, not a zero.*
+A zero row asserts the line ran and carried nobody. Writing them would draw line 106
+plunging from 4,062 to a flatline along the axis, which reads as a ridership collapse
+rather than a line that ended — and the flatline grows by one month with every export
+that lands. `CLAUDE.md` already has the words for this: *a month a line doesn't report
+is a gap, not a zero.*
 
 The rows appear because `fill_missing_months` cross-joins **the batch's** month range
 with **the batch's** line set. Incremental ingests each covered a narrow range, so a line
 that starts or stops mid-window was never padded across months outside its own batch. One
-full re-ingest spans all 11 months at once and pads everything. Line 74 is the mirror
+full re-ingest spans every month at once and pads everything. Line 74 is the mirror
 image and is already in the committed file — five zeros for 2025-07 … 11, then real data
 from 2025-12 — because its batch's range covered those months. So the file's working
 convention is **pad the start, not the end**: at 2026-05 there are 114 lines and not one
 with zero weekday ridership.
 
 **Action for PR 3: none, beyond not "fixing" it.** Do not chase a clean
-`git diff src/data/ridership.json` after a full re-ingest, and do not add the five rows.
+`git diff src/data/ridership.json` after a full re-ingest, and do not add the rows.
 
-**Separately — a live footgun PR 3 must not walk into.** `merge_ridership`'s docstring
-promises that "gaps in new data (within its date range) are backfilled from existing data
-before the concat, preserving non-zero historical values." That backfill is
-**unreachable**: its mask is `isnull(new) & notnull(old)`, but `fill_missing_months` has
-already `.fillna(0)`'d every gap, so the new side is never null (0 nulls survive it).
-Meanwhile `pd.concat([merged, current]).drop_duplicates(keep="first")` lets the new rows
-win. So a wide-range re-ingest **can overwrite real committed ridership with zeros**, and
-the guard that is supposed to prevent exactly that does not run. Today it only surfaces as
-five insertions because line 106's rows are absent rather than present-and-nonzero.
-Nobody has fixed this; it is in `process_ridership.py`, which is out of scope for PR 1.
+#### The padding rule is now enforced in code
+
+Everything above described a convention the *data* followed and the *code* did not. Until
+this was fixed, "pad the start, not the end" held only because the archives happen to be
+delivered in narrow batches — feed the same months in as one wide batch and the padding
+reappeared. `fill_missing_months` now pads a line's **leading** gap only. Months after a
+line's last report, and interior months it skipped, are left absent.
+
+**And the footgun that came with it is closed.** `merge_ridership`'s docstring promised
+that "gaps in new data (within its date range) are backfilled from existing data before
+the concat, preserving non-zero historical values." That backfill was **unreachable**: its
+mask is `isnull(new) & notnull(old)`, but `fill_missing_months` had already `.fillna(0)`'d
+every gap, so the new side was never null. Meanwhile
+`pd.concat([merged, current]).drop_duplicates(keep="first")` let the new rows win — so a
+wide-range re-ingest **could overwrite real committed ridership with zeros**, for any line
+whose reporting is discontinuous inside the range, with the guard meant to prevent exactly
+that sitting dead. It never fired on this data only because line 106's rows are absent
+rather than present-and-nonzero.
+
+Pads are now left as **NaN**, not `0`, which is what makes the existing mask reachable and
+its docstring true. The NaN is load-bearing, and this is the part to not undo:
+
+> **Padding cannot be detected by value — a real row may be all zeros.** Line 60 genuinely
+> reported `0/0/0` for 2026-01. A backfill keyed on `== 0` instead of `isnull` would read
+> that as padding and resurrect stale figures over a real zero report. Reported-ness comes
+> from the merge indicator, never from the numbers.
+
+Measured on a single wide batch over all five archives (2025-07 … 2026-06, 115 lines):
+before, `42,747 → 42,753` records, writing six zero rows for line 106; after, `42,747 →
+42,747` and none. Per-archive re-ingest is byte-identical to its control run.
+
+`update_ridership.py`'s `diff_against_current` moved in step — a pad is not a pending
+correction, and without that `--overwrite` reported 8 corrections where 1 was real.
 
 ## The contract PR 1 freezes
 

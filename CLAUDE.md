@@ -61,6 +61,10 @@ Each one has cost someone real time. The reasoning is in `docs/`; this is the sh
   committed chart baselines — [ADR-0001](docs/adr/0001-ridership-month-window-is-deliberately-offset.md).
   The Event Window disagreeing with it is also intended.
 - **Don't set `spanGaps`** on the chart. A month a line doesn't report is a gap, not a zero.
+- **Don't make `fill_missing_months` pad anything but a line's leading gap**, and don't let its pads
+  become `0` before `merge_ridership` has backfilled them. A pad is NaN so the merge can tell it from
+  a line that genuinely reported zero riders — line 60 did, in 2026-01 — so a backfill keyed on `== 0`
+  is wrong. Pad the start, not the end: see *Settled* in [docs/ROADMAP.md](docs/ROADMAP.md).
 - **Don't add a derived field to `Line`.** Figures belong on a Line Readout and last only as long as
   the window that produced them — [ADR-0005](docs/adr/0005-derived-figures-live-on-line-readouts.md).
   The write-back that used to do this was deleted in #167; don't reintroduce it.
