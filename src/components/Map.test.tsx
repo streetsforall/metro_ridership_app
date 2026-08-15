@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import maplibregl from 'maplibre-gl';
 import Map from './Map';
-import type { Line } from '../@types/lines.types';
+import { makeLine } from '../test/builders';
 
 // Hoisted so the vi.mock factory below can close over them
 const captured = vi.hoisted(() => ({
@@ -46,16 +46,6 @@ vi.mock('maplibre-gl', () => ({
     };
   }),
 }));
-
-const makeLine = (overrides: Partial<Line> = {}): Line => ({
-  id: 801,
-  name: 'A Line',
-  mode: 'Rail',
-  provider: 'DO',
-  selected: false,
-  visible: true,
-  ...overrides,
-});
 
 beforeEach(() => {
   captured.loadCallback = undefined;

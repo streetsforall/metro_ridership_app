@@ -1,25 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import LineSelector from './LineSelector';
-import type { Line } from '../@types/lines.types';
+import type { LineReadout } from '../ridership';
+import { makeLineReadout } from '../test/builders';
 import type { ConsolidatedRidership } from '../@types/metrics.types';
 
 vi.mock('react-chartjs-2', () => ({
   Line: () => <canvas data-testid="sparkline" />,
 }));
 
-const mockLine: Line = {
-  id: 801,
-  name: 'A Line',
-  mode: 'Rail',
-  provider: 'DO',
-  selected: false,
-  visible: true,
-};
+const mockLine: LineReadout = makeLineReadout();
 
 const defaultProps = {
-  ridershipByLine: {} as ConsolidatedRidership,
-  lines: [] as Line[],
+  consolidated: {} as ConsolidatedRidership,
+  lines: [] as LineReadout[],
   setLines: vi.fn(),
   onToggleSelectLine: vi.fn(),
   isExpanded: false,
@@ -30,7 +24,7 @@ const defaultProps = {
   modes: ['bus', 'train'],
   setModes: vi.fn(),
   clearSelections: vi.fn(),
-  selectAllVisibleLines: vi.fn(),
+  selectAllListedLines: vi.fn(),
   isAggregateVisible: false,
   toggleIsAggregateVisible: vi.fn(),
 };

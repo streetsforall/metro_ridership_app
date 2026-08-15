@@ -1,0 +1,36 @@
+flowchart TB
+  subgraph mutators["Mutators the hook returns"]
+    direction LR
+    selectionMutators["onToggleSelectLine(line)<br/>clearSelections()<br/>selectAllListedLines(ids)"]
+    setters["the eight setters —<br/>dates · dayOfWeek · search · modes<br/>aggregate · context logs"]
+  end
+
+  lines["lines: Line[]<br/>the three selection mutators write here"]
+  otherSlices["the window, filter and toggle slices"]
+
+  subgraph effects["The one effect inside the hook"]
+    direction LR
+    urlSync["state → history.replaceState<br/>deps are the raw slices, `lines` included"]
+  end
+
+  keys["No JSON.stringify keys left in the hook or App (#167).<br/>`lines` changes identity only on a real user action now,<br/>so the sync effect keys on it directly.<br/>Two guards remain in LineTableRow, for<br/>ridershipRecords and chartDataset."]
+
+  subgraph local["Component-local state — deliberately not in the store"]
+    direction LR
+    appLocal["App<br/>isLineSelectorExpanded<br/>ridershipRecords"]
+    lsLocal["LineSelector<br/>column sort · isCopied"]
+    oaLocal["OutputArea<br/>isContextLogOpen"]
+    ltrLocal["LineTableRow<br/>isMounted · data"]
+    mapLocal["Map<br/>refs only, never state"]
+  end
+
+  selectionMutators --> lines
+  setters --> otherSlices
+
+  lines --> effects
+  otherSlices --> urlSync
+  effects --> keys
+  keys --> local
+
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  class keys key

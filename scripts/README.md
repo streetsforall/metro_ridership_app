@@ -120,8 +120,9 @@ Two details worth knowing if you ever edit the docker invocation:
   `webServer` still runs `npm run build && npm run preview` and the regeneration is
   self-contained.
 
-When and why you'd run this is covered in the
-[Continuous integration](../README.md#continuous-integration) section of the main README.
+When and why you'd run this is covered in
+[docs/guides/testing.md](../docs/guides/testing.md#only-the-linux-baselines-are-committed), and the
+CI jobs it mirrors are in [docs/guides/ci.md](../docs/guides/ci.md).
 
 ---
 

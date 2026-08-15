@@ -17,13 +17,13 @@ import colors from 'tailwindcss/colors';
 import SummaryData from './SummaryData';
 import Map from './Map';
 import type { CustomChartData } from '../@types/chart.types';
-import type { Line } from '../@types/lines.types';
+import type { LineReadout } from '../ridership';
 import type { EventCategory, TransitEvent } from '../@types/events.types';
 
 interface OutputAreaProps {
   chartDatasets: ChartDataset<'line', CustomChartData[]>[];
   months: string[];
-  lines: Line[];
+  lines: LineReadout[];
   transitEvents: TransitEvent[];
   /** Whether the context-log panel is enabled from the filter bar. */
   showContextLogs: boolean;
@@ -375,8 +375,15 @@ export default function OutputArea({
     },
   };
 
+  /**
+   * `min-w-0` on the root opts this grid item out of its automatic minimum,
+   * which is otherwise its min-content width. Without it a child that refuses
+   * to wrap — the summary row below did at `xl` — hands the surrounding `1fr`
+   * track a min-content width larger than its share, and the whole page scrolls
+   * sideways.
+   */
   return (
-    <div className="flex flex-col gap-4 lg:min-h-[50vh]">
+    <div className="flex flex-col gap-4 lg:min-h-[50vh] min-w-0">
       {/* Only show chart and summary metrics if something selected */}
       {chartDatasets.length > 0 ? (
         <>
@@ -420,7 +427,10 @@ export default function OutputArea({
         </>
       ) : (
         /* Chart pane */
-        <div className="pane flex-1 flex items-center justify-center text-sm text-stone-400">
+        <div
+          id="output-placeholder"
+          className="pane flex-1 flex items-center justify-center text-sm text-stone-400"
+        >
           <p>{isLoading ? 'Loading ridership data…' : 'Please select a Metro line.'}</p>
         </div>
       )}

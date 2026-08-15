@@ -1,28 +1,41 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import LineTableRow from './LineTableRow';
-import type { Line } from '../@types/lines.types';
+import type { LineReadout } from '../ridership';
+import { makeLineReadout } from '../test/builders';
+import type { CustomChartData } from '../@types/chart.types';
 import type { RidershipRecord } from '../@types/metrics.types';
 
+/**
+ * Records what the sparkline was actually handed, so the shared-axis alignment can be
+ * asserted without rendering a real canvas.
+ */
+const { sparklineSpy } = vi.hoisted(() => ({ sparklineSpy: vi.fn() }));
+
 vi.mock('react-chartjs-2', () => ({
-  Line: () => <canvas data-testid="sparkline" />,
+  Line: ({
+    data,
+  }: {
+    data: { datasets: { data: CustomChartData[] }[] };
+  }) => {
+    sparklineSpy(data.datasets[0]?.data);
+    return <canvas data-testid="sparkline" />;
+  },
 }));
 
-const mockLine: Line = {
-  id: 801,
-  name: 'A Line',
+/** The points the most recent sparkline render received. */
+const lastSparklinePoints = (): CustomChartData[] =>
+  (sparklineSpy.mock.calls.at(-1)?.[0] ?? []) as CustomChartData[];
+
+const mockLine: LineReadout = makeLineReadout({
   former: 'Blue Line',
-  mode: 'Rail',
-  provider: 'DO',
-  selected: false,
-  visible: true,
   averageRidership: 5000,
   changeInRidership: 1000,
   startingRidership: 4000,
   endingRidership: 5500, // distinct from averageRidership to avoid duplicate text matches
-};
+});
 
-const mockMetrics: RidershipRecord[] = [
+const mockRidershipRecords: RidershipRecord[] = [
   {
     year: 2022,
     month: 1,
@@ -38,11 +51,13 @@ const baseProps = {
   line: mockLine,
   id: 1,
   dayOfWeek: 'est_wkday_ridership',
-  lineMetrics: mockMetrics,
+  ridershipRecords: mockRidershipRecords,
+  monthAxis: ['2022 1'],
 };
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  sparklineSpy.mockClear();
 });
 
 describe('LineTableRow rendering', () => {
@@ -79,11 +94,11 @@ describe('LineTableRow rendering', () => {
     expect(screen.getByRole('checkbox')).toBeTruthy();
   });
 
-  it('renders nothing when lineMetrics is falsy', () => {
+  it('renders nothing when ridershipRecords is falsy', () => {
     const { container } = render(
       <table>
         <tbody>
-          <LineTableRow {...baseProps} lineMetrics={undefined as never} />
+          <LineTableRow {...baseProps} ridershipRecords={undefined as never} />
         </tbody>
       </table>,
     );
@@ -209,8 +224,178 @@ describe('LineTableRow expanded view', () => {
   });
 });
 
+describe('LineTableRow coverage marker', () => {
+  const partialLine: LineReadout = {
+    ...mockLine,
+    id: 805,
+    name: 'D Line',
+    former: undefined,
+    coveredFrom: '2025-09',
+    coveredTo: '2026-05',
+    isPartialCoverage: true,
+  };
+
+  const renderRow = (line: LineReadout) =>
+    render(
+      <table>
+        <tbody>
+          <LineTableRow {...baseProps} line={line} isExpanded />
+        </tbody>
+      </table>,
+    );
+
+  it('shows the covered range beside the name of a partial-coverage line', () => {
+    const { container } = renderRow(partialLine);
+    const marker = container.querySelector('[data-qa="coverage-805"]');
+
+    expect(marker?.textContent).toBe('2025-09 → 2026-05');
+  });
+
+  it('explains the shorter span in the marker’s hover text', () => {
+    const { container } = renderRow(partialLine);
+    const marker = container.querySelector('[data-qa="coverage-805"]');
+
+    expect(marker?.getAttribute('title')).toContain('2025-09');
+    expect(marker?.getAttribute('title')).toContain('2026-05');
+    expect(marker?.getAttribute('title')).toMatch(/shorter span/);
+  });
+
+  it('omits the marker on a line that spans the whole window', () => {
+    const { container } = renderRow({
+      ...partialLine,
+      isPartialCoverage: false,
+    });
+
+    expect(container.querySelector('[data-qa="coverage-805"]')).toBeNull();
+  });
+
+  it('omits the marker in the collapsed list, which shows no metric columns', () => {
+    const { container } = render(
+      <table>
+        <tbody>
+          <LineTableRow {...baseProps} line={partialLine} isExpanded={false} />
+        </tbody>
+      </table>,
+    );
+
+    expect(container.querySelector('[data-qa="coverage-805"]')).toBeNull();
+  });
+
+  it('omits the marker when coverage has not been computed yet', () => {
+    const { container } = renderRow({
+      ...partialLine,
+      coveredFrom: undefined,
+      coveredTo: undefined,
+    });
+
+    expect(container.querySelector('[data-qa="coverage-805"]')).toBeNull();
+  });
+
+  it('leaves the cell count unchanged when the marker is present', () => {
+    const { container } = renderRow(partialLine);
+    expect(container.querySelectorAll('td')).toHaveLength(10);
+  });
+});
+
+describe('LineTableRow sparkline alignment', () => {
+  const axis = ['2020 7', '2020 8', '2025 9', '2025 10'];
+
+  const ridershipRecordsFor = (
+    months: [number, number][],
+    wkday = 500,
+  ): RidershipRecord[] =>
+    months.map(([year, month]) => ({
+      year,
+      month,
+      line_name: 805,
+      est_wkday_ridership: wkday,
+      est_sat_ridership: 250,
+      est_sun_ridership: 125,
+    }));
+
+  const renderRow = (ridershipRecords: RidershipRecord[], monthAxis = axis) =>
+    render(
+      <table>
+        <tbody>
+          <LineTableRow
+            {...baseProps}
+            ridershipRecords={ridershipRecords}
+            monthAxis={monthAxis}
+            isExpanded
+          />
+        </tbody>
+      </table>,
+    );
+
+  it('plots one point per window month, in axis order', () => {
+    renderRow(ridershipRecordsFor([[2025, 9]]));
+
+    expect(lastSparklinePoints().map((p) => p.time)).toEqual(axis);
+  });
+
+  it('leaves months outside a short line’s coverage null instead of shifting it left', () => {
+    // The D Line shape: a late, short series must occupy the right-hand slice of the
+    // cell, not stretch across the whole width as it did on its own implicit axis.
+    renderRow(ridershipRecordsFor([[2025, 9]]));
+
+    expect(lastSparklinePoints().map((p) => p.stat)).toEqual([
+      null,
+      null,
+      500,
+      null,
+    ]);
+  });
+
+  it('renders an interior gap as a gap rather than bridging it', () => {
+    renderRow(
+      ridershipRecordsFor([
+        [2020, 7],
+        [2025, 10],
+      ]),
+    );
+
+    expect(lastSparklinePoints().map((p) => p.stat)).toEqual([
+      500,
+      null,
+      null,
+      500,
+    ]);
+  });
+
+  it('fills every slot for a line that spans the window', () => {
+    renderRow(
+      ridershipRecordsFor([
+        [2020, 7],
+        [2020, 8],
+        [2025, 9],
+        [2025, 10],
+      ]),
+    );
+
+    expect(lastSparklinePoints().every((p) => p.stat === 500)).toBe(true);
+  });
+
+  it('reads the field named by dayOfWeek', () => {
+    render(
+      <table>
+        <tbody>
+          <LineTableRow
+            {...baseProps}
+            ridershipRecords={ridershipRecordsFor([[2025, 9]])}
+            monthAxis={axis}
+            dayOfWeek="est_sat_ridership"
+            isExpanded
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(lastSparklinePoints()[2].stat).toBe(250);
+  });
+});
+
 describe('LineTableRow — zero ridership values', () => {
-  const renderExpanded = (lineOverride: Partial<Line>) =>
+  const renderExpanded = (lineOverride: Partial<LineReadout>) =>
     render(
       <table>
         <tbody>

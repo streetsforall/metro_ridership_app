@@ -1,17 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import SummaryData from './SummaryData';
-import type { Line } from '../@types/lines.types';
-
-const makeLine = (overrides: Partial<Line>): Line => ({
-  id: 801,
-  name: 'A Line',
-  mode: 'Rail',
-  provider: 'DO',
-  selected: false,
-  visible: true,
-  ...overrides,
-});
+import { makeLineReadout } from '../test/builders';
 
 describe('SummaryData with no selected lines', () => {
   it('renders nothing when the lines array is empty', () => {
@@ -23,8 +13,8 @@ describe('SummaryData with no selected lines', () => {
     render(
       <SummaryData
         lines={[
-          makeLine({ selected: false }),
-          makeLine({ id: 802, name: 'B Line', selected: false }),
+          makeLineReadout({ selected: false }),
+          makeLineReadout({ id: 802, name: 'B Line', selected: false }),
         ]}
       />,
     );
@@ -34,14 +24,14 @@ describe('SummaryData with no selected lines', () => {
 
 describe('SummaryData with selected lines', () => {
   it('shows the Average Ridership label', () => {
-    render(<SummaryData lines={[makeLine({ selected: true, averageRidership: 5000 })]} />);
+    render(<SummaryData lines={[makeLineReadout({ selected: true, averageRidership: 5000 })]} />);
     expect(screen.getByText('Average Ridership')).toBeTruthy();
   });
 
   it('shows the Ending Ridership label', () => {
     render(
       <SummaryData
-        lines={[makeLine({ selected: true, endingRidership: 4000, changeInRidership: 0 })]}
+        lines={[makeLineReadout({ selected: true, endingRidership: 4000, changeInRidership: 0 })]}
       />,
     );
     expect(screen.getByText('Ending Ridership')).toBeTruthy();
@@ -49,8 +39,8 @@ describe('SummaryData with selected lines', () => {
 
   it('sums average ridership across selected lines', () => {
     const lines = [
-      makeLine({ selected: true, averageRidership: 10000 }),
-      makeLine({ id: 802, name: 'B Line', selected: true, averageRidership: 5000 }),
+      makeLineReadout({ selected: true, averageRidership: 10000 }),
+      makeLineReadout({ id: 802, name: 'B Line', selected: true, averageRidership: 5000 }),
     ];
     render(<SummaryData lines={lines} />);
     expect(screen.getByText('15,000')).toBeTruthy();
@@ -58,8 +48,8 @@ describe('SummaryData with selected lines', () => {
 
   it('sums ending ridership across selected lines', () => {
     const lines = [
-      makeLine({ selected: true, endingRidership: 8000, changeInRidership: 500 }),
-      makeLine({ id: 802, name: 'B Line', selected: true, endingRidership: 2000, changeInRidership: 100 }),
+      makeLineReadout({ selected: true, endingRidership: 8000, changeInRidership: 500 }),
+      makeLineReadout({ id: 802, name: 'B Line', selected: true, endingRidership: 2000, changeInRidership: 100 }),
     ];
     render(<SummaryData lines={lines} />);
     expect(screen.getByText('10,000')).toBeTruthy();
@@ -68,7 +58,7 @@ describe('SummaryData with selected lines', () => {
   it('shows a positive change with a leading + sign', () => {
     render(
       <SummaryData
-        lines={[makeLine({ selected: true, changeInRidership: 2000, endingRidership: 9000 })]}
+        lines={[makeLineReadout({ selected: true, changeInRidership: 2000, endingRidership: 9000 })]}
       />,
     );
     expect(screen.getByLabelText('Change').textContent).toBe('+2,000');
@@ -77,7 +67,7 @@ describe('SummaryData with selected lines', () => {
   it('shows a negative change without a + sign', () => {
     render(
       <SummaryData
-        lines={[makeLine({ selected: true, changeInRidership: -500, endingRidership: 8000 })]}
+        lines={[makeLineReadout({ selected: true, changeInRidership: -500, endingRidership: 8000 })]}
       />,
     );
     expect(screen.getByLabelText('Change').textContent).toBe('-500');
@@ -86,7 +76,7 @@ describe('SummaryData with selected lines', () => {
   it('applies red styling when change is negative', () => {
     render(
       <SummaryData
-        lines={[makeLine({ selected: true, changeInRidership: -100, endingRidership: 5000 })]}
+        lines={[makeLineReadout({ selected: true, changeInRidership: -100, endingRidership: 5000 })]}
       />,
     );
     const changeEl = screen.getByLabelText('Change');
@@ -96,7 +86,7 @@ describe('SummaryData with selected lines', () => {
   it('applies green styling when change is positive', () => {
     render(
       <SummaryData
-        lines={[makeLine({ selected: true, changeInRidership: 100, endingRidership: 5000 })]}
+        lines={[makeLineReadout({ selected: true, changeInRidership: 100, endingRidership: 5000 })]}
       />,
     );
     const changeEl = screen.getByLabelText('Change');
@@ -105,8 +95,8 @@ describe('SummaryData with selected lines', () => {
 
   it('lists the names of all selected lines', () => {
     const lines = [
-      makeLine({ selected: true, name: 'A Line' }),
-      makeLine({ id: 802, name: 'B Line', selected: true }),
+      makeLineReadout({ selected: true, name: 'A Line' }),
+      makeLineReadout({ id: 802, name: 'B Line', selected: true }),
     ];
     render(<SummaryData lines={lines} />);
     expect(screen.getByText(/A Line/)).toBeTruthy();
@@ -115,8 +105,8 @@ describe('SummaryData with selected lines', () => {
 
   it('excludes unselected lines from calculations', () => {
     const lines = [
-      makeLine({ selected: true, averageRidership: 5000 }),
-      makeLine({ id: 802, name: 'B Line', selected: false, averageRidership: 9999 }),
+      makeLineReadout({ selected: true, averageRidership: 5000 }),
+      makeLineReadout({ id: 802, name: 'B Line', selected: false, averageRidership: 9999 }),
     ];
     render(<SummaryData lines={lines} />);
     expect(screen.getByText('5,000')).toBeTruthy();
@@ -126,7 +116,7 @@ describe('SummaryData with selected lines', () => {
   it('shows the Total Miles label when selected lines have distance data', () => {
     render(
       <SummaryData
-        lines={[makeLine({ selected: true, averageRidership: 5000, distanceMiles: 22.3 })]}
+        lines={[makeLineReadout({ selected: true, averageRidership: 5000, distanceMiles: 22.3 })]}
       />,
     );
     expect(screen.getByText('Total Miles')).toBeTruthy();
@@ -134,8 +124,8 @@ describe('SummaryData with selected lines', () => {
 
   it('sums total miles across selected lines', () => {
     const lines = [
-      makeLine({ selected: true, averageRidership: 5000, distanceMiles: 10.5 }),
-      makeLine({ id: 802, name: 'B Line', selected: true, averageRidership: 3000, distanceMiles: 9.5 }),
+      makeLineReadout({ selected: true, averageRidership: 5000, distanceMiles: 10.5 }),
+      makeLineReadout({ id: 802, name: 'B Line', selected: true, averageRidership: 3000, distanceMiles: 9.5 }),
     ];
     render(<SummaryData lines={lines} />);
     expect(screen.getByText('20')).toBeTruthy();
@@ -143,7 +133,7 @@ describe('SummaryData with selected lines', () => {
 
   it('hides Total Miles when no selected lines have distance data', () => {
     render(
-      <SummaryData lines={[makeLine({ selected: true, averageRidership: 5000 })]} />,
+      <SummaryData lines={[makeLineReadout({ selected: true, averageRidership: 5000 })]} />,
     );
     expect(screen.queryByText('Total Miles')).toBeNull();
   });
@@ -151,7 +141,7 @@ describe('SummaryData with selected lines', () => {
   it('shows the Riders / Mile label when selected lines have distance data', () => {
     render(
       <SummaryData
-        lines={[makeLine({ selected: true, averageRidership: 10000, distanceMiles: 20 })]}
+        lines={[makeLineReadout({ selected: true, averageRidership: 10000, distanceMiles: 20 })]}
       />,
     );
     expect(screen.getByText('Riders / Mile')).toBeTruthy();
@@ -159,8 +149,8 @@ describe('SummaryData with selected lines', () => {
 
   it('computes riders per mile as total riders divided by total miles', () => {
     const lines = [
-      makeLine({ selected: true, averageRidership: 10000, distanceMiles: 20 }),
-      makeLine({ id: 802, name: 'B Line', selected: true, averageRidership: 5000, distanceMiles: 5 }),
+      makeLineReadout({ selected: true, averageRidership: 10000, distanceMiles: 20 }),
+      makeLineReadout({ id: 802, name: 'B Line', selected: true, averageRidership: 5000, distanceMiles: 5 }),
     ];
     render(<SummaryData lines={lines} />);
     // total riders = 15000, total miles = 25 → 600
@@ -170,7 +160,7 @@ describe('SummaryData with selected lines', () => {
   it('hides the Riders / Mile stat when no lines have distance data', () => {
     render(
       <SummaryData
-        lines={[makeLine({ selected: true, averageRidership: 5000 })]}
+        lines={[makeLineReadout({ selected: true, averageRidership: 5000 })]}
       />,
     );
     expect(screen.queryByText('Riders / Mile')).toBeNull();
@@ -178,17 +168,52 @@ describe('SummaryData with selected lines', () => {
 
   it('treats undefined averageRidership as 0 in the sum', () => {
     const lines = [
-      makeLine({ selected: true, averageRidership: undefined }),
-      makeLine({ id: 802, name: 'B Line', selected: true, averageRidership: 3000 }),
+      makeLineReadout({ selected: true, averageRidership: undefined }),
+      makeLineReadout({ id: 802, name: 'B Line', selected: true, averageRidership: 3000 }),
     ];
     render(<SummaryData lines={lines} />);
     expect(screen.getByText('3,000')).toBeTruthy();
   });
 
+  it('attributes averages and changes to each line’s own available months', () => {
+    // The footnote used to claim the figures spanned "the current selected time
+    // period", which is false for any line whose data starts mid-window (issue #88).
+    render(
+      <SummaryData
+        lines={[makeLineReadout({ selected: true, averageRidership: 5000 })]}
+      />,
+    );
+    expect(
+      screen.getByText(
+        /calculated over each line’s own available months within the selected period/,
+      ),
+    ).toBeTruthy();
+  });
+
+  it('says the period can differ between lines', () => {
+    render(
+      <SummaryData
+        lines={[makeLineReadout({ selected: true, averageRidership: 5000 })]}
+      />,
+    );
+    expect(screen.getByText(/which can differ from line to line/)).toBeTruthy();
+  });
+
+  it('no longer claims a single uniform period across lines', () => {
+    render(
+      <SummaryData
+        lines={[makeLineReadout({ selected: true, averageRidership: 5000 })]}
+      />,
+    );
+    expect(
+      screen.queryByText(/calculations across the current selected time period/),
+    ).toBeNull();
+  });
+
   it('shows the Selected label with selected line names', () => {
     render(
       <SummaryData
-        lines={[makeLine({ selected: true, name: 'A Line', averageRidership: 1000 })]}
+        lines={[makeLineReadout({ selected: true, name: 'A Line', averageRidership: 1000 })]}
       />,
     );
     expect(screen.getByText(/Selected:/)).toBeTruthy();

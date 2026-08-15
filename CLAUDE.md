@@ -1,17 +1,32 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) working in this repository.
+
+**This file holds no facts of its own.** It is a pointer plus a short list of things that are easy
+to break without noticing. Everything else lives in `docs/`, once. If you find a fact here that
+contradicts `docs/`, `docs/` wins and this file is the bug.
 
 ## Project
 
-Client-side React + Vite app (Streets for All Data/Dev Team) for visualizing LA Metro bus/rail ridership data. There is no backend. Small metadata JSON (line metadata, distances) is bundled into the build; the large ridership dataset is served as a separate columnar asset **fetched at runtime** (see the `ridership-data` Vite plugin) so it stays out of the JS bundle. The app may move to full-stack if data processing gets too heavy.
+Client-side React + Vite app (Streets for All Data/Dev Team) visualising LA Metro bus and rail
+ridership. No backend. Small metadata JSON is bundled; the large ridership dataset is fetched at
+runtime as a columnar asset so it stays out of the JS bundle.
+
+## Read before working
+
+- **[CONTEXT.md](CONTEXT.md)** — the ubiquitous language. Where a term there conflicts with a name
+  in the source, the term wins and the source is out of date. Use these words.
+- **[docs/how-it-works.md](docs/how-it-works.md)** — the derivation pipeline, the module rule, and
+  every convention that looks like a bug and isn't.
+- **[docs/README.md](docs/README.md)** — the index. Everything else is one link from there.
+- **[docs/adr/](docs/adr/)** — read the ADRs covering whatever you're about to change.
 
 ## Commands
 
 ```bash
 npm run dev          # Vite dev server at https://localhost:5173 (basicSsl in dev only)
 npm run build        # tsc -b type-check, then vite build → dist/
-npm run preview      # serve the production build
+npm run preview      # serve the production build at https://localhost:4173 (also HTTPS)
 npm run test         # vitest run (all tests once)
 npm run test:watch   # vitest watch mode
 npm run lint         # eslint .
@@ -20,67 +35,58 @@ npm run test:e2e               # playwright visual-regression suite
 npm run test:e2e:ui            # playwright UI / trace viewer
 npm run test:e2e:update        # rewrite baselines for the current platform
 npm run test:e2e:update:linux  # rewrite the Linux baselines in Docker
+
+npm run docs:architecture      # regenerate the diagram set
 ```
 
-Run a single test file: `npx vitest run src/utils/calc.test.ts` (or pass a name filter with `-t`). Tests use Vitest + `@testing-library/react` in a jsdom environment with globals enabled (no per-file imports of `describe`/`it`/`expect` needed).
+One test file: `npx vitest run src/ridership/lineMetrics.test.ts`, or filter by name with `-t`.
+Vitest runs with globals enabled — no per-file imports of `describe`/`it`/`expect`.
 
-The dev server uses HTTPS via `@vitejs/plugin-basic-ssl` — expect a self-signed cert warning the first time. **`vite preview` is also HTTPS** (basicSsl runs for `command === 'serve'`, which covers preview), which is why the Playwright config sets `ignoreHTTPSErrors` and `NODE_TLS_REJECT_UNAUTHORIZED=0`.
+Python pipeline: `pip install -r scripts/requirements.txt`, then `pytest scripts/`.
 
-## Testing
+## Invariants — don't break these
 
-Vitest specs live beside the code under `src/`; `vitest.config.ts` excludes `e2e/**` (and `.claude/**`, where Claude Code's throwaway worktrees live). E2E is Playwright, run against the production build on `https://localhost:4173` — not the dev server.
+Each one has cost someone real time. The reasoning is in `docs/`; this is the short list.
 
-Non-obvious constraints:
+- **Never regenerate visual baselines to silence a diff you can't explain.** That deletes the
+  evidence. Only the `-linux.png` set is committed and it is what gates CI —
+  [docs/guides/testing.md](docs/guides/testing.md).
+- **Don't delete `window.__metroMap`** from `src/components/Map.tsx`. Nothing in the app reads it;
+  it is the only handle the map spec has on a WebGL canvas.
+- **Don't import `src/ridership/chartData` from outside `src/ridership/`.** That folder is a sealed
+  module and `index.ts` is its entire public surface — [ADR-0007](docs/adr/0007-a-folder-with-an-index-is-a-sealed-module.md).
+- **Don't "fix" the two `JSON.stringify` dependency guards in `LineTableRow`.** `ridershipRecords`
+  and `chartDataset` are new references every render.
+- **Don't silently change the Month Window's off-by-one.** It is intended and pinned by the
+  committed chart baselines — [ADR-0001](docs/adr/0001-ridership-month-window-is-deliberately-offset.md).
+  The Event Window disagreeing with it is also intended.
+- **Don't set `spanGaps`** on the chart. A month a line doesn't report is a gap, not a zero.
+- **Don't add a derived field to `Line`.** Figures belong on a Line Readout and last only as long as
+  the window that produced them — [ADR-0005](docs/adr/0005-derived-figures-live-on-line-readouts.md).
+  The write-back that used to do this was deleted in #167; don't reintroduce it.
+- **New dashboard state must be wired through both** the lazy `useState` initialisers and the URL
+  sync effect in `src/hooks/useUserDashboardInput.ts`, or the view stops being shareable.
+- **Bumping `@playwright/test` means regenerating the Linux baselines in the same PR.** A new
+  browser build re-renders text.
 
-- **Only the Linux baselines are committed** — `-linux.png` is what CI compares against; `-win32.png`/`-darwin.png` are git-ignored per-developer scratch that your first local run writes. A UI change that alters the screenshots needs one command, `npm run test:e2e:update:linux`. Never regenerate baselines to silence a diff you can't explain.
-- `npm run test:e2e:update:linux` ([scripts/update_linux_snapshots.py](scripts/update_linux_snapshots.py)) needs Docker. It resolves its image tag from `package-lock.json` — the same source [.github/workflows/ci.yml](.github/workflows/ci.yml) uses — so local regeneration and CI stay in lockstep.
-- **Bumping `@playwright/test` means regenerating the Linux baselines in the same PR**; a new browser build re-renders text. The workflow's container tag follows the lockfile automatically, so `ci.yml` itself needs no edit.
-- `npm run build` type-checks `e2e/` and `playwright.config.ts` — `tsconfig.json` references `tsconfig.e2e.json`, so a broken spec fails the build.
-- **`#lineMap` is masked in every `visual.spec.ts` screenshot.** The map is covered by [e2e/map.spec.ts](e2e/map.spec.ts) instead, in its own `map` Playwright project: it stubs every off-localhost request with a blank MapLibre style (one background layer, no sources), so only the same-origin `metro_lines.geojson` geometry paints and the render is byte-identical run to run. It waits on MapLibre's `idle` event via `window.__metroMap` — a test seam published by [src/components/Map.tsx](src/components/Map.tsx) that nothing in the app reads; don't delete it. Regenerate its baselines alone with `npm run test:e2e:update:linux -- --project=map`.
-- CI is two jobs: `build` (lint/test/build, uploads `dist/`) → `e2e` (Playwright container, downloads `dist/`, previews only — `playwright.config.ts` skips its own build when `CI` is set). The full failure runbook is in [README.md](README.md#ci-went-red--now-what).
+## When you change code, check the docs
 
-CI runs lint → test → build on every push/PR to `main` ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+There is no CI check for this. Renaming or deleting an exported symbol means grepping `README.md`,
+`CONTEXT.md`, `CLAUDE.md` and `docs/` for it — including
+`docs/architecture/mermaid/` and `captions.md`, then `npm run docs:architecture`. See
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Data flow (the core architecture)
+## Agent skills
 
-The app transforms flat ridership records into per-line consolidated structures, then derives summary metrics. Understanding this pipeline is key:
-
-1. **Lines are built from metadata** — `createLinesData()` in [src/hooks/useUserDashboardInput.ts](src/hooks/useUserDashboardInput.ts) reads `metro_line_metadata_current.json`, attaches display names/colors (via `getLineNames`/`getLineColor`), distance from `line_distances.json`, and sorts with `lineNameSortFunction` (lettered lines first, then numbered).
-2. **Records are consolidated by line** — [src/App.tsx](src/App.tsx) fetches `/ridership.json` at runtime (a columnar blob decoded by [src/utils/ridershipData.ts](src/utils/ridershipData.ts)), then a single `useMemo` filters it to the selected date window and groups records by `line_name` into `ConsolidatedRidership`, while deriving the shared month axis and Chart.js datasets in the same pass (via [src/utils/chartData.ts](src/utils/chartData.ts)). The memo yields empty results until the fetch resolves.
-3. **Summary metrics are attached back to lines** — `updateLinesWithLineMetrics()` (in the hook) runs from a `useEffect` in App and computes average/change/start/end ridership and riders-per-mile per line using helpers in [src/utils/calc.ts](src/utils/calc.ts). The `LineSelector`/`SummaryData` components read these.
-
-Type definitions for these shapes live in [src/@types/metrics.types.ts](src/@types/metrics.types.ts) (`RidershipRecord`, `ConsolidatedRidership`) and [src/@types/lines.types.ts](src/@types/lines.types.ts) (`LineJson` from disk vs. enriched `Line`).
-
-### Important conventions & quirks
-
-- **`DayOfWeek` is the JSON column name**, not a label — `daysOfWeek` maps `Weekday/Saturday/Sunday` to `est_wkday_ridership`/`est_sat_ridership`/`est_sun_ridership`. Selecting a day-of-week literally swaps which field is read.
-- **All UI state syncs to URL query params** (`start`, `end`, `day`, `lines`, `q`, `buses`, `trains`, `aggregate`) so views are shareable. The canonical set lives in [src/hooks/useUserDashboardInput.ts](src/hooks/useUserDashboardInput.ts) — read from the URL on mount (~L114-123) and written back via `history.replaceState` in a `useEffect` (~L145-155); [src/utils/queryParams.ts](src/utils/queryParams.ts) only holds the parse/format helpers. When adding new dashboard state, wire it through both the init readers and the sync effect.
-- **`JSON.stringify(...)` is intentionally used in several dependency arrays** (`lines`, `ridershipByLine`) because those objects get a new reference every render; don't "fix" these to raw object deps.
-- **The ridership dataset is fetched, not bundled** — `src/data/ridership.json` remains the canonical record-format source (the Python pipeline reads/writes it), but the app fetches `/ridership.json` at runtime as a minified columnar `{cols,rows}` blob emitted by the `ridership-data` Vite plugin ([vite/ridership-data-plugin.ts](vite/ridership-data-plugin.ts)) and decodes it via [src/utils/ridershipData.ts](src/utils/ridershipData.ts). The selectable date bounds come from the plugin's `virtual:ridership-bounds` module, so the full dataset never enters the JS bundle. The plugin is registered in both `vite.config.ts` and `vitest.config.ts`. Run `ANALYZE=1 npm run build` for a bundle treemap at `dist/stats.html`. `OutputArea` (Chart.js + MapLibre GL) is lazy-loaded to keep MapLibre out of the entry chunk.
-- **Month indexing is off by one on purpose** in App.tsx's date filter (`new Date(year, month)` treats month as 0-based while data is 1-based) — preserved from the original implementation; don't silently change it.
-- **Date range bounds are derived from the data, not hardcoded** — [src/utils/dataDateRange.ts](src/utils/dataDateRange.ts) computes `dataMinYear`/`dataMaxYear` (the year `<option>`s in `DateRangeSelector`) and `dataDefaultEndDate` (the default end of the window) from `ridership.json` at module load, so the newest month is always selectable without code changes. `dataDefaultEndDate` is deliberately one month past the latest record to satisfy the exclusive, off-by-one end filter above.
-- **Lines cover different date ranges** — a line added mid-history has far fewer records than its neighbours (the D Line starts 2025-09; most rail starts 2009). Chart.js `CategoryScale` **appends** any label missing from `labels` to the end of the axis, so every dataset must be drawn against one shared axis: [src/utils/chartData.ts](src/utils/chartData.ts) builds the chronologically sorted union of months (`buildMonthAxis`), pads each line onto it with `null` for months it doesn't cover (`alignToMonthAxis`), and sums the aggregate by month rather than by array index (`buildAggregateSeries`). Never derive the axis from a single dataset, and don't set `spanGaps` — the gaps are meaningful. The per-line metrics in [src/utils/calc.ts](src/utils/calc.ts) are **not** coverage-aware (see issue #88).
-- **Line colors**: official rail/BRT lines have hardcoded brand colors in `definedLines` ([src/utils/lines.ts](src/utils/lines.ts)); all other bus lines get a deterministic golden-angle HSL hue so the chart and map agree.
-
-## Map
-
-[src/components/Map.tsx](src/components/Map.tsx) uses MapLibre GL, loading route geometry from `public/metro_lines.geojson` (served at `/metro_lines.geojson`). It renders two layers: `lines-all` (dimmed) and `lines-selected` (brand colors, filtered by selected line IDs via `setFilter`). Base tiles come from MapTiler if `VITE_MAPTILER_KEY` is set, otherwise OpenFreeMap. The map instance lives in refs (initialized once); selection changes only update the layer filter, not the map.
-
-## Data processing scripts (`scripts/`)
-
-Python scripts maintain the JSON the app consumes (the old `.mjs` versions have been removed). See [scripts/README.md](scripts/README.md). Setup: `pip install -r scripts/requirements.txt`; tests: `pytest scripts/`.
-
-- `update_ridership.py` — **the day-to-day entry point.** Scans `data/raw/`, works out which month/line records are missing, and appends only those (append-only unless `--overwrite`). Prepends an entry to `DATA_RELEASE_NOTES.md` unless `--no-release-notes`. Supports `--dry-run`.
-- `process_ridership.py <xlsx|zip|csv.gz>` — the merge engine `update_ridership.py` calls; use it directly to force-ingest one specific file. Merges into `src/data/ridership.json` and appends new lines to `metro_line_metadata_current.json`. New data wins on conflicts; old data backfills.
-- `convert_excel_ridership.py` — helper invoked by `process_ridership.py` to parse the `.xlsx` files records requests return into the legacy CSV schema. Also exposed as `npm run load-ridership` for converting Excel inputs directly.
-- `fetch_metro_lines.py` (also `npm run fetch-lines`) — downloads GTFS feeds → `public/metro_lines.geojson`. Run before the script tests, which use that file as a fixture.
-- `compute_line_distances.py` — `metro_lines.geojson` → `src/data/line_distances.json` (one-way miles; only outbound leg for rail).
-- `check_transit_events.py` (also `npm run check-transit-events`) — validates `src/data/transit-events.json`: line_ids exist in the live GTFS feed, and single-line `opening` dates match the first non-zero ridership month. Extensions are flagged for manual review. Offline schema checks also run in `src/data/transit-events.test.ts`.
-
-Store raw files compressed in `data/raw/` — `.zip` for Excel, `.csv.gz` for legacy CSVs; uncompressed `.xlsx`/`.csv` are gitignored. `notebooks/` holds exploration notebooks (`metro_data_ridership_update.ipynb`).
-
-Note `DATA_RELEASE_NOTES.md` (data updates) and `RELEASE_NOTES.md` (app releases) are different files.
+- **Issue tracker** — GitHub Issues on `streetsforall/metro_ridership_app`, via `gh`. See
+  [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md).
+- **Triage labels** — the five canonical roles map onto existing repo labels (`needs-info` →
+  `question`, `ready-for-human` → `help wanted`, `wontfix` → `wontfix`). See
+  [docs/agents/triage-labels.md](docs/agents/triage-labels.md).
+- **Domain docs** — single-context: one `CONTEXT.md` plus `docs/adr/` at the repo root, both of
+  which exist. See [docs/agents/domain.md](docs/agents/domain.md).
 
 ## Styling
 
-Tailwind CSS (config in `tailwind.config.ts`). A reusable `.pane` class is used throughout for card containers. Font is Overpass Mono (via `@fontsource-variable`).
+Tailwind (`tailwind.config.ts`). A reusable `.pane` class is used for card containers throughout.
+Font is Overpass Mono via `@fontsource-variable`.

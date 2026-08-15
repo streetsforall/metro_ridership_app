@@ -1,0 +1,41 @@
+flowchart TB
+  urlIn["URL query string<br/>read once, in lazy useState initialisers"]
+  bundledMeta[("line metadata + line_distances.json<br/>bundled at import")]
+
+  subgraph store["useUserDashboardInput — the whole store, four slices"]
+    direction LR
+
+    subgraph windowSlice["Month Window"]
+      direction TB
+      startDate["startDate<br/>default 2020-07"]
+      endDate["endDate<br/>dataDefaultEndDate"]
+      dow["dayOfWeek<br/>Weekday | Sat | Sun"]
+    end
+
+    subgraph linesSlice["Lines"]
+      direction TB
+      lines["lines: Line[]<br/>createLinesData(selectedIds)<br/>sorted by name"]
+    end
+
+    subgraph filterSlice["Filters"]
+      direction TB
+      search["searchText"]
+      modes["modes<br/>'bus' | 'train'"]
+    end
+
+    subgraph toggleSlice["Toggles"]
+      direction TB
+      aggregate["isAggregateVisible"]
+      logs["showContextLogs"]
+    end
+  end
+
+  nothingDerived["The store derives nothing (#167).<br/>Every derived value now lives in App's memos,<br/>so `lines` changes identity only on a real user action."]
+  consumer["buildRidershipView · LineSelector · OutputArea<br/>all read these nine values and nothing else"]
+
+  urlIn --> store
+  bundledMeta --> linesSlice
+  store --> nothingDerived --> consumer
+
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  class nothingDerived key

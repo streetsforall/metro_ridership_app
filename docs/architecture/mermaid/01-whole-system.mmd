@@ -1,0 +1,49 @@
+flowchart TB
+  ext["External — outside the repo<br/>LA Metro ridership workbooks · Metro GIS route geometry<br/>service-change announcements"]
+
+  subgraph authoring["Authoring — by hand, never in CI"]
+    raw[/"data/raw/"/]
+    py["Python pipeline<br/>scripts/*.py"]
+    raw --> py
+  end
+
+  committed[("Committed data — the repo is the database<br/>ridership.json ~7 MB · line metadata · distances<br/>transit events · metro_lines.geojson")]
+
+  subgraph build["Build — Vite 6"]
+    plugin["ridership-data-plugin<br/>re-encodes the dataset"]
+    dist[/"dist/ — entry chunk · lazy OutputArea<br/>columnar ridership.json · geojson"/]
+    plugin --> dist
+  end
+
+  host["Static host — dist/ only<br/>there is no backend"]
+
+  subgraph browser["Browser runtime"]
+    hook["useUserDashboardInput<br/>the only store"]
+    view["buildRidershipView<br/>the derived view, one pass"]
+    ui["chart · table · summary<br/>map · context log"]
+    hook --> view --> ui
+  end
+
+  urlbar["URL query string<br/>the only persistence"]
+  user(["User"])
+  tiles["Basemap tiles<br/>OpenFreeMap or MapTiler"]
+  ci["GitHub Actions<br/>lint · test · build · visual regression"]
+
+  ext --> raw
+  py --> committed
+  committed --> plugin
+  dist --> host
+  host -- "serves the app and /ridership.json" --> hook
+  tiles --> ui
+
+  ui --> user
+  user -- "picks lines, months, day" --> hook
+  hook <--> urlbar
+  urlbar -- "shareable link" --> user
+
+  dist -.-> ci
+
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class view key
+  class urlbar pending

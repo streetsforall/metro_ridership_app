@@ -1,0 +1,32 @@
+flowchart TB
+  subgraph loading["Loading — App.tsx:35-45"]
+    fetchCall["fetch('/ridership.json')<br/>AbortController"]
+    decode["decodeRidership()"]
+    records["RidershipRecord[] | null<br/>null IS the loading state"]
+    fetchCall --> decode --> records
+  end
+
+  inputs["The other inputs<br/>useUserDashboardInput — lines · window · dayOfWeek · aggregate<br/>transit-events.json, bundled at import"]
+
+  subgraph derive["buildRidershipView — one pass, useMemo'd"]
+    group["group by line<br/>Month Window filter + Selection Snapshot<br/>→ consolidated"]
+    cover["buildCoverageByLine<br/>→ coverage"]
+    metricsLoop["lineMetrics per line<br/>iterates lines, not groups<br/>→ metrics"]
+    axis["buildMonthAxis<br/>union of the selected lines' months<br/>→ months"]
+    align["alignToMonthAxis<br/>a gap, never a zero"]
+    agg["buildAggregateSeries<br/>ordered last<br/>→ datasets"]
+    evfilter["Event Window filter — off the same inputs,<br/>not off the grouping. Inclusive, and reads the<br/>LIVE selection rather than the snapshot.<br/>→ events"]
+
+    group --> cover
+    group --> metricsLoop
+    group --> axis --> align --> agg
+  end
+
+  records --> group
+  inputs --> group
+
+  returns["The six keys go to diagram 06,<br/>which is where anything reads them."]
+  agg --> returns
+
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  class returns key

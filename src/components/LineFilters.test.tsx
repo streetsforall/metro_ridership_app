@@ -8,7 +8,7 @@ const defaultProps = {
   modes: ['bus', 'train'],
   setModes: vi.fn(),
   clearSelections: vi.fn(),
-  selectAllVisibleLines: vi.fn(),
+  selectAllListedLines: vi.fn(),
   isAggregateVisible: false,
   toggleIsAggregateVisible: vi.fn(),
 };
@@ -78,16 +78,16 @@ describe('LineFilters interactions', () => {
     expect(setSearchText).toHaveBeenCalledWith('blue');
   });
 
-  it('calls selectAllVisibleLines when Select All is clicked', () => {
-    const selectAllVisibleLines = vi.fn();
+  it('calls selectAllListedLines when Select All is clicked', () => {
+    const selectAllListedLines = vi.fn();
     render(
       <LineFilters
         {...defaultProps}
-        selectAllVisibleLines={selectAllVisibleLines}
+        selectAllListedLines={selectAllListedLines}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Select All' }));
-    expect(selectAllVisibleLines).toHaveBeenCalledOnce();
+    expect(selectAllListedLines).toHaveBeenCalledOnce();
   });
 
   it('calls clearSelections when Clear All is clicked', () => {
@@ -116,15 +116,15 @@ describe('LineFilters interactions', () => {
     expect(clearSelections).not.toHaveBeenCalled();
   });
 
-  it('does not call selectAllVisibleLines when Clear All is clicked', () => {
-    const selectAllVisibleLines = vi.fn();
+  it('does not call selectAllListedLines when Clear All is clicked', () => {
+    const selectAllListedLines = vi.fn();
     render(
       <LineFilters
         {...defaultProps}
-        selectAllVisibleLines={selectAllVisibleLines}
+        selectAllListedLines={selectAllListedLines}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Clear All' }));
-    expect(selectAllVisibleLines).not.toHaveBeenCalled();
+    expect(selectAllListedLines).not.toHaveBeenCalled();
   });
 });

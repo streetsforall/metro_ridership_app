@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import maplibregl, { Popup } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import type { Line } from '../@types/lines.types';
+import type { LineReadout } from '../ridership';
 import { buildPopupHTML } from '../utils/mapPopup';
 import './Map.css';
 
@@ -12,7 +12,7 @@ const STYLE_URL = mapTilerKey
   : 'https://tiles.openfreemap.org/styles/positron';
 
 interface MapProps {
-  lines: Line[];
+  lines: LineReadout[];
 }
 
 
@@ -20,7 +20,7 @@ export default function Map({ lines }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const isStyleLoaded = useRef(false);
-  const linesRef = useRef<Line[]>(lines);
+  const linesRef = useRef<LineReadout[]>(lines);
 
   // Initialize map once
   useEffect(() => {

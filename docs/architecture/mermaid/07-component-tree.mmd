@@ -1,0 +1,48 @@
+flowchart TB
+  main["main.tsx — createRoot, StrictMode"]
+  app["App — container<br/>no router, no context providers"]
+  header["Header"]
+  drs["DateRangeSelector<br/>Radix RadioGroup + Checkbox"]
+
+  subgraph leftPane["#line-selector-pane — always mounted"]
+    direction TB
+    ls["LineSelector — container<br/>sort · CSV · share · expand"]
+    lf["LineFilters<br/>search · mode toggle · aggregate"]
+    ltr["LineTableRow × N<br/>checkbox + Chart.js sparkline"]
+    ls --> lf
+    ls --> ltr
+  end
+
+  gate{"isLineSelectorExpanded?<br/>a CSS gate, not a mount gate"}
+  hidden["display: none —<br/>OutputArea stays mounted (#168),<br/>chart canvas and map instance survive"]
+  susp["Suspense fallback"]
+
+  subgraph rightPane["OutputArea — React.lazy chunk"]
+    direction TB
+    oa["OutputArea — container"]
+    chart["LineChart — #ridership-chart"]
+    summary["SummaryData"]
+    ctxlog["context-log panel"]
+    mapCmp["Map — #lineMap"]
+    oa --> chart
+    oa --> summary
+    oa --> ctxlog
+    oa --> mapCmp
+  end
+
+  footer["Footer"]
+
+  main --> app
+  app --> header
+  app --> drs
+  app --> leftPane
+  app --> gate
+  gate -- "true" --> hidden
+  gate -- "false — display: contents" --> susp --> oa
+  hidden -. "same subtree, still mounted" .-> oa
+  app --> footer
+
+  app -. "spreads the whole hook state<br/>{...userDashboardInputState}" .-> ls
+
+  classDef structural fill:#dce9f4,stroke:#0072bc,stroke-width:1.5px,color:#44403c
+  class oa,chart,summary,ctxlog,mapCmp structural

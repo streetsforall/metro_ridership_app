@@ -1,0 +1,25 @@
+sequenceDiagram
+  autonumber
+  participant OA as OutputArea
+  participant M as Map.tsx
+  participant ML as MapLibre
+  participant Net as Network
+
+  OA->>M: render with `lines`
+  Note over M: refs only — mapContainer, map,<br/>isStyleLoaded, linesRef. No React state.
+
+  M->>M: useEffect([]) — return early if map.current exists
+  M->>ML: new Map(container, STYLE_URL, LA centre, zoom 10)
+  Note over M,ML: MapTiler when VITE_MAPTILER_KEY is set,<br/>otherwise OpenFreeMap positron
+  ML->>Net: fetch style + basemap tiles
+  M->>ML: addControl(NavigationControl)
+
+  ML-->>M: 'load'
+  M->>M: isStyleLoaded.current = true
+  M->>ML: addSource 'metro-lines' — geojson, generateId
+  ML->>Net: fetch /metro_lines.geojson
+  M->>ML: addLayer 'lines-all' — grey, opacity 0.15
+  M->>ML: addLayer 'lines-selected' — colour from the feature,<br/>width 5 on hover else 3
+  M->>ML: setFilter to the initial selection
+
+  Note over M: unmount — remove(), null the ref,<br/>clear the test seam

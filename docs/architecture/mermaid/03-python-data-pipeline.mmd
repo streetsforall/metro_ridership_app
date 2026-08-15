@@ -1,0 +1,39 @@
+flowchart LR
+  subgraph ridershipChain["Ridership chain — the main line"]
+    direction LR
+    xlsx[/"data/raw/*.xlsx<br/>monthly bus workbooks"/]
+    zips[/"data/raw/Rail *.zip"/]
+    convert["convert_excel_ridership.py"]
+    process["process_ridership.py<br/>normalise · dedupe · type"]
+    update["update_ridership.py<br/>merge one new month"]
+    ridJson[("src/data/ridership.json")]
+
+    xlsx --> convert
+    zips --> convert
+    convert --> process
+    process --> ridJson
+    update --> ridJson
+  end
+
+  subgraph geometry["Geometry chain"]
+    direction LR
+    gisapi["Metro GIS endpoint"]
+    fetchLines["fetch_metro_lines.py"]
+    geojson[("public/metro_lines.geojson")]
+    distances["compute_line_distances.py"]
+    distJson[("src/data/line_distances.json")]
+
+    gisapi --> fetchLines --> geojson --> distances --> distJson
+  end
+
+  subgraph eventsChain["Events chain"]
+    direction LR
+    sources["Published<br/>service-change notices"]
+    checkEvents["check_transit_events.py"]
+    events[("src/data/transit-events.json")]
+
+    sources --> checkEvents --> events
+  end
+
+  classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
+  class ridJson,geojson,distJson,events surface

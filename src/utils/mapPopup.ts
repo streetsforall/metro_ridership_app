@@ -1,6 +1,6 @@
-import type { Line } from '../@types/lines.types';
+import type { LineReadout } from '../ridership';
 
-export function buildPopupHTML(name: string, line?: Line): string {
+export function buildPopupHTML(name: string, line?: LineReadout): string {
   const rows: string[] = [];
   if (line?.distanceMiles)
     rows.push(

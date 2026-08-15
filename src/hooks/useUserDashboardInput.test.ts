@@ -3,7 +3,6 @@ import { renderHook, act } from '@testing-library/react';
 import useUserDashboardInput, { daysOfWeek } from './useUserDashboardInput';
 import { dataDefaultEndDate } from '../utils/dataDateRange';
 import { formatMonthParam } from '../utils/queryParams';
-import type { ConsolidatedRidership } from '../@types/metrics.types';
 
 // Reset URL and replaceState spy before each test
 beforeEach(() => {
@@ -133,42 +132,39 @@ describe('initial state from URL params', () => {
   });
 });
 
-describe('modes → line visibility', () => {
-  it('hides bus lines when buses=0 is in URL', () => {
+describe('modes → mode filter state', () => {
+  /**
+   * These asserted on `Line.visible` until the write-back went. The mode clause now
+   * lives in `listedReadouts`, which is tested in `src/utils/lines.test.ts`; what is
+   * left here is the hook's own half — the URL contract onto `modes`.
+   */
+  it('switches bus off when buses=0 is in URL', () => {
     window.history.replaceState({}, '', '?buses=0');
     const { result } = renderHook(() => useUserDashboardInput());
-    const busLines = result.current.lines.filter((l) => l.mode === 'Bus');
-    expect(busLines.length).toBeGreaterThan(0);
-    expect(busLines.every((l) => !l.visible)).toBe(true);
+    expect(result.current.modes).not.toContain('bus');
   });
 
-  it('keeps rail lines visible when only buses=0', () => {
+  it('leaves train on when only buses=0', () => {
     window.history.replaceState({}, '', '?buses=0');
     const { result } = renderHook(() => useUserDashboardInput());
-    const railLines = result.current.lines.filter((l) => l.mode === 'Rail');
-    expect(railLines.every((l) => l.visible)).toBe(true);
+    expect(result.current.modes).toContain('train');
   });
 
-  it('hides rail lines when trains=0 is in URL', () => {
+  it('switches train off when trains=0 is in URL', () => {
     window.history.replaceState({}, '', '?trains=0');
     const { result } = renderHook(() => useUserDashboardInput());
-    const railLines = result.current.lines.filter((l) => l.mode === 'Rail');
-    expect(railLines.length).toBeGreaterThan(0);
-    expect(railLines.every((l) => !l.visible)).toBe(true);
+    expect(result.current.modes).not.toContain('train');
   });
 
-  it('updates visibility when modes state changes', () => {
+  it('updates the mode filter when modes state changes', () => {
     const { result } = renderHook(() => useUserDashboardInput());
 
     act(() => {
       result.current.setModes(['train']);
     });
 
-    const busLines = result.current.lines.filter((l) => l.mode === 'Bus');
-    expect(busLines.every((l) => !l.visible)).toBe(true);
-
-    const railLines = result.current.lines.filter((l) => l.mode === 'Rail');
-    expect(railLines.every((l) => l.visible)).toBe(true);
+    expect(result.current.modes).not.toContain('bus');
+    expect(result.current.modes).toContain('train');
   });
 });
 
@@ -316,56 +312,38 @@ describe('line initialisation', () => {
   });
 });
 
-describe('updateLinesWithLineMetrics', () => {
-  const makeRidership = (lineId: number, wkday: number): ConsolidatedRidership => ({
-    [lineId]: {
-      selected: true,
-      ridershipRecords: [
-        {
-          year: 2022,
-          month: 1,
-          line_name: lineId,
-          est_wkday_ridership: wkday,
-          est_sat_ridership: null,
-          est_sun_ridership: null,
-        },
-      ],
-    },
-  });
-
-  it('sets ridersPerMile on a line that has distanceMiles', () => {
+describe('selectAllListedLines', () => {
+  it('selects a listed line', () => {
+    // Was `selectAllVisibleLines selects a zero-change line too`: the hook no longer
+    // re-derives which rows are listed, so the ids are passed in. That a zero-change
+    // line is among them is `listedReadouts`' assertion now.
     const { result } = renderHook(() => useUserDashboardInput());
 
     act(() => {
-      result.current.updateLinesWithLineMetrics(makeRidership(801, 10000));
+      result.current.selectAllListedLines([801]);
     });
 
-    const aLine = result.current.lines.find((l) => l.id === 801);
-    expect(aLine?.ridersPerMile).toBeGreaterThan(0);
+    expect(result.current.lines.find((l) => l.id === 801)?.selected).toBe(true);
   });
 
-  it('computes ridersPerMile as averageRidership divided by distanceMiles', () => {
+  it('leaves a line that was not listed unselected', () => {
     const { result } = renderHook(() => useUserDashboardInput());
 
     act(() => {
-      result.current.updateLinesWithLineMetrics(makeRidership(801, 10000));
+      result.current.selectAllListedLines([801]);
     });
 
-    const aLine = result.current.lines.find((l) => l.id === 801);
-    expect(aLine?.ridersPerMile).toBeCloseTo(
-      10000 / (aLine?.distanceMiles ?? 1),
-      5,
-    );
+    expect(result.current.lines.find((l) => l.id === 802)?.selected).toBe(false);
   });
 
-  it('leaves ridersPerMile undefined when no ridership record exists for the line', () => {
+  it('keeps an already-selected line selected when it is not listed', () => {
+    window.history.replaceState({}, '', '?lines=802');
     const { result } = renderHook(() => useUserDashboardInput());
 
     act(() => {
-      result.current.updateLinesWithLineMetrics({});
+      result.current.selectAllListedLines([801]);
     });
 
-    const aLine = result.current.lines.find((l) => l.id === 801);
-    expect(aLine?.ridersPerMile).toBeUndefined();
+    expect(result.current.lines.find((l) => l.id === 802)?.selected).toBe(true);
   });
 });

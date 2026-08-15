@@ -3,7 +3,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import OutputArea from './OutputArea';
 import { Chart as ChartJS, type ChartOptions } from 'chart.js';
 import colors from 'tailwindcss/colors';
-import type { Line } from '../@types/lines.types';
+import type { LineReadout } from '../ridership';
+import { makeLineReadout } from '../test/builders';
 import type { EventCategory, TransitEvent } from '../@types/events.types';
 
 let capturedOptions: ChartOptions<'line'> | undefined;
@@ -16,20 +17,10 @@ vi.mock('react-chartjs-2', () => ({
 }));
 
 vi.mock('./Map', () => ({
-  default: ({ lines }: { lines: Line[] }) => (
+  default: ({ lines }: { lines: LineReadout[] }) => (
     <div data-testid="map" data-line-count={String(lines.length)} />
   ),
 }));
-
-const makeLine = (overrides: Partial<Line>): Line => ({
-  id: 801,
-  name: 'A Line',
-  mode: 'Rail',
-  provider: 'DO',
-  selected: false,
-  visible: true,
-  ...overrides,
-});
 
 const emptyProps = {
   chartDatasets: [],
@@ -95,7 +86,7 @@ describe('OutputArea with datasets', () => {
   });
 
   it('renders SummaryData for the passed lines', () => {
-    const selectedLine = makeLine({
+    const selectedLine = makeLineReadout({
       selected: true,
       averageRidership: 4000,
       changeInRidership: 200,
@@ -118,7 +109,7 @@ describe('OutputArea with datasets', () => {
       <OutputArea
         chartDatasets={[datasetFixture]}
         months={['2022 1']}
-        lines={[makeLine({ selected: false })]}
+        lines={[makeLineReadout({ selected: false })]}
         transitEvents={[]}
         showContextLogs={false}
       />,
@@ -147,7 +138,7 @@ describe('OutputArea Map', () => {
   });
 
   it('passes the lines prop through to the Map component', () => {
-    const lines = [makeLine({ id: 801 }), makeLine({ id: 802 })];
+    const lines = [makeLineReadout({ id: 801 }), makeLineReadout({ id: 802 })];
     render(
       <OutputArea
         chartDatasets={[]}
