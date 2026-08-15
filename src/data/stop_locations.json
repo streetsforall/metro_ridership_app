@@ -44,10 +44,13 @@
       "rail": 110
     },
     "matched": {
-      "bus": 6772,
+      "bus": 6756,
       "rail": 110
     },
-    "spread_warn_m": 200.0
+    "spread_warn_m": 200.0,
+    "near_line_m": 150.0,
+    "ambiguous_m": 1000.0,
+    "refined_by_line": 1
   },
   "stops": {
     "bus:10231-sunland": {
@@ -10485,17 +10488,6 @@
       ],
       "spread_m": 28.8
     },
-    "bus:broadway-4th": {
-      "name": "Broadway / 4th",
-      "lat": 34.032294,
-      "lon": -118.371488,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "13242",
-        "5969"
-      ],
-      "spread_m": 22888.5
-    },
     "bus:broadway-51st": {
       "name": "Broadway / 51st",
       "lat": 33.996505,
@@ -10667,19 +10659,6 @@
         "4807"
       ],
       "spread_m": 34.9
-    },
-    "bus:broadway-adams": {
-      "name": "Broadway / Adams",
-      "lat": 34.085809,
-      "lon": -118.255763,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "1288",
-        "13270",
-        "4810",
-        "9815"
-      ],
-      "spread_m": 13717.5
     },
     "bus:broadway-alpine": {
       "name": "Broadway / Alpine",
@@ -18354,19 +18333,6 @@
       ],
       "spread_m": 55.1
     },
-    "bus:eagle-rock-verdugo": {
-      "name": "Eagle Rock / Verdugo",
-      "lat": 34.112085,
-      "lon": -118.234416,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "10301",
-        "10302",
-        "1746",
-        "7073"
-      ],
-      "spread_m": 1862.2
-    },
     "bus:eagle-rock-westdale": {
       "name": "Eagle Rock / Westdale",
       "lat": 34.129492,
@@ -23102,19 +23068,6 @@
       ],
       "spread_m": 41.5
     },
-    "bus:foothill-osborne": {
-      "name": "Foothill / Osborne",
-      "lat": 34.274768,
-      "lon": -118.385865,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "10592",
-        "2002",
-        "2042",
-        "2984"
-      ],
-      "spread_m": 1485.0
-    },
     "bus:foothill-pali": {
       "name": "Foothill / Pali",
       "lat": 34.243021,
@@ -24426,17 +24379,6 @@
       ],
       "spread_m": 57.6
     },
-    "bus:garfield-main": {
-      "name": "Garfield / Main",
-      "lat": 34.006121,
-      "lon": -118.147819,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "142434",
-        "9796"
-      ],
-      "spread_m": 20232.9
-    },
     "bus:garfield-mendy": {
       "name": "Garfield / Mendy",
       "lat": 33.909205,
@@ -24792,17 +24734,6 @@
         "9996"
       ],
       "spread_m": 42.5
-    },
-    "bus:garvey-ramona": {
-      "name": "Garvey / Ramona",
-      "lat": 34.063886,
-      "lon": -118.140345,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "13534",
-        "7668"
-      ],
-      "spread_m": 2802.4
     },
     "bus:garvey-river": {
       "name": "Garvey / River",
@@ -25438,18 +25369,6 @@
         "3579"
       ],
       "spread_m": 41.4
-    },
-    "bus:glenoaks-brand": {
-      "name": "Glenoaks / Brand",
-      "lat": 34.246621,
-      "lon": -118.371171,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "10777",
-        "2241",
-        "7677"
-      ],
-      "spread_m": 21576.4
     },
     "bus:glenoaks-branford": {
       "name": "Glenoaks / Branford",
@@ -31573,18 +31492,6 @@
       ],
       "spread_m": 0.0
     },
-    "bus:la-brea-market": {
-      "name": "La Brea / Market",
-      "lat": 33.964076,
-      "lon": -118.354076,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "140975",
-        "1520",
-        "5181"
-      ],
-      "spread_m": 2375.9
-    },
     "bus:la-brea-melrose": {
       "name": "La Brea / Melrose",
       "lat": 34.083449,
@@ -36511,17 +36418,6 @@
       ],
       "spread_m": 47.2
     },
-    "bus:main-3rd": {
-      "name": "Main / 3rd",
-      "lat": 34.071263,
-      "lon": -118.188207,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "1419",
-        "5259"
-      ],
-      "spread_m": 11703.4
-    },
     "bus:main-41st": {
       "name": "Main / 41st",
       "lat": 34.008173,
@@ -36630,17 +36526,6 @@
         "5285"
       ],
       "spread_m": 29.3
-    },
-    "bus:main-5th": {
-      "name": "Main / 5th",
-      "lat": 34.069597,
-      "lon": -118.190481,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "16078",
-        "5271"
-      ],
-      "spread_m": 11859.4
     },
     "bus:main-61st": {
       "name": "Main / 61st",
@@ -36971,19 +36856,6 @@
       ],
       "spread_m": 0.0
     },
-    "bus:main-pico": {
-      "name": "Main / Pico",
-      "lat": 34.022516,
-      "lon": -118.375086,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "13716",
-        "3117",
-        "3157",
-        "5279"
-      ],
-      "spread_m": 21415.6
-    },
     "bus:main-pier": {
       "name": "Main / Pier",
       "lat": 33.998385,
@@ -37109,17 +36981,6 @@
         "1551"
       ],
       "spread_m": 30.7
-    },
-    "bus:main-venice": {
-      "name": "Main / Venice",
-      "lat": 34.010632,
-      "lon": -118.366724,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "11606",
-        "3123"
-      ],
-      "spread_m": 19874.7
     },
     "bus:main-vernon": {
       "name": "Main / Vernon",
@@ -39052,16 +38913,14 @@
     },
     "bus:mission-broadway": {
       "name": "Mission / Broadway",
-      "lat": 34.08654,
-      "lon": -118.153187,
+      "lat": 34.073673,
+      "lon": -118.196644,
       "mode": "Bus",
       "gtfs_stop_ids": [
         "12289",
-        "13731",
-        "3803",
-        "5303"
+        "3803"
       ],
-      "spread_m": 8518.1
+      "spread_m": 24.7
     },
     "bus:mission-cesar-e-chavez": {
       "name": "Mission / Cesar E Chavez",
@@ -40740,18 +40599,6 @@
         "30001"
       ],
       "spread_m": 251.0
-    },
-    "bus:norwalk-civic-center": {
-      "name": "Norwalk / Civic Center",
-      "lat": 33.886242,
-      "lon": -118.072403,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "12557",
-        "4066",
-        "725"
-      ],
-      "spread_m": 9387.0
     },
     "bus:norwalk-crewe": {
       "name": "Norwalk / Crewe",
@@ -43636,19 +43483,6 @@
         "17621"
       ],
       "spread_m": 0.0
-    },
-    "bus:pacific-coast-highway-walnut": {
-      "name": "Pacific Coast Highway / Walnut",
-      "lat": 33.859392,
-      "lon": -118.354156,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "23200043",
-        "23200082",
-        "2646",
-        "2647"
-      ],
-      "spread_m": 17387.5
     },
     "bus:pacific-coast-highway-western": {
       "name": "Pacific Coast Highway / Western",
@@ -54998,18 +54832,6 @@
       ],
       "spread_m": 0.0
     },
-    "bus:slauson-2nd": {
-      "name": "Slauson / 2nd",
-      "lat": 33.989188,
-      "lon": -118.291245,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "16041",
-        "16941",
-        "7961"
-      ],
-      "spread_m": 7875.9
-    },
     "bus:slauson-4th": {
       "name": "Slauson / 4th",
       "lat": 33.989094,
@@ -63225,18 +63047,6 @@
         "140724"
       ],
       "spread_m": 34.9
-    },
-    "bus:venice-grand-view": {
-      "name": "Venice / Grand View",
-      "lat": 34.000744,
-      "lon": -118.439365,
-      "mode": "Bus",
-      "gtfs_stop_ids": [
-        "15278",
-        "6909",
-        "6925"
-      ],
-      "spread_m": 2664.6
     },
     "bus:venice-harvard": {
       "name": "Venice / Harvard",
@@ -73993,7 +73803,8 @@
       "mode": "Bus",
       "lines": [
         602
-      ]
+      ],
+      "reason": "no-gtfs-match"
     },
     {
       "stop_key": "bus:arleta-pierce",
@@ -74001,6 +73812,43 @@
       "mode": "Bus",
       "lines": [
         158
+      ],
+      "reason": "no-gtfs-match"
+    },
+    {
+      "stop_key": "bus:broadway-4th",
+      "name": "Broadway / 4th",
+      "mode": "Bus",
+      "lines": [
+        4,
+        30,
+        40,
+        90
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 22888.5,
+      "gtfs_stop_ids": [
+        "13242",
+        "5969"
+      ]
+    },
+    {
+      "stop_key": "bus:broadway-adams",
+      "name": "Broadway / Adams",
+      "mode": "Bus",
+      "lines": [
+        40,
+        45,
+        180,
+        217
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 13717.5,
+      "gtfs_stop_ids": [
+        "1288",
+        "13270",
+        "4810",
+        "9815"
       ]
     },
     {
@@ -74009,7 +73857,8 @@
       "mode": "Bus",
       "lines": [
         602
-      ]
+      ],
+      "reason": "no-gtfs-match"
     },
     {
       "stop_key": "bus:do-not-announce-this-stop",
@@ -74023,6 +73872,154 @@
         460,
         577,
         910
+      ],
+      "reason": "no-gtfs-match"
+    },
+    {
+      "stop_key": "bus:eagle-rock-verdugo",
+      "name": "Eagle Rock / Verdugo",
+      "mode": "Bus",
+      "lines": [
+        182,
+        251
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 1862.2,
+      "gtfs_stop_ids": [
+        "10301",
+        "10302",
+        "1746",
+        "7073"
+      ]
+    },
+    {
+      "stop_key": "bus:foothill-osborne",
+      "name": "Foothill / Osborne",
+      "mode": "Bus",
+      "lines": [
+        690
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 1485.0,
+      "gtfs_stop_ids": [
+        "10592",
+        "2002",
+        "2042",
+        "2984"
+      ]
+    },
+    {
+      "stop_key": "bus:garfield-main",
+      "name": "Garfield / Main",
+      "mode": "Bus",
+      "lines": [
+        78,
+        258
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 20232.9,
+      "gtfs_stop_ids": [
+        "142434",
+        "9796"
+      ]
+    },
+    {
+      "stop_key": "bus:garvey-ramona",
+      "name": "Garvey / Ramona",
+      "mode": "Bus",
+      "lines": [
+        70,
+        74,
+        106
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 2802.4,
+      "gtfs_stop_ids": [
+        "13534",
+        "7668"
+      ]
+    },
+    {
+      "stop_key": "bus:glenoaks-brand",
+      "name": "Glenoaks / Brand",
+      "mode": "Bus",
+      "lines": [
+        92
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 21576.4,
+      "gtfs_stop_ids": [
+        "10777",
+        "2241",
+        "7677"
+      ]
+    },
+    {
+      "stop_key": "bus:la-brea-market",
+      "name": "La Brea / Market",
+      "mode": "Bus",
+      "lines": [
+        40,
+        111,
+        212
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 2375.9,
+      "gtfs_stop_ids": [
+        "140975",
+        "1520",
+        "5181"
+      ]
+    },
+    {
+      "stop_key": "bus:main-3rd",
+      "name": "Main / 3rd",
+      "mode": "Bus",
+      "lines": [
+        33,
+        78,
+        92
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 11703.4,
+      "gtfs_stop_ids": [
+        "1419",
+        "5259"
+      ]
+    },
+    {
+      "stop_key": "bus:main-5th",
+      "name": "Main / 5th",
+      "mode": "Bus",
+      "lines": [
+        33,
+        78,
+        92
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 11859.4,
+      "gtfs_stop_ids": [
+        "16078",
+        "5271"
+      ]
+    },
+    {
+      "stop_key": "bus:main-pico",
+      "name": "Main / Pico",
+      "mode": "Bus",
+      "lines": [
+        10,
+        30,
+        33,
+        55
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 21415.6,
+      "gtfs_stop_ids": [
+        "13716",
+        "3117",
+        "3157",
+        "5279"
       ]
     },
     {
@@ -74031,6 +74028,54 @@
       "mode": "Bus",
       "lines": [
         33
+      ],
+      "reason": "no-gtfs-match"
+    },
+    {
+      "stop_key": "bus:main-venice",
+      "name": "Main / Venice",
+      "mode": "Bus",
+      "lines": [
+        10,
+        33,
+        55
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 19874.7,
+      "gtfs_stop_ids": [
+        "11606",
+        "3123"
+      ]
+    },
+    {
+      "stop_key": "bus:norwalk-civic-center",
+      "name": "Norwalk / Civic Center",
+      "mode": "Bus",
+      "lines": [
+        62
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 9387.0,
+      "gtfs_stop_ids": [
+        "12557",
+        "4066",
+        "725"
+      ]
+    },
+    {
+      "stop_key": "bus:pacific-coast-highway-walnut",
+      "name": "Pacific Coast Highway / Walnut",
+      "mode": "Bus",
+      "lines": [
+        232
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 17387.5,
+      "gtfs_stop_ids": [
+        "23200043",
+        "23200082",
+        "2646",
+        "2647"
       ]
     },
     {
@@ -74039,7 +74084,8 @@
       "mode": "Bus",
       "lines": [
         30
-      ]
+      ],
+      "reason": "no-gtfs-match"
     },
     {
       "stop_key": "bus:pico-l-a-live",
@@ -74047,7 +74093,8 @@
       "mode": "Bus",
       "lines": [
         30
-      ]
+      ],
+      "reason": "no-gtfs-match"
     },
     {
       "stop_key": "bus:pico-union",
@@ -74055,7 +74102,8 @@
       "mode": "Bus",
       "lines": [
         30
-      ]
+      ],
+      "reason": "no-gtfs-match"
     },
     {
       "stop_key": "bus:san-vicente-fairfax",
@@ -74063,7 +74111,8 @@
       "mode": "Bus",
       "lines": [
         28
-      ]
+      ],
+      "reason": "no-gtfs-match"
     },
     {
       "stop_key": "bus:sepulveda-g-line",
@@ -74072,6 +74121,22 @@
       "lines": [
         154,
         234
+      ],
+      "reason": "no-gtfs-match"
+    },
+    {
+      "stop_key": "bus:slauson-2nd",
+      "name": "Slauson / 2nd",
+      "mode": "Bus",
+      "lines": [
+        108
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 7875.9,
+      "gtfs_stop_ids": [
+        "16041",
+        "16941",
+        "7961"
       ]
     },
     {
@@ -74080,7 +74145,8 @@
       "mode": "Bus",
       "lines": [
         115
-      ]
+      ],
+      "reason": "no-gtfs-match"
     },
     {
       "stop_key": "bus:van-nuys-saticoy",
@@ -74089,6 +74155,22 @@
       "lines": [
         169,
         233
+      ],
+      "reason": "no-gtfs-match"
+    },
+    {
+      "stop_key": "bus:venice-grand-view",
+      "name": "Venice / Grand View",
+      "mode": "Bus",
+      "lines": [
+        33
+      ],
+      "reason": "ambiguous-name",
+      "spread_m": 2664.6,
+      "gtfs_stop_ids": [
+        "15278",
+        "6909",
+        "6925"
       ]
     },
     {
@@ -74097,7 +74179,8 @@
       "mode": "Bus",
       "lines": [
         662
-      ]
+      ],
+      "reason": "no-gtfs-match"
     }
   ]
 }

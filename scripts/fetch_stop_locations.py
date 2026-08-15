@@ -16,7 +16,7 @@ Output: `src/data/stop_locations.json`
 
 Run with: python scripts/fetch_stop_locations.py  (or `npm run fetch-stops`)
 
-Three things about this file that look like choices and are load-bearing:
+Four things about this file that look like choices and are load-bearing:
 
 **Unmatched stops are kept, not dropped.** A stop with ridership and no geometry still
 belongs in the series and in the ranked table; it is simply absent from the map layer.
@@ -27,9 +27,16 @@ stub so the table can be extended.
 
 **Bus stops sharing a name are centroided.** `STOP_NAME` is a name and not a `stop_id`,
 so the two sides of a street are one ridership row and must become one dot. That is
-fine at ~20 m; a name reused by two genuinely different places is not, and would
-centroid into a point on neither. `spread_m` (the widest pairwise distance in the group)
-is emitted for every stop and warned on above `SPREAD_WARN_M`.
+fine at ~20 m, which is what 4,945 of these groups are. `spread_m` (the widest pairwise
+distance in the group) is emitted for every stop and warned on above `SPREAD_WARN_M`.
+
+**A name used by two different places gets no coordinate.** LA reuses intersection
+names between cities: `Main / Pico` is downtown *and* in Santa Monica, 21 km apart, so
+the centroid is in neither. Where the route shapes of the reporting lines can say which
+one is meant, they do (`refine_by_line`). Where they cannot — and usually they cannot,
+because each place is served by one of the reporting lines — the stop is written to
+`unmatched` as `ambiguous-name` rather than given a midpoint that is simply wrong. This
+is the one case where a stop *has* geometry in GTFS and still gets none here.
 
 **Rail prefers the `location_type == 1` parent station.** Metro models most stations as
 a parent plus platform children plus entrances (`location_type == 2`, excluded). Taking
@@ -62,7 +69,14 @@ from convert_excel_ridership import (
     _read_excel_bytes,
     aggregate_to_stop_ridership,
 )
-from fetch_metro_lines import GTFS_URLS, fetch_gtfs
+from fetch_metro_lines import (
+    GTFS_URLS,
+    build_route_shapes,
+    build_shape_points,
+    fetch_gtfs,
+    resolve_bus_route,
+    resolve_rail_route,
+)
 
 SCRIPT_DIR = Path(__file__).parent
 REPO_ROOT = SCRIPT_DIR.parent
@@ -72,6 +86,23 @@ DEFAULT_OUT_PATH = REPO_ROOT / "src" / "data" / "stop_locations.json"
 # Above this, a group of same-named stops is probably not one place. Two sides of a
 # street are ~20 m apart; a stop pair at either end of a long block is under 150 m.
 SPREAD_WARN_M = 200.0
+
+# How close a stop has to sit to a line's route shape to count as served by it. Generous
+# on purpose: shapes are sampled polylines, so the distance to the nearest *vertex*
+# overstates the distance to the route. It only has to separate candidates that are
+# kilometres apart, and being generous is the safe direction — an over-tight value would
+# reject a real stop and shrink the map.
+NEAR_LINE_M = 150.0
+
+# Past this, the group is not one stop with a wide footprint — it is one *name* used by
+# two different places, and no single coordinate is right. `Main / Pico` is an
+# intersection in downtown LA and another in Santa Monica, 21 km apart. Such a stop gets
+# **no** coordinate rather than the midpoint, and is reported as `ambiguous-name`.
+#
+# Set well above any real stop's footprint: the widest genuine one in the feed is a
+# transit centre at ~250 m, and the tightest genuinely-ambiguous one left after
+# `refine_by_line` is ~1.5 km, so the gap either side of 1 km is large.
+AMBIGUOUS_M = 1_000.0
 
 # GTFS `location_type`: 0 (or blank) is a stop/platform, 1 a parent station, 2 an
 # entrance. Entrances are geometry for a station that already has a dot of its own.
@@ -164,41 +195,119 @@ def _collect_members(rows: list[dict], mode: str, aliases: dict) -> dict[str, li
     return groups
 
 
-def group_bus_stops(rows: list[dict], aliases: dict | None = None) -> dict[str, dict]:
-    """One location per bus `stop_key`, centroiding the stops that share a name.
+def stop_candidates(rows: list[dict], mode: str, aliases: dict | None = None) -> dict[str, list[dict]]:
+    """The GTFS stops that could be each `stop_key`, before anything is averaged.
 
-    Every row in Metro's bus feed carries a blank `location_type`, which GTFS defines as
-    0; the filter is here so a feed that starts modelling entrances does not silently
-    drag them into the centroid.
+    Kept separate from the averaging because a name shared by two genuinely different
+    places can only be resolved once you know which lines report ridership there — see
+    `refine_by_line`.
+
+    Bus keeps `location_type` 0 only. Every row in Metro's bus feed carries a blank
+    `location_type`, which GTFS defines as 0; the filter is here so a feed that starts
+    modelling entrances does not silently drag them into a centroid.
+
+    Rail keeps 0 and 1, and where a station is modelled as a parent (`1`) plus platforms
+    (`0`), **only the parent survives** — one dot per station, and no dependence on how
+    many platforms happen to be listed. Entrances (`2`) never contribute.
     """
-    stops = [
+    allowed = (STOP_OR_PLATFORM,) if mode == "Bus" else (STOP_OR_PLATFORM, PARENT_STATION)
+    kept = [
         row for row in rows
-        if (row.get("location_type", "") or STOP_OR_PLATFORM) == STOP_OR_PLATFORM
+        if (row.get("location_type", "") or STOP_OR_PLATFORM) in allowed
     ]
-    groups = _collect_members(stops, "Bus", aliases)
-    return {key: _summarise_group("Bus", members) for key, members in groups.items()}
+    groups = _collect_members(kept, mode, aliases)
+    if mode == "Rail":
+        groups = {
+            key: [m for m in members if m["location_type"] == PARENT_STATION] or members
+            for key, members in groups.items()
+        }
+    return groups
+
+
+def group_bus_stops(rows: list[dict], aliases: dict | None = None) -> dict[str, dict]:
+    """One location per bus `stop_key`, centroiding the stops that share a name."""
+    return {
+        key: _summarise_group("Bus", members)
+        for key, members in stop_candidates(rows, "Bus", aliases).items()
+    }
 
 
 def group_rail_stops(rows: list[dict], aliases: dict | None = None) -> dict[str, dict]:
-    """One location per rail `stop_key`, preferring the parent station.
+    """One location per rail `stop_key`, preferring the parent station."""
+    return {
+        key: _summarise_group("Rail", members)
+        for key, members in stop_candidates(rows, "Rail", aliases).items()
+    }
 
-    Where a station is modelled as a parent (`location_type == 1`) plus platforms
-    (`0`), only the parent contributes — one dot per station, and no dependence on how
-    many platforms happen to be listed. Where there is no parent, the platforms are
-    centroided as bus stops are. Entrances (`2`) never contribute.
+
+# --- telling two places with the same name apart ---
+
+def build_line_shapes(get_file, mode: str) -> dict[int, list[tuple[float, float]]]:
+    """`line_id -> every shape point that line runs over`, from the feed's own tables.
+
+    Reuses `fetch_metro_lines`'s `build_shape_points` / `build_route_shapes` and its
+    route resolvers, so "which line is this" is decided the same way here as it is for
+    the route geometry on the map. Unlike `get_coord_arrays`, every shape is kept rather
+    than the longest one — a stop on a short branch is exactly the case this has to
+    catch.
     """
-    stops = [
-        row for row in rows
-        if (row.get("location_type", "") or STOP_OR_PLATFORM)
-        in (STOP_OR_PLATFORM, PARENT_STATION)
-    ]
-    groups = _collect_members(stops, "Rail", aliases)
+    shape_points = build_shape_points(get_file("shapes.txt"))
+    route_shapes = build_route_shapes(get_file("trips.txt"))
+    resolve = resolve_rail_route if mode == "Rail" else resolve_bus_route
 
-    located = {}
-    for key, members in groups.items():
-        parents = [m for m in members if m["location_type"] == PARENT_STATION]
-        located[key] = _summarise_group("Rail", parents or members)
-    return located
+    lines: dict[int, list[tuple[float, float]]] = defaultdict(list)
+    for route in get_file("routes.txt"):
+        resolved = resolve(route)
+        if resolved is None:
+            continue
+        line_id, _ = resolved
+        for shape_id in route_shapes.get(route["route_id"], ()):
+            lines[line_id].extend(
+                (point["lat"], point["lng"]) for point in shape_points.get(shape_id, ())
+            )
+    return dict(lines)
+
+
+def near_any_point(
+    point: tuple[float, float], others: list[tuple[float, float]], tolerance_m: float
+) -> bool:
+    """Whether `point` is within `tolerance_m` of any of `others`.
+
+    Bounding-box rejection first, because the shape-point lists run to thousands of
+    entries and almost every comparison is a miss by kilometres.
+    """
+    lat_span = tolerance_m / 111_320.0
+    lon_span = lat_span / max(math.cos(math.radians(point[0])), 0.01)
+    for other in others:
+        if abs(other[0] - point[0]) > lat_span or abs(other[1] - point[1]) > lon_span:
+            continue
+        if haversine_m(point, other) <= tolerance_m:
+            return True
+    return False
+
+
+def refine_by_line(
+    members: list[dict],
+    lines: set[int] | list[int],
+    line_shapes: dict[int, list[tuple[float, float]]],
+    tolerance_m: float = NEAR_LINE_M,
+) -> list[dict]:
+    """Narrow same-named GTFS stops to the ones on a line that reports ridership there.
+
+    `Main / Pico` is an intersection in downtown LA and another in Santa Monica, 21 km
+    apart. Averaging them puts the dot in neither. But the ridership row knows which
+    *line* it is on, and a line only runs over one of the two, so the route shape tells
+    them apart.
+
+    Returns every member unchanged when the lines have no shapes, or when the filter
+    would reject all of them — a stop with a bad centroid is still better than a stop
+    that silently vanishes from the map.
+    """
+    points = [point for line in lines for point in line_shapes.get(int(line), ())]
+    if not points:
+        return list(members)
+    kept = [m for m in members if near_any_point(m["point"], points, tolerance_m)]
+    return kept or list(members)
 
 
 def spread_warnings(stops: dict[str, dict], threshold: float = SPREAD_WARN_M) -> list[dict]:
@@ -255,31 +364,6 @@ def iter_raw_frames(paths: list[Path]):
                 yield _read_excel_bytes(zf.read(entry.filename), basename, cols), year, month, mode
 
 
-def drop_unnamed_rows(df: pd.DataFrame, mode: str) -> tuple[pd.DataFrame, int]:
-    """Drop bus rows whose `STOP_NAME` is blank, returning `(frame, dropped)`.
-
-    **This is a workaround for a gap in the ingest, not a rule of its own.**
-    `extract_leaf_rows` keeps every bus row with a real `DIRECTION`, including one in
-    `06-2026-Bus.xlsx` (line 155, 2.9 weekday boardings) whose stop name is blank.
-    `stop_identity._require_text` then raises `ValueError: Stop name is missing (nan)`
-    by design — a nameless row must not become a plausible-looking stop that is the sum
-    of every blank-named row on its line.
-
-    So `aggregate_to_stop_ridership` cannot currently be run over `data/raw/` at all.
-    The fix belongs in `extract_leaf_rows`, which is frozen for this PR; see the PR body.
-    Filtering here is sound for *this* script's purpose regardless — a row with no name
-    has no `stop_key`, so it can have no geometry either.
-
-    The count is of **raw** rows, so a single nameless stop shows as two: its direction
-    row and the direction-total row beside it, which `extract_leaf_rows` would have
-    dropped anyway.
-    """
-    if mode != "Bus":
-        return df, 0
-    named = df["STOP_NAME"].notna() & (df["STOP_NAME"].astype(str).str.strip() != "")
-    return df[named].copy(), int((~named).sum())
-
-
 def collect_ridership_stops(paths: list[Path]) -> tuple[dict[str, dict], list[str]]:
     """Every `stop_key` that has ridership, and the months they came from.
 
@@ -292,10 +376,6 @@ def collect_ridership_stops(paths: list[Path]) -> tuple[dict[str, dict], list[st
 
     for df, year, month, mode in iter_raw_frames(paths):
         months.add(f"{year:04d}-{month:02d}")
-        df, dropped = drop_unnamed_rows(df, mode)
-        if dropped:
-            print(f"  {year}-{month:02d} {mode}: dropped {dropped} raw row(s) with no "
-                  "stop name (see drop_unnamed_rows)")
         stops = aggregate_to_stop_ridership(df, year, month, mode)
         for key, name, line in zip(stops["stop_key"], stops["stop_name"], stops["line"]):
             entry = found.setdefault(key, {"name": name, "mode": mode, "lines": set()})
@@ -307,29 +387,76 @@ def collect_ridership_stops(paths: list[Path]) -> tuple[dict[str, dict], list[st
 # --- the join ---
 
 def join_locations(
-    ridership: dict[str, dict], gtfs: dict[str, dict]
-) -> tuple[dict[str, dict], list[dict]]:
+    ridership: dict[str, dict],
+    candidates: dict[str, list[dict]],
+    line_shapes: dict[int, list[tuple[float, float]]] | None = None,
+    threshold: float = SPREAD_WARN_M,
+    ambiguous_m: float = AMBIGUOUS_M,
+) -> tuple[dict[str, dict], list[dict], list[dict]]:
     """Attach geometry to the stops that have ridership.
 
-    Returns `(stops, unmatched)`. Only keys with ridership are written — the bus feed
-    carries thousands of stops no export mentions, and this file is shipped to the
-    client. Keys with ridership and no geometry go to `unmatched`; they are **not**
-    dropped, because the ridership series and the ranked table still contain them.
+    Returns `(stops, unmatched, refined)`. Only keys with ridership are written — the bus
+    feed carries thousands of stops no export mentions, and this file is shipped to the
+    client. Keys with ridership and no usable geometry go to `unmatched` with a `reason`;
+    they are **not** dropped, because the ridership series and the ranked table still
+    contain them. Two reasons occur:
+
+    - `no-gtfs-match` — GTFS does not list the name at all, usually a rename the alias
+      table has not caught up with.
+    - `ambiguous-name` — GTFS lists it in two places more than `ambiguous_m` apart, so
+      one coordinate cannot be right and none is written. `Main / Pico` is an
+      intersection in downtown LA and another in Santa Monica.
+
+    Before giving up on a wide group, its members are re-checked against the route shapes
+    of the lines that report ridership there (`refine_by_line`); each narrowing is
+    recorded in `refined` so the run says what it changed rather than quietly moving dots.
+    That rescues a group whose stray members no reporting line runs past. It cannot
+    rescue a name whose *two* places are each served by one of the reporting lines —
+    which is most of them, and is why the `ambiguous-name` case exists.
     """
-    stops, unmatched = {}, []
+    stops, unmatched, refined = {}, [], []
     for key in sorted(ridership):
         entry = ridership[key]
-        location = gtfs.get(key)
-        if location is None:
+        members = candidates.get(key)
+        if not members:
             unmatched.append({
                 "stop_key": key,
                 "name": entry["name"],
                 "mode": entry["mode"],
                 "lines": sorted(entry["lines"]),
+                "reason": "no-gtfs-match",
             })
-        else:
-            stops[key] = location
-    return stops, unmatched
+            continue
+
+        located = _summarise_group(entry["mode"], members)
+        if line_shapes and located["spread_m"] > threshold:
+            kept = refine_by_line(members, entry["lines"], line_shapes)
+            narrowed = _summarise_group(entry["mode"], kept)
+            if narrowed["spread_m"] < located["spread_m"]:
+                refined.append({
+                    "stop_key": key,
+                    "spread_before_m": located["spread_m"],
+                    "spread_after_m": narrowed["spread_m"],
+                    "dropped_gtfs_stop_ids": sorted(
+                        set(located["gtfs_stop_ids"]) - set(narrowed["gtfs_stop_ids"])
+                    ),
+                })
+                located = narrowed
+
+        if located["spread_m"] > ambiguous_m:
+            unmatched.append({
+                "stop_key": key,
+                "name": entry["name"],
+                "mode": entry["mode"],
+                "lines": sorted(entry["lines"]),
+                "reason": "ambiguous-name",
+                "spread_m": located["spread_m"],
+                "gtfs_stop_ids": located["gtfs_stop_ids"],
+            })
+            continue
+
+        stops[key] = located
+    return stops, unmatched, refined
 
 
 def alias_stub(unmatched: list[dict]) -> str:
@@ -381,10 +508,13 @@ def build_document(
     months: list[str],
     ridership_counts: dict[str, int],
     spread_warn_m: float = SPREAD_WARN_M,
+    refined: list[dict] | None = None,
+    ambiguous_m: float = AMBIGUOUS_M,
 ) -> dict:
     """The committed JSON. Every collection is sorted here rather than relied on from
     upstream, so two runs against one feed produce byte-identical output (ROADMAP
     risk 3)."""
+    refined = refined or []
     matched: dict[str, int] = defaultdict(int)
     for key in stops:
         matched[key.split(":", 1)[0]] += 1
@@ -396,6 +526,9 @@ def build_document(
             "stop_keys": dict(sorted(ridership_counts.items())),
             "matched": {mode: matched.get(mode, 0) for mode in sorted(ridership_counts)},
             "spread_warn_m": spread_warn_m,
+            "near_line_m": NEAR_LINE_M,
+            "ambiguous_m": ambiguous_m,
+            "refined_by_line": len(refined),
         },
         "stops": {key: stops[key] for key in sorted(stops)},
         "unmatched": sorted(unmatched, key=lambda u: u["stop_key"]),
@@ -424,6 +557,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="output path (default: src/data/stop_locations.json)")
     parser.add_argument("--spread-warn", type=float, default=SPREAD_WARN_M,
                         help=f"warn above this centroid spread in metres (default: {SPREAD_WARN_M:g})")
+    parser.add_argument("--ambiguous", type=float, default=AMBIGUOUS_M,
+                        help="above this spread, write no coordinate at all "
+                             f"(default: {AMBIGUOUS_M:g})")
     args = parser.parse_args(argv)
 
     aliases = stop_identity.load_aliases()
@@ -442,19 +578,24 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  {len(ridership):,} stop keys over {len(months)} months "
           f"({months[0]} .. {months[-1]})")
 
-    gtfs_locations: dict[str, dict] = {}
+    candidates: dict[str, list[dict]] = {}
+    line_shapes: dict[int, list[tuple[float, float]]] = {}
     feeds: dict[str, dict] = {}
-    for mode, url in GTFS_URLS.items():
+    for feed, url in GTFS_URLS.items():
+        mode = "Rail" if feed == "rail" else "Bus"
         print(f"[{mode}]")
         get_file = fetch_gtfs(url)
         rows = get_file("stops.txt")
-        feeds[mode] = _feed_provenance(url, rows, get_file("feed_info.txt"))
-        group = group_bus_stops if mode == "bus" else group_rail_stops
-        located = group(rows, aliases)
-        print(f"  {len(rows):,} stops.txt rows -> {len(located):,} keyed locations")
-        gtfs_locations.update(located)
+        feeds[feed] = _feed_provenance(url, rows, get_file("feed_info.txt"))
+        keyed = stop_candidates(rows, mode, aliases)
+        print(f"  {len(rows):,} stops.txt rows -> {len(keyed):,} keyed locations")
+        candidates.update(keyed)
+        print("  Reading route shapes to tell same-named stops apart...")
+        line_shapes.update(build_line_shapes(get_file, mode))
 
-    stops, unmatched = join_locations(ridership, gtfs_locations)
+    stops, unmatched, refined = join_locations(
+        ridership, candidates, line_shapes, args.spread_warn, args.ambiguous
+    )
 
     print("\nMatch rate:")
     for prefix in sorted(counts):
@@ -462,22 +603,39 @@ def main(argv: list[str] | None = None) -> int:
         total = counts[prefix]
         print(f"  {prefix}: {matched:,}/{total:,} ({matched / total:.1%})")
 
+    if refined:
+        print(f"\n{len(refined)} stop(s) narrowed to the GTFS stops their own lines run "
+              f"past (within {NEAR_LINE_M:g} m of the route shape):")
+        for entry in sorted(refined, key=lambda e: -e["spread_before_m"]):
+            print(f"  {entry['spread_before_m']:>9.1f} m -> {entry['spread_after_m']:>7.1f} m  "
+                  f"{entry['stop_key']}  (dropped {', '.join(entry['dropped_gtfs_stop_ids'])})")
+
     warned = spread_warnings(stops, args.spread_warn)
     if warned:
-        print(f"\n{len(warned)} stop(s) above {args.spread_warn:g} m spread — a name reused "
-              "by two different places centroids into neither:")
+        print(f"\n{len(warned)} stop(s) still above {args.spread_warn:g} m spread — a name "
+              "reused by two places the same line runs past centroids into neither:")
         for stop in warned:
             print(f"  {stop['spread_m']:>8.1f} m  {stop['stop_key']}  "
                   f"({', '.join(stop['gtfs_stop_ids'])})")
 
-    if unmatched:
-        print(f"\n{len(unmatched)} stop(s) with ridership and no geometry. They are kept "
-              "in the output and are simply absent from the map layer.")
-        for stop in unmatched:
+    ambiguous = [u for u in unmatched if u["reason"] == "ambiguous-name"]
+    if ambiguous:
+        print(f"\n{len(ambiguous)} stop(s) name two places more than {args.ambiguous:g} m "
+              "apart, so no single coordinate is right and none was written. They keep "
+              "their ridership and are absent from the map layer:")
+        for stop in sorted(ambiguous, key=lambda s: -s["spread_m"]):
+            print(f"  {stop['spread_m']:>9.1f} m  {stop['stop_key']:<38} "
+                  f"(line {', '.join(str(n) for n in stop['lines'])})")
+
+    missing = [u for u in unmatched if u["reason"] == "no-gtfs-match"]
+    if missing:
+        print(f"\n{len(missing)} stop(s) GTFS does not list at all. They are kept in the "
+              "output and are simply absent from the map layer.")
+        for stop in missing:
             print(f"  {stop['stop_key']:<44} {stop['name']}  "
                   f"(line {', '.join(str(n) for n in stop['lines'])})")
         print("\nPaste into scripts/stop_aliases.json, filling in the name GTFS uses now:")
-        print(alias_stub(unmatched))
+        print(alias_stub(missing))
 
     document = build_document(
         stops, unmatched, feeds,
@@ -485,6 +643,8 @@ def main(argv: list[str] | None = None) -> int:
         months=months,
         ridership_counts=dict(counts),
         spread_warn_m=args.spread_warn,
+        refined=refined,
+        ambiguous_m=args.ambiguous,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(

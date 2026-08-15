@@ -44,7 +44,8 @@ Re-run it after `data/raw/` gains a month, or when Metro republishes a feed.
 { "generated_from": { "gtfs": {...}, "ridership": {...}, "stop_keys": {...}, "matched": {...} },
   "stops": { "bus:vermont-wilshire": { "name": "Vermont / Wilshire", "lat": 34.06, "lon": -118.29,
                                        "mode": "Bus", "gtfs_stop_ids": ["111","222"], "spread_m": 40.2 } },
-  "unmatched": [ { "stop_key": "bus:pico-union", "name": "Pico / Union", "mode": "Bus", "lines": [30] } ] }
+  "unmatched": [ { "stop_key": "bus:pico-union", "name": "Pico / Union", "mode": "Bus",
+                   "lines": [30], "reason": "no-gtfs-match" } ] }
 ```
 
 Only stops that **have ridership** are written. The bus feed carries 11,892 stops and
@@ -60,12 +61,21 @@ parent plus platforms only the parent contributes. That sidesteps the platform-s
 problem wherever a parent exists, and it is also where the clean name lives: GTFS calls
 the C Line platform `Crenshaw C-Line Station` and its parent `Crenshaw Station`.
 
+**A name used by two different places gets no coordinate.** LA reuses intersection
+names between cities: `Main / Pico` is downtown *and* in Santa Monica, 21 km apart, so
+the centroid is in neither. Where the route shapes of the reporting lines can say which
+place is meant they do, and the narrowing is printed. Where they cannot — usually they
+cannot, because each place is served by one of the reporting lines — the stop goes to
+`unmatched` with `reason: "ambiguous-name"` instead of getting a midpoint that is simply
+wrong. Sixteen bus stops are in this state.
+
 **Unmatched stops are kept, not dropped.** A stop with ridership and no geometry still
 belongs in the series and in the ranked table; it is simply absent from the map layer.
 Dropping it would change a line's stop count between months depending on when GTFS last
 caught up with a rename — the same silent-divergence bug the alias table exists to
-prevent. The unmatched names go into the JSON *and* print as a paste-ready
-`stop_aliases.json` fragment.
+prevent. Entries carry a `reason`: `no-gtfs-match` (GTFS does not list the name) or
+`ambiguous-name` (it lists it twice, far apart). The `no-gtfs-match` names print as a
+paste-ready `stop_aliases.json` fragment.
 
 **Keep the output pretty-printed.** `fetch_metro_lines.py` minifies
 `public/metro_lines.geojson` because that file is fetched at runtime, where whitespace is
@@ -79,29 +89,31 @@ Feed identity stands in for it: `feed_start_date`/`feed_end_date` where the feed
 them — Metro's rail feed publishes them blank — plus a sha256 of the `stops.txt` rows
 actually used.
 
-#### Match rate, and the two things it doesn't tell you
+#### Match rate
 
 Against the feeds published 2026-06-07, over all twelve months in `data/raw/`:
 
 ```
-bus   6,772 / 6,785   (99.8%)      rail   110 / 110   (100%)
+bus   6,756 / 6,785   (99.6%)      rail   110 / 110   (100%)
 ```
 
 Rail is 110 places rather than the export's 116 names because platform suffixes fold —
 `Union Station - A Line` and `Union Station - Metro Red & Purple Lines` are one station.
 
-**A high match rate is not a promise the dot is right.** 39 bus stops centroid across
-more than 200 m, and 12 of those across more than 5 km, because LA reuses corner pairs
-between cities: `Main / Pico` is in downtown LA *and* in Santa Monica, and the centroid
-is in neither. The ordinary case is fine — 4,945 stops group more than one GTFS stop and
-the median spread among them is 41 m, which is two sides of a street. The script prints
-every offender worst-first; `spread_m` ships so the map layer can act on it. The real fix
-is line-aware disambiguation (`stop_times.txt` × `trips.txt` says which stops a route
-actually serves), which changes the join's grain from `stop_key` to `(line, stop_key)`.
+The 29 bus stops without coordinates split into two kinds, and the `reason` field says
+which:
 
-**Thirteen bus stops have no geometry at all.** One is junk Metro left in the export
-(`Do Not Announce This Stop!`, on seven lines); the rest are stops GTFS no longer lists.
-Naming their successors takes a map, not the data, so none of them is aliased.
+- **16 `ambiguous-name`** — GTFS lists the name in two places more than a kilometre
+  apart. See above; no coordinate is written for them.
+- **13 `no-gtfs-match`** — GTFS does not list the name at all. One is junk Metro left in
+  the export (`Do Not Announce This Stop!`, on seven lines); the rest are stops GTFS no
+  longer lists. Naming their successors takes a map, not the data, so none is aliased.
+
+**A match is not a promise the dot is exact.** 22 stops still centroid across 200–900 m.
+Those are plausible single places — a transit centre, a stop pair at either end of a long
+block — rather than name collisions, but `spread_m` ships on every stop so the map layer
+can judge for itself. The ordinary case is 4,945 stops grouping more than one GTFS stop
+with a median spread of 41 m, which is two sides of a street.
 
 #### Adding an alias
 

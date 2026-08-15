@@ -153,6 +153,16 @@ def extract_leaf_rows(df: pd.DataFrame, mode: str) -> pd.DataFrame:
     return leaf
 
 
+def _has_stop_name(raw: object) -> bool:
+    """Whether a leaf row carries a stop name that can be turned into an identity.
+
+    `raw != raw` is the NaN test, matching `stop_identity`'s pandas-free style.
+    """
+    if raw is None or raw != raw:
+        return False
+    return str(raw).strip() != ""
+
+
 def aggregate_to_line_ridership(df: pd.DataFrame, year: int, month: int, mode: str) -> pd.DataFrame:
     """Sum stop/station boardings per line, then reshape to the long CSV format.
 
@@ -199,6 +209,10 @@ def aggregate_to_stop_ridership(df: pd.DataFrame, year: int, month: int, mode: s
     Rail keeps `station_order` as an ordering attribute. It is **not** an identity —
     it is scoped to the route, so Union Station carries three different numbers in
     the same month. See `stop_identity`.
+
+    Leaf rows with **no stop name** are dropped here and reported on stdout. They stay
+    in the line totals, so they are the one thing that breaks the otherwise exact
+    reconciliation with `aggregate_to_line_ridership`. See the comment at the filter.
     """
     leaf = extract_leaf_rows(df, mode)
     aliases = stop_identity.load_aliases()
@@ -212,6 +226,25 @@ def aggregate_to_stop_ridership(df: pd.DataFrame, year: int, month: int, mode: s
     else:
         leaf["station_order"] = pd.array([None] * len(leaf), dtype="Int64")
         raw_names = list(leaf["STOP_NAME"])
+
+    # A leaf row can carry riders and no stop name: 06-2026-Bus.xlsx has one on line 155,
+    # 2.9 weekday boardings. `stop_identity` refuses a blank name rather than inventing
+    # one, so without this the whole ingest raises on that file.
+    #
+    # Dropped **here and not in `extract_leaf_rows`**, which is the deliberate part. Those
+    # riders are a real observation of line 155 — what is missing is where they boarded,
+    # not whether they did. Dropping them upstream would take them out of the line totals
+    # too and quietly restate committed history in `ridership.json`. So the line keeps
+    # them and the stop grain does not, which is the one case where the per-line sums
+    # below do not reconcile exactly.
+    named = [_has_stop_name(name) for name in raw_names]
+    if not all(named):
+        print(
+            f"  {year}-{month:02d} {mode}: {named.count(False)} leaf row(s) have no stop "
+            "name; dropped at stop grain, still counted in the line total"
+        )
+        leaf = leaf[named].copy()
+        raw_names = [name for name, ok in zip(raw_names, named) if ok]
 
     leaf["stop_key"] = [stop_identity.stop_key(mode, name, aliases) for name in raw_names]
     leaf["stop_name"] = [stop_identity.display_stop_name(mode, name) for name in raw_names]

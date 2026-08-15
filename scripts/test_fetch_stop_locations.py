@@ -9,6 +9,7 @@ and would be silent if they broke:
 - `spread_m` measures the group and the warning fires above the threshold
 - rail prefers the `location_type == 1` parent station over its platforms
 - a stop with ridership and no geometry is **retained** in `unmatched`, not dropped
+- a name reused by two different places is narrowed to the stops its own line runs past
 """
 
 import json
@@ -16,19 +17,20 @@ import json
 import pytest
 
 from fetch_stop_locations import (
+    NEAR_LINE_M,
     SPREAD_WARN_M,
     alias_stub,
     build_document,
-    drop_unnamed_rows,
     group_bus_stops,
     group_rail_stops,
     haversine_m,
     join_locations,
     max_pairwise_m,
+    near_any_point,
+    refine_by_line,
     spread_warnings,
+    stop_candidates,
 )
-
-import pandas as pd
 
 
 # --- helpers ---
@@ -270,79 +272,198 @@ def _ridership(*keys):
 
 
 def test_matched_stops_carry_their_geometry():
-    gtfs = group_bus_stops([stop_row("111", "Vermont / Wilshire", *VERMONT_NORTH)])
-    stops, unmatched = join_locations(_ridership("bus:vermont-wilshire"), gtfs)
+    gtfs = stop_candidates([stop_row("111", "Vermont / Wilshire", *VERMONT_NORTH)], "Bus")
+    stops, unmatched, _ = join_locations(_ridership("bus:vermont-wilshire"), gtfs)
     assert stops["bus:vermont-wilshire"]["lat"] == pytest.approx(VERMONT_NORTH[0])
     assert unmatched == []
 
 def test_a_stop_with_ridership_and_no_geometry_is_kept_not_dropped():
     """The series and the ranked table still contain it; only the map layer does not.
     Dropping would change a line's stop count between months."""
-    stops, unmatched = join_locations(_ridership("rail:apu-station"), {})
+    stops, unmatched, _ = join_locations(_ridership("rail:apu-station"), {})
     assert stops == {}
     assert unmatched == [
-        {"stop_key": "rail:apu-station", "name": "Apu Station", "mode": "Rail", "lines": [2, 4]}
+        {"stop_key": "rail:apu-station", "name": "Apu Station", "mode": "Rail",
+         "lines": [2, 4], "reason": "no-gtfs-match"}
     ]
 
 def test_gtfs_stops_with_no_ridership_are_not_written():
     """The bus feed carries ~5,000 stops no export mentions, and this file ships."""
-    gtfs = group_bus_stops([
+    gtfs = stop_candidates([
         stop_row("111", "Vermont / Wilshire", *VERMONT_NORTH),
         stop_row("222", "Nowhere / Nothing", *VERMONT_SOUTH),
-    ])
-    stops, unmatched = join_locations(_ridership("bus:vermont-wilshire"), gtfs)
+    ], "Bus")
+    stops, unmatched, _ = join_locations(_ridership("bus:vermont-wilshire"), gtfs)
     assert list(stops) == ["bus:vermont-wilshire"]
     assert unmatched == []
 
 def test_join_output_is_sorted_by_key():
     """Deterministic writes; otherwise every run is a phantom multi-megabyte diff."""
-    gtfs = group_bus_stops([
+    gtfs = stop_candidates([
         stop_row("111", "Zebra / Street", *VERMONT_NORTH),
         stop_row("222", "Alpha / Street", *VERMONT_SOUTH),
-    ])
-    stops, _ = join_locations(_ridership("bus:zebra-street", "bus:alpha-street"), gtfs)
+    ], "Bus")
+    stops, _, _ = join_locations(_ridership("bus:zebra-street", "bus:alpha-street"), gtfs)
     assert list(stops) == ["bus:alpha-street", "bus:zebra-street"]
 
 def test_unmatched_is_sorted_by_key():
-    _, unmatched = join_locations(_ridership("rail:zebra-station", "rail:alpha-station"), {})
+    _, unmatched, _ = join_locations(_ridership("rail:zebra-station", "rail:alpha-station"), {})
     assert [u["stop_key"] for u in unmatched] == ["rail:alpha-station", "rail:zebra-station"]
+
+
+# --- refine_by_line: telling two places with the same name apart ---
+
+# The two real `Main / Pico` intersections, 21 km apart.
+MAIN_PICO_DTLA = (34.0407, -118.2468)
+MAIN_PICO_SANTA_MONICA = (34.0110, -118.4900)
+
+# A route shape that runs through downtown and nowhere near Santa Monica.
+DTLA_SHAPE = [(34.0400, -118.2500), (34.0407, -118.2469), (34.0420, -118.2440)]
+
+
+def _main_pico_rows():
+    return [
+        stop_row("111", "Main / Pico", *MAIN_PICO_DTLA),
+        stop_row("222", "Main / Pico", *MAIN_PICO_SANTA_MONICA),
+    ]
+
+
+def test_near_any_point_accepts_a_point_on_the_shape():
+    assert near_any_point(MAIN_PICO_DTLA, DTLA_SHAPE, NEAR_LINE_M)
+
+def test_near_any_point_rejects_a_point_20km_away():
+    assert not near_any_point(MAIN_PICO_SANTA_MONICA, DTLA_SHAPE, NEAR_LINE_M)
+
+def test_near_any_point_respects_the_tolerance():
+    """~111 m north of the shape: inside 150 m, outside 50 m."""
+    just_off = (34.0407 + 0.001, -118.2469)
+    assert near_any_point(just_off, DTLA_SHAPE, 150.0)
+    assert not near_any_point(just_off, DTLA_SHAPE, 50.0)
+
+
+def test_refine_keeps_only_the_stop_its_line_runs_past():
+    members = stop_candidates(_main_pico_rows(), "Bus")["bus:main-pico"]
+    kept = refine_by_line(members, {30}, {30: DTLA_SHAPE})
+    assert [m["stop_id"] for m in kept] == ["111"]
+
+def test_refine_keeps_everything_when_the_line_has_no_shape():
+    """No shape is no evidence. A bad centroid beats inventing a location."""
+    members = stop_candidates(_main_pico_rows(), "Bus")["bus:main-pico"]
+    assert len(refine_by_line(members, {30}, {})) == 2
+
+def test_refine_keeps_everything_rather_than_rejecting_all():
+    """If the filter would empty the group, the stop would vanish from the map. Keep
+    the bad centroid and let `spread_m` say so."""
+    members = stop_candidates(_main_pico_rows(), "Bus")["bus:main-pico"]
+    far_away = {30: [(40.7, -74.0)]}
+    assert len(refine_by_line(members, {30}, far_away)) == 2
+
+def test_refine_considers_every_line_that_reports_there():
+    """A stop served by two lines is kept if *either* runs past it."""
+    members = stop_candidates(_main_pico_rows(), "Bus")["bus:main-pico"]
+    shapes = {30: [(40.7, -74.0)], 33: DTLA_SHAPE}
+    assert [m["stop_id"] for m in refine_by_line(members, {30, 33}, shapes)] == ["111"]
+
+
+def test_join_narrows_a_stop_whose_name_is_reused():
+    candidates = stop_candidates(_main_pico_rows(), "Bus")
+    ridership = {"bus:main-pico": {"name": "Main / Pico", "mode": "Bus", "lines": {30}}}
+    stops, _, refined = join_locations(ridership, candidates, {30: DTLA_SHAPE})
+    stop = stops["bus:main-pico"]
+    assert stop["lat"] == pytest.approx(MAIN_PICO_DTLA[0])
+    assert stop["gtfs_stop_ids"] == ["111"]
+    assert stop["spread_m"] == 0.0
+
+def test_join_reports_what_it_narrowed():
+    """Moving a dot silently is the failure mode. Each swap is recorded."""
+    candidates = stop_candidates(_main_pico_rows(), "Bus")
+    ridership = {"bus:main-pico": {"name": "Main / Pico", "mode": "Bus", "lines": {30}}}
+    _, _, refined = join_locations(ridership, candidates, {30: DTLA_SHAPE})
+    assert len(refined) == 1
+    assert refined[0]["stop_key"] == "bus:main-pico"
+    assert refined[0]["spread_before_m"] > 20_000
+    assert refined[0]["spread_after_m"] == 0.0
+    assert refined[0]["dropped_gtfs_stop_ids"] == ["222"]
+
+def test_join_leaves_an_ordinary_pair_alone():
+    """Two sides of a street are below the threshold, so the shapes are never consulted
+    — 4,945 stops are in this case and refining them all would be pointless work."""
+    candidates = stop_candidates([
+        stop_row("111", "Vermont / Wilshire", *VERMONT_NORTH),
+        stop_row("222", "Vermont / Wilshire", *VERMONT_SOUTH),
+    ], "Bus")
+    ridership = {"bus:vermont-wilshire": {"name": "V", "mode": "Bus", "lines": {204}}}
+    stops, _, refined = join_locations(ridership, candidates, {204: DTLA_SHAPE})
+    assert stops["bus:vermont-wilshire"]["gtfs_stop_ids"] == ["111", "222"]
+    assert refined == []
+
+def test_a_name_used_by_two_places_gets_no_coordinate_at_all():
+    """The centroid of downtown LA and Santa Monica is in neither, so writing it would
+    put a dot on the map that is simply wrong. No coordinate, and say why."""
+    candidates = stop_candidates(_main_pico_rows(), "Bus")
+    ridership = {"bus:main-pico": {"name": "Main / Pico", "mode": "Bus", "lines": {30}}}
+    stops, unmatched, _ = join_locations(ridership, candidates)  # no shapes to rescue it
+    assert stops == {}
+    assert unmatched[0]["reason"] == "ambiguous-name"
+    assert unmatched[0]["spread_m"] > 20_000
+
+def test_an_ambiguous_stop_keeps_its_ridership_identity_and_evidence():
+    """It still belongs in the series and the ranked table; only the map skips it. The
+    ids are carried so the next person can see which two places collided."""
+    candidates = stop_candidates(_main_pico_rows(), "Bus")
+    ridership = {"bus:main-pico": {"name": "Main / Pico", "mode": "Bus", "lines": {30, 33}}}
+    _, unmatched, _ = join_locations(ridership, candidates)
+    assert unmatched[0]["stop_key"] == "bus:main-pico"
+    assert unmatched[0]["lines"] == [30, 33]
+    assert unmatched[0]["gtfs_stop_ids"] == ["111", "222"]
+
+def test_refinement_rescues_a_stop_that_would_have_been_ambiguous():
+    """The order matters: narrow first, then judge. Judging first would discard a stop
+    the route shapes could have placed."""
+    candidates = stop_candidates(_main_pico_rows(), "Bus")
+    ridership = {"bus:main-pico": {"name": "Main / Pico", "mode": "Bus", "lines": {30}}}
+    stops, unmatched, refined = join_locations(ridership, candidates, {30: DTLA_SHAPE})
+    assert unmatched == []
+    assert stops["bus:main-pico"]["gtfs_stop_ids"] == ["111"]
+    assert len(refined) == 1
+
+def test_a_wide_but_plausible_stop_keeps_its_centroid():
+    """A transit centre spans a few hundred metres and is still one place. Only the
+    kilometre-scale collisions lose their coordinate."""
+    rows = [
+        stop_row("111", "North Hollywood Station", 34.16800, -118.37700),
+        stop_row("222", "North Hollywood Station", 34.16600, -118.37600),  # ~250 m
+    ]
+    ridership = {"bus:north-hollywood-station": {"name": "N", "mode": "Bus", "lines": {224}}}
+    stops, unmatched, _ = join_locations(ridership, stop_candidates(rows, "Bus"))
+    assert unmatched == []
+    assert 200 < stops["bus:north-hollywood-station"]["spread_m"] < 1000
+
+def test_ambiguous_threshold_is_configurable():
+    candidates = stop_candidates(_main_pico_rows(), "Bus")
+    ridership = {"bus:main-pico": {"name": "Main / Pico", "mode": "Bus", "lines": {30}}}
+    stops, unmatched, _ = join_locations(ridership, candidates, ambiguous_m=50_000.0)
+    assert unmatched == []
+    assert stops["bus:main-pico"]["spread_m"] > 20_000
 
 
 # --- alias_stub ---
 
 def test_alias_stub_is_valid_json_ready_to_paste():
-    _, unmatched = join_locations(_ridership("rail:apu-station", "bus:pico-union"), {})
+    _, unmatched, _ = join_locations(_ridership("rail:apu-station", "bus:pico-union"), {})
     stub = json.loads(alias_stub(unmatched))
     assert stub == {"bus": {"pico-union": ""}, "rail": {"apu-station": ""}}
 
 def test_alias_stub_has_both_tables_even_when_one_side_is_empty():
-    _, unmatched = join_locations(_ridership("rail:apu-station"), {})
+    _, unmatched, _ = join_locations(_ridership("rail:apu-station"), {})
     assert json.loads(alias_stub(unmatched)) == {"bus": {}, "rail": {"apu-station": ""}}
-
-
-# --- drop_unnamed_rows ---
-
-def test_drop_unnamed_rows_removes_blank_bus_stop_names():
-    """Works around a nameless row in 06-2026-Bus.xlsx that aggregate_to_stop_ridership
-    raises on; see the function's docstring."""
-    df = pd.DataFrame({"STOP_NAME": ["Vermont / Wilshire", None, "  "], "LINE": [2, 155, 4]})
-    kept, dropped = drop_unnamed_rows(df, "Bus")
-    assert list(kept["STOP_NAME"]) == ["Vermont / Wilshire"]
-    assert dropped == 2
-
-def test_drop_unnamed_rows_leaves_rail_alone():
-    """Rail identity is STATION_ORDER, and extract_leaf_rows already drops blanks."""
-    df = pd.DataFrame({"STATION_ORDER": ["1001-Union Station"], "LINE": [801]})
-    kept, dropped = drop_unnamed_rows(df, "Rail")
-    assert dropped == 0
-    assert len(kept) == 1
 
 
 # --- build_document ---
 
 def _document():
-    gtfs = group_bus_stops([stop_row("111", "Vermont / Wilshire", *VERMONT_NORTH)])
-    stops, unmatched = join_locations(
+    gtfs = stop_candidates([stop_row("111", "Vermont / Wilshire", *VERMONT_NORTH)], "Bus")
+    stops, unmatched, _ = join_locations(
         _ridership("bus:vermont-wilshire", "rail:apu-station"), gtfs
     )
     return build_document(
