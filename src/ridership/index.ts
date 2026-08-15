@@ -13,6 +13,18 @@ export {
 } from './buildRidershipView';
 
 /**
+ * The Month Window predicate, exported because a **second** derivation now applies
+ * it: `src/stops/` filters Stop Ridership Records to the same window the chart uses.
+ *
+ * It is exported so that there is exactly one copy, not so that callers may reach
+ * past `buildRidershipView` to re-filter its records. The off-by-one is intended and
+ * is pinned by the committed chart baselines — see
+ * `docs/adr/0001-ridership-month-window-is-deliberately-offset.md`. Restating this
+ * arithmetic anywhere else is the failure ADR-0001 exists to prevent.
+ */
+export { isInMonthWindow } from './monthWindow';
+
+/**
  * The line-table's month axis and coverage labels.
  *
  * `buildRidershipView` cannot serve these: it derives everything for the **chart**,

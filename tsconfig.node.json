@@ -25,6 +25,8 @@
     "tailwind.config.ts",
     "vite.config.ts",
     "vitest.config.ts",
-    "vite/ridership-data-plugin.ts"
+    "vite/ridership-data-plugin.ts",
+    "vite/stop-ridership-plugin.ts",
+    "vite/stop-ridership-plugin.test.ts"
   ]
 }
