@@ -187,7 +187,9 @@ def test_default_threshold_is_the_documented_one():
 
 # --- group_rail_stops: parent-station preference ---
 
-STATION_PARENT = (34.056197, -118.234249)
+# The parent sits ~55 m north of the platforms' midpoint, deliberately: put it *at* the
+# midpoint and the preference test passes whether or not the preference is implemented.
+STATION_PARENT = (34.056700, -118.234250)
 STATION_PLATFORM_A = (34.056500, -118.234000)
 STATION_PLATFORM_B = (34.055900, -118.234500)
 
@@ -202,6 +204,9 @@ def test_rail_prefers_the_parent_station_over_its_platforms():
     stop = group_rail_stops(rows)["rail:union-station"]
     assert stop["lat"] == pytest.approx(STATION_PARENT[0])
     assert stop["lon"] == pytest.approx(STATION_PARENT[1])
+    # Not the platform centroid, which is the thing it would silently fall back to.
+    platform_mean = (STATION_PLATFORM_A[0] + STATION_PLATFORM_B[0]) / 2
+    assert abs(stop["lat"] - platform_mean) > 1e-4
 
 def test_rail_records_only_the_ids_that_produced_the_coordinate():
     """gtfs_stop_ids and spread_m must describe the same point set, or a wide spread
@@ -362,5 +367,23 @@ def test_document_carries_no_timestamp():
     the geometry moved. Feed identity says the same thing without the noise."""
     assert "generated_at" not in json.dumps(_document())
 
-def test_document_is_byte_identical_across_runs():
-    assert json.dumps(_document(), indent=2) == json.dumps(_document(), indent=2)
+def test_document_sorts_stops_and_unmatched_it_is_handed():
+    """`build_document` must not inherit its ordering from the caller. Sorting only in
+    `join_locations` would leave the committed file's determinism resting on a
+    guarantee made somewhere else — ROADMAP risk 3, a phantom multi-megabyte diff."""
+    document = build_document(
+        stops={"bus:zebra": {"name": "Z"}, "bus:alpha": {"name": "A"}},
+        unmatched=[{"stop_key": "rail:zebra"}, {"stop_key": "rail:alpha"}],
+        feeds={}, archives=[], months=[], ridership_counts={"bus": 2, "rail": 2},
+    )
+    assert list(document["stops"]) == ["bus:alpha", "bus:zebra"]
+    assert [u["stop_key"] for u in document["unmatched"]] == ["rail:alpha", "rail:zebra"]
+
+
+def test_document_records_the_threshold_actually_used():
+    """`--spread-warn 100` must not warn at 100 and then record 200 as provenance."""
+    document = build_document(
+        stops={}, unmatched=[], feeds={}, archives=[], months=[],
+        ridership_counts={"bus": 0}, spread_warn_m=100.0,
+    )
+    assert document["generated_from"]["spread_warn_m"] == 100.0

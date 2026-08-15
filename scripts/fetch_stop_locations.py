@@ -240,8 +240,16 @@ def iter_raw_frames(paths: list[Path]):
                     mode = outer.group(3).capitalize()
                 else:
                     inner = INNER_FILENAME_RE.match(basename)
-                    if not inner or typed_mode is None:
+                    if not inner:
                         continue
+                    if typed_mode is None:
+                        # Same refusal as convert_zip. Skipping would drop the archive's
+                        # stops out of the file entirely — not even into `unmatched`.
+                        raise ValueError(
+                            f"Cannot parse mode from '{path.name}'. Zips with "
+                            "'YYYY-MM.xlsx' inner files must be named 'Bus YYYY.zip' "
+                            "or 'Rail YYYY.zip'."
+                        )
                     year, month, mode = int(inner.group(1)), int(inner.group(2)), typed_mode
                 cols = BUS_COLS if mode == "Bus" else RAIL_COLS
                 yield _read_excel_bytes(zf.read(entry.filename), basename, cols), year, month, mode
@@ -372,9 +380,11 @@ def build_document(
     archives: list[str],
     months: list[str],
     ridership_counts: dict[str, int],
+    spread_warn_m: float = SPREAD_WARN_M,
 ) -> dict:
-    """The committed JSON. Every collection is sorted, so two runs against one feed
-    produce byte-identical output (ROADMAP risk 3)."""
+    """The committed JSON. Every collection is sorted here rather than relied on from
+    upstream, so two runs against one feed produce byte-identical output (ROADMAP
+    risk 3)."""
     matched: dict[str, int] = defaultdict(int)
     for key in stops:
         matched[key.split(":", 1)[0]] += 1
@@ -385,7 +395,7 @@ def build_document(
             "ridership": {"archives": archives, "months": months},
             "stop_keys": dict(sorted(ridership_counts.items())),
             "matched": {mode: matched.get(mode, 0) for mode in sorted(ridership_counts)},
-            "spread_warn_m": SPREAD_WARN_M,
+            "spread_warn_m": spread_warn_m,
         },
         "stops": {key: stops[key] for key in sorted(stops)},
         "unmatched": sorted(unmatched, key=lambda u: u["stop_key"]),
@@ -474,6 +484,7 @@ def main(argv: list[str] | None = None) -> int:
         archives=[p.name for p in inputs],
         months=months,
         ridership_counts=dict(counts),
+        spread_warn_m=args.spread_warn,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(
