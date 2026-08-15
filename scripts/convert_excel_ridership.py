@@ -29,6 +29,8 @@ from pathlib import Path
 
 import pandas as pd
 
+import stop_identity
+
 # Column names assigned after skipping the two merged Excel header rows
 BUS_COLS = [
     "STOP_NAME", "LINE", "DIRECTION",
@@ -41,6 +43,22 @@ RAIL_COLS = [
     "WD_ONS", "WD_OFFS", "WD_ACT",
     "SA_ONS", "SA_OFFS", "SA_ACT",
     "SU_ONS", "SU_OFFS", "SU_ACT",
+]
+
+# The per-stop measures carried through to stop grain. *_ACT is deliberately absent:
+# it equals ONS + OFFS, so it is a third of the payload for one client-side addition.
+LEAF_VALUE_COLS = [
+    "WD_ONS", "WD_OFFS",
+    "SA_ONS", "SA_OFFS",
+    "SU_ONS", "SU_OFFS",
+]
+
+# Column order of aggregate_to_stop_ridership's output. Frozen — downstream stages
+# read it by name, and `station_order` is a rail-only ordering attribute that must
+# never be used as an identity (see stop_identity.py).
+STOP_OUTPUT_COLS = [
+    "year", "month", "mode", "line", "stop_key", "stop_name", "station_order",
+    "wd_ons", "wd_offs", "sa_ons", "sa_offs", "su_ons", "su_offs",
 ]
 
 # Maps the wide Ons column name to the DayType code process_ridership.py expects
@@ -94,35 +112,54 @@ def load_excel(path: Path, cols: list[str]) -> pd.DataFrame:
     return _read_excel_bytes(path.read_bytes(), path.name, cols)
 
 
-def aggregate_to_line_ridership(df: pd.DataFrame, year: int, month: int, mode: str) -> pd.DataFrame:
-    """Sum stop/station boardings per line, then reshape to the long CSV format.
+def extract_leaf_rows(df: pd.DataFrame, mode: str) -> pd.DataFrame:
+    """Reduce a raw export frame to its leaf rows, with LINE resolved to ROUTE.
 
-    Excludes aggregate "Total" rows that the Excel export includes at multiple
-    levels (direction-total for Bus, route-total and station-total for Rail).
-    Summing only the leaf-level rows gives the correct line ridership.
+    **This is the single source of truth for what counts as a real observation.**
+    Both the line-level and the stop-level aggregations go through it, so the rule
+    cannot drift between them the next time Metro changes the export layout.
 
-    For rail, Metro nests distinct routes under a shared LINE grouping — notably
-    ROUTE 805 (D/Purple) under LINE 802 (B/Red). Boardings are aggregated by
-    ROUTE, not LINE, so each route is reported as its own line rather than being
-    summed into the parent LINE's total (which would fold the Purple Line's
-    riders into the Red Line's).
+    The export interleaves aggregate "Total" rows at several levels — a
+    direction-total per stop for Bus, and for Rail both a line-total row
+    (`ROUTE == "Total"`) and a route-total row (`STATION_ORDER == "Total"`).
+    Summing anything without dropping those double-counts.
+
+    For rail it also resolves LINE to ROUTE, because Metro nests distinct routes
+    under a shared LINE grouping — notably ROUTE 805 (D/Purple) under LINE 802
+    (B/Red). Reporting each ROUTE as its own line is what keeps the Purple Line's
+    riders, and its stations, out of the Red Line's totals. Single-route lines have
+    ROUTE == LINE so this is a no-op for them; a non-numeric ROUTE falls back to
+    LINE.
+
+    Returns a copy; the caller may mutate it freely.
     """
     if mode == "Bus":
         # Each stop has one row per direction plus a "Total" direction row.
         # Keep only real direction rows so we don't double-count.
-        df = df[df["DIRECTION"].notna() & (df["DIRECTION"] != "Total")]
+        leaf = df[df["DIRECTION"].notna() & (df["DIRECTION"] != "Total")].copy()
     else:  # Rail
         # Each line has a line-total row (ROUTE=="Total") and per-station rows
         # where the first station row is a route-total (STATION_ORDER=="Total").
         # Keep only individual station rows.
-        df = df[df["STATION_ORDER"].notna() & (df["STATION_ORDER"] != "Total")].copy()
-        # Report each ROUTE as its own line. Single-route lines have ROUTE == LINE
-        # so this is a no-op for them; a non-numeric ROUTE falls back to LINE.
-        route = pd.to_numeric(df["ROUTE"], errors="coerce")
-        df["LINE"] = route.fillna(df["LINE"]).astype(int)
+        leaf = df[df["STATION_ORDER"].notna() & (df["STATION_ORDER"] != "Total")].copy()
+        route = pd.to_numeric(leaf["ROUTE"], errors="coerce")
+        leaf["LINE"] = route.fillna(leaf["LINE"]).astype(int)
 
-    for col in ["WD_ONS", "SA_ONS", "SU_ONS"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+    # Excel sometimes stores numeric cells as strings, and a stop that reported
+    # nothing comes through blank rather than zero.
+    for col in LEAF_VALUE_COLS:
+        leaf[col] = pd.to_numeric(leaf[col], errors="coerce").fillna(0)
+
+    return leaf
+
+
+def aggregate_to_line_ridership(df: pd.DataFrame, year: int, month: int, mode: str) -> pd.DataFrame:
+    """Sum stop/station boardings per line, then reshape to the long CSV format.
+
+    A thin wrapper over `extract_leaf_rows` — see there for why "Total" rows are
+    excluded and why rail is grouped by ROUTE rather than LINE.
+    """
+    df = extract_leaf_rows(df, mode)
 
     agg = df.groupby("LINE")[["WD_ONS", "SA_ONS", "SU_ONS"]].sum().reset_index()
 
@@ -144,6 +181,59 @@ def aggregate_to_line_ridership(df: pd.DataFrame, year: int, month: int, mode: s
     return long.rename(columns={"LINE": "Line"})[
         ["Year", "Month", "Line", "DayType", "Riders", "Shakeup", "Provider", "Mode", "Days"]
     ]
+
+
+def aggregate_to_stop_ridership(df: pd.DataFrame, year: int, month: int, mode: str) -> pd.DataFrame:
+    """Reduce a raw export frame to one row per line per stop, keeping boardings
+    **and alightings** for all three day types.
+
+    Columns are `STOP_OUTPUT_COLS`. Values are the raw decimals the export carries;
+    rounding belongs on write, not here, so that the per-line sums of this frame
+    reconcile exactly with `aggregate_to_line_ridership`'s `Riders`.
+
+    Grain is (line, stop). **Bus direction is collapsed**: `STOP_NAME` is a name and
+    not a `stop_id`, so both sides of a street share one name and therefore one
+    coordinate — they could not be drawn apart even if kept separate. This discards
+    which way riders board, recoverable later only from GTFS `stop_times.txt`.
+
+    Rail keeps `station_order` as an ordering attribute. It is **not** an identity —
+    it is scoped to the route, so Union Station carries three different numbers in
+    the same month. See `stop_identity`.
+    """
+    leaf = extract_leaf_rows(df, mode)
+    aliases = stop_identity.load_aliases()
+
+    if mode == "Rail":
+        parsed = [stop_identity.parse_station_order(v) for v in leaf["STATION_ORDER"]]
+        leaf["station_order"] = pd.array(
+            [order for order, _ in parsed], dtype="Int64"
+        )
+        raw_names = [name for _, name in parsed]
+    else:
+        leaf["station_order"] = pd.array([None] * len(leaf), dtype="Int64")
+        raw_names = list(leaf["STOP_NAME"])
+
+    leaf["stop_key"] = [stop_identity.stop_key(mode, name, aliases) for name in raw_names]
+    leaf["stop_name"] = [stop_identity.display_stop_name(mode, name) for name in raw_names]
+
+    grouped = leaf.groupby(["LINE", "stop_key"], as_index=False).agg(
+        # One display name and one sequence number per key, chosen deterministically
+        # rather than arbitrarily: names that differ only in case or spacing fold onto
+        # one key, and a group could in principle carry more than one sequence number.
+        stop_name=("stop_name", "min"),
+        station_order=("station_order", "min"),
+        **{col.lower(): (col, "sum") for col in LEAF_VALUE_COLS},
+    )
+
+    grouped["year"] = year
+    grouped["month"] = month
+    grouped["mode"] = mode
+
+    return (
+        grouped.rename(columns={"LINE": "line"})
+        .sort_values(["line", "stop_key"])
+        .reset_index(drop=True)[STOP_OUTPUT_COLS]
+    )
 
 
 def convert_file(path: Path) -> pd.DataFrame:

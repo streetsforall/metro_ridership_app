@@ -1,0 +1,21 @@
+{
+  "_comment": [
+    "Hand-maintained rename table for stop identity. Pipeline input only — this",
+    "file is never shipped to the client. See scripts/README.md for provenance and",
+    "for how to add an entry.",
+    "",
+    "Keys and values are UNPREFIXED slugs, as produced by stop_identity.stop_key",
+    "before the 'bus:'/'rail:' prefix is attached. An entry maps a name Metro has",
+    "stopped using onto the one it uses now, so a renamed stop keeps one continuous",
+    "series instead of splitting into two. Chains are followed; cycles raise.",
+    "",
+    "Both tables are empty because no month in the 2025-07..2026-05 window has both",
+    "an added and a dropped key, which is the signature a rename leaves. The one",
+    "ambiguous case — line 28's san-vicente-fairfax -> san-vicente-orange-grove — is",
+    "left alone on purpose; see scripts/README.md. The known rail renames (e.g. 'APU",
+    "Station' -> 'APU / Citrus College Station') are GTFS-side mismatches, not",
+    "ridership-side ones, and belong to the geometry join."
+  ],
+  "bus": {},
+  "rail": {}
+}

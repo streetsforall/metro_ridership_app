@@ -27,6 +27,7 @@ Then read whichever guide matches what you're about to do. Don't read them all.
 | [`guides/ci.md`](guides/ci.md) | The two CI jobs, and a symptom-to-fix table | CI is red |
 | [`guides/data.md`](guides/data.md) | Ingesting new ridership data | You have new files from a records request |
 | [`../scripts/README.md`](../scripts/README.md) | The Python pipeline in full — records requests, every script, compression | Working on the pipeline itself |
+| [`ROADMAP.md`](ROADMAP.md) | The stop-level ridership batch — five PRs, the contract they share, the named risks | You're picking up one of those PRs, or wondering where stop data is up to |
 | [`adr/`](adr/) | Eight decisions, with the reasoning | You want to know *why*, or you're about to change something one of them covers |
 | [`architecture/diagrams.md`](architecture/diagrams.md) | 21 diagrams — system, data, state, URL, seams, tests, CI | You'd rather see it than read it |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Conventions, and the one docs rule | Before your first PR |
