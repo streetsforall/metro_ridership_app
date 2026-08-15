@@ -21,17 +21,17 @@ _Avoid_: chart data, dashboard state, the memo
 
 **Month Window**:
 The stretch of months a Ridership View covers, chosen by the user as a start month and an end
-month. The window's start month **is** included; the end month **and the month immediately before
-it** are excluded. This is long-standing intended behaviour, not an off-by-one bug — see
-[ADR-0001](docs/adr/0001-ridership-month-window-is-deliberately-offset.md).
+month. **Inclusive of both ends** — ask for Jan 2022 to Dec 2022 and you get January through
+December. Until [ADR-0009](docs/adr/0009-the-two-window-rules-are-one-rule.md) the end month and the
+month before it were excluded, so the chart hid the two most recent months of the range asked for.
 _Avoid_: date range, date window, time period
 
 **Event Window**:
-The stretch of months a Transit Event must fall in to appear in the context log. Unlike the Month
-Window it is **inclusive of both its start and end months**. The two windows are derived from the
-same user choices but do not agree, and that divergence is deliberate — it is preserved, not
-reconciled.
-_Avoid_: treating this as the same thing as the Month Window
+The stretch of months a Transit Event must fall in to appear in the context log. **The same rule and
+the same bounds as the Month Window** — the log and the chart cover the same months. The two used to
+disagree by exactly two months; ADR-0009 removed the disagreement, and the term survives only because
+the two are reached through different code paths (a record's year-and-month, an event's `"YYYY-MM"`).
+_Avoid_: treating this as a different rule from the Month Window
 
 **Month Axis**:
 The chronologically ordered union of every month covered by the selected lines. One axis is shared

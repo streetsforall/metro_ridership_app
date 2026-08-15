@@ -1,6 +1,16 @@
 # A month is a `{year, month}` value, and `Date` is not used to represent one
 
-Status: accepted
+Status: accepted. Still in force; two details below have been overtaken by later decisions.
+
+> **Reading note.** This ADR was written when `month.ts` had two window predicates and no production
+> caller. Both have changed and the decision itself has not:
+>
+> - **`containsOffset` no longer exists.** [ADR-0009](0009-the-two-window-rules-are-one-rule.md)
+>   removed the offset rule; `contains` is the app's one window rule. Read every mention of
+>   `containsOffset` below as `contains`.
+> - **`month.ts` has production callers.** The window rule is reached through
+>   `src/ridership/monthWindow.ts` and `src/ridership/eventWindow.ts`. The rest of the migration —
+>   the chart axis, the picker, the sort — is still ahead, in #144 / #145 / #146.
 
 A month was encoded seven ways: `new Date(y, m)` in the record filter, `y * 100 + m` in the event
 filter, `"YYYY M"` on the chart axis, `y * 12 + m` in the axis sort, `"YYYY-MM"` in

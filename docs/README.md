@@ -38,14 +38,15 @@ Then read whichever guide matches what you're about to do. Don't read them all.
 
 | ADR | Says | Status |
 | --- | --- | --- |
-| [0001](adr/0001-ridership-month-window-is-deliberately-offset.md) | The Month Window's off-by-one is intended | accepted |
+| [0001](adr/0001-ridership-month-window-is-deliberately-offset.md) | The Month Window's off-by-one is intended | **superseded by 0009** |
 | [0002](adr/0002-ridership-view-returns-chart-js-dataset-types.md) | The view returns Chart.js dataset types | accepted |
 | [0003](adr/0003-one-domain-folder-not-a-repo-wide-reorganisation.md) | One domain folder, not a repo-wide reorg | **superseded by 0007** |
 | [0004](adr/0004-line-metrics-are-one-nullable-shape.md) | Line Metrics are one nullable shape | accepted |
 | [0005](adr/0005-derived-figures-live-on-line-readouts.md) | Derived figures live on Line Readouts, never on `Line` | accepted, fully landed |
-| [0006](adr/0006-a-month-is-a-year-and-a-month-not-a-date.md) | A month is a year and a month, not a `Date` | accepted, **half landed** — `month.ts` has no production caller yet |
+| [0006](adr/0006-a-month-is-a-year-and-a-month-not-a-date.md) | A month is a year and a month, not a `Date` | accepted, **half landed** — `month.ts` states the window rule production uses; #144–#146 migrate the rest |
 | [0007](adr/0007-a-folder-with-an-index-is-a-sealed-module.md) | A folder with an `index.ts` is a sealed module; `src/` is flat by default | accepted |
 | [0008](adr/0008-panel-layout-is-a-tailwind-grid-with-url-synced-settings.md) | Panel layout is a Tailwind grid with URL-synced settings; dockview was reverted | accepted |
+| [0009](adr/0009-the-two-window-rules-are-one-rule.md) | One window rule, inclusive on both ends — the chart's two-month offset is gone | accepted, **supersedes 0001** |
 
 ## Not for humans
 

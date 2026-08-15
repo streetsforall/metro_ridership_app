@@ -811,19 +811,17 @@ flowchart TB
 
 ## Month Window, Event Window, Month Axis
 
-The single most surprising thing in the codebase. One user choice produces two windows that
-disagree by two months: records use `S ≤ R ≤ E − 2` — the start month is in, the end month **and
-the month before it** are out — while the context log uses an ordinary inclusive range.
+One rule — `S ≤ R ≤ E`, inclusive on both ends — stated once as `contains` in `utils/month.ts` and
+reached through two adapters that differ only in what they accept: a record's `{year, month}`, or an
+event's `"YYYY-MM"`. The chart, the stop panel and the context log therefore cover exactly the same
+months for a given date range.
 
-This reads like an off-by-one and is not. It is long-standing behaviour, users have shared URLs
-against it, and `e2e/chart-content.spec.ts` renders windows through it into committed PNG
-baselines, so normalising it would change what every existing link shows. ADR-0001 accepts it.
-
-Each rule is stated exactly once, in `utils/month.ts` — `containsOffset` and `contains` — and
-production reaches it through a `Date`-shaped adapter (`ridership/monthWindow.ts`,
-`ridership/eventWindow.ts`). Two copies of a rule this surprising is how the chart and the stop
-panel would start disagreeing about which months one URL shows; ADR-0001's addendum carries the
-argument and the test that licensed retiring the original `Date` arithmetic.
+This used to be the single most surprising thing in the codebase. One user choice produced two
+windows that disagreed by two months: records used `S ≤ R ≤ E − 2` — the end month **and the month
+before it** were out — while the context log used an ordinary inclusive range. The offset was an
+accident of `Date`'s 0-based months that ADR-0001 chose to keep rather than risk changing, and it
+meant the chart hid the two most recent months of whatever range you asked for. ADR-0009 removed it
+and regenerated the baselines that had pinned it.
 
 The Month Axis is derived after filtering: one shared axis for every series, because Chart.js
 appends any label missing from `labels` to the end and a per-series axis scrambles the rest.
@@ -832,23 +830,17 @@ appends any label missing from `labels` to the end and a per-series axis scrambl
 flowchart TB
   choice["One user choice — start 2025-01, end 2025-06"]
 
-  subgraph monthWindow["Month Window — records, chart, metrics"]
+  onePlace["utils/month.ts — contains()<br/>S ≤ R ≤ E, inclusive both ends.<br/>The one statement of the rule."]
+
+  subgraph adapters["Two adapters, one rule — they differ only in what they accept"]
     direction TB
-    mwRule["S ≤ R ≤ E − 2"]
-    mwMeaning["start included · end month AND<br/>the month before it excluded"]
-    mwMonths["2025-01 · 02 · 03 · 04"]
-    mwRule --> mwMeaning --> mwMonths
+    mw["ridership/monthWindow.ts<br/>isInMonthWindow(record {year, month})<br/>records · chart · metrics · stop panel"]
+    ew["ridership/eventWindow.ts<br/>isInEventWindow(event 'YYYY-MM')<br/>context log"]
   end
 
-  subgraph eventWindow["Event Window — context log"]
-    direction TB
-    ewRule["S ≤ R ≤ E"]
-    ewMeaning["inclusive both ends, correctly 1-based"]
-    ewMonths["2025-01 · 02 · 03 · 04 · 05 · 06"]
-    ewRule --> ewMeaning --> ewMonths
-  end
+  months["2025-01 · 02 · 03 · 04 · 05 · 06<br/>the same six months, everywhere"]
 
-  keep["Two months apart, from the same choice.<br/>Preserved, not reconciled — shared URLs and the<br/>committed chart baselines both depend on it. ADR-0001"]
+  was["Until ADR-0009 the chart used a second rule, S ≤ R ≤ E − 2,<br/>and stopped at 2025-04 while the log showed through 06.<br/>The offset hid the two most recent months asked for.<br/>Removed, with the chart baselines regenerated."]
 
   subgraph axis["Month Axis — derived after filtering"]
     direction TB
@@ -858,17 +850,16 @@ flowchart TB
     axisDef --> axisGap --> axisTwo
   end
 
-  onePlace["utils/month.ts — containsOffset() and contains()<br/>state both rules once, and production goes through them.<br/>ridership/monthWindow.ts and ridership/eventWindow.ts are<br/>the Date-shaped adapters in front. ADR-0001 · ADR-0006"]
+  choice --> onePlace
+  onePlace --> mw
+  onePlace --> ew
+  mw --> months
+  ew --> months
+  months --> axis
+  months -.-> was
 
-  choice --> monthWindow
-  choice --> eventWindow
-  mwMonths --> keep
-  ewMonths --> keep
-  keep --> axis
-  keep --> onePlace
-
-  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
-  class keep cycle
+  classDef gone fill:#e7e5e4,stroke:#a8a29e,stroke-width:1.5px,color:#57534e
+  class was gone
 ```
 
 ---
@@ -1261,7 +1252,7 @@ flowchart TB
   subgraph authority["Authority order — who wins on conflict"]
     direction TB
     ctx["CONTEXT.md — where a term conflicts<br/>with a name in the source, the term wins"]
-    adrs["docs/adr/ — seven decisions"]
+    adrs["docs/adr/ — nine decisions"]
     prose["docs/how-it-works.md · docs/guides/"]
     pointer["CLAUDE.md — pointer file, no facts of its own"]
     ctx --> adrs --> prose --> pointer
@@ -1269,7 +1260,7 @@ flowchart TB
 
   subgraph landed["Decided and in force"]
     direction TB
-    a1["0001 — the offset Month Window<br/>→ buildRidershipView.ts"]
+    a9["0009 — one window rule, inclusive both ends<br/>→ utils/month.ts contains()"]
     a2["0002 — the view returns Chart.js types<br/>→ RidershipView.datasets"]
     a4["0004 — one nullable Line Metrics shape<br/>→ lineMetrics.ts"]
     a5["0005 — figures live on a Line Readout.<br/>#154 moved the consumers, #167 deleted<br/>the write-back. Fully landed."]
@@ -1278,18 +1269,20 @@ flowchart TB
 
   subgraph half["Accepted, only half landed"]
     direction TB
-    a6["0006 — a month is {year, month}.<br/>utils/month.ts has the rules and its own spec<br/>and no production caller yet; #144 #145 #146 migrate onto it."]
+    a6["0006 — a month is {year, month}.<br/>utils/month.ts states the window rule production uses;<br/>#144 #145 #146 migrate the app's other month encodings onto it."]
   end
 
   subgraph superseded["Superseded"]
     direction TB
     a3["0003 — one domain folder.<br/>Superseded by 0007; the utils/ reorg it<br/>deferred is now tracked in #170."]
+    a1["0001 — the offset Month Window.<br/>Superseded by 0009, on the terms 0001 itself set:<br/>a product decision with a baseline regeneration."]
   end
 
   adrs --> landed
   adrs --> half
   adrs --> superseded
   a3 -.->|superseded by| a7
+  a1 -.->|superseded by| a9
 
   classDef authorityC fill:#f0e5f1,stroke:#a05da5,stroke-width:1.5px,color:#44403c
   classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
@@ -1298,6 +1291,7 @@ flowchart TB
   class ctx authorityC
   class a6 pending
   class a3 pending
+  class a1 pending
   class landed surface
   class hub,r0 entry
 ```

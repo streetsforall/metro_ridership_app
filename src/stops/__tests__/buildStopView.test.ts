@@ -54,14 +54,14 @@ describe('buildStopView', () => {
   describe('the Month Window', () => {
     /**
      * The predicate is `isInMonthWindow`, imported from `src/ridership`. These cases
-     * pin that this module did not restate it — the offset is intended (ADR-0001) and
-     * the stop panel has to agree with the chart above it, month for month.
+     * pin that this module did not restate it — the stop panel has to agree with the
+     * chart above it, month for month.
      */
     const across2025 = [7, 8, 9, 10, 11, 12].map((month) =>
       makeStopRecord({ month }),
     );
 
-    it('includes the start month and E - 2, and excludes E - 1 and E', () => {
+    it('includes every month from the start to the end inclusive', () => {
       const view = buildStopView(
         input({
           records: across2025,
@@ -70,7 +70,16 @@ describe('buildStopView', () => {
         }),
       );
 
-      expect(view.months).toEqual(['2025-07', '2025-08', '2025-09', '2025-10']);
+      // Before ADR-0009 this stopped at 2025-10: the end month and the month before it
+      // were dropped. These are the two months that changed.
+      expect(view.months).toEqual([
+        '2025-07',
+        '2025-08',
+        '2025-09',
+        '2025-10',
+        '2025-11',
+        '2025-12',
+      ]);
     });
 
     it('agrees with `isInMonthWindow` record for record', () => {

@@ -15,11 +15,11 @@ import { desktopOnly, gotoDashboard, shootPane } from './helpers';
  * `?buses=0` narrows the table to the seven rail lines (801–807), so a `<tr>` crop is a
  * cheap, legible baseline rather than a slice of a 180-row canvas farm.
  *
- * `start=2023-01&end=2025-12` is closed and historical. Per ADR-0001 the Month Window is
- * offset — a record at month ordinal `R` is included when `S <= R <= E - 2` — so those
- * params render **2023-01 through 2025-10, 34 months**. Both ends are pinned and the
- * rendered end sits well inside the dataset, so appending new months to `ridership.json`
- * cannot move a figure in these baselines.
+ * `start=2023-01&end=2025-12` is closed and historical. The Month Window is inclusive of both
+ * ends, so those params render **2023-01 through 2025-12, 36 months**. (It was 34, stopping at
+ * 2025-10, until ADR-0009 removed the offset.) Both ends are pinned and the rendered end sits
+ * inside the dataset, so appending new months to `ridership.json` cannot move a figure in these
+ * baselines.
  *
  * ## Why the L Line (806) for the coverage marker
  *

@@ -27,8 +27,9 @@ import { gotoDashboard, shootPane } from './helpers';
  *
  * Both bounds are pinned, and for the reason `context-logs.spec.ts` spells out: `end` otherwise
  * defaults to `dataDefaultEndDate`, which advances on every ridership refresh. Line 801 has all
- * 17 months of the resulting Month Window (2019-06 → 2020-10), so the ridership figure in the
- * readout is historical and frozen.
+ * 19 months of the resulting Month Window (2019-06 → 2020-12, both ends inclusive), so the
+ * ridership figure in the readout is historical and frozen. The window ran to 2020-10, 17 months,
+ * until ADR-0009 removed the two-month offset.
  *
  * The first log row is **2020-03 "COVID-19 Service Reductions"** (`disruption`, rose). Its
  * description runs well past three lines, which is what makes the clamp visible in the focused
@@ -67,7 +68,7 @@ test('focused readout — description clamped, no link', async ({ page }) => {
   // plain shape: heading and ridership rows, nothing else.
   const tooltip = page.locator(TOOLTIP);
   await expect(tooltip).toHaveAttribute('data-pinned', 'false');
-  await expect(tooltip).toContainText('Oct 2020');
+  await expect(tooltip).toContainText('Dec 2020');
 
   await shootPane(page, TOOLTIP, 'chart-tooltip-focused.png');
 });
