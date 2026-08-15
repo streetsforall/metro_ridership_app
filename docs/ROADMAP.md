@@ -208,9 +208,16 @@ reconciliation caveat.
 
 ## Named risks
 
-1. **Forking the Month Window** — highest. PR 4 extracts `isInMonthWindow` and both
-   derivations call it. [ADR-0001](adr/0001-ridership-month-window-is-deliberately-offset.md)
-   exists because this arithmetic drifted once already.
+1. **Forking the Month Window** — was highest, now **closed**.
+   [ADR-0001](adr/0001-ridership-month-window-is-deliberately-offset.md) exists because
+   this arithmetic drifted once already. PR 4 extracted `isInMonthWindow` so both
+   derivations called one copy; the follow-up closed the rest. Each rule is stated once
+   in `src/utils/month.ts` — `containsOffset` for the Month Window, `contains` for the
+   Event Window — with `src/ridership/monthWindow.ts` and `src/ridership/eventWindow.ts`
+   as the `Date`-shaped adapters production calls. The Event Window had the same fork
+   shape and is fixed the same way. Bounds must stay month-aligned; see ADR-0001's
+   addendum. **The rule that replaces this one: don't restate either window at a call
+   site.**
 2. **3.8 MB reaching first paint** — the bus file loads only when the stop panel is
    on *and* a bus-export line is selected, inside `OutputArea`'s lazy chunk. This is
    the failure that would undo that lazy-load.

@@ -88,18 +88,46 @@ describe('isInMonthWindow — the Month Window rule, S <= R <= E - 2', () => {
   });
 
   /**
-   * `src/utils/month.ts`'s `containsOffset` states this rule a second time, in ordinal
-   * form, and is the landing site for the month migration ADR-0007 tracks as #144 /
-   * #145 / #146. ADR-0001 is explicit that "a `Month` module that unifies the app's
-   * several month encodings **may** replace the arithmetic; it **may not** change these
-   * boundaries" — and that the tests, not the algebra, are what makes that safe.
+   * The `Date` comparison `isInMonthWindow` used to be, kept here **verbatim** as the
+   * historical reference. Nothing in `src/` calls it and nothing should — it exists so
+   * the rule that shipped for years stays executable and can be asserted against.
    *
-   * Two functions each asserted against their own hand-written cases does not establish
-   * that. This does: every month from 2018 through 2027 against every window with
-   * endpoints in the same span, both functions, exhaustively. If the migration ever
-   * moves a boundary, this fails before anything reaches a chart baseline.
+   * `new Date(year, month)` treats `month` as 0-based while the data stores it 1-based,
+   * and the bounds are built as `new Date(year, month - 1)`; the strict comparison on
+   * both ends is what produces the offset.
    */
-  it('agrees with `containsOffset` over a decade of windows, exhaustively', () => {
+  const legacyIsInMonthWindow = (
+    record: { year: number; month: number },
+    startDate: Date,
+    endDate: Date,
+  ): boolean => {
+    const metricDate = new Date(record.year, record.month);
+    if (
+      startDate.getTime() >= metricDate.getTime() ||
+      endDate.getTime() <= metricDate.getTime()
+    )
+      return false;
+    return true;
+  };
+
+  /**
+   * ADR-0001 is explicit that "a `Month` module that unifies the app's several month
+   * encodings **may** replace the arithmetic; it **may not** change these boundaries" —
+   * and that the tests, not the algebra, are what makes that safe. This is that test,
+   * and it is what licensed `isInMonthWindow` to stop being the `Date` comparison and
+   * start delegating to `containsOffset`.
+   *
+   * Hand-written cases on each side do not establish equivalence. This does: every
+   * month from 2018 through 2027 against every window with endpoints in the same span,
+   * exhaustively, three ways — the live function, the ordinal rule it delegates to, and
+   * the `Date` arithmetic it replaced.
+   *
+   * The third comparand is the point. Now that `isInMonthWindow` calls `containsOffset`,
+   * checking those two against each other alone would be a tautology that passes no
+   * matter what either does. `legacyIsInMonthWindow` is the only comparand here that
+   * cannot move, so it is the one holding the boundaries still.
+   */
+  it('agrees with `containsOffset` and the retired `Date` arithmetic over a decade of windows, exhaustively', () => {
     const months = [];
     for (let year = 2018; year <= 2027; year++)
       for (let month = 1; month <= 12; month++) months.push({ year, month });
@@ -111,11 +139,12 @@ describe('isInMonthWindow — the Month Window rule, S <= R <= E - 2', () => {
     for (const [s, start] of months.entries())
       for (const [e, end] of months.entries())
         for (const m of months) {
-          const byDate = isInMonthWindow(m, bounds[s], bounds[e]);
+          const live = isInMonthWindow(m, bounds[s], bounds[e]);
           const byOrdinal = containsOffset({ start, end }, m);
-          if (byDate !== byOrdinal)
+          const byDate = legacyIsInMonthWindow(m, bounds[s], bounds[e]);
+          if (live !== byOrdinal || live !== byDate)
             throw new Error(
-              `disagree at start=${start.year}-${start.month} end=${end.year}-${end.month} record=${m.year}-${m.month}: Date says ${String(byDate)}, ordinal says ${String(byOrdinal)}`,
+              `disagree at start=${start.year}-${start.month} end=${end.year}-${end.month} record=${m.year}-${m.month}: live says ${String(live)}, ordinal says ${String(byOrdinal)}, retired Date arithmetic says ${String(byDate)}`,
             );
           compared++;
         }

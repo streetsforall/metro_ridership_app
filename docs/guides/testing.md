@@ -10,9 +10,14 @@ npm run test        # run all tests once
 npm run test:watch  # watch mode
 ```
 
-Vitest with `@testing-library/react`, jsdom, globals enabled — no per-file imports of
-`describe`/`it`/`expect`. Specs live next to the code under `src/`. `vitest.config.ts` excludes
-`e2e/**` (Playwright's) and `.claude/**` (throwaway worktrees).
+Vitest with `@testing-library/react`, jsdom. Specs live next to the code under `src/`.
+`vitest.config.ts` excludes `e2e/**` (Playwright's) and `.claude/**` (throwaway worktrees).
+
+**Import `describe`/`it`/`expect` from `vitest` in every spec.** `vitest.config.ts` does set
+`globals: true`, so the runtime would not need them — but `tsconfig.app.json` does not list
+`vitest/globals` under `types`, so `tsc -b` cannot see them and `npm run build` fails on a spec
+that omits the import. Runtime globals and type-level globals are separate switches and only one
+is on.
 
 One file:
 

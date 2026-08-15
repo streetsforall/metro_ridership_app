@@ -25,6 +25,14 @@ export {
 export { isInMonthWindow } from './monthWindow';
 
 /**
+ * The Event Window predicate, exported for the same reason and under the same
+ * condition: one copy, and callers apply it rather than restating it. It is inclusive
+ * on both ends where the Month Window is not, so the context log deliberately runs two
+ * months past the chart's right-hand edge — see `./eventWindow` and ADR-0001.
+ */
+export { isInEventWindow } from './eventWindow';
+
+/**
  * The line-table's month axis and coverage labels.
  *
  * `buildRidershipView` cannot serve these: it derives everything for the **chart**,

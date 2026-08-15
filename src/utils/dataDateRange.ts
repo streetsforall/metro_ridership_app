@@ -14,10 +14,14 @@ export const dataMaxYear: number = maxYear;
 /**
  * Default end of the date window.
  *
- * App.tsx filters with `new Date(record.year, record.month)` — month is 1-based
- * in the data but Date treats it as 0-based, and the end comparison is exclusive
- * (`endDate <= metricDate` skips the record). To include the latest record we
- * therefore set the default one month past it. This preserves the intentional
- * off-by-one (see CLAUDE.md); do not "fix" the filter.
+ * The Month Window excludes the end month **and the month before it** — the rule is
+ * `isInMonthWindow` in `src/ridership/monthWindow.ts`, and it is deliberate. To include
+ * the latest record in the default view we therefore set the default end one month past
+ * it. See `docs/adr/0001-ridership-month-window-is-deliberately-offset.md`; do not
+ * "fix" the filter.
+ *
+ * This bound must stay **month-aligned** — `new Date(y, m)`, midnight on the first —
+ * like every other producer of a window bound. `isInMonthWindow` reads only the year
+ * and month off it.
  */
 export const dataDefaultEndDate: Date = new Date(maxYear, maxMonth + 1);
