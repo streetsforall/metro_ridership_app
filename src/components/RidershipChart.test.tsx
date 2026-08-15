@@ -146,7 +146,7 @@ describe('RidershipChart wiring', () => {
 
   it('passes the events to the gutter plugin', () => {
     renderChart();
-    expect(capturedOptions?.plugins?.eventGutter?.events).toHaveLength(1);
+    expect(capturedOptions?.plugins?.eventGutter?.transitEvents).toHaveLength(1);
   });
 
   it('tells the gutter plugin which month the log is hovering', () => {
@@ -199,20 +199,53 @@ describe('RidershipChart pinning', () => {
   });
 
   /**
-   * The dots sit on the axis baseline, where Chart.js finds no element. Without
-   * the scale fallback, clicking the very thing the feature added does nothing.
+   * The x-scale fallback that used to run here is gone. It fired for any click
+   * with no element under it and could not tell the Event Gutter from the plot's
+   * empty space; the gutter now reports its own clicks, and leaving both would
+   * be two routes to one pin — see ADR-0009.
    */
-  it('pins from a click on the axis strip, where no element is hit', () => {
+  it('pins nothing from a plot click that hits no element', () => {
     const { onPinnedMonthChange } = renderChart();
     fakeChart.getElementsAtEventForMode.mockReturnValue([]);
     clickChart(175);
+    expect(onPinnedMonthChange).not.toHaveBeenCalled();
+  });
+
+  it('pins the month the gutter reports from below the axis', () => {
+    const { onPinnedMonthChange } = renderChart();
+    capturedOptions?.plugins?.eventGutter?.onGutterClick?.(5);
     expect(onPinnedMonthChange).toHaveBeenCalledWith('2020 6');
   });
 
-  it('clamps an axis-strip click past the last month', () => {
-    const { onPinnedMonthChange } = renderChart();
-    clickChart(5000);
-    expect(onPinnedMonthChange).toHaveBeenCalledWith('2020 12');
+  it('unpins when the gutter reports the pinned month again', () => {
+    const { onPinnedMonthChange } = renderChart({ pinnedMonth: '2020 6' });
+    capturedOptions?.plugins?.eventGutter?.onGutterClick?.(5);
+    expect(onPinnedMonthChange).toHaveBeenCalledWith(null);
+  });
+
+  /**
+   * The readout must not change with where the reader pointed, so the gutter's
+   * hover lands on the same state a plot hover writes rather than on a copy.
+   */
+  it('shows the same readout for a gutter hover as for a plot hover', () => {
+    renderChart();
+    act(() => {
+      capturedOptions?.plugins?.eventGutter?.onGutterHover?.(5);
+    });
+    expect(screen.getByText('Jun 2020')).toBeTruthy();
+    expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
+    expect(screen.getByText('1,500')).toBeTruthy();
+  });
+
+  it('clears the readout when the pointer leaves the gutter', () => {
+    renderChart();
+    act(() => {
+      capturedOptions?.plugins?.eventGutter?.onGutterHover?.(5);
+    });
+    act(() => {
+      capturedOptions?.plugins?.eventGutter?.onGutterHover?.(null);
+    });
+    expect(screen.queryByTestId('chart-tooltip')).toBeNull();
   });
 
   /** Chart.js fires click after mouseup, so a drag would otherwise also pin. */

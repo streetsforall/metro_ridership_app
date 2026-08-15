@@ -46,6 +46,7 @@ Then read whichever guide matches what you're about to do. Don't read them all.
 | [0006](adr/0006-a-month-is-a-year-and-a-month-not-a-date.md) | A month is a year and a month, not a `Date` | accepted, **half landed** — `month.ts` has no production caller yet |
 | [0007](adr/0007-a-folder-with-an-index-is-a-sealed-module.md) | A folder with an `index.ts` is a sealed module; `src/` is flat by default | accepted |
 | [0008](adr/0008-panel-layout-is-a-tailwind-grid-with-url-synced-settings.md) | Panel layout is a Tailwind grid with URL-synced settings; dockview was reverted | accepted |
+| [0009](adr/0009-the-event-gutter-hit-tests-itself.md) | The Event Gutter hit-tests itself, because Chart.js will not | accepted |
 
 ## Not for humans
 
