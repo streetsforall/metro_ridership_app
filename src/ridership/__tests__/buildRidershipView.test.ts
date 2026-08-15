@@ -224,11 +224,11 @@ describe('buildRidershipView — the Month Window', () => {
   });
 
   /**
-   * The boundary rule ADR-0001 depends on. With start = 2022-01 and end =
-   * 2024-01, a record at calendar-month ordinal R is included when
-   * S <= R <= E - 2 — so the window is 2022-01 … 2023-11 inclusive. The start
-   * month is in; the end month **and the month immediately before it** are out.
-   * This is intended. Do not "fix" it.
+   * The boundary rule, end to end through the derivation. With start = 2022-01 and
+   * end = 2024-01 the window is 2022-01 … 2024-01 inclusive — both ends in.
+   *
+   * Until ADR-0009 this window stopped at 2023-11: the end month and the month before
+   * it were excluded. `2023-12` and `2024-01` below are the two that changed.
    */
   describe('boundaries (start 2022-01, end 2024-01)', () => {
     const windowed = (year: number, monthOfYear: number) =>
@@ -256,16 +256,20 @@ describe('buildRidershipView — the Month Window', () => {
       expect(windowed(2022, 1)).toBe(1);
     });
 
-    it('includes E − 2 (2023-11)', () => {
+    it('includes a month mid-window (2023-11)', () => {
       expect(windowed(2023, 11)).toBe(1);
     });
 
-    it('excludes E − 1 (2023-12)', () => {
-      expect(windowed(2023, 12)).toBe(0);
+    it('includes E − 1 (2023-12) — excluded before ADR-0009', () => {
+      expect(windowed(2023, 12)).toBe(1);
     });
 
-    it('excludes the end month itself (2024-01)', () => {
-      expect(windowed(2024, 1)).toBe(0);
+    it('includes the end month itself (2024-01) — excluded before ADR-0009', () => {
+      expect(windowed(2024, 1)).toBe(1);
+    });
+
+    it('excludes the month after the end (2024-02)', () => {
+      expect(windowed(2024, 2)).toBe(0);
     });
   });
 });
@@ -587,7 +591,7 @@ describe('buildRidershipView — the Event Window', () => {
     expect(events.map((e) => e.id)).toEqual(['at-start']);
   });
 
-  it('includes an event exactly at the end month — unlike the Month Window', () => {
+  it('includes an event exactly at the end month, and the record beside it', () => {
     const { events, datasets } = build({
       ...eventWindow,
       records: [
@@ -599,9 +603,10 @@ describe('buildRidershipView — the Event Window', () => {
     });
 
     expect(events.map((e) => e.id)).toEqual(['at-end']);
-    // Same bounds, same month: the record at 2024-01 is excluded. The two
-    // windows disagree on purpose.
-    expect(datasets).toHaveLength(0);
+    // Same bounds, same month, same answer. Before ADR-0009 the record at 2024-01 was
+    // excluded while the event beside it showed — one rule for the chart and another
+    // for the log. This assertion is the one that changed.
+    expect(datasets).toHaveLength(1);
   });
 
   it('excludes an event one month before the start', () => {

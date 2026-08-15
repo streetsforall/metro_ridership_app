@@ -8,12 +8,11 @@ import {
   formatMonth,
   displayMonth,
   contains,
-  containsOffset,
   type Month,
   type MonthWindow,
 } from '../month';
 
-/** The window ADR-0001's boundary cases are stated against. */
+/** The window the boundary cases are stated against. */
 const window2020: MonthWindow = {
   start: { year: 2020, month: 1 },
   end: { year: 2020, month: 12 },
@@ -30,47 +29,7 @@ describe('ordinal', () => {
   });
 });
 
-describe('containsOffset — the Month Window rule, S <= R <= E - 2', () => {
-  it('includes the start month', () => {
-    expect(containsOffset(window2020, { year: 2020, month: 1 })).toBe(true);
-  });
-
-  it('excludes one month before the start', () => {
-    expect(containsOffset(window2020, { year: 2019, month: 12 })).toBe(false);
-  });
-
-  it('includes E - 2', () => {
-    expect(containsOffset(window2020, { year: 2020, month: 10 })).toBe(true);
-  });
-
-  it('excludes E - 1', () => {
-    expect(containsOffset(window2020, { year: 2020, month: 11 })).toBe(false);
-  });
-
-  it('excludes the end month', () => {
-    expect(containsOffset(window2020, { year: 2020, month: 12 })).toBe(false);
-  });
-
-  // Exercises the *12 term: the window and its boundaries straddle a year boundary.
-  describe('across a year boundary', () => {
-    const crossing: MonthWindow = {
-      start: { year: 2019, month: 11 },
-      end: { year: 2020, month: 2 },
-    };
-
-    it('includes the start month and E - 2', () => {
-      expect(containsOffset(crossing, { year: 2019, month: 11 })).toBe(true);
-      expect(containsOffset(crossing, { year: 2019, month: 12 })).toBe(true);
-    });
-
-    it('excludes E - 1 and E', () => {
-      expect(containsOffset(crossing, { year: 2020, month: 1 })).toBe(false);
-      expect(containsOffset(crossing, { year: 2020, month: 2 })).toBe(false);
-    });
-  });
-});
-
-describe('contains — the Event Window rule, inclusive on both ends', () => {
+describe('contains — the window rule, inclusive on both ends', () => {
   it('includes the start month', () => {
     expect(contains(window2020, { year: 2020, month: 1 })).toBe(true);
   });
@@ -87,13 +46,24 @@ describe('contains — the Event Window rule, inclusive on both ends', () => {
     expect(contains(window2020, { year: 2021, month: 1 })).toBe(false);
   });
 
-  // The two rules read the same window and genuinely disagree about it. That is
-  // deliberate — see ADR-0001. This test is the guard against a future tidy-up that
-  // "unifies" them; if it fails, one of the two rules has drifted.
-  it('disagrees with containsOffset at the end of the window', () => {
-    const endMonth: Month = { year: 2020, month: 12 };
-    expect(contains(window2020, endMonth)).toBe(true);
-    expect(containsOffset(window2020, endMonth)).toBe(false);
+  // Exercises the *12 term: the window and its boundaries straddle a year boundary.
+  describe('across a year boundary', () => {
+    const crossing: MonthWindow = {
+      start: { year: 2019, month: 11 },
+      end: { year: 2020, month: 2 },
+    };
+
+    it('includes every month from the start to the end', () => {
+      expect(contains(crossing, { year: 2019, month: 11 })).toBe(true);
+      expect(contains(crossing, { year: 2019, month: 12 })).toBe(true);
+      expect(contains(crossing, { year: 2020, month: 1 })).toBe(true);
+      expect(contains(crossing, { year: 2020, month: 2 })).toBe(true);
+    });
+
+    it('excludes the months either side', () => {
+      expect(contains(crossing, { year: 2019, month: 10 })).toBe(false);
+      expect(contains(crossing, { year: 2020, month: 3 })).toBe(false);
+    });
   });
 });
 

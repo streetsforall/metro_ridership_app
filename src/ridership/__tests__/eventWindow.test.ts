@@ -4,8 +4,9 @@ import { isInMonthWindow } from '../monthWindow';
 import { contains } from '../../utils/month';
 
 /**
- * Boundary tests for the Event Window rule, pinned at month granularity — the sibling
- * of `monthWindow.test.ts`, and deliberately not the same rule.
+ * Boundary tests for the Event Window, pinned at month granularity — the sibling of
+ * `monthWindow.test.ts`. Since ADR-0009 they are the same rule reached through two
+ * adapters, and both files assert they stay that way.
  *
  * Bounds are constructed the way the app constructs them, `new Date(year, month - 1)`,
  * and event dates the way `transit-events.json` stores them, `"YYYY-MM"`.
@@ -18,7 +19,7 @@ const end = bound(2020, 12);
 
 const event = (date: string) => ({ date });
 
-describe('isInEventWindow — the Event Window rule, S <= R <= E', () => {
+describe('isInEventWindow — the window rule, S <= R <= E', () => {
   it('includes the start month', () => {
     expect(isInEventWindow(event('2020-01'), start, end)).toBe(true);
   });
@@ -62,24 +63,23 @@ describe('isInEventWindow — the Event Window rule, S <= R <= E', () => {
   });
 
   /**
-   * The disagreement with the Month Window is the whole reason both rules exist. For
-   * one window, the context log runs two months past the chart's right-hand edge: the
-   * chart's last plotted month is `E - 2`, and events at `E - 1` and `E` still show.
-   *
-   * ADR-0001: reconciling the two would change which events a shared URL displays.
+   * The two windows used to disagree by exactly two months: `E` and `E - 1` showed in
+   * the context log and not on the chart. ADR-0009 made them one rule, so the log and
+   * the chart now cover the same months for the same date range — including these two,
+   * which are the ones that changed.
    */
-  it('disagrees with the Month Window at E and E - 1, deliberately', () => {
-    // E - 1
+  it('agrees with the Month Window at E and E - 1, which used to differ', () => {
+    // E - 1 — the chart used to exclude this
     expect(isInEventWindow(event('2020-11'), start, end)).toBe(true);
-    expect(isInMonthWindow({ year: 2020, month: 11 }, start, end)).toBe(false);
+    expect(isInMonthWindow({ year: 2020, month: 11 }, start, end)).toBe(true);
 
-    // E
+    // E — likewise
     expect(isInEventWindow(event('2020-12'), start, end)).toBe(true);
-    expect(isInMonthWindow({ year: 2020, month: 12 }, start, end)).toBe(false);
+    expect(isInMonthWindow({ year: 2020, month: 12 }, start, end)).toBe(true);
 
-    // Everywhere else in the window they agree.
-    expect(isInEventWindow(event('2020-05'), start, end)).toBe(true);
-    expect(isInMonthWindow({ year: 2020, month: 5 }, start, end)).toBe(true);
+    // And outside the window they still agree.
+    expect(isInEventWindow(event('2021-01'), start, end)).toBe(false);
+    expect(isInMonthWindow({ year: 2021, month: 1 }, start, end)).toBe(false);
   });
 
   it('excludes an unparseable date rather than admitting it to every window', () => {
