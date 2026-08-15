@@ -67,7 +67,9 @@ with zero weekday ridership.
 **Action for PR 3: none, beyond not "fixing" it.** Do not chase a clean
 `git diff src/data/ridership.json` after a full re-ingest, and do not add the five rows.
 
-**Separately — a live footgun PR 3 must not walk into.** `merge_ridership`'s docstring
+**Separately — a live footgun PR 3 must not walk into**, tracked as
+[#177](https://github.com/streetsforall/metro_ridership_app/issues/177).
+`merge_ridership`'s docstring
 promises that "gaps in new data (within its date range) are backfilled from existing data
 before the concat, preserving non-zero historical values." That backfill is
 **unreachable**: its mask is `isnull(new) & notnull(old)`, but `fill_missing_months` has
@@ -76,7 +78,14 @@ Meanwhile `pd.concat([merged, current]).drop_duplicates(keep="first")` lets the 
 win. So a wide-range re-ingest **can overwrite real committed ridership with zeros**, and
 the guard that is supposed to prevent exactly that does not run. Today it only surfaces as
 five insertions because line 106's rows are absent rather than present-and-nonzero.
-Nobody has fixed this; it is in `process_ridership.py`, which is out of scope for PR 1.
+It is in `process_ridership.py`, which is out of scope for PR 1.
+
+Note for whoever fixes it: **a zero is not evidence of padding**, so a mask keyed on
+`== 0` is worse than the bug. In 2026-01 line 60 has 193 leaf rows all summing to 0.0 —
+present and genuinely reporting zero — while line 106 has 0 leaf rows and is padded to the
+same three values. Lines 202, 209, 211, 550 and 577 report `SA = 0` and `SU = 0` that month
+for the same reason: weekday-only service. Reported-ness has to come from the merge
+indicator, never from the numbers.
 
 ## The contract PR 1 freezes
 
