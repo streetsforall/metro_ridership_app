@@ -77,4 +77,4 @@ Those bolded terms are defined in [`CONTEXT.md`](CONTEXT.md), and they mean some
 - **[`CONTRIBUTING.md`](CONTRIBUTING.md)** — before your first PR.
 
 Changing anything visual? Read [`docs/guides/testing.md`](docs/guides/testing.md) first — this repo
-gates on 35 committed screenshots.
+gates on 49 committed screenshots.

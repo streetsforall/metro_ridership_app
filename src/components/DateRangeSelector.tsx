@@ -218,7 +218,7 @@ export default function DateRangeSelector({
        * it had when this was a single checkbox, and so the four toggles do not
        * push the line selector and the output area down the page on every load.
        */}
-      <fieldset>
+      <fieldset id="panel-settings">
         <legend>Panel Settings</legend>
 
         <button
@@ -226,14 +226,14 @@ export default function DateRangeSelector({
           type="button"
           onClick={() => setIsPanelSettingsOpen((prevOpen) => !prevOpen)}
           aria-expanded={isPanelSettingsOpen}
-          aria-controls="panel-settings"
+          aria-controls="panel-settings-content"
           className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
         >
           {isPanelSettingsOpen ? 'Hide panel settings' : 'Show panel settings'}
         </button>
 
         {isPanelSettingsOpen && (
-          <div id="panel-settings" className="flex flex-col gap-2 pt-2">
+          <div id="panel-settings-content" className="flex flex-col gap-2 pt-2">
             {panelToggles.map(({ name, label, checked, toggle }) => (
               <div key={name} className="flex items-center">
                 <Checkbox.Root

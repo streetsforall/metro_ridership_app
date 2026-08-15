@@ -27,7 +27,7 @@ because tests that touch the date bounds need `virtual:ridership-bounds` to reso
 
 ## Visual regression
 
-Playwright screenshots the app and compares against committed baselines. **Nine specs, 39 Linux
+Playwright screenshots the app and compares against committed baselines. **Eleven specs, 49 Linux
 baselines.**
 
 ```bash
@@ -63,8 +63,9 @@ because an element crop would clip at the narrow viewport edge.
 | [`context-logs.spec.ts`](../../e2e/context-logs.spec.ts) | the context-log panel open, and a window spanning all nine event categories (plus two absence assertions, no shots) | 4 |
 | [`responsive-tablet.spec.ts`](../../e2e/responsive-tablet.spec.ts) | 768×1024 via a file-level `test.use`, not a fourth project | 2 |
 | [`table-view.spec.ts`](../../e2e/table-view.spec.ts) | sort chrome and ordering, a partial-coverage row (desktop) | 2 |
+| [`chart-tooltip.spec.ts`](../../e2e/chart-tooltip.spec.ts) | the pinned and focused chart readouts | 6 |
 | [`loading.spec.ts`](../../e2e/loading.spec.ts) | the output pane mid-fetch, and that a failed fetch doesn't crash (desktop) | 1 |
-| [`panel-settings.spec.ts`](../../e2e/panel-settings.spec.ts) | the Panel Settings disclosure, each panel's visibility param, and that a default view writes none of them (no shots) | 0 |
+| [`panel-settings.spec.ts`](../../e2e/panel-settings.spec.ts) | the open Panel Settings disclosure, all-on and with two panels off; plus each visibility param and that a default view writes none of them (DOM only) | 4 |
 
 The map is masked out of every full-page shot, because a live MapLibre map over third-party tiles
 never renders identically twice.

@@ -1091,15 +1091,15 @@ flowchart TB
     mapProj["map — SwiftShader ANGLE,<br/>deviceScaleFactor 1"]
   end
 
-  subgraph specs["Ten specs, 35 committed Linux baselines"]
+  subgraph specs["Eleven specs, 49 committed Linux baselines"]
     direction TB
     s1["visual.spec.ts — 6"]
     s2["chart-content.spec.ts — 10<br/>scoped to #chart-panel"]
     s3["line-filters.spec.ts — 5"]
     s4["summary-tiles.spec.ts — 4"]
     s5["map.spec.ts — 3"]
-    s6["context-logs · responsive-tablet<br/>table-view · loading — 7"]
-    s7["panel-settings.spec.ts — 0<br/>DOM only, no shots"]
+    s6["chart-tooltip · context-logs · responsive-tablet<br/>table-view · loading — 15"]
+    s7["panel-settings.spec.ts — 4<br/>scoped to #panel-settings"]
   end
 
   subgraph rules["The rules that keep it stable"]

@@ -1,16 +1,18 @@
 import { test, expect, type Page } from '@playwright/test';
-import { gotoDashboardShell } from './helpers';
+import { gotoDashboardShell, shootPane } from './helpers';
 
 /**
  * Panel Settings — the disclosure in the filter bar and the four visibility
  * params it writes.
  *
- * DOM assertions only, no screenshots. What this section changes is which
- * panels are in the document, and each hidden state's *appearance* is already
- * a baseline somewhere else: a hidden chart is `#output-placeholder`, which
- * `loading.spec.ts` shoots, and a hidden context log is the default view that
- * `visual.spec.ts` shoots. A second set of near-identical PNGs would gate on
- * pixels that nothing here can move.
+ * Two shots, of the *control* rather than of what it hides. The hidden states
+ * themselves are already baselines elsewhere — a hidden chart is
+ * `#output-placeholder`, which `loading.spec.ts` shoots, and the collapsed
+ * disclosure is in all eight full-page shots — so a second set of
+ * near-identical PNGs would gate on pixels nothing here can move. What has no
+ * baseline is the open disclosure: four checkboxes whose ticks, labels and
+ * order are exactly the kind of thing a DOM assertion passes over. The rest of
+ * the file stays DOM-only.
  *
  * A line is selected in every case so the panels have something to render —
  * `#chart-panel` and `#summary-panel` are gated on a selection as well as on
@@ -46,7 +48,28 @@ test('the settings are collapsed on load', async ({ page }) => {
     'aria-expanded',
     'false',
   );
-  await expect(page.locator('#panel-settings')).toHaveCount(0);
+  await expect(page.locator('#panel-settings-content')).toHaveCount(0);
+});
+
+/**
+ * Both ticked and unticked rows are in frame on purpose. All-on would leave the
+ * unchecked box — the state three of these four spend most of their time in —
+ * with no baseline at all.
+ */
+test('open disclosure, every panel on', async ({ page }) => {
+  await gotoPanels(page, LINE);
+  await page.locator('#panel-settings-toggle').click();
+  await expect(page.locator('#panel-settings-reset')).toBeVisible();
+
+  await shootPane(page, '#panel-settings', 'panel-settings-open.png');
+});
+
+test('open disclosure, chart and map switched off', async ({ page }) => {
+  await gotoPanels(page, `${LINE}&chart=0&map=0&logs=1`);
+  await page.locator('#panel-settings-toggle').click();
+  await expect(page.locator('#panel-settings-reset')).toBeVisible();
+
+  await shootPane(page, '#panel-settings', 'panel-settings-mixed.png');
 });
 
 test('opening the disclosure reveals the four toggles and the reset', async ({
