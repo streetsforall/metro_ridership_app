@@ -3,11 +3,15 @@
  *
  * Source of truth is `docs/architecture/mermaid/*.mmd` — one diagram per file — paired
  * with `docs/architecture/captions.md` by filename stem. This script produces three
- * generated, committed outputs from them and nothing else:
+ * outputs from them and nothing else, of which only the first is committed:
  *
- *   - `docs/architecture/diagrams.md`   — GitHub renders the mermaid fences natively
- *   - `docs/architecture/architecture.html` — self-contained, SVG inlined, no network
- *   - `docs/architecture/architecture.pdf`  — printed from that same HTML
+ *   - `docs/architecture/diagrams.md`   — committed; GitHub renders the mermaid fences natively
+ *   - `docs/architecture/architecture.html` — gitignored; self-contained, SVG inlined, no network
+ *   - `docs/architecture/architecture.pdf`  — gitignored; printed from that same HTML
+ *
+ * The html and pdf are build artifacts: readable diffs are the point of committing
+ * `diagrams.md`, and neither a minified HTML blob nor a binary PDF has one. Run this
+ * script when you want them.
  *
  * Rendering reuses the Playwright Chromium already installed for the visual-regression
  * suite, driving the `mermaid` devDependency in-page. That keeps the toolchain to one

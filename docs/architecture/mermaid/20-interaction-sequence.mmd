@@ -24,15 +24,13 @@ sequenceDiagram
   View-->>App: months · datasets · consolidated<br/>events · metrics · coverage
   deactivate View
 
-  par Render
-    App->>OA: datasets, months, events
-    OA->>Map: lines
-    Map->>Map: setFilter — the D Line lights up in brand purple
-  and Write-back
-    App->>Hook: updateLinesWithLineMetrics(consolidated)
-    Hook->>Hook: setLines — stamps 8 derived fields
-    Note right of Hook: a NEW lines array re-enters the memo above.<br/>It settles because the second pass produces<br/>identical figures. ADR-0005 removes it.
-  end
+  App->>App: buildLineReadouts(lines, metrics, coverage)
+  App->>App: listedReadouts — mode on, name matches, has figures
+  Note right of App: one pass. No array re-enters the memo above:<br/>the write-back ADR-0005 objected to was deleted in #167.
+
+  App->>OA: datasets, months, events, readouts
+  OA->>Map: lines
+  Map->>Map: setFilter — the D Line lights up in brand purple
 
   Note over App,Map: the table now lists the D Line with its figures<br/>and a partial-coverage label — its data begins 2025-09
   Hook-->>U: the address bar is a link to exactly this view

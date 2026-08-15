@@ -1,21 +1,19 @@
 flowchart TB
   subgraph mutators["Mutators the hook returns"]
     direction LR
-    selectionMutators["onToggleSelectLine(line)<br/>clearSelections()<br/>selectAllVisibleLines()"]
-    updateMetrics["updateLinesWithLineMetrics(consolidated)"]
+    selectionMutators["onToggleSelectLine(line)<br/>clearSelections()<br/>selectAllListedLines(ids)"]
     setters["the eight setters —<br/>dates · dayOfWeek · search · modes<br/>aggregate · context logs"]
   end
 
-  lines["lines: Line[]<br/>four of the five mutators write here"]
+  lines["lines: Line[]<br/>the three selection mutators write here"]
   otherSlices["the window, filter and toggle slices"]
 
-  subgraph effects["The two effects inside the hook"]
+  subgraph effects["The one effect inside the hook"]
     direction LR
-    modeSync["modes → per-line `visible`<br/>useEffect([modes])"]
-    urlSync["state → history.replaceState<br/>deps include JSON.stringify(lines)"]
+    urlSync["state → history.replaceState<br/>deps are the raw slices, `lines` included"]
   end
 
-  keys["Three JSON.stringify dependency keys —<br/>App.tsx:116 · hook :168 · hook :264.<br/>Load-bearing: `lines` is a fresh array every derivation,<br/>so reference equality would fire these forever."]
+  keys["No JSON.stringify keys left in the hook or App (#167).<br/>`lines` changes identity only on a real user action now,<br/>so the sync effect keys on it directly.<br/>Two guards remain in LineTableRow, for<br/>ridershipRecords and chartDataset."]
 
   subgraph local["Component-local state — deliberately not in the store"]
     direction LR
@@ -27,7 +25,6 @@ flowchart TB
   end
 
   selectionMutators --> lines
-  updateMetrics --> lines
   setters --> otherSlices
 
   lines --> effects
@@ -35,7 +32,5 @@ flowchart TB
   effects --> keys
   keys --> local
 
-  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
-  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
-  class updateMetrics cycle
-  class keys pending
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  class keys key

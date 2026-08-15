@@ -1,6 +1,9 @@
 # `src/ridership/` is one domain folder, not the start of a repo-wide reorganisation
 
-Status: accepted
+Status: superseded by [ADR-0007](0007-a-folder-with-an-index-is-a-sealed-module.md), which replaces
+the pause below with a standing rule. The reasoning here still holds; the deferred `src/utils/`
+reorganisation is tracked in
+[#170](https://github.com/streetsforall/metro_ridership_app/issues/170).
 
 `src/` is otherwise flat — `components/`, `hooks/`, `utils/`, `data/`, `@types/`. We introduced a
 single domain folder, `src/ridership/`, so that the ridership derivation has a real interface: an

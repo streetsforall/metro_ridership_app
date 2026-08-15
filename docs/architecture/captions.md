@@ -22,10 +22,12 @@ box here.
 ## 02-repository-map — Repository map
 
 What lives where. Two things are worth noticing. `src/` is flat — `components/`, `hooks/`,
-`utils/`, `data/`, `@types/` — with exactly one domain folder, `src/ridership/`, and ADR-0003 says
-that is deliberate rather than the first step of a reorganisation. And the repo carries an unusual
-amount of prose: `CONTEXT.md`, six ADRs, an architecture review, seven design plans. That is the
-system's memory; read it before changing behaviour that looks wrong.
+`utils/`, `data/`, `@types/` — with exactly one domain folder, `src/ridership/`. ADR-0007 gives the
+rule: a folder with an `index.ts` is a sealed module reached only through that file, everything
+else is loose by default, and a new folder is earned by invariants a caller must not reach past
+rather than by tidiness. And the prose is the system's memory — `CONTEXT.md` for the vocabulary,
+seven ADRs for the decisions, `docs/how-it-works.md` for how the derivation actually runs. Read it
+before changing behaviour that looks wrong. `docs/README.md` says what to read in which order.
 
 ## 03-python-data-pipeline — The Python data pipeline
 
@@ -60,30 +62,28 @@ show context-log events while the ridership data is still in flight. Note that t
 iterates `lines`, not the consolidated groups: a record whose `line_name` has no metadata entry
 produces a group but no `Line`, and therefore no figures.
 
-## 06-runtime-consume-and-writeback — Consuming the view, and the write-back
+## 06-runtime-consume-the-view — Consuming the view
 
-The second half, and the one live design problem in the app.
+The second half: how one `RidershipView` reaches the screen.
 
-`buildRidershipView` already returns `metrics` and `coverage` keyed by line id — everything a
-caller needs — yet `App.tsx:114` still calls `updateLinesWithLineMetrics`, which writes eight
-derived fields back onto every `Line`. That mints a new `lines` array, which re-enters the memo it
-came from; the `JSON.stringify` dependency keys exist to keep the loop from thrashing. It settles
-only because the second pass produces figures identical to the first.
+`buildRidershipView` returns `metrics` and `coverage` keyed by line id — everything a caller needs.
+`buildLineReadouts` joins them onto each `Line`, `listedReadouts` narrows to the rows the table
+shows, and `LineSelector`, `LineTableRow`, `SummaryData`, `Map` and `mapPopup` all take a
+`LineReadout`. Figures flow one way and are thrown away with the window that produced them.
 
-**ADR-0005 is now half landed.** #154 wired the replacement in: `App.tsx:98` builds `readouts` with
-`buildLineReadouts`, `:103` narrows them with `listedReadouts`, and `LineSelector`, `LineTableRow`,
-`SummaryData`, `Map` and `mapPopup` all take `LineReadout` rather than `Line`. What the ADR also
-asked for — deleting the write-back — did not happen, so the consumers moved but the round trip
-did not.
+**ADR-0005 is fully landed.** It took two changes: #154 moved every consumer onto readouts, and
+#167 deleted the write-back — `updateLinesWithLineMetrics`, which used to stamp eight derived
+fields back onto every `Line` and mint a new array that re-entered the memo it came from. With it
+went `isVisibleLine` and `visibleLines`, and `selectAllVisibleLines` became
+`selectAllListedLines(ids)`: the hook can no longer re-derive which rows are listed, so
+`LineSelector` passes the ids it is displaying.
 
-The stamped fields are consequently no longer what the screen renders: `buildLineReadouts` spreads
-`metrics[line.id]` and `coverage[line.id]` *over* the `Line`, so this window's figures win. They are
-still load-bearing, though, and that is the reason the effect cannot simply be deleted —
-`isVisibleLine` in the hook gates on `line.averageRidership !== undefined`, and
-`selectAllVisibleLines` behind the line table's *Select all* button runs through it.
+The one behaviour change was a transient — the table no longer shows the previous window's rows for
+a single commit while the effect round-trips. Settled state is identical, which is why no baseline
+moved.
 
 `LineSelector` reads `consolidated` directly and builds its own axis, because the table draws a
-sparkline for every *visible* line while the chart covers only the *selected* ones.
+sparkline for every *listed* line while the chart covers only the *selected* ones.
 
 ## 07-component-tree — Component tree
 
@@ -102,21 +102,22 @@ All shared state lives in one custom hook: four slices, no Redux, no Zustand, no
 slice is seeded once from the URL in a lazy `useState` initialiser, so a shared link reconstructs
 the view before the first render rather than after it.
 
-`visibleLines` is the only derived value in the store, and its memo key is
-`JSON.stringify(lines)` rather than `lines` — see the next diagram for why. Since #154 nothing in
-`src/` reads it but the hook's own spec; `listedReadouts` computes the same rule over readouts
-instead. The rule it encodes is still live, though — `selectAllVisibleLines` shares
-`isVisibleLine` with it.
+The store derives **nothing**. It did — a `visibleLines` memo held the line-table's filter rule —
+but #167 deleted it along with the write-back, and `listedReadouts` now owns that rule, working
+over Line Readouts in `App`. The payoff is that `lines` changes identity only when a user actually
+does something, which is what let the next diagram's dependency keys go away.
 
 ## 09-state-mutators-and-effects — Mutators, effects, and local state
 
-Everything that writes. Four of the five mutators touch `lines`, which is why that one array is the
-hinge the whole store turns on.
+Everything that writes. Three mutators touch `lines`, which is why that one array is the hinge the
+whole store turns on, and one effect syncs the URL.
 
-The `JSON.stringify` dependency keys at `App.tsx:116`, `useUserDashboardInput.ts:168` and `:264` are
-load-bearing, not sloppiness: `lines` is a fresh array on every derivation, so reference equality
-would fire these effects forever. `CLAUDE.md` asks you not to "fix" them. The real fix is removing
-the write-back that mints the array (ADR-0005), not changing the keys.
+There used to be three `JSON.stringify` dependency keys here, load-bearing because the write-back
+minted a fresh `lines` array on every derivation and reference equality would have fired the
+effects forever. Removing the write-back (ADR-0005, #167) was the real fix, and all three keys went
+with it — the URL effect now keys on `lines` directly. Two guards survive in `LineTableRow`, for
+`ridershipRecords` and `chartDataset`, which genuinely are new references each render. Don't "fix"
+those.
 
 What is *not* in the store matters too. Expansion, the fetched records, sort state, the context-log
 disclosure and every MapLibre handle stay local, so none of them participate in the derivation
@@ -135,18 +136,17 @@ the architecture review would replace with an explicit parsed contract; it is un
 
 ## 11-domain-type-model — Domain type model
 
-The types and how they relate. Read `Line` from the top down: identity and metadata first, then a
-block of optional derived figures that ADR-0005 says do not belong there. `LineSelection` is the
-same information minus that block — it is what `buildRidershipView` actually accepts, and `Line`
-satisfies it structurally, which is what keeps derived figures from being handed back into the
-module that produced them.
+The types and how they relate. `Line` is identity and metadata, and nothing else — the block of
+optional derived figures it used to carry was deleted in #167, which is what ADR-0005 asked for.
+`LineSelection` is a narrower view of the same information: it is what `buildRidershipView`
+actually accepts, and `Line` satisfies it structurally, which keeps derived figures from being
+handed back into the module that produced them.
 
-`LineReadout` is the destination, and since #154 it is where every consumer reads from:
-`Line & Partial<LineMetrics> & Partial<LineCoverage>`, derived per window and thrown away. The
-optional block on `Line` survives anyway, because the write-back that fills it is still running —
-so both shapes carry the figures today, and only one of them is what renders. `Month` is
-ADR-0006's replacement for the seven encodings a month currently has; it exists with a full spec
-and still has no production caller.
+`LineReadout` is where every consumer reads from: `Line & Partial<LineMetrics> &
+Partial<LineCoverage>`, derived per window and thrown away. There is now exactly one shape carrying
+the figures, and it is the one that renders. `Month` is ADR-0006's replacement for the several
+encodings a month has; it exists with a full spec and still has no production caller — #144, #145
+and #146 are the migration onto it.
 
 ## 12-ridership-module-seam — The `src/ridership/` seam
 
@@ -239,17 +239,24 @@ One click traced through every layer, to show how the pieces above compose. The 
 the hook mints a new `lines` array; the URL is rewritten; `buildRidershipView` re-derives the entire
 view in one pass; chart, table, summary and map all update from that one result.
 
-The `par` block is the write-back cycle seen live: rendering and re-deriving happen alongside each
-other, and the loop settles only because the second pass produces figures identical to the first.
+It is worth reading as a straight line, because that is now what it is. Derive, join the figures
+onto readouts, narrow to the listed rows, render. Nothing feeds back into the store, so there is no
+second pass to settle — the D Line appears in the table with its figures and a partial-coverage
+label on the same commit that draws it purple on the map.
 
 ## 21-docs-adr-map — Documentation and decision map
 
-Which document governs what, and where the code has not caught up. `CONTEXT.md` outranks the source
-by its own rule — where a term there conflicts with a name in the code, the code is what's out of
-date.
+Two orders, and they are not the same. **Reading order** is the disclosure gradient a newcomer
+walks — README, then the vocabulary, then how the derivation runs, then a guide for whatever
+you're actually doing, then the ADRs when you want the reasoning. `docs/README.md` is the hub that
+states it. **Authority order** is who wins on conflict: `CONTEXT.md` outranks the source by its own
+rule — where a term there conflicts with a name in the code, the code is what's out of date — then
+the ADRs, then the prose. `CLAUDE.md` sits at the bottom because it holds no facts of its own; it
+is a pointer file, so it cannot contradict anything.
 
-All six ADRs are accepted, but two are only half-landed, and differently. 0006's `month.ts` exists
-with a full spec and no production caller at all. 0005 got its consumers in #154 — the line table,
-summary panel, map and popup all read a Line Readout now — but not its deletion: the write-back
-still stamps eight figures onto every `Line` on every derivation. Finishing it is the most
-actionable thing in this whole set, and the remaining work is subtraction rather than addition.
+Of the seven ADRs, one is superseded and one is half-landed. 0003 deferred a `src/utils/`
+reorganisation; 0007 replaces its pause with a standing rule, and the reorg itself is now tracked
+in #170, blocked on the month migration. 0006's `month.ts` exists with a full spec and still no
+production caller — #144, #145 and #146 are the migration onto it, and they are the most actionable
+thing in this set. 0005 is done: #154 moved every consumer onto Line Readouts and #167 deleted the
+write-back, so no `Line` carries a derived figure any more.

@@ -14,18 +14,10 @@ classDiagram
     +name: string
     +mode: Bus | Rail
     +provider: DO | PT
+    +former?: string
     +selected: boolean
-    +visible: boolean
     +distanceMiles?: number
-    --derived, still written back — ADR-0005 says these do not belong here--
-    +averageRidership?: number
-    +changeInRidership?: number
-    +startingRidership?: number
-    +endingRidership?: number
-    +ridersPerMile?: number
-    +coveredFrom?: string
-    +coveredTo?: string
-    +isPartialCoverage?: boolean
+    --no derived figures live here — ADR-0005, deleted in #167--
   }
 
   class LineSelection {
@@ -112,4 +104,3 @@ classDiagram
   Line --> LineReadout
   LineMetrics --> LineReadout
   LineCoverage --> LineReadout
-  LineMetrics ..> Line : the write-back today

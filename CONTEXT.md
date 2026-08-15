@@ -131,5 +131,7 @@ _Avoid_: grouped records, ridership by line
 ## Scope note
 
 `src/ridership/` is the first and, for now, the only domain folder in an otherwise flat `src/`.
-That is deliberate and is not the first step of a repo-wide reorganisation — see
+That is deliberate: a folder with an `index.ts` is a sealed module whose index is its entire public
+surface, and everything else in `src/` is flat by default — see
+[ADR-0007](docs/adr/0007-a-folder-with-an-index-is-a-sealed-module.md), which supersedes
 [ADR-0003](docs/adr/0003-one-domain-folder-not-a-repo-wide-reorganisation.md).
