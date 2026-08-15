@@ -11,7 +11,7 @@ interface LineFiltersProps {
   modes: string[];
   setModes: React.Dispatch<React.SetStateAction<string[]>>;
   clearSelections: () => void;
-  selectAllVisibleLines: () => void;
+  selectAllListedLines: () => void;
   isAggregateVisible: boolean;
   toggleIsAggregateVisible: () => void;
 }
@@ -22,7 +22,7 @@ export default function LineFilters({
   modes,
   setModes,
   clearSelections,
-  selectAllVisibleLines,
+  selectAllListedLines,
   isAggregateVisible,
   toggleIsAggregateVisible,
 }: LineFiltersProps) {
@@ -77,7 +77,7 @@ export default function LineFilters({
           <button
             id="select-all"
             type="button"
-            onClick={selectAllVisibleLines}
+            onClick={selectAllListedLines}
             className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
           >
             Select All

@@ -55,7 +55,6 @@ function App() {
     setDayOfWeek,
     endDate,
     setEndDate,
-    updateLinesWithLineMetrics,
     searchText,
     modes,
     isAggregateVisible,
@@ -71,8 +70,8 @@ function App() {
    * deliberately offset month window, the shared axis, the aggregate ordering)
    * lives in src/ridership/ and is unit-tested there.
    *
-   * Kept memoised: the metrics effect below keys on JSON.stringify(consolidated), and
-   * a fresh object every render would thrash it.
+   * Kept memoised: `metrics` and `coverage` feed the readouts below, whose own memo
+   * keys on their identity, so a fresh view every render would thrash it.
    */
   const { months, datasets, consolidated, events, metrics, coverage } = useMemo(
     () =>
@@ -91,9 +90,9 @@ function App() {
    * Each Line with the figures this window derives for it. Rebuilt whole whenever
    * the view changes, so a figure from a previous window cannot survive.
    *
-   * No JSON.stringify in the dependency array: `metrics` and `coverage` come out of
-   * the already-memoised `buildRidershipView` above, so their identity is stable per
-   * view.
+   * Nothing is stringified into the dependency array: `metrics` and `coverage` come
+   * out of the already-memoised `buildRidershipView` above, so their identity is
+   * stable per view.
    */
   const readouts = useMemo(
     () => buildLineReadouts({ lines, metrics, coverage }),
@@ -104,16 +103,6 @@ function App() {
     () => listedReadouts({ readouts, searchText, modes }),
     [readouts, searchText, modes],
   );
-
-  /**
-   * Attach computed metrics (average ridership, change, etc.) to each line entry
-   * so the LineSelector can display them. JSON.stringify is used as the dependency
-   * because consolidated is a new object reference on every render (useMemo).
-   */
-  useEffect(() => {
-    updateLinesWithLineMetrics(consolidated);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(consolidated)]);
 
   return (
     /* Stretch full height */

@@ -39,7 +39,6 @@ export const makeLine = (overrides: Partial<Line> = {}): Line => ({
   mode: 'Rail',
   provider: 'DO',
   selected: false,
-  visible: true,
   ...overrides,
 });
 

@@ -152,7 +152,7 @@ interface LineSelectorProps {
   modes: string[];
   setModes: React.Dispatch<React.SetStateAction<string[]>>;
   clearSelections: () => void;
-  selectAllVisibleLines: () => void;
+  selectAllListedLines: (ids: number[]) => void;
   isAggregateVisible: boolean;
   toggleIsAggregateVisible: () => void;
 }
@@ -173,7 +173,7 @@ export default function LineSelector(props: LineSelectorProps) {
     modes,
     setModes,
     clearSelections,
-    selectAllVisibleLines,
+    selectAllListedLines,
     isAggregateVisible,
     toggleIsAggregateVisible,
   } = props;
@@ -275,9 +275,7 @@ export default function LineSelector(props: LineSelectorProps) {
 
     // Sort lines
     return lodash.orderBy(lines, sortKeys, sortDirections);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(columnHeaderStates), JSON.stringify(lines), dayOfWeek]);
+  }, [columnHeaderStates, lines]);
 
   const shareData: ShareData = {
     title: 'LA Metro Ridership Data',
@@ -329,7 +327,9 @@ export default function LineSelector(props: LineSelectorProps) {
         modes={modes}
         setModes={setModes}
         clearSelections={clearSelections}
-        selectAllVisibleLines={selectAllVisibleLines}
+        selectAllListedLines={(): void =>
+          selectAllListedLines(sortedLines.map((l) => l.id))
+        }
         isAggregateVisible={isAggregateVisible}
         toggleIsAggregateVisible={toggleIsAggregateVisible}
       />
