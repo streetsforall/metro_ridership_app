@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import * as RadioGroup from '@radix-ui/react-radio-group';
+import * as ToggleGroup from '@radix-ui/react-toggle-group';
 import checkIcon from '../assets/check.svg';
 import { daysOfWeek, type DayOfWeek } from '../hooks/useUserDashboardInput';
 import { dataMinYear, dataMaxYear } from '../utils/dataDateRange';
+import type { PanelSize, SummarySplit } from '../utils/panelSizes';
 
 const yearOptions: number[] = Array.from(
   { length: dataMaxYear - dataMinYear + 1 },
@@ -19,11 +22,52 @@ export interface DateRangeSelectorProps {
   dayOfWeek: DayOfWeek;
   setDayOfWeek: React.Dispatch<React.SetStateAction<DayOfWeek>>;
 
+  showChart: boolean;
+  toggleShowChart: () => void;
+
+  showSummary: boolean;
+  toggleShowSummary: () => void;
+
+  showMap: boolean;
+  toggleShowMap: () => void;
+
   showContextLogs: boolean;
   toggleShowContextLogs: () => void;
+
+  chartSize: PanelSize;
+  setChartSize: (size: PanelSize) => void;
+
+  mapSize: PanelSize;
+  setMapSize: (size: PanelSize) => void;
+
+  logSize: PanelSize;
+  setLogSize: (size: PanelSize) => void;
+
+  summarySplit: SummarySplit;
+  setSummarySplit: (split: SummarySplit) => void;
+
+  resetPanelSettings: () => void;
 }
 
 type IntervalEndpoint = 'start' | 'end';
+
+/**
+ * Every size control offers the same three steps, and the labels say what the
+ * step is rather than what it does — "Large" is honest about being one of three
+ * fixed choices in a way "Taller" would not be.
+ */
+const sizeOptions: { value: PanelSize; label: string }[] = [
+  { value: 'small', label: 'Small' },
+  { value: 'standard', label: 'Standard' },
+  { value: 'large', label: 'Large' },
+];
+
+/** Summary | map, as the summary's share. See `SummarySplit`. */
+const splitOptions: { value: SummarySplit; label: string }[] = [
+  { value: 50, label: '50/50' },
+  { value: 40, label: '40/60' },
+  { value: 30, label: '30/70' },
+];
 
 export default function DateRangeSelector({
   startDate,
@@ -32,9 +76,96 @@ export default function DateRangeSelector({
   setEndDate,
   dayOfWeek,
   setDayOfWeek,
+  showChart,
+  toggleShowChart,
+  showSummary,
+  toggleShowSummary,
+  showMap,
+  toggleShowMap,
   showContextLogs,
   toggleShowContextLogs,
+  chartSize,
+  setChartSize,
+  mapSize,
+  setMapSize,
+  logSize,
+  setLogSize,
+  summarySplit,
+  setSummarySplit,
+  resetPanelSettings,
 }: DateRangeSelectorProps) {
+  /**
+   * Panel Settings is a disclosure, collapsed on load. Open state is local and
+   * deliberately not URL-synced: it is where the controls are, not what they
+   * chose, and every choice inside it is already shareable on its own.
+   */
+  const [isPanelSettingsOpen, setIsPanelSettingsOpen] =
+    useState<boolean>(false);
+
+  const panelToggles = [
+    { name: 'chart', label: 'Chart', checked: showChart, toggle: toggleShowChart },
+    {
+      name: 'summary',
+      label: 'Summary',
+      checked: showSummary,
+      toggle: toggleShowSummary,
+    },
+    { name: 'map', label: 'Map', checked: showMap, toggle: toggleShowMap },
+    {
+      name: 'context-logs',
+      label: 'Context Logs',
+      checked: showContextLogs,
+      toggle: toggleShowContextLogs,
+    },
+  ];
+
+  /**
+   * One labelled row of mutually exclusive size steps.
+   *
+   * `display` comes from the caller rather than sitting in the base classes: the
+   * split control is `hidden lg:flex`, and `flex` alongside `hidden` would leave
+   * which one wins to their order in the generated stylesheet.
+   */
+  const sizeControl = <T extends string | number>(
+    id: string,
+    label: string,
+    value: T,
+    options: { value: T; label: string }[],
+    onChange: (value: T) => void,
+    display = 'flex',
+  ) => (
+    <div className={`${display} flex-col gap-1`}>
+      <span id={`${id}-label`} className="text-sm">
+        {label}
+      </span>
+
+      <ToggleGroup.Root
+        id={id}
+        className="toggle-group"
+        type="single"
+        aria-labelledby={`${id}-label`}
+        value={String(value)}
+        onValueChange={(next) => {
+          /* Radix emits '' when the pressed item is clicked again. There is no
+             "no size", so a deselect is a no-op rather than a fourth state. */
+          const selected = options.find((o) => String(o.value) === next);
+          if (selected) onChange(selected.value);
+        }}
+      >
+        {options.map((option) => (
+          <ToggleGroup.Item
+            key={option.value}
+            id={`${id}-${option.value}`}
+            className="toggle-group-item toggle-group-item--text"
+            value={String(option.value)}
+          >
+            {option.label}
+          </ToggleGroup.Item>
+        ))}
+      </ToggleGroup.Root>
+    </div>
+  );
+
   const getDateSetter = (
     intervalEndpoint: IntervalEndpoint,
   ): React.Dispatch<React.SetStateAction<Date>> => {
@@ -170,32 +301,102 @@ export default function DateRangeSelector({
         </RadioGroup.Root>
       </fieldset>
 
-      {/* Panel visibility */}
+      {/**
+       * Panel Settings. Collapsed by default so the filter bar keeps the height
+       * it had when this was a single checkbox, and so the four toggles do not
+       * push the line selector and the output area down the page on every load.
+       */}
       <fieldset>
-        <legend>Panel Visibility</legend>
+        <legend>Panel Settings</legend>
 
-        <div className="flex items-center">
-          <Checkbox.Root
-            id="context-logs"
-            onClick={toggleShowContextLogs}
-            checked={showContextLogs}
-            className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
-          >
-            <Checkbox.Indicator>
-              <img
-                src={checkIcon}
-                height={20}
-                width={20}
-                alt="Check"
-                className="recolor-white"
-              />
-            </Checkbox.Indicator>
-          </Checkbox.Root>
+        <button
+          id="panel-settings-toggle"
+          type="button"
+          onClick={() => setIsPanelSettingsOpen((prevOpen) => !prevOpen)}
+          aria-expanded={isPanelSettingsOpen}
+          aria-controls="panel-settings"
+          className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
+        >
+          {isPanelSettingsOpen ? 'Hide panel settings' : 'Show panel settings'}
+        </button>
 
-          <label className="pl-2" htmlFor="context-logs">
-            Context Logs
-          </label>
-        </div>
+        {isPanelSettingsOpen && (
+          <div id="panel-settings" className="flex flex-col gap-2 pt-2">
+            {panelToggles.map(({ name, label, checked, toggle }) => (
+              <div key={name} className="flex items-center">
+                <Checkbox.Root
+                  id={`panel-${name}-toggle`}
+                  onClick={toggle}
+                  checked={checked}
+                  className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
+                >
+                  <Checkbox.Indicator>
+                    <img
+                      src={checkIcon}
+                      height={20}
+                      width={20}
+                      alt="Check"
+                      className="recolor-white"
+                    />
+                  </Checkbox.Indicator>
+                </Checkbox.Root>
+
+                <label className="pl-2" htmlFor={`panel-${name}-toggle`}>
+                  {label}
+                </label>
+              </div>
+            ))}
+
+            {/**
+             * Size, below visibility. Every default here is what the app
+             * rendered before these controls existed, so "Standard" everywhere
+             * is the view the committed baselines hold and writes no param.
+             *
+             * The split is `hidden lg:flex` because that is exactly the range
+             * where the summary and map share a row. Below `lg` they stack and
+             * the row falls back to one column, which would make this a control
+             * with nothing to change.
+             */}
+            {sizeControl(
+              'panel-chart-size',
+              'Chart height',
+              chartSize,
+              sizeOptions,
+              setChartSize,
+            )}
+            {sizeControl(
+              'panel-map-size',
+              'Map height',
+              mapSize,
+              sizeOptions,
+              setMapSize,
+            )}
+            {sizeControl(
+              'panel-log-size',
+              'Context log height',
+              logSize,
+              sizeOptions,
+              setLogSize,
+            )}
+            {sizeControl(
+              'panel-split',
+              'Summary | map split',
+              summarySplit,
+              splitOptions,
+              setSummarySplit,
+              'hidden lg:flex',
+            )}
+
+            <button
+              id="panel-settings-reset"
+              type="button"
+              onClick={resetPanelSettings}
+              className="self-start bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
+            >
+              Reset to defaults
+            </button>
+          </div>
+        )}
       </fieldset>
     </div>
   );

@@ -45,7 +45,7 @@ test('dashboard at tablet width — line selected', async ({ page }) => {
   // the `sm:flex-row` date range selector, and the below-`lg` single-column app grid.
   await gotoDashboard(page, '?lines=801,802&start=2019-12&end=2026-05&day=wkday');
 
-  await expect(page.locator('#ridership-chart')).toBeVisible();
+  await expect(page.locator('#chart-panel')).toBeVisible();
   await expect(page.getByText('Average Ridership', { exact: false })).toBeVisible();
 
   await expect(page).toHaveScreenshot('dashboard-tablet.png', {

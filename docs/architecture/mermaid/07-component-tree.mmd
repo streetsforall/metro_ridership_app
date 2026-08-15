@@ -2,9 +2,9 @@ flowchart TB
   main["main.tsx — createRoot, StrictMode"]
   app["App — container<br/>no router, no context providers"]
   header["Header"]
-  drs["DateRangeSelector<br/>Radix RadioGroup + Checkbox"]
+  drs["DateRangeSelector<br/>Radix RadioGroup + Checkbox + ToggleGroup<br/>Panel Settings disclosure —<br/>visibility and size"]
 
-  subgraph leftPane["#line-selector-pane — always mounted"]
+  subgraph leftPane["#line-selector-panel — always mounted"]
     direction TB
     ls["LineSelector — container<br/>sort · CSV · share · expand"]
     lf["LineFilters<br/>search · mode toggle · aggregate"]
@@ -20,11 +20,11 @@ flowchart TB
   subgraph rightPane["OutputArea — React.lazy chunk"]
     direction TB
     oa["OutputArea — container,<br/>owns pinned + hovered month"]
-    chart["RidershipChart — #ridership-chart"]
+    chart["RidershipChart — #chart-panel"]
     tooltip["ChartTooltip — HTML readout"]
-    summary["SummaryData"]
+    summary["SummaryData — #summary-panel"]
     ctxlog["ContextLogPanel — #context-log-panel"]
-    mapCmp["Map — #lineMap"]
+    mapCmp["Map — #lineMap,<br/>inside #map-panel"]
     oa --> chart
     oa --> summary
     oa --> ctxlog

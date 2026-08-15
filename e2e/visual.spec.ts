@@ -32,7 +32,7 @@ test('dashboard — with a line selected', async ({ page }) => {
 
   // Select the first visible line; the main ridership chart and summary tiles then render.
   await page.locator('td[data-qa^="select-"] button').first().click();
-  await expect(page.locator('#ridership-chart')).toBeVisible();
+  await expect(page.locator('#chart-panel')).toBeVisible();
   await expect(page.getByText('Average Ridership', { exact: false })).toBeVisible();
 
   await expect(page).toHaveScreenshot('dashboard-line-selected.png', {

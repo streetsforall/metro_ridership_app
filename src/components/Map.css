@@ -6,10 +6,17 @@
  * pane a flex column); `min-height` is the floor for the cases where there is no
  * spare height to claim — no line selected, or any single-column layout below
  * `lg`, where the row's height is the map's own.
+ *
+ * Panel Settings' map size drives that floor and nothing else. `#map-panel`
+ * sets `--map-min-height` as a Tailwind arbitrary property; a size that pinned
+ * `height` instead would win back the fixed box this rule exists to remove, and
+ * the map would stop filling a pane the summary beside it made taller. The
+ * fallback is the Standard step, so a default view is byte-identical to before
+ * the setting existed even if the property never arrives.
  */
 #lineMap {
   flex: 1 1 auto;
-  min-height: 400px;
+  min-height: var(--map-min-height, 400px);
   width: 100%;
   border-radius: inherit;
 }

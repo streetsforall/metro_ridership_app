@@ -409,9 +409,9 @@ flowchart TB
   main["main.tsx — createRoot, StrictMode"]
   app["App — container<br/>no router, no context providers"]
   header["Header"]
-  drs["DateRangeSelector<br/>Radix RadioGroup + Checkbox"]
+  drs["DateRangeSelector<br/>Radix RadioGroup + Checkbox + ToggleGroup<br/>Panel Settings disclosure —<br/>visibility and size"]
 
-  subgraph leftPane["#line-selector-pane — always mounted"]
+  subgraph leftPane["#line-selector-panel — always mounted"]
     direction TB
     ls["LineSelector — container<br/>sort · CSV · share · expand"]
     lf["LineFilters<br/>search · mode toggle · aggregate"]
@@ -427,11 +427,11 @@ flowchart TB
   subgraph rightPane["OutputArea — React.lazy chunk"]
     direction TB
     oa["OutputArea — container,<br/>owns pinned + hovered month"]
-    chart["RidershipChart — #ridership-chart"]
+    chart["RidershipChart — #chart-panel"]
     tooltip["ChartTooltip — HTML readout"]
-    summary["SummaryData"]
+    summary["SummaryData — #summary-panel"]
     ctxlog["ContextLogPanel — #context-log-panel"]
-    mapCmp["Map — #lineMap"]
+    mapCmp["Map — #lineMap,<br/>inside #map-panel"]
     oa --> chart
     oa --> summary
     oa --> ctxlog
@@ -501,12 +501,13 @@ flowchart TB
     subgraph toggleSlice["Toggles"]
       direction TB
       aggregate["isAggregateVisible"]
-      logs["showContextLogs"]
+      panels["Panel Settings — visibility<br/>showChart · showSummary ·<br/>showMap · showContextLogs"]
+      sizes["Panel Settings — size<br/>chartSize · mapSize · logSize<br/>summarySplit"]
     end
   end
 
   nothingDerived["The store derives nothing (#167).<br/>Every derived value now lives in App's memos,<br/>so `lines` changes identity only on a real user action."]
-  consumer["buildRidershipView · LineSelector · OutputArea<br/>all read these nine values and nothing else"]
+  consumer["buildRidershipView · LineSelector · OutputArea<br/>all read these sixteen values and nothing else"]
 
   urlIn --> store
   bundledMeta --> linesSlice
@@ -588,15 +589,15 @@ the architecture review would replace with an explicit parsed contract; it is un
 
 ```mermaid
 flowchart TB
-  subgraph readPath["Read — once, on mount (hook L92-132)"]
+  subgraph readPath["Read — once, on mount (hook L108-195)"]
     direction LR
     lazyInit["lazy useState<br/>initialisers"]
-    parsers["parseMonthParam<br/>paramToDayOfWeek<br/>parseModesFromParams"]
+    parsers["parseMonthParam<br/>paramToDayOfWeek<br/>parseModesFromParams<br/>parsePanelSize · parseSummarySplit"]
     fallback["malformed → the default,<br/>never a throw"]
     lazyInit --> parsers --> fallback
   end
 
-  subgraph pairs["The nine parameters"]
+  subgraph pairs["The sixteen parameters"]
     direction LR
 
     subgraph always["Always written"]
@@ -616,6 +617,9 @@ flowchart TB
       direction TB
       p6["buses=0"]
       p7["trains=0"]
+      p10["chart=0"]
+      p11["summary=0"]
+      p12["map=0"]
     end
 
     subgraph whenOn["Written only when ON"]
@@ -623,12 +627,20 @@ flowchart TB
       p8["aggregate=1"]
       p9["logs=1"]
     end
+
+    subgraph whenResized["Written only when not Standard"]
+      direction TB
+      p13["chartsize=s|l"]
+      p14["mapsize=s|l"]
+      p15["logsize=s|l"]
+      p16["split=50|30"]
+    end
   end
 
-  subgraph writePath["Write — on every change (hook L150-168)"]
+  subgraph writePath["Write — on every change (hook L197-226)"]
     direction LR
     build["fresh URLSearchParams"]
-    formatters["formatMonthParam<br/>dayOfWeekToParam"]
+    formatters["formatMonthParam<br/>dayOfWeekToParam<br/>panelSizeToParam · summarySplitToParam"]
     replace["history.replaceState —<br/>no history entry, no reload"]
     build --> formatters --> replace
   end
@@ -639,7 +651,7 @@ flowchart TB
   replace --> share
 
   classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
-  class whenOff,whenOn pending
+  class whenOff,whenOn,whenResized pending
 ```
 
 ---
@@ -1088,14 +1100,15 @@ flowchart TB
     mapProj["map — SwiftShader ANGLE,<br/>deviceScaleFactor 1"]
   end
 
-  subgraph specs["Nine specs, 35 committed Linux baselines"]
+  subgraph specs["Ten specs, 35 committed Linux baselines"]
     direction TB
     s1["visual.spec.ts — 6"]
-    s2["chart-content.spec.ts — 10<br/>scoped to #ridership-chart"]
+    s2["chart-content.spec.ts — 10<br/>scoped to #chart-panel"]
     s3["line-filters.spec.ts — 5"]
     s4["summary-tiles.spec.ts — 4"]
     s5["map.spec.ts — 3"]
     s6["context-logs · responsive-tablet<br/>table-view · loading — 7"]
+    s7["panel-settings.spec.ts — 0<br/>DOM only, no shots"]
   end
 
   subgraph rules["The rules that keep it stable"]

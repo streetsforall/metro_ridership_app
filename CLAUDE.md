@@ -70,6 +70,13 @@ Each one has cost someone real time. The reasoning is in `docs/`; this is the sh
   The write-back that used to do this was deleted in #167; don't reintroduce it.
 - **New dashboard state must be wired through both** the lazy `useState` initialisers and the URL
   sync effect in `src/hooks/useUserDashboardInput.ts`, or the view stops being shareable.
+- **Panel Settings' map size drives `#lineMap`'s `min-height`, never its `height`.** The map is
+  elastic so it fills a pane a taller summary beside it stretched; a fixed height wins that back and
+  the map floats above empty pane again — `src/components/Map.css`.
+- **Keep every panel size a class or a CSS custom property.** `e2e/helpers.ts` stubs out
+  `ResizeObserver`, so JS-driven sizing is inert under Playwright and effectively untested —
+  [ADR-0008](docs/adr/0008-panel-layout-is-a-tailwind-grid-with-url-synced-settings.md). The one
+  place the stub is absent is `e2e/map.spec.ts`, which is why MapLibre's re-measure is asserted there.
 - **Bumping `@playwright/test` means regenerating the Linux baselines in the same PR.** A new
   browser build re-renders text.
 

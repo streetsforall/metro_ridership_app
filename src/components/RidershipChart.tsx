@@ -10,6 +10,7 @@ import colors from 'tailwindcss/colors';
 import ChartTooltip from './ChartTooltip';
 import type { CustomChartData } from '../@types/chart.types';
 import type { TransitEvent } from '../@types/events.types';
+import type { PanelSize } from '../utils/panelSizes';
 import {
   consumeDragSuppression,
   formatMonthLabel,
@@ -18,6 +19,21 @@ import {
 } from '../chart';
 
 const ridershipFormatter = new Intl.NumberFormat('en-US');
+
+/**
+ * Panel Settings' chart height, as the sizing box's padding ratio. Read the long
+ * comment on that box below before changing any of these: the unit is percentage
+ * padding rather than `aspect-ratio` on purpose, and `min-h-[20rem]` is a floor
+ * that stays at every step — a shorter *ratio* must not become a shorter floor,
+ * which is what collapsed the plot on a phone the last time.
+ *
+ * Whole class strings because Tailwind scans source text.
+ */
+const chartHeightClass: Record<PanelSize, string> = {
+  small: 'pt-[35%]',
+  standard: 'pt-[50%]',
+  large: 'pt-[65%]',
+};
 
 export interface RidershipChartProps {
   chartDatasets: ChartDataset<'line', CustomChartData[]>[];
@@ -30,6 +46,8 @@ export interface RidershipChartProps {
   highlightedMonth: string | null;
   /** Inclusive month labels of a drag across the plot. */
   onRangeSelect?: (startMonth: string, endMonth: string) => void;
+  /** Panel Settings' chart height. `standard` is the pre-setting `pt-[50%]`. */
+  size?: PanelSize;
 }
 
 /** Index of a label, or null when absent — `indexOf`'s -1 is a footgun here. */
@@ -47,6 +65,7 @@ export default function RidershipChart({
   onPinnedMonthChange,
   highlightedMonth,
   onRangeSelect,
+  size = 'standard',
 }: RidershipChartProps) {
   /**
    * The chart instance is state, not a ref, because the tooltip's position is
@@ -293,7 +312,7 @@ export default function RidershipChart({
         ].join('. ');
 
   return (
-    <div className="pane" id="ridership-chart">
+    <div className="pane" id="chart-panel">
       {/**
        * Sizing box for the canvas. Chart.js's own `maintainAspectRatio` derives the
        * canvas height from the container width alone, which on a 390px phone is a
@@ -314,8 +333,13 @@ export default function RidershipChart({
        * already rendered at, with a floor that only bites below 640px of container width.
        * `relative` also makes this the dedicated container Chart.js's responsive mode
        * wants — it measures the canvas's parent, so nothing else may share that box.
+       *
+       * Panel Settings' chart height varies the ratio only (35/50/65%, see
+       * `chartHeightClass`). `min-h-[20rem]` is deliberately not part of that: the floor
+       * is what stops the collapsed-plot regression described above, and Small would be
+       * the step that reintroduced it.
        */}
-      <div className="relative min-h-[20rem] pt-[50%]">
+      <div className={`relative min-h-[20rem] ${chartHeightClass[size]}`}>
         <div
           ref={containerRef}
           className="absolute inset-0 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-500"

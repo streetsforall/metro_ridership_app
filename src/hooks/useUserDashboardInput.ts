@@ -7,6 +7,16 @@ import {
   paramToDayOfWeek,
   parseModesFromParams,
 } from '../utils/queryParams';
+import {
+  defaultPanelSize,
+  defaultSummarySplit,
+  panelSizeToParam,
+  parsePanelSize,
+  parseSummarySplit,
+  summarySplitToParam,
+  type PanelSize,
+  type SummarySplit,
+} from '../utils/panelSizes';
 import type { Line, LineJson } from '../@types/lines.types';
 import { daysOfWeek, type DayOfWeek } from '../@types/metrics.types';
 
@@ -37,8 +47,31 @@ export interface UserDashboardInputState {
   isAggregateVisible: boolean;
   toggleIsAggregateVisible: () => void;
 
+  showChart: boolean;
+  toggleShowChart: () => void;
+
+  showSummary: boolean;
+  toggleShowSummary: () => void;
+
+  showMap: boolean;
+  toggleShowMap: () => void;
+
   showContextLogs: boolean;
   toggleShowContextLogs: () => void;
+
+  chartSize: PanelSize;
+  setChartSize: (size: PanelSize) => void;
+
+  mapSize: PanelSize;
+  setMapSize: (size: PanelSize) => void;
+
+  logSize: PanelSize;
+  setLogSize: (size: PanelSize) => void;
+
+  summarySplit: SummarySplit;
+  setSummarySplit: (split: SummarySplit) => void;
+
+  resetPanelSettings: () => void;
 
   onToggleSelectLine: (line: Line) => void;
   clearSelections: () => void;
@@ -109,9 +142,56 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     return params.get('aggregate') === '1';
   });
 
+  /**
+   * Panel visibility. Three of the four panels are on by default and one — the
+   * context log — is off, so the params they write are asymmetric: `chart=0`,
+   * `summary=0` and `map=0` appear only when a panel is switched off, `logs=1`
+   * only when it is switched on. Either way nothing is written for a panel left
+   * at its default, so a default view's URL is unchanged.
+   */
+  const [showChart, setShowChart] = useState<boolean>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('chart') !== '0';
+  });
+
+  const [showSummary, setShowSummary] = useState<boolean>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('summary') !== '0';
+  });
+
+  const [showMap, setShowMap] = useState<boolean>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('map') !== '0';
+  });
+
   const [showContextLogs, setShowContextLogs] = useState<boolean>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('logs') === '1';
+  });
+
+  /**
+   * Panel size. Same asymmetry as the visibility flags above and for the same
+   * reason: `standard` — and a 40/60 split — is what the app rendered before
+   * these controls existed, so only a step away from it writes a param.
+   */
+  const [chartSize, setChartSize] = useState<PanelSize>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return parsePanelSize(params.get('chartsize'));
+  });
+
+  const [mapSize, setMapSize] = useState<PanelSize>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return parsePanelSize(params.get('mapsize'));
+  });
+
+  const [logSize, setLogSize] = useState<PanelSize>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return parsePanelSize(params.get('logsize'));
+  });
+
+  const [summarySplit, setSummarySplit] = useState<SummarySplit>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return parseSummarySplit(params.get('split'));
   });
 
   // Sync state → URL query params
@@ -129,10 +209,38 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     if (!modes.includes('bus')) params.set('buses', '0');
     if (!modes.includes('train')) params.set('trains', '0');
     if (isAggregateVisible) params.set('aggregate', '1');
+    if (!showChart) params.set('chart', '0');
+    if (!showSummary) params.set('summary', '0');
+    if (!showMap) params.set('map', '0');
     if (showContextLogs) params.set('logs', '1');
 
+    const chartSizeParam = panelSizeToParam(chartSize);
+    if (chartSizeParam) params.set('chartsize', chartSizeParam);
+    const mapSizeParam = panelSizeToParam(mapSize);
+    if (mapSizeParam) params.set('mapsize', mapSizeParam);
+    const logSizeParam = panelSizeToParam(logSize);
+    if (logSizeParam) params.set('logsize', logSizeParam);
+    const splitParam = summarySplitToParam(summarySplit);
+    if (splitParam) params.set('split', splitParam);
+
     window.history.replaceState(null, '', `?${params.toString()}`);
-  }, [startDate, endDate, dayOfWeek, searchText, modes, lines, isAggregateVisible, showContextLogs]);
+  }, [
+    startDate,
+    endDate,
+    dayOfWeek,
+    searchText,
+    modes,
+    lines,
+    isAggregateVisible,
+    showChart,
+    showSummary,
+    showMap,
+    showContextLogs,
+    chartSize,
+    mapSize,
+    logSize,
+    summarySplit,
+  ]);
 
   /**
    * Select every row the table is currently showing, on top of whatever is already
@@ -179,8 +287,37 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     );
   };
 
+  const toggleShowChart = (): void => {
+    setShowChart((prevShowChart: boolean) => !prevShowChart);
+  };
+
+  const toggleShowSummary = (): void => {
+    setShowSummary((prevShowSummary: boolean) => !prevShowSummary);
+  };
+
+  const toggleShowMap = (): void => {
+    setShowMap((prevShowMap: boolean) => !prevShowMap);
+  };
+
   const toggleShowContextLogs = (): void => {
     setShowContextLogs((prevShowContextLogs: boolean) => !prevShowContextLogs);
+  };
+
+  /**
+   * Put every Panel Settings choice back to its default — visibility and size
+   * both. Because the sync effect writes a param only for a non-default value,
+   * this is also what drops `chart`/`summary`/`map`/`logs` and
+   * `chartsize`/`mapsize`/`logsize`/`split` out of the URL.
+   */
+  const resetPanelSettings = (): void => {
+    setShowChart(true);
+    setShowSummary(true);
+    setShowMap(true);
+    setShowContextLogs(false);
+    setChartSize(defaultPanelSize);
+    setMapSize(defaultPanelSize);
+    setLogSize(defaultPanelSize);
+    setSummarySplit(defaultSummarySplit);
   };
 
   return {
@@ -194,8 +331,23 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     setLines,
     isAggregateVisible,
     toggleIsAggregateVisible,
+    showChart,
+    toggleShowChart,
+    showSummary,
+    toggleShowSummary,
+    showMap,
+    toggleShowMap,
     showContextLogs,
     toggleShowContextLogs,
+    chartSize,
+    setChartSize,
+    mapSize,
+    setMapSize,
+    logSize,
+    setLogSize,
+    summarySplit,
+    setSummarySplit,
+    resetPanelSettings,
     searchText,
     setSearchText,
     modes,

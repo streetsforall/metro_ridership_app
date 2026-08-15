@@ -132,24 +132,56 @@ test('context log panel spans the category palette', async ({ page }) => {
  * so the list must overflow its own box while the pane around it does not grow
  * to fit. The pane staying at the list's height is the half that keeps the map
  * and chart above it reachable.
+ *
+ * The cap is Panel Settings' *default* context log height rather than a fixed
+ * property of the panel, which is why the window is spelled out here and the two
+ * other steps get their own cases below. Each measures the same two numbers, so
+ * they read as one contract with three settings and not three unrelated tests.
  */
-test('the event list scrolls instead of growing the page', async ({ page }) => {
-  await gotoDashboard(
-    page,
-    '?logs=1&lines=801,805&start=2020-03&end=2026-05&day=wkday',
-  );
+const LONG_WINDOW = '?logs=1&lines=801,805&start=2020-03&end=2026-05&day=wkday';
 
+async function measureList(page: Page) {
   const list = page.locator('#context-log-panel ol');
   await expect(list).toBeVisible();
-
-  const { scrolls, clientHeight } = await list.evaluate((ol) => ({
+  return list.evaluate((ol) => ({
     scrolls: ol.scrollHeight > ol.clientHeight,
     clientHeight: ol.clientHeight,
   }));
+}
+
+test('the event list scrolls instead of growing the page', async ({ page }) => {
+  await gotoDashboard(page, LONG_WINDOW);
+
+  const { scrolls, clientHeight } = await measureList(page);
 
   expect(scrolls).toBe(true);
   // 32rem at the app's 16px root.
   expect(clientHeight).toBeLessThanOrEqual(512);
+});
+
+test('logsize=s halves the cap to 16rem', async ({ page }) => {
+  await gotoDashboard(page, `${LONG_WINDOW}&logsize=s`);
+
+  const { scrolls, clientHeight } = await measureList(page);
+
+  expect(scrolls).toBe(true);
+  // 16rem at the app's 16px root.
+  expect(clientHeight).toBeLessThanOrEqual(256);
+});
+
+/**
+ * `logsize=l` is no cap at all rather than a larger one, so the list is as tall
+ * as its rows and has nothing left to scroll. That it clears the 32rem default
+ * is the assertion that separates "uncapped" from "capped higher" — 15 rows are
+ * comfortably past it, which is the same fact the default case leans on.
+ */
+test('logsize=l lets the list grow instead of scrolling', async ({ page }) => {
+  await gotoDashboard(page, `${LONG_WINDOW}&logsize=l`);
+
+  const { scrolls, clientHeight } = await measureList(page);
+
+  expect(scrolls).toBe(false);
+  expect(clientHeight).toBeGreaterThan(512);
 });
 
 test('panel is absent without logs=1', async ({ page }) => {
@@ -157,7 +189,7 @@ test('panel is absent without logs=1', async ({ page }) => {
   // `showContextLogs` leg of the three-way gate.
   await gotoDashboard(page, '?lines=801&start=2019-06&end=2020-12&day=wkday');
 
-  await expect(page.locator('#ridership-chart')).toBeVisible();
+  await expect(page.locator('#chart-panel')).toBeVisible();
   await expect(page.locator('#context-log-panel')).toHaveCount(0);
 });
 

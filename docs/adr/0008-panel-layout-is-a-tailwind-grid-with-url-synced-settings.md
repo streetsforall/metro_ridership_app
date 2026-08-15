@@ -67,10 +67,27 @@ query parameter cannot be shared, which is the property this decision protects. 
 drag-resizing fails both tests — which is the honest reason it is not on offer, and a fair argument
 for revisiting `#83` the day continuous resizing genuinely matters.
 
-The regions are to be called **panels**, matching the Panel Settings control the user will see. The
-ids are inconsistent today — `line-selector-pane`, `ridership-chart`, `summary-data`,
-`context-log-panel`, `map` — and settle on `<name>-panel` when the Panel Settings work lands. The
-`.pane` class in `src/index.css` is a style hook, not a name, and keeps its spelling.
+Two consequences of staying a grid are worth naming, because both look like bugs.
+
+The **summary|map split is a request, not a guarantee**. `lg:grid-cols-[3fr_7fr]` gives the map 70%
+only while the summary's content fits in 30%; at 1280px it does not, and the grid honours the `1fr`
+track's automatic minimum instead — the summary lands at ~284px where an exact 30% is ~271px. That is
+the rule to keep. Buying the exact ratio means `min-w-0` on the summary, which lets a seven-digit
+`text-3xl` figure overflow its tile: a worse answer than a track 13px wider than asked for. The
+property that would genuinely be a bug is the page scrolling sideways, and it does not.
+
+The **map's size sets a floor, not a height**. `#lineMap` is `flex: 1 1 auto` over
+`min-height: var(--map-min-height, 400px)`, with the property set as a class on `#map-panel`. A size
+that pinned `height` would win back the fixed box that made the map float above empty pane whenever
+the summary beside it was taller.
+
+The regions are called **panels**, matching the Panel Settings control the user sees. The ids were
+inconsistent — `line-selector-pane`, `ridership-chart`, `summary-data`, `context-log-panel`, `map` —
+and settled on `<name>-panel` when the Panel Settings work landed: `line-selector-panel`,
+`chart-panel`, `summary-panel`, `context-log-panel`, `map-panel`, with toggles at
+`panel-<name>-toggle`. Two names are deliberately untouched. The `.pane` class in `src/index.css` is
+a style hook, not a name, and keeps its spelling; and `#lineMap` is the MapLibre container *inside*
+`#map-panel`, which both the map instance and `mapMask` in `e2e/helpers.ts` bind to.
 
 The panel arrangement is not domain language and does not appear in [`CONTEXT.md`](../../CONTEXT.md).
 The glossary describes what the Ridership View *is*; where its pieces sit on screen is not part of

@@ -43,7 +43,7 @@ export default function SummaryData({ lines }: SummaryDataProps) {
     totalMiles > 0 ? averageDailyRidership / totalMiles : undefined;
 
   return (
-    <div id="summary-data">
+    <div id="summary-panel">
       {/**
        * Two layouts. Below `sm` the tiles stack in one column: two do not fit a
        * 390px phone, because each `.pane` carries 4rem of horizontal padding,

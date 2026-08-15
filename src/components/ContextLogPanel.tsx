@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TransitEvent } from '../@types/events.types';
+import type { PanelSize } from '../utils/panelSizes';
 import {
   categoryChip,
   categoryColor,
@@ -16,7 +17,25 @@ export interface ContextLogPanelProps {
   onSelectMonth: (month: string) => void;
   /** Hovering a row enlarges that month's dot. */
   onHoverMonthChange: (month: string | null) => void;
+  /** Panel Settings' context log height. `standard` is the pre-setting 32rem cap. */
+  size?: PanelSize;
 }
+
+/**
+ * The list's scroll cap. `large` is deliberately *no* cap rather than a bigger
+ * number: the panel sits last in the column with nothing below it to push out
+ * of reach, so a reader who wants the whole log in one piece can have the page
+ * scroll instead of the list. That is the one step where `scrollIntoView` on a
+ * pinned row moves the page rather than the list — an accepted trade for asking
+ * to see everything at once.
+ *
+ * Whole class strings because Tailwind scans source text.
+ */
+const logHeightClass: Record<PanelSize, string> = {
+  small: 'max-h-[16rem] overflow-y-auto',
+  standard: 'max-h-[32rem] overflow-y-auto',
+  large: '',
+};
 
 /**
  * The events in the current window, as a scrolling list below the chart and map.
@@ -31,6 +50,7 @@ export default function ContextLogPanel({
   pinnedMonth,
   onSelectMonth,
   onHoverMonthChange,
+  size = 'standard',
 }: ContextLogPanelProps) {
   const [isOpen, setIsOpen] = useState(true);
   const rowRefs = useRef(new Map<string, HTMLLIElement>());
@@ -72,9 +92,13 @@ export default function ContextLogPanel({
        * pin's `scrollIntoView({ block: 'nearest' })` below a scroll container of
        * its own, so revealing a pinned row scrolls the list instead of jumping
        * the whole page.
+       *
+       * Panel Settings varies the cap — and at `large` removes it, which is the
+       * one case where both of those properties are given up on purpose. See
+       * `logHeightClass`.
        */}
       {isOpen && (
-        <ol className="flex flex-col gap-3 mt-3 max-h-[32rem] overflow-y-auto">
+        <ol className={`flex flex-col gap-3 mt-3 ${logHeightClass[size]}`}>
           {events.map((event) => {
             const month = eventDateToLabel(event.date);
             const isPinned = month === pinnedMonth;

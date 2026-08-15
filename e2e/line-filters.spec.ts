@@ -5,7 +5,7 @@ import { desktopOnly, gotoDashboard, gotoDashboardShell, shootPane } from './hel
  * Element-scoped visual coverage for the line selector's *filters* — the search box, the
  * bus/train mode toggles, and the empty state they can produce between them.
  *
- * Every case shoots `#line-selector-pane` in its **collapsed** form. Collapsed the table renders
+ * Every case shoots `#line-selector-panel` in its **collapsed** form. Collapsed the table renders
  * no metric columns and no per-row sparkline (`isExpanded` gates all of them in
  * `LineTableRow.tsx`), so the crop is entirely canvas-free — the most stable shot this suite can
  * take. The expanded table is covered elsewhere; nothing here touches `#expand-toggle`.
@@ -35,11 +35,11 @@ const WINDOW = 'start=2022-12&end=2023-12&day=wkday';
 /** Every row checkbox in the collapsed list. Excludes the Aggregate checkbox, which is a sibling
  *  of the table rather than a cell in it. */
 const rowCheckboxes = (page: Page) =>
-  page.locator('#line-selector-pane td[data-qa^="select-"] [role="checkbox"]');
+  page.locator('#line-selector-panel td[data-qa^="select-"] [role="checkbox"]');
 
 const checkedRowCheckboxes = (page: Page) =>
   page.locator(
-    '#line-selector-pane td[data-qa^="select-"] [role="checkbox"][data-state="checked"]',
+    '#line-selector-panel td[data-qa^="select-"] [role="checkbox"][data-state="checked"]',
   );
 
 test('search filters the line list', async ({ page }) => {
@@ -47,22 +47,22 @@ test('search filters the line list', async ({ page }) => {
   // "Line <number>", so "a line" cannot match one — this resolves to the A Line alone, whatever
   // the bus roster does next.
   await gotoDashboard(page, `?q=a+line&${WINDOW}`);
-  await expect(page.locator('#line-selector-pane td[data-qa="select-801"]')).toBeVisible();
+  await expect(page.locator('#line-selector-panel td[data-qa="select-801"]')).toBeVisible();
   await expect(rowCheckboxes(page)).toHaveCount(1);
 
-  await shootPane(page, '#line-selector-pane', 'line-filters-search.png');
+  await shootPane(page, '#line-selector-panel', 'line-filters-search.png');
 });
 
 test('rail-only mode filter', async ({ page }) => {
   // `parseModesFromParams` reads absence as on, so `buses=0` alone leaves `['train']`.
   await gotoDashboard(page, `?buses=0&${WINDOW}`);
   // Rail only: the bus rows are the numeric names, and none of them should have survived.
-  await expect(page.locator('#line-selector-pane td[data-qa="select-801"]')).toBeVisible();
+  await expect(page.locator('#line-selector-panel td[data-qa="select-801"]')).toBeVisible();
   await expect(
-    page.locator('#line-selector-pane').getByText(/^Line \d+$/),
+    page.locator('#line-selector-panel').getByText(/^Line \d+$/),
   ).toHaveCount(0);
 
-  await shootPane(page, '#line-selector-pane', 'line-filters-rail-only.png');
+  await shootPane(page, '#line-selector-panel', 'line-filters-rail-only.png');
 });
 
 /**
@@ -86,7 +86,7 @@ test.describe('empty mode', () => {
     // its height is settled by the sibling. Wait for that chunk to mount before cropping.
     await expect(page.locator('#lineMap')).toBeVisible();
 
-    await shootPane(page, '#line-selector-pane', 'line-filters-empty-mode.png');
+    await shootPane(page, '#line-selector-panel', 'line-filters-empty-mode.png');
   });
 });
 
