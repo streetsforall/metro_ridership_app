@@ -26,12 +26,12 @@ flowchart TB
     subgraph toggleSlice["Toggles"]
       direction TB
       aggregate["isAggregateVisible"]
-      logs["showContextLogs"]
+      panels["Panel Settings —<br/>showChart · showSummary ·<br/>showMap · showContextLogs"]
     end
   end
 
   nothingDerived["The store derives nothing (#167).<br/>Every derived value now lives in App's memos,<br/>so `lines` changes identity only on a real user action."]
-  consumer["buildRidershipView · LineSelector · OutputArea<br/>all read these nine values and nothing else"]
+  consumer["buildRidershipView · LineSelector · OutputArea<br/>all read these twelve values and nothing else"]
 
   urlIn --> store
   bundledMeta --> linesSlice

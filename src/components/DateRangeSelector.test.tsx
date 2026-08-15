@@ -10,8 +10,23 @@ const defaultProps = {
   setEndDate: vi.fn(),
   dayOfWeek: daysOfWeek.Weekday,
   setDayOfWeek: vi.fn(),
+  showChart: true,
+  toggleShowChart: vi.fn(),
+  showSummary: true,
+  toggleShowSummary: vi.fn(),
+  showMap: true,
+  toggleShowMap: vi.fn(),
   showContextLogs: false,
   toggleShowContextLogs: vi.fn(),
+  resetPanelSettings: vi.fn(),
+};
+
+/**
+ * Panel Settings is collapsed on load, so every assertion about a control
+ * inside it opens the disclosure first.
+ */
+const openPanelSettings = () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Show panel settings' }));
 };
 
 beforeEach(() => {
@@ -122,35 +137,100 @@ describe('DateRangeSelector interactions', () => {
   });
 });
 
-describe('DateRangeSelector context logs checkbox', () => {
-  it('renders the Context Logs checkbox', () => {
+describe('Panel Settings disclosure', () => {
+  it('renders the Panel Settings fieldset legend', () => {
+    render(<DateRangeSelector {...defaultProps} />);
+    expect(screen.getByText('Panel Settings')).toBeTruthy();
+  });
+
+  it('is collapsed on load', () => {
+    render(<DateRangeSelector {...defaultProps} />);
+    expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+  });
+
+  it('reports its collapsed state to assistive technology', () => {
+    render(<DateRangeSelector {...defaultProps} />);
+    const toggle = screen.getByRole('button', { name: 'Show panel settings' });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('reveals the four panel checkboxes when opened', () => {
+    render(<DateRangeSelector {...defaultProps} />);
+    openPanelSettings();
+    expect(screen.getAllByRole('checkbox')).toHaveLength(4);
+  });
+
+  it('collapses again when the toggle is clicked a second time', () => {
+    render(<DateRangeSelector {...defaultProps} />);
+    openPanelSettings();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide panel settings' }));
+    expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+  });
+});
+
+describe('Panel Settings visibility checkboxes', () => {
+  const panels = [
+    { label: 'Chart', prop: 'showChart', toggle: 'toggleShowChart' },
+    { label: 'Summary', prop: 'showSummary', toggle: 'toggleShowSummary' },
+    { label: 'Map', prop: 'showMap', toggle: 'toggleShowMap' },
+    {
+      label: 'Context Logs',
+      prop: 'showContextLogs',
+      toggle: 'toggleShowContextLogs',
+    },
+  ] as const;
+
+  panels.forEach(({ label, prop, toggle }) => {
+    it(`renders the ${label} checkbox`, () => {
+      render(<DateRangeSelector {...defaultProps} />);
+      openPanelSettings();
+      expect(screen.getByRole('checkbox', { name: label })).toBeTruthy();
+    });
+
+    it(`shows ${label} as unchecked when its panel is hidden`, () => {
+      render(<DateRangeSelector {...defaultProps} {...{ [prop]: false }} />);
+      openPanelSettings();
+      expect(
+        screen.getByRole('checkbox', { name: label }).getAttribute('aria-checked'),
+      ).toBe('false');
+    });
+
+    it(`shows ${label} as checked when its panel is shown`, () => {
+      render(<DateRangeSelector {...defaultProps} {...{ [prop]: true }} />);
+      openPanelSettings();
+      expect(
+        screen.getByRole('checkbox', { name: label }).getAttribute('aria-checked'),
+      ).toBe('true');
+    });
+
+    it(`calls ${toggle} when the ${label} checkbox is clicked`, () => {
+      const spy = vi.fn();
+      render(<DateRangeSelector {...defaultProps} {...{ [toggle]: spy }} />);
+      openPanelSettings();
+      fireEvent.click(screen.getByRole('checkbox', { name: label }));
+      expect(spy).toHaveBeenCalledOnce();
+    });
+  });
+});
+
+describe('Panel Settings reset', () => {
+  it('is not reachable while the disclosure is collapsed', () => {
     render(<DateRangeSelector {...defaultProps} />);
     expect(
-      screen.getByRole('checkbox', { name: 'Context Logs' }),
-    ).toBeTruthy();
+      screen.queryByRole('button', { name: 'Reset to defaults' }),
+    ).toBeNull();
   });
 
-  it('is unchecked when showContextLogs is false', () => {
-    render(<DateRangeSelector {...defaultProps} showContextLogs={false} />);
-    const checkbox = screen.getByRole('checkbox', { name: 'Context Logs' });
-    expect(checkbox.getAttribute('aria-checked')).toBe('false');
-  });
-
-  it('is checked when showContextLogs is true', () => {
-    render(<DateRangeSelector {...defaultProps} showContextLogs={true} />);
-    const checkbox = screen.getByRole('checkbox', { name: 'Context Logs' });
-    expect(checkbox.getAttribute('aria-checked')).toBe('true');
-  });
-
-  it('calls toggleShowContextLogs when clicked', () => {
-    const toggleShowContextLogs = vi.fn();
+  it('calls resetPanelSettings when clicked', () => {
+    const resetPanelSettings = vi.fn();
     render(
       <DateRangeSelector
         {...defaultProps}
-        toggleShowContextLogs={toggleShowContextLogs}
+        resetPanelSettings={resetPanelSettings}
       />,
     );
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Context Logs' }));
-    expect(toggleShowContextLogs).toHaveBeenCalledOnce();
+    openPanelSettings();
+    fireEvent.click(screen.getByRole('button', { name: 'Reset to defaults' }));
+    expect(resetPanelSettings).toHaveBeenCalledOnce();
   });
 });

@@ -293,7 +293,7 @@ export default function RidershipChart({
         ].join('. ');
 
   return (
-    <div className="pane" id="ridership-chart">
+    <div className="pane" id="chart-panel">
       {/**
        * Sizing box for the canvas. Chart.js's own `maintainAspectRatio` derives the
        * canvas height from the container width alone, which on a 390px phone is a

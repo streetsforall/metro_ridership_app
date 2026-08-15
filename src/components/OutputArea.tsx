@@ -13,6 +13,10 @@ interface OutputAreaProps {
   months: string[];
   lines: LineReadout[];
   transitEvents: TransitEvent[];
+  /** Panel Settings visibility flags. All default to on except the context log. */
+  showChart?: boolean;
+  showSummary?: boolean;
+  showMap?: boolean;
   /** Whether the context-log panel is enabled from the filter bar. */
   showContextLogs: boolean;
   /** True while the ridership dataset is still being fetched. */
@@ -33,6 +37,9 @@ export default function OutputArea({
   months,
   lines,
   transitEvents,
+  showChart = true,
+  showSummary = true,
+  showMap = true,
   showContextLogs,
   isLoading = false,
   onRangeSelect,
@@ -48,6 +55,26 @@ export default function OutputArea({
 
   /** Whether any line is selected, and so whether there is anything to chart. */
   const hasSelection = chartDatasets.length > 0;
+
+  /**
+   * A hidden chart falls back to `#output-placeholder` — the same element the
+   * no-selection and loading states use — rather than a second empty state, so
+   * the area is never blank and there is only one thing to keep in step.
+   */
+  const isChartVisible = hasSelection && showChart;
+  const placeholderMessage = isLoading
+    ? 'Loading ridership data…'
+    : hasSelection
+      ? 'Chart hidden — turn it back on in Panel Settings.'
+      : 'Please select a Metro line.';
+
+  /**
+   * The summary and map share a row only when both are actually on screen.
+   * Either one alone takes the full width instead of leaving a hole in the
+   * other track.
+   */
+  const isSummaryVisible = hasSelection && showSummary;
+  const isRowSplit = isSummaryVisible && showMap;
 
   /**
    * A press anywhere outside this whole area releases the pin — scoped to the
@@ -69,8 +96,8 @@ export default function OutputArea({
 
   return (
     <div ref={rootRef} className="flex flex-col gap-4 lg:min-h-[50vh] min-w-0">
-      {/* Only show the chart if something is selected */}
-      {hasSelection ? (
+      {/* Only show the chart if something is selected and it is not switched off */}
+      {isChartVisible ? (
         <RidershipChart
           chartDatasets={chartDatasets}
           months={months}
@@ -86,7 +113,7 @@ export default function OutputArea({
           id="output-placeholder"
           className="pane flex-1 flex items-center justify-center text-sm text-stone-400"
         >
-          <p>{isLoading ? 'Loading ridership data…' : 'Please select a Metro line.'}</p>
+          <p>{placeholderMessage}</p>
         </div>
       )}
 
@@ -94,9 +121,13 @@ export default function OutputArea({
        * Summary and map share a row from `lg` up. The map is rendered here and
        * nowhere else, in one JSX position that is never inside a branch: moving
        * it between branches would unmount MapLibre whenever the last line is
-       * deselected, and the instance must survive that. With no summary beside
-       * it the row falls back to one column so the map spans the full width
-       * rather than sitting in a 2fr track with a hole next to it.
+       * deselected, and the instance must survive that. Switching the map off
+       * from Panel Settings hides its pane with `display: none` for the same
+       * reason — the instance is ready to draw, and coming back is safe without
+       * a manual re-measure because `trackResize` watches the container. With
+       * no summary beside it the row falls back to one column so the map spans
+       * the full width rather than sitting in a 2fr track with a hole next to
+       * it, and the same applies to the summary with no map beside it.
        *
        * The two panes stretch to a common height, and the map fills its pane
        * rather than sitting at a fixed height inside a taller one — see
@@ -105,9 +136,9 @@ export default function OutputArea({
        * number of selected lines, and the map holds a 400px floor below that.
        */}
       <div
-        className={`grid gap-4 grid-cols-[1fr] ${hasSelection ? 'lg:grid-cols-[2fr_3fr]' : ''}`}
+        className={`grid gap-4 grid-cols-[1fr] ${isRowSplit ? 'lg:grid-cols-[2fr_3fr]' : ''}`}
       >
-        {hasSelection && <SummaryData lines={lines} />}
+        {isSummaryVisible && <SummaryData lines={lines} />}
 
         {/**
          * The map pane keeps `.pane`'s 2rem padding, like every other pane. The
@@ -116,8 +147,15 @@ export default function OutputArea({
          * complaint it was meant to answer was the *pane* not reaching the
          * bottom of the row, which is fixed above by letting the two panes
          * stretch to a common height.
+         *
+         * `flex` is written out per branch rather than sitting alongside
+         * `hidden`: both set `display`, so which one wins would come down to
+         * their order in the generated stylesheet.
          */}
-        <div className="pane flex flex-col">
+        <div
+          id="map-panel"
+          className={`pane flex-col ${showMap ? 'flex' : 'hidden'}`}
+        >
           <Map lines={lines} />
         </div>
       </div>

@@ -130,6 +130,46 @@ describe('initial state from URL params', () => {
     const { result } = renderHook(() => useUserDashboardInput());
     expect(result.current.showContextLogs).toBe(false);
   });
+
+  it('shows the chart, summary and map when no panel params are present', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.showChart).toBe(true);
+    expect(result.current.showSummary).toBe(true);
+    expect(result.current.showMap).toBe(true);
+  });
+
+  it('hides the chart when chart=0 in URL', () => {
+    window.history.replaceState({}, '', '?chart=0');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.showChart).toBe(false);
+  });
+
+  it('hides the summary when summary=0 in URL', () => {
+    window.history.replaceState({}, '', '?summary=0');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.showSummary).toBe(false);
+  });
+
+  it('hides the map when map=0 in URL', () => {
+    window.history.replaceState({}, '', '?map=0');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.showMap).toBe(false);
+  });
+
+  it('restores every panel setting from one URL together', () => {
+    window.history.replaceState({}, '', '?chart=0&summary=0&map=0&logs=1');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.showChart).toBe(false);
+    expect(result.current.showSummary).toBe(false);
+    expect(result.current.showMap).toBe(false);
+    expect(result.current.showContextLogs).toBe(true);
+  });
+
+  it('keeps the chart shown for any value other than 0', () => {
+    window.history.replaceState({}, '', '?chart=1');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.showChart).toBe(true);
+  });
 });
 
 describe('modes → mode filter state', () => {
@@ -301,6 +341,97 @@ describe('URL sync', () => {
   it('omits logs param when showContextLogs is false by default', () => {
     renderHook(() => useUserDashboardInput());
     expect(window.location.search).not.toContain('logs=');
+  });
+
+  it('adds chart=0 to URL when the chart is switched off', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.toggleShowChart();
+    });
+
+    expect(window.location.search).toContain('chart=0');
+  });
+
+  it('adds summary=0 to URL when the summary is switched off', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.toggleShowSummary();
+    });
+
+    expect(window.location.search).toContain('summary=0');
+  });
+
+  it('adds map=0 to URL when the map is switched off', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.toggleShowMap();
+    });
+
+    expect(window.location.search).toContain('map=0');
+  });
+
+  it('removes chart param from URL when switched back on', () => {
+    window.history.replaceState({}, '', '?chart=0');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.toggleShowChart();
+    });
+
+    expect(window.location.search).not.toContain('chart=');
+  });
+
+  it('omits every panel param in a default view', () => {
+    renderHook(() => useUserDashboardInput());
+    expect(window.location.search).not.toContain('chart=');
+    expect(window.location.search).not.toContain('summary=');
+    expect(window.location.search).not.toContain('map=');
+    expect(window.location.search).not.toContain('logs=');
+  });
+});
+
+describe('resetPanelSettings', () => {
+  it('puts every panel back to its default', () => {
+    window.history.replaceState({}, '', '?chart=0&summary=0&map=0&logs=1');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.resetPanelSettings();
+    });
+
+    expect(result.current.showChart).toBe(true);
+    expect(result.current.showSummary).toBe(true);
+    expect(result.current.showMap).toBe(true);
+    expect(result.current.showContextLogs).toBe(false);
+  });
+
+  it('drops every panel param out of the URL', () => {
+    window.history.replaceState({}, '', '?chart=0&summary=0&map=0&logs=1');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.resetPanelSettings();
+    });
+
+    expect(window.location.search).not.toContain('chart=');
+    expect(window.location.search).not.toContain('summary=');
+    expect(window.location.search).not.toContain('map=');
+    expect(window.location.search).not.toContain('logs=');
+  });
+
+  it('leaves the rest of the dashboard state alone', () => {
+    window.history.replaceState({}, '', '?map=0&q=blue&lines=801');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.resetPanelSettings();
+    });
+
+    expect(result.current.searchText).toBe('blue');
+    expect(result.current.lines.find((l) => l.id === 801)?.selected).toBe(true);
   });
 });
 

@@ -59,8 +59,15 @@ function App() {
     searchText,
     modes,
     isAggregateVisible,
+    showChart,
+    toggleShowChart,
+    showSummary,
+    toggleShowSummary,
+    showMap,
+    toggleShowMap,
     showContextLogs,
     toggleShowContextLogs,
+    resetPanelSettings,
   } = userDashboardInputState;
 
   const isLoading = ridershipRecords === null;
@@ -140,8 +147,15 @@ function App() {
           setEndDate={setEndDate}
           dayOfWeek={dayOfWeek}
           setDayOfWeek={setDayOfWeek}
+          showChart={showChart}
+          toggleShowChart={toggleShowChart}
+          showSummary={showSummary}
+          toggleShowSummary={toggleShowSummary}
+          showMap={showMap}
+          toggleShowMap={toggleShowMap}
           showContextLogs={showContextLogs}
           toggleShowContextLogs={toggleShowContextLogs}
+          resetPanelSettings={resetPanelSettings}
         />
       </div>
 
@@ -152,7 +166,7 @@ function App() {
         {/* Metro lines pane */}
         {/* Hack to match sibling height - https://www.reddit.com/r/css/comments/15qu1ml/restrict_childs_height_to_parents_height_which_is/*/}
         <div
-          id="line-selector-pane"
+          id="line-selector-panel"
           className={`pane flex flex-col gap-4 min-h-full w-0 min-w-full ${isLineSelectorExpanded ? 'h-auto' : 'h-[32rem] lg:h-0'}`}
         >
           <LineSelector
@@ -197,6 +211,9 @@ function App() {
               months={months}
               lines={readouts}
               transitEvents={events}
+              showChart={showChart}
+              showSummary={showSummary}
+              showMap={showMap}
               showContextLogs={showContextLogs}
               isLoading={isLoading}
               onRangeSelect={handleRangeSelect}

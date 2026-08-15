@@ -409,9 +409,9 @@ flowchart TB
   main["main.tsx — createRoot, StrictMode"]
   app["App — container<br/>no router, no context providers"]
   header["Header"]
-  drs["DateRangeSelector<br/>Radix RadioGroup + Checkbox"]
+  drs["DateRangeSelector<br/>Radix RadioGroup + Checkbox<br/>Panel Settings disclosure"]
 
-  subgraph leftPane["#line-selector-pane — always mounted"]
+  subgraph leftPane["#line-selector-panel — always mounted"]
     direction TB
     ls["LineSelector — container<br/>sort · CSV · share · expand"]
     lf["LineFilters<br/>search · mode toggle · aggregate"]
@@ -427,11 +427,11 @@ flowchart TB
   subgraph rightPane["OutputArea — React.lazy chunk"]
     direction TB
     oa["OutputArea — container,<br/>owns pinned + hovered month"]
-    chart["RidershipChart — #ridership-chart"]
+    chart["RidershipChart — #chart-panel"]
     tooltip["ChartTooltip — HTML readout"]
-    summary["SummaryData"]
+    summary["SummaryData — #summary-panel"]
     ctxlog["ContextLogPanel — #context-log-panel"]
-    mapCmp["Map — #lineMap"]
+    mapCmp["Map — #lineMap,<br/>inside #map-panel"]
     oa --> chart
     oa --> summary
     oa --> ctxlog
@@ -501,12 +501,12 @@ flowchart TB
     subgraph toggleSlice["Toggles"]
       direction TB
       aggregate["isAggregateVisible"]
-      logs["showContextLogs"]
+      panels["Panel Settings —<br/>showChart · showSummary ·<br/>showMap · showContextLogs"]
     end
   end
 
   nothingDerived["The store derives nothing (#167).<br/>Every derived value now lives in App's memos,<br/>so `lines` changes identity only on a real user action."]
-  consumer["buildRidershipView · LineSelector · OutputArea<br/>all read these nine values and nothing else"]
+  consumer["buildRidershipView · LineSelector · OutputArea<br/>all read these twelve values and nothing else"]
 
   urlIn --> store
   bundledMeta --> linesSlice
@@ -596,7 +596,7 @@ flowchart TB
     lazyInit --> parsers --> fallback
   end
 
-  subgraph pairs["The nine parameters"]
+  subgraph pairs["The twelve parameters"]
     direction LR
 
     subgraph always["Always written"]
@@ -616,6 +616,9 @@ flowchart TB
       direction TB
       p6["buses=0"]
       p7["trains=0"]
+      p10["chart=0"]
+      p11["summary=0"]
+      p12["map=0"]
     end
 
     subgraph whenOn["Written only when ON"]
@@ -1088,14 +1091,15 @@ flowchart TB
     mapProj["map — SwiftShader ANGLE,<br/>deviceScaleFactor 1"]
   end
 
-  subgraph specs["Nine specs, 35 committed Linux baselines"]
+  subgraph specs["Eleven specs, 49 committed Linux baselines"]
     direction TB
     s1["visual.spec.ts — 6"]
-    s2["chart-content.spec.ts — 10<br/>scoped to #ridership-chart"]
+    s2["chart-content.spec.ts — 10<br/>scoped to #chart-panel"]
     s3["line-filters.spec.ts — 5"]
     s4["summary-tiles.spec.ts — 4"]
     s5["map.spec.ts — 3"]
-    s6["context-logs · responsive-tablet<br/>table-view · loading — 7"]
+    s6["chart-tooltip · context-logs · responsive-tablet<br/>table-view · loading — 15"]
+    s7["panel-settings.spec.ts — 4<br/>scoped to #panel-settings"]
   end
 
   subgraph rules["The rules that keep it stable"]

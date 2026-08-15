@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import * as RadioGroup from '@radix-ui/react-radio-group';
 import checkIcon from '../assets/check.svg';
@@ -19,8 +20,19 @@ export interface DateRangeSelectorProps {
   dayOfWeek: DayOfWeek;
   setDayOfWeek: React.Dispatch<React.SetStateAction<DayOfWeek>>;
 
+  showChart: boolean;
+  toggleShowChart: () => void;
+
+  showSummary: boolean;
+  toggleShowSummary: () => void;
+
+  showMap: boolean;
+  toggleShowMap: () => void;
+
   showContextLogs: boolean;
   toggleShowContextLogs: () => void;
+
+  resetPanelSettings: () => void;
 }
 
 type IntervalEndpoint = 'start' | 'end';
@@ -32,9 +44,40 @@ export default function DateRangeSelector({
   setEndDate,
   dayOfWeek,
   setDayOfWeek,
+  showChart,
+  toggleShowChart,
+  showSummary,
+  toggleShowSummary,
+  showMap,
+  toggleShowMap,
   showContextLogs,
   toggleShowContextLogs,
+  resetPanelSettings,
 }: DateRangeSelectorProps) {
+  /**
+   * Panel Settings is a disclosure, collapsed on load. Open state is local and
+   * deliberately not URL-synced: it is where the controls are, not what they
+   * chose, and every choice inside it is already shareable on its own.
+   */
+  const [isPanelSettingsOpen, setIsPanelSettingsOpen] =
+    useState<boolean>(false);
+
+  const panelToggles = [
+    { name: 'chart', label: 'Chart', checked: showChart, toggle: toggleShowChart },
+    {
+      name: 'summary',
+      label: 'Summary',
+      checked: showSummary,
+      toggle: toggleShowSummary,
+    },
+    { name: 'map', label: 'Map', checked: showMap, toggle: toggleShowMap },
+    {
+      name: 'context-logs',
+      label: 'Context Logs',
+      checked: showContextLogs,
+      toggle: toggleShowContextLogs,
+    },
+  ];
   const getDateSetter = (
     intervalEndpoint: IntervalEndpoint,
   ): React.Dispatch<React.SetStateAction<Date>> => {
@@ -170,32 +213,62 @@ export default function DateRangeSelector({
         </RadioGroup.Root>
       </fieldset>
 
-      {/* Panel visibility */}
-      <fieldset>
-        <legend>Panel Visibility</legend>
+      {/**
+       * Panel Settings. Collapsed by default so the filter bar keeps the height
+       * it had when this was a single checkbox, and so the four toggles do not
+       * push the line selector and the output area down the page on every load.
+       */}
+      <fieldset id="panel-settings">
+        <legend>Panel Settings</legend>
 
-        <div className="flex items-center">
-          <Checkbox.Root
-            id="context-logs"
-            onClick={toggleShowContextLogs}
-            checked={showContextLogs}
-            className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
-          >
-            <Checkbox.Indicator>
-              <img
-                src={checkIcon}
-                height={20}
-                width={20}
-                alt="Check"
-                className="recolor-white"
-              />
-            </Checkbox.Indicator>
-          </Checkbox.Root>
+        <button
+          id="panel-settings-toggle"
+          type="button"
+          onClick={() => setIsPanelSettingsOpen((prevOpen) => !prevOpen)}
+          aria-expanded={isPanelSettingsOpen}
+          aria-controls="panel-settings-content"
+          className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
+        >
+          {isPanelSettingsOpen ? 'Hide panel settings' : 'Show panel settings'}
+        </button>
 
-          <label className="pl-2" htmlFor="context-logs">
-            Context Logs
-          </label>
-        </div>
+        {isPanelSettingsOpen && (
+          <div id="panel-settings-content" className="flex flex-col gap-2 pt-2">
+            {panelToggles.map(({ name, label, checked, toggle }) => (
+              <div key={name} className="flex items-center">
+                <Checkbox.Root
+                  id={`panel-${name}-toggle`}
+                  onClick={toggle}
+                  checked={checked}
+                  className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
+                >
+                  <Checkbox.Indicator>
+                    <img
+                      src={checkIcon}
+                      height={20}
+                      width={20}
+                      alt="Check"
+                      className="recolor-white"
+                    />
+                  </Checkbox.Indicator>
+                </Checkbox.Root>
+
+                <label className="pl-2" htmlFor={`panel-${name}-toggle`}>
+                  {label}
+                </label>
+              </div>
+            ))}
+
+            <button
+              id="panel-settings-reset"
+              type="button"
+              onClick={resetPanelSettings}
+              className="self-start bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
+            >
+              Reset to defaults
+            </button>
+          </div>
+        )}
       </fieldset>
     </div>
   );

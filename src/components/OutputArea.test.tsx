@@ -147,6 +147,94 @@ describe('OutputArea Map', () => {
   });
 });
 
+/**
+ * Panel Settings crossed with what there is to show. The chart's own gate is
+ * still `hasSelection`; the settings only ever take a panel away.
+ */
+describe('panel visibility settings', () => {
+  it('hides the chart when showChart is false', () => {
+    renderWithEvents({ showChart: false });
+    expect(screen.queryByTestId('line-chart')).toBeNull();
+  });
+
+  it('falls back to the placeholder rather than a second empty state', () => {
+    const { container } = renderWithEvents({ showChart: false });
+    expect(container.querySelector('#output-placeholder')).toBeTruthy();
+    expect(
+      screen.getByText('Chart hidden — turn it back on in Panel Settings.'),
+    ).toBeTruthy();
+  });
+
+  it('still says to select a line when nothing is selected and the chart is off', () => {
+    render(<OutputArea {...emptyProps} showChart={false} />);
+    expect(screen.getByText('Please select a Metro line.')).toBeTruthy();
+  });
+
+  it('hides the summary when showSummary is false', () => {
+    renderWithEvents({
+      showSummary: false,
+      lines: [makeLineReadout({ selected: true })],
+    });
+    expect(screen.queryByText('Average Ridership')).toBeNull();
+  });
+
+  it('hides the map panel when showMap is false', () => {
+    const { container } = renderWithEvents({ showMap: false });
+    expect(container.querySelector('#map-panel')?.className).toContain('hidden');
+  });
+
+  it('keeps the Map mounted when showMap is false', () => {
+    renderWithEvents({ showMap: false });
+    expect(screen.getByTestId('map')).toBeTruthy();
+  });
+
+  it('hides the context log panel when showContextLogs is false', () => {
+    renderWithEvents({ showContextLogs: false });
+    expect(screen.queryByText('Regional Connector Opening')).toBeNull();
+  });
+
+  it('splits the summary/map row only when both are on screen', () => {
+    const { container } = renderWithEvents({
+      lines: [makeLineReadout({ selected: true })],
+    });
+    expect(
+      container.querySelector('#map-panel')?.parentElement?.className,
+    ).toContain('lg:grid-cols-[2fr_3fr]');
+  });
+
+  it('drops back to one column when the summary is hidden', () => {
+    const { container } = renderWithEvents({
+      showSummary: false,
+      lines: [makeLineReadout({ selected: true })],
+    });
+    expect(
+      container.querySelector('#map-panel')?.parentElement?.className,
+    ).not.toContain('lg:grid-cols-[2fr_3fr]');
+  });
+
+  it('drops back to one column when the map is hidden', () => {
+    const { container } = renderWithEvents({
+      showMap: false,
+      lines: [makeLineReadout({ selected: true })],
+    });
+    expect(
+      container.querySelector('#map-panel')?.parentElement?.className,
+    ).not.toContain('lg:grid-cols-[2fr_3fr]');
+  });
+
+  it('leaves the placeholder standing when every panel is off', () => {
+    const { container } = renderWithEvents({
+      showChart: false,
+      showSummary: false,
+      showMap: false,
+      showContextLogs: false,
+      lines: [makeLineReadout({ selected: true })],
+    });
+    expect(container.querySelector('#output-placeholder')).toBeTruthy();
+    expect(screen.queryByText('Average Ridership')).toBeNull();
+  });
+});
+
 describe('context log panel visibility', () => {
   it('does not render the panel when transitEvents is empty', () => {
     renderWithEvents({ transitEvents: [] });
