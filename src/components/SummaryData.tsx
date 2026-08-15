@@ -45,85 +45,98 @@ export default function SummaryData({ lines }: SummaryDataProps) {
   return (
     <div id="summary-data">
       {/**
-       * Three layouts, widest last. Below `sm` the tiles stack: two columns do
-       * not fit a 390px phone, because each `.pane` carries 4rem of horizontal
-       * padding and a `whitespace-nowrap` label, giving it a min-content width
-       * of ~262px against a ~171px track — and a `1fr` track has to honour
-       * min-content, so the page scrolls sideways. `lg:flex` restores the
-       * single row. Deliberately not `xl:flex-nowrap`: an unwrappable row hands
-       * the surrounding `1fr` grid track its full min-content width and
-       * overflows the page (see OutputArea's min-w-0).
+       * Two layouts. Below `sm` the tiles stack in one column: two do not fit a
+       * 390px phone, because each `.pane` carries 4rem of horizontal padding,
+       * giving it a min-content width larger than its ~171px track — and a
+       * `1fr` track has to honour min-content, so the page scrolls sideways.
+       * From `sm` up they sit two-by-two and stay that way.
+       *
+       * There was a third layout: `lg:flex flex-wrap` put all four in one row
+       * once the viewport was wide enough. That is gone because the panel is no
+       * longer full-width — it shares its row with the map and gets ~40% of it,
+       * around 360px, which is a two-column width and never a four-column one.
+       * The tiles shed their `lg:min-w-56` and most of their padding for the
+       * same reason: 224px of declared minimum inside a ~170px tile is an
+       * overflow, not a layout.
+       *
+       * The tiles are their own grid so the four stay one size. `auto-rows-fr`
+       * gives every row the same height and `1fr 1fr` the same width, so a tile
+       * whose label wraps to two lines — "Average Ridership" — or that carries a
+       * change figure — "Ending Ridership" — no longer stands taller than the
+       * one beside it. Each tile then spaces its own label and figure apart, so
+       * the four figures sit on a common baseline. The explanatory text cannot
+       * be in this grid: an equal-height row is exactly wrong for a paragraph.
        */}
       {selectedLines.length > 0 && (
-        <div className="grid grid-cols-[1fr] sm:grid-cols-[1fr_1fr] lg:flex flex-wrap gap-4 items-center">
-          {/* Stats */}
-          {/* TODO: Refactor into component */}
-          <div className="pane">
-            <div className="flex justify-between mb-2 lg:min-w-56 text-sm">
-              <span className="text-stone-400 uppercase whitespace-nowrap">
-                Average Ridership
-              </span>
-            </div>
-            <span
-              aria-labelledby="avg-ridership"
-              className="tracking-tighter text-3xl lg:text-5xl"
-            >
-              {Math.round(averageDailyRidership).toLocaleString()}
-            </span>
-          </div>
-
-          {ridersPerMile !== undefined && (
-            <div className="pane">
-              <div className="flex justify-between mb-2 lg:min-w-56 text-sm">
-                <span className="text-stone-400 uppercase whitespace-nowrap">
-                  Riders / Mile
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-[1fr] sm:grid-cols-[1fr_1fr] auto-rows-fr gap-4">
+            {/* Stats */}
+            {/* TODO: Refactor into component */}
+            <div className="pane lg:p-4 flex flex-col justify-between">
+              <div className="flex flex-wrap justify-between gap-x-2 mb-2 text-sm">
+                <span className="text-stone-400 uppercase">
+                  Average Ridership
                 </span>
               </div>
-              <span className="tracking-tighter text-3xl lg:text-5xl">
-                {Math.round(ridersPerMile).toLocaleString()}
-              </span>
-            </div>
-          )}
-
-          {totalMiles > 0 && (
-            <div className="pane">
-              <div className="flex justify-between mb-2 lg:min-w-56 text-sm">
-                <span className="text-stone-400 uppercase whitespace-nowrap">
-                  Total Miles
-                </span>
-              </div>
-              <span className="tracking-tighter text-3xl lg:text-5xl">
-                {totalMiles.toLocaleString()}
-              </span>
-            </div>
-          )}
-
-          <div className="pane">
-            <div className="flex justify-between mb-2 lg:min-w-56 text-sm">
-              <span className="text-stone-400 uppercase whitespace-nowrap">
-                Ending Ridership
-              </span>
-
               <span
-                aria-label="Change"
-                className={
-                  changeInRidership < 0 ? 'text-red-600' : 'text-green-600'
-                }
+                aria-labelledby="avg-ridership"
+                className="tracking-tighter text-3xl"
               >
-                {changeInRidership > 0 && '+'}
-                {changeInRidership.toLocaleString()}
+                {Math.round(averageDailyRidership).toLocaleString()}
               </span>
             </div>
-            <span
-              aria-labelledby="cur-ridership"
-              className="tracking-tighter text-3xl lg:text-5xl"
-            >
-              {Math.round(recentRidership).toLocaleString()}
-            </span>
+
+            {ridersPerMile !== undefined && (
+              <div className="pane lg:p-4 flex flex-col justify-between">
+                <div className="flex flex-wrap justify-between gap-x-2 mb-2 text-sm">
+                  <span className="text-stone-400 uppercase">
+                    Riders / Mile
+                  </span>
+                </div>
+                <span className="tracking-tighter text-3xl">
+                  {Math.round(ridersPerMile).toLocaleString()}
+                </span>
+              </div>
+            )}
+
+            {totalMiles > 0 && (
+              <div className="pane lg:p-4 flex flex-col justify-between">
+                <div className="flex flex-wrap justify-between gap-x-2 mb-2 text-sm">
+                  <span className="text-stone-400 uppercase">Total Miles</span>
+                </div>
+                <span className="tracking-tighter text-3xl">
+                  {totalMiles.toLocaleString()}
+                </span>
+              </div>
+            )}
+
+            <div className="pane lg:p-4 flex flex-col justify-between">
+              <div className="flex flex-wrap justify-between gap-x-2 mb-2 text-sm">
+                <span className="text-stone-400 uppercase">
+                  Ending Ridership
+                </span>
+
+                <span
+                  aria-label="Change"
+                  className={
+                    changeInRidership < 0 ? 'text-red-600' : 'text-green-600'
+                  }
+                >
+                  {changeInRidership > 0 && '+'}
+                  {changeInRidership.toLocaleString()}
+                </span>
+              </div>
+              <span
+                aria-labelledby="cur-ridership"
+                className="tracking-tighter text-3xl"
+              >
+                {Math.round(recentRidership).toLocaleString()}
+              </span>
+            </div>
           </div>
 
           {/* Text */}
-          <div className="basis-full flex flex-col col-span-full gap-4 p-4 text-sm max-w-[54rem]">
+          <div className="flex flex-col gap-4 p-4 text-sm max-w-[54rem]">
             <p>
               <span className="font-bold mr-1">Selected:</span>
 

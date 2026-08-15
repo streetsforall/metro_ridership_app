@@ -106,6 +106,24 @@ class TestLoadAndComputeFillScoping:
         assert len(new_df[(new_df["line_name"] == 90) & (new_df["month"] == 1)]) == 1
 
 
+class TestDiffAgainstCurrent:
+    def test_pads_are_not_counted_as_corrections(self, tmp_path, monkeypatch):
+        """fill_missing_months leaves pads as NaN and merge_ridership backfills
+        them, so a pad over an existing record is not a pending correction."""
+        _setup_data(tmp_path, monkeypatch, [_rec(month=1, wk=100.0)])
+
+        new_df = pd.DataFrame([_rec(
+            month=1, wk=float("nan"), sa=float("nan"), su=float("nan"),
+        )])
+        assert ur.diff_against_current(new_df, overwrite=True)["updated_records"] == 0
+
+    def test_real_change_still_counted(self, tmp_path, monkeypatch):
+        _setup_data(tmp_path, monkeypatch, [_rec(month=1, wk=100.0)])
+
+        new_df = pd.DataFrame([_rec(month=1, wk=123.0)])
+        assert ur.diff_against_current(new_df, overwrite=True)["updated_records"] == 1
+
+
 # ---------------------------------------------------------------------------
 # main — append-only / overwrite / no-op
 # ---------------------------------------------------------------------------

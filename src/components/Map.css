@@ -1,5 +1,15 @@
+/**
+ * The map fills its pane instead of standing at a fixed height inside it. It
+ * shares a row with the summary, which grows with the number of selected lines,
+ * and a fixed height there leaves the map floating above an arbitrary amount of
+ * empty pane. `flex: 1` claims the pane's spare height (OutputArea makes that
+ * pane a flex column); `min-height` is the floor for the cases where there is no
+ * spare height to claim — no line selected, or any single-column layout below
+ * `lg`, where the row's height is the map's own.
+ */
 #lineMap {
-  height: 400px;
+  flex: 1 1 auto;
+  min-height: 400px;
   width: 100%;
   border-radius: inherit;
 }

@@ -1,5 +1,21 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { gotoDashboard, shootPane } from './helpers';
+
+/**
+ * Lift the list's `max-h-[32rem]` scroll cap for a shot.
+ *
+ * The cap is real behaviour and is asserted on its own below, but it is wrong
+ * for these two baselines: they exist to prove the panel renders *every* event
+ * and every category hue, and a scroll container shows only its first screenful.
+ * Without this the palette shot would pin two of fifteen rows while the nine
+ * category assertions above it still passed — Playwright counts an element
+ * scrolled out of a container as visible, since it still has a box.
+ */
+async function unclampLog(page: Page): Promise<void> {
+  await page.addStyleTag({
+    content: '#context-log-panel ol { max-height: none !important; }',
+  });
+}
 
 /**
  * Visual + DOM coverage for `#context-log-panel`.
@@ -34,7 +50,10 @@ import { gotoDashboard, shootPane } from './helpers';
  */
 
 test('context log panel renders its events', async ({ page }) => {
-  await gotoDashboard(page, '?logs=1&lines=801&start=2019-06&end=2020-12&day=wkday');
+  await gotoDashboard(
+    page,
+    '?logs=1&lines=801&start=2019-06&end=2020-12&day=wkday',
+  );
 
   // Prove the gate actually opened before capturing — without this a typo'd param would
   // snapshot nothing and Playwright would fail on a missing element rather than a wrong view.
@@ -42,6 +61,7 @@ test('context log panel renders its events', async ({ page }) => {
   await expect(panel).toBeVisible();
   await expect(panel.locator('ol > li')).toHaveCount(3);
 
+  await unclampLog(page);
   await shootPane(page, '#context-log-panel', 'context-log-panel-open.png');
 });
 
@@ -76,7 +96,10 @@ test('context log panel renders its events', async ({ page }) => {
  * 2.15–4.76:1 on the pane's white and must never be the only signal.
  */
 test('context log panel spans the category palette', async ({ page }) => {
-  await gotoDashboard(page, '?logs=1&lines=801,805&start=2020-03&end=2026-05&day=wkday');
+  await gotoDashboard(
+    page,
+    '?logs=1&lines=801,805&start=2020-03&end=2026-05&day=wkday',
+  );
 
   const panel = page.locator('#context-log-panel');
   await expect(panel).toBeVisible();
@@ -97,7 +120,36 @@ test('context log panel spans the category palette', async ({ page }) => {
     await expect(panel.getByText(label, { exact: true }).first()).toBeVisible();
   }
 
+  await unclampLog(page);
   await shootPane(page, '#context-log-panel', 'context-log-panel-palette.png');
+});
+
+/**
+ * The scroll cap, asserted rather than snapshotted — the two shots above lift it
+ * on purpose, so without this nothing would catch its removal.
+ *
+ * A long window is what makes the assertion meaningful: 15 rows exceed `32rem`,
+ * so the list must overflow its own box while the pane around it does not grow
+ * to fit. The pane staying at the list's height is the half that keeps the map
+ * and chart above it reachable.
+ */
+test('the event list scrolls instead of growing the page', async ({ page }) => {
+  await gotoDashboard(
+    page,
+    '?logs=1&lines=801,805&start=2020-03&end=2026-05&day=wkday',
+  );
+
+  const list = page.locator('#context-log-panel ol');
+  await expect(list).toBeVisible();
+
+  const { scrolls, clientHeight } = await list.evaluate((ol) => ({
+    scrolls: ol.scrollHeight > ol.clientHeight,
+    clientHeight: ol.clientHeight,
+  }));
+
+  expect(scrolls).toBe(true);
+  // 32rem at the app's 16px root.
+  expect(clientHeight).toBeLessThanOrEqual(512);
 });
 
 test('panel is absent without logs=1', async ({ page }) => {

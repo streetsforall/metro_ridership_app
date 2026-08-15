@@ -100,15 +100,38 @@ def compute_ridership(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def fill_missing_months(df: pd.DataFrame) -> pd.DataFrame:
-    """Cross-join all year/month combos with all lines so every line has a row
-    for every month in the new dataset's range.  Gaps are filled with 0."""
+    """Pad each line's *leading* gap: every line gets a row for each month from
+    the start of this batch's range up to its own first reported month.
+
+    Pad the start, not the end.  This matches the convention the committed file
+    already follows — line 74 carries five pad months for 2025-07…11 before its
+    first real 2025-12 report.  Months *after* a line's last report in the
+    batch, and interior months it skipped, are deliberately left absent: a zero
+    row asserts the line ran and carried nobody, which is a stronger and
+    usually false claim than "did not report".  So a line discontinued
+    mid-batch ends where its data ends, and one that paused and resumed keeps a
+    genuine gap.
+
+    Pad rows are left as NaN rather than 0.  That is what lets merge_ridership
+    tell a manufactured pad from a line that genuinely reported zero riders
+    (line 60 did, in 2026-01); it backfills the pads against committed history
+    and zeroes whatever survives.
+    """
+    keys = ["year", "month", "line_name"]
     unique_ym = df[["year", "month"]].drop_duplicates()
     unique_lines = df[["line_name"]].drop_duplicates()
     calendar = unique_ym.merge(unique_lines, how="cross")
+    padded = calendar.merge(df, on=keys, how="left", indicator=True)
+
+    # Reported-ness comes from the merge, not from the values: a real row may
+    # legitimately be all zeros, and a line missing a DayType pivots to NaN.
+    reported = padded["_merge"] == "both"
+    period = padded["year"] * 12 + padded["month"]
+    first_report = period.where(reported).groupby(padded["line_name"]).transform("min")
+
     return (
-        calendar.merge(df, on=["year", "month", "line_name"], how="left")
-        .fillna(0)
-        .sort_values(["year", "month", "line_name"])
+        padded[reported | (period < first_report)]
+        .sort_values(keys)
         .reset_index(drop=True)
     )[RIDERSHIP_COLS]
 
@@ -118,39 +141,50 @@ def merge_ridership(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Merge new records with existing ridership.json.
 
+    ``new_df`` is expected to come from fill_missing_months, so its pad rows are
+    NaN and its real rows — including any that genuinely report zero riders —
+    are not.
+
     With ``prefer_new=True`` (default):
     - New data wins when both new and existing have a record for the same key.
-    - Gaps in new data (within its date range) are backfilled from existing data
-      before the concat, preserving non-zero historical values.
+    - Pad rows are backfilled from existing data before the concat, so padding
+      never overwrites a real historical value.  A pad with no history behind it
+      becomes 0.
     - Existing records outside the new dataset's date range are always preserved.
 
     With ``prefer_new=False`` (append-only):
     - Existing records always win; only keys absent from ridership.json are added.
-      No backfill is needed since existing rows are kept verbatim.
+      No backfill is needed since existing rows are kept verbatim; pads that land
+      on a new key become 0.
     """
     with open(RIDERSHIP_PATH) as f:
         current = pd.DataFrame(json.load(f))
 
     keys = ["year", "month", "line_name"]
+    value_cols = ["est_wkday_ridership", "est_sat_ridership", "est_sun_ridership"]
 
     if not prefer_new:
+        appended = new_df[RIDERSHIP_COLS].copy()
+        appended[value_cols] = appended[value_cols].fillna(0)
         final = (
-            pd.concat([current, new_df[RIDERSHIP_COLS]])
+            pd.concat([current, appended])
             .drop_duplicates(subset=keys, keep="first")
             .sort_values(keys)
             .reset_index(drop=True)
         )
         return final, current
 
-    # Backfill zeros in new_df from current where current has real values
+    # Backfill pads in new_df from current where current has a record at all.
     merged = new_df.merge(
         current, on=keys, how="left", suffixes=("_new", "_old")
     )
-    for col in ["est_wkday_ridership", "est_sat_ridership", "est_sun_ridership"]:
+    for col in value_cols:
         mask = merged[f"{col}_new"].isnull() & merged[f"{col}_old"].notnull()
         merged.loc[mask, f"{col}_new"] = merged.loc[mask, f"{col}_old"]
     merged.columns = merged.columns.str.replace("_new", "", regex=False)
-    merged = merged[RIDERSHIP_COLS]
+    merged = merged[RIDERSHIP_COLS].copy()
+    # Pads with nothing behind them: the line had not started reporting yet.
+    merged[value_cols] = merged[value_cols].fillna(0)
 
     final = (
         pd.concat([merged, current])
