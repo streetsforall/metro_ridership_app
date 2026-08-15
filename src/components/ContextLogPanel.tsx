@@ -19,7 +19,7 @@ export interface ContextLogPanelProps {
 }
 
 /**
- * The events in the current window, as a list beside the chart.
+ * The events in the current window, as a scrolling list below the chart and map.
  *
  * The rows and the chart's dots are two views of one set, so each row is a
  * button: hovering it enlarges its dot, clicking it pins that month's tooltip,
@@ -61,8 +61,20 @@ export default function ContextLogPanel({
         <span>Context Logs</span>
         <span>{isOpen ? '▴' : '▾'}</span>
       </button>
+      {/**
+       * The list scrolls rather than the page. It sits at the bottom of the
+       * output column and a wide window can hold dozens of events, so an
+       * unbounded list pushes the footer arbitrarily far down and makes the
+       * chart and map above it unreachable without scrolling back.
+       *
+       * The cap is on the `<ol>` and not on the `.pane`, which keeps the
+       * collapse toggle in view while the rows move under it. It also gives the
+       * pin's `scrollIntoView({ block: 'nearest' })` below a scroll container of
+       * its own, so revealing a pinned row scrolls the list instead of jumping
+       * the whole page.
+       */}
       {isOpen && (
-        <ol className="flex flex-col gap-3 mt-3">
+        <ol className="flex flex-col gap-3 mt-3 max-h-[32rem] overflow-y-auto">
           {events.map((event) => {
             const month = eventDateToLabel(event.date);
             const isPinned = month === pinnedMonth;
