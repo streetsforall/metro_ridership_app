@@ -1,0 +1,32 @@
+flowchart TB
+  view["RidershipView<br/>months · datasets · consolidated<br/>events · metrics · coverage"]
+
+  outputArea["OutputArea<br/>chart · summary · context log · map"]
+  lineSelector["LineSelector<br/>builds its own wider axis from consolidated —<br/>the table draws every LISTED line,<br/>the chart only the SELECTED ones"]
+  mapCmp["Map<br/>selection filter · mapPopup"]
+
+  hook["useUserDashboardInput — holds lines.<br/>Derives nothing. `lines` changes identity<br/>only on a real user action."]
+
+  subgraph readoutPath["ADR-0005's Line Readout — the only path figures take"]
+    readouts["buildLineReadouts(lines, metrics, coverage)<br/>one readout per line, figures spread over it"]
+    listed["listedReadouts(readouts, searchText, modes)<br/>mode on · name matches · has figures"]
+    readouts --> listed
+  end
+
+  view -- "datasets · months · events" --> outputArea
+  view -- "consolidated" --> lineSelector
+  view -- "metrics + coverage" --> readouts
+
+  hook -- "lines" --> view
+  hook -- "lines" --> readouts
+
+  readouts -- "lines={readouts}" --> outputArea
+  listed -- "lines={listed}" --> lineSelector
+  outputArea --> mapCmp
+
+  gone["The write-back cycle is gone (#167).<br/>updateLinesWithLineMetrics, isVisibleLine and<br/>visibleLines were deleted; Line is back to<br/>id · name · former? · mode · provider ·<br/>selected · distanceMiles?"]
+
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
+  class view,readouts,listed key
+  class gone surface

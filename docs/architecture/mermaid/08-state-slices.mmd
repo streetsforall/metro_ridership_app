@@ -14,7 +14,7 @@ flowchart TB
 
     subgraph linesSlice["Lines"]
       direction TB
-      lines["lines: Line[]<br/>createLinesData()<br/>sorted by name"]
+      lines["lines: Line[]<br/>createLinesData(selectedIds)<br/>sorted by name"]
     end
 
     subgraph filterSlice["Filters"]
@@ -30,12 +30,12 @@ flowchart TB
     end
   end
 
-  visible["visibleLines — the store's one derived value<br/>useMemo keyed on JSON.stringify(lines) + searchText"]
+  nothingDerived["The store derives nothing (#167).<br/>Every derived value now lives in App's memos,<br/>so `lines` changes identity only on a real user action."]
   consumer["buildRidershipView · LineSelector · OutputArea<br/>all read these nine values and nothing else"]
 
   urlIn --> store
   bundledMeta --> linesSlice
-  store --> visible --> consumer
+  store --> nothingDerived --> consumer
 
   classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
-  class visible key
+  class nothingDerived key

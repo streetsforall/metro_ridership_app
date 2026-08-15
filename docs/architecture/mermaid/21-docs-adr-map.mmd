@@ -1,41 +1,56 @@
 flowchart TB
-  subgraph authority["Authority order"]
+  subgraph reading["Reading order — progressive disclosure"]
     direction TB
-    ctx["CONTEXT.md — the ubiquitous language.<br/>Where a term conflicts with a name in the<br/>source, the term wins."]
-    adrs["docs/adr/ — six decisions, all accepted"]
-    claude["CLAUDE.md — working notes"]
-    readme["README.md — runbooks"]
-    ctx --> adrs --> claude --> readme
+    r0["README.md — what it is, quickstart,<br/>repo map, where to go next"]
+    r1["CONTEXT.md — the ubiquitous language"]
+    r2["docs/how-it-works.md — the derivation,<br/>the conventions, the module rule"]
+    r3["docs/guides/ — testing · ci · data<br/>read only when you are doing that thing"]
+    r4["docs/adr/ — the why, when you need it"]
+    r0 --> r1 --> r2 --> r3 --> r4
+  end
+
+  hub["docs/README.md — the hub.<br/>Names every document and this order."]
+  hub -.-> reading
+
+  subgraph authority["Authority order — who wins on conflict"]
+    direction TB
+    ctx["CONTEXT.md — where a term conflicts<br/>with a name in the source, the term wins"]
+    adrs["docs/adr/ — seven decisions"]
+    prose["docs/how-it-works.md · docs/guides/"]
+    pointer["CLAUDE.md — pointer file, no facts of its own"]
+    ctx --> adrs --> prose --> pointer
   end
 
   subgraph landed["Decided and in force"]
     direction TB
     a1["0001 — the offset Month Window<br/>→ buildRidershipView.ts"]
     a2["0002 — the view returns Chart.js types<br/>→ RidershipView.datasets"]
-    a3["0003 — one domain folder<br/>→ src/ridership/index.ts"]
     a4["0004 — one nullable Line Metrics shape<br/>→ lineMetrics.ts"]
+    a5["0005 — figures live on a Line Readout.<br/>#154 moved the consumers, #167 deleted<br/>the write-back. Fully landed."]
+    a7["0007 — a folder with an index.ts is a<br/>sealed module; src/ is flat by default"]
   end
 
   subgraph half["Accepted, only half landed"]
     direction TB
-    a5["0005 — figures live on a Line Readout.<br/>#154 moved every consumer onto readouts;<br/>App.tsx:114 still stamps the eight fields onto Line."]
-    a6["0006 — a month is {year, month}.<br/>utils/month.ts has both rules and its own spec,<br/>and no production caller; the filters still do Date arithmetic."]
+    a6["0006 — a month is {year, month}.<br/>utils/month.ts has the rules and its own spec<br/>and no production caller yet; #144 #145 #146 migrate onto it."]
   end
 
-  subgraph planning["Planning — intent, not decisions"]
+  subgraph superseded["Superseded"]
     direction TB
-    review["architecture-review-2026-08-05.md<br/>six candidates; 1 landed,<br/>5 (URL contract) and 6 (CSV seam) unscheduled"]
-    plans["src/plans/ — 7 design notes"]
-    agents["docs/agents/ · perf/BASELINE.md"]
+    a3["0003 — one domain folder.<br/>Superseded by 0007; the utils/ reorg it<br/>deferred is now tracked in #170."]
   end
 
   adrs --> landed
   adrs --> half
-  plans --> review --> adrs
+  adrs --> superseded
+  a3 -.->|superseded by| a7
 
   classDef authorityC fill:#f0e5f1,stroke:#a05da5,stroke-width:1.5px,color:#44403c
   classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
   classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
+  classDef entry fill:#dce9f4,stroke:#0072bc,stroke-width:1.5px,color:#44403c
   class ctx authorityC
-  class a5,a6 pending
+  class a6 pending
+  class a3 pending
   class landed surface
+  class hub,r0 entry

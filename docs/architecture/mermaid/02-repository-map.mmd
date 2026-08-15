@@ -17,7 +17,7 @@ flowchart LR
   app --> utils["utils/ — lines · month · queryParams<br/>ridershipData · dataDateRange · mapPopup"]
   app --> types["@types/ — domain types"]
   app --> dataDir["data/ — bundled JSON + the dataset"]
-  app --> misc["assets/ · plans/ · test/<br/>App.tsx · main.tsx · index.css"]
+  app --> misc["assets/ · test/<br/>App.tsx · main.tsx · index.css"]
 
   pipeline --> dataN["data/raw/ — source workbooks"]
   pipeline --> scriptsN["scripts/ — pipeline + 6 Python specs"]
@@ -30,9 +30,11 @@ flowchart LR
   tooling --> cfgN["configs — vite · vitest · playwright<br/>eslint · tailwind · tsconfig ×4"]
 
   writing --> ctxN["CONTEXT.md — the ubiquitous language"]
-  writing --> adrN["docs/adr/ — six decisions"]
+  writing --> adrN["docs/adr/ — seven decisions"]
+  writing --> hubN["docs/README.md — the hub<br/>docs/how-it-works.md — the derivation"]
+  writing --> guideN["docs/guides/ — testing · ci · data"]
   writing --> archN["docs/architecture/ — these diagrams"]
-  writing --> otherN["docs/agents/ · architecture review<br/>CLAUDE.md · README.md · perf/"]
+  writing --> otherN["docs/agents/ — agent procedure<br/>CLAUDE.md · README.md · CONTRIBUTING.md · perf/"]
 
   classDef structural fill:#dce9f4,stroke:#0072bc,stroke-width:1.5px,color:#44403c
   classDef authority fill:#f0e5f1,stroke:#a05da5,stroke-width:1.5px,color:#44403c

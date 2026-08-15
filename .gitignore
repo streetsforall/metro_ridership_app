@@ -26,6 +26,12 @@ dist-ssr
 e2e/**/*-snapshots/*-win32.png
 e2e/**/*-snapshots/*-darwin.png
 
+# Architecture docs: the mermaid sources, captions.md and the generated
+# diagrams.md are committed (GitHub renders mermaid inline). The html and pdf
+# are build outputs — regenerate with `npm run docs:architecture`.
+docs/architecture/architecture.html
+docs/architecture/architecture.pdf
+
 # Python
 __pycache__/
 *.pyc

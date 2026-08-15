@@ -16,7 +16,7 @@ A whole-system view plus one diagram per subsystem. GitHub renders the fences be
 3. [The Python data pipeline](#the-python-data-pipeline)
 4. [The build pipeline](#the-build-pipeline)
 5. [Loading and deriving](#loading-and-deriving)
-6. [Consuming the view, and the write-back](#consuming-the-view-and-the-write-back)
+6. [Consuming the view](#consuming-the-view)
 7. [Component tree](#component-tree)
 8. [State slices](#state-slices)
 9. [Mutators, effects, and local state](#mutators-effects-and-local-state)
@@ -103,10 +103,12 @@ flowchart TB
 ## Repository map
 
 What lives where. Two things are worth noticing. `src/` is flat — `components/`, `hooks/`,
-`utils/`, `data/`, `@types/` — with exactly one domain folder, `src/ridership/`, and ADR-0003 says
-that is deliberate rather than the first step of a reorganisation. And the repo carries an unusual
-amount of prose: `CONTEXT.md`, six ADRs, an architecture review, seven design plans. That is the
-system's memory; read it before changing behaviour that looks wrong.
+`utils/`, `data/`, `@types/` — with exactly one domain folder, `src/ridership/`. ADR-0007 gives the
+rule: a folder with an `index.ts` is a sealed module reached only through that file, everything
+else is loose by default, and a new folder is earned by invariants a caller must not reach past
+rather than by tidiness. And the prose is the system's memory — `CONTEXT.md` for the vocabulary,
+seven ADRs for the decisions, `docs/how-it-works.md` for how the derivation actually runs. Read it
+before changing behaviour that looks wrong. `docs/README.md` says what to read in which order.
 
 ```mermaid
 flowchart LR
@@ -128,7 +130,7 @@ flowchart LR
   app --> utils["utils/ — lines · month · queryParams<br/>ridershipData · dataDateRange · mapPopup"]
   app --> types["@types/ — domain types"]
   app --> dataDir["data/ — bundled JSON + the dataset"]
-  app --> misc["assets/ · plans/ · test/<br/>App.tsx · main.tsx · index.css"]
+  app --> misc["assets/ · test/<br/>App.tsx · main.tsx · index.css"]
 
   pipeline --> dataN["data/raw/ — source workbooks"]
   pipeline --> scriptsN["scripts/ — pipeline + 6 Python specs"]
@@ -141,9 +143,11 @@ flowchart LR
   tooling --> cfgN["configs — vite · vitest · playwright<br/>eslint · tailwind · tsconfig ×4"]
 
   writing --> ctxN["CONTEXT.md — the ubiquitous language"]
-  writing --> adrN["docs/adr/ — six decisions"]
+  writing --> adrN["docs/adr/ — seven decisions"]
+  writing --> hubN["docs/README.md — the hub<br/>docs/how-it-works.md — the derivation"]
+  writing --> guideN["docs/guides/ — testing · ci · data"]
   writing --> archN["docs/architecture/ — these diagrams"]
-  writing --> otherN["docs/agents/ · architecture review<br/>CLAUDE.md · README.md · perf/"]
+  writing --> otherN["docs/agents/ — agent procedure<br/>CLAUDE.md · README.md · CONTRIBUTING.md · perf/"]
 
   classDef structural fill:#dce9f4,stroke:#0072bc,stroke-width:1.5px,color:#44403c
   classDef authority fill:#f0e5f1,stroke:#a05da5,stroke-width:1.5px,color:#44403c
@@ -325,70 +329,62 @@ flowchart TB
 
 ---
 
-## Consuming the view, and the write-back
+## Consuming the view
 
-The second half, and the one live design problem in the app.
+The second half: how one `RidershipView` reaches the screen.
 
-`buildRidershipView` already returns `metrics` and `coverage` keyed by line id — everything a
-caller needs — yet `App.tsx:114` still calls `updateLinesWithLineMetrics`, which writes eight
-derived fields back onto every `Line`. That mints a new `lines` array, which re-enters the memo it
-came from; the `JSON.stringify` dependency keys exist to keep the loop from thrashing. It settles
-only because the second pass produces figures identical to the first.
+`buildRidershipView` returns `metrics` and `coverage` keyed by line id — everything a caller needs.
+`buildLineReadouts` joins them onto each `Line`, `listedReadouts` narrows to the rows the table
+shows, and `LineSelector`, `LineTableRow`, `SummaryData`, `Map` and `mapPopup` all take a
+`LineReadout`. Figures flow one way and are thrown away with the window that produced them.
 
-**ADR-0005 is now half landed.** #154 wired the replacement in: `App.tsx:98` builds `readouts` with
-`buildLineReadouts`, `:103` narrows them with `listedReadouts`, and `LineSelector`, `LineTableRow`,
-`SummaryData`, `Map` and `mapPopup` all take `LineReadout` rather than `Line`. What the ADR also
-asked for — deleting the write-back — did not happen, so the consumers moved but the round trip
-did not.
+**ADR-0005 is fully landed.** It took two changes: #154 moved every consumer onto readouts, and
+#167 deleted the write-back — `updateLinesWithLineMetrics`, which used to stamp eight derived
+fields back onto every `Line` and mint a new array that re-entered the memo it came from. With it
+went `isVisibleLine` and `visibleLines`, and `selectAllVisibleLines` became
+`selectAllListedLines(ids)`: the hook can no longer re-derive which rows are listed, so
+`LineSelector` passes the ids it is displaying.
 
-The stamped fields are consequently no longer what the screen renders: `buildLineReadouts` spreads
-`metrics[line.id]` and `coverage[line.id]` *over* the `Line`, so this window's figures win. They are
-still load-bearing, though, and that is the reason the effect cannot simply be deleted —
-`isVisibleLine` in the hook gates on `line.averageRidership !== undefined`, and
-`selectAllVisibleLines` behind the line table's *Select all* button runs through it.
+The one behaviour change was a transient — the table no longer shows the previous window's rows for
+a single commit while the effect round-trips. Settled state is identical, which is why no baseline
+moved.
 
 `LineSelector` reads `consolidated` directly and builds its own axis, because the table draws a
-sparkline for every *visible* line while the chart covers only the *selected* ones.
+sparkline for every *listed* line while the chart covers only the *selected* ones.
 
 ```mermaid
 flowchart TB
   view["RidershipView<br/>months · datasets · consolidated<br/>events · metrics · coverage"]
 
   outputArea["OutputArea<br/>chart · summary · context log · map"]
-  lineSelector["LineSelector<br/>builds its own wider axis from consolidated —<br/>the table draws every VISIBLE line,<br/>the chart only the SELECTED ones"]
+  lineSelector["LineSelector<br/>builds its own wider axis from consolidated —<br/>the table draws every LISTED line,<br/>the chart only the SELECTED ones"]
   mapCmp["Map<br/>selection filter · mapPopup"]
 
-  subgraph loop["The write-back cycle — still running"]
-    writeback["updateLinesWithLineMetrics(consolidated)<br/>useEffect keyed on JSON.stringify — App.tsx:113-116"]
-    stamp["stamps 8 derived fields onto every Line"]
-    fresh["a new lines array<br/>re-enters the same useMemo"]
-    writeback --> stamp --> fresh
-  end
+  hook["useUserDashboardInput — holds lines.<br/>Derives nothing. `lines` changes identity<br/>only on a real user action."]
 
-  hook["useUserDashboardInput — holds lines.<br/>isVisibleLine still reads the stamped fields,<br/>which is what keeps the cycle load-bearing."]
-
-  subgraph replacement["ADR-0005's Line Readout — the consumers moved onto it (#154)"]
-    readouts["buildLineReadouts(lines, metrics, coverage)<br/>App.tsx:98"]
-    listed["listedReadouts(readouts, searchText, modes)<br/>App.tsx:103"]
+  subgraph readoutPath["ADR-0005's Line Readout — the only path figures take"]
+    readouts["buildLineReadouts(lines, metrics, coverage)<br/>one readout per line, figures spread over it"]
+    listed["listedReadouts(readouts, searchText, modes)<br/>mode on · name matches · has figures"]
     readouts --> listed
   end
 
   view -- "datasets · months · events" --> outputArea
   view -- "consolidated" --> lineSelector
-  view -- "consolidated" --> writeback
-  view -. "metrics + coverage, already returned" .-> readouts
+  view -- "metrics + coverage" --> readouts
 
-  fresh --> hook
-  hook --> view
+  hook -- "lines" --> view
+  hook -- "lines" --> readouts
 
   readouts -- "lines={readouts}" --> outputArea
   listed -- "lines={listed}" --> lineSelector
   outputArea --> mapCmp
 
+  gone["The write-back cycle is gone (#167).<br/>updateLinesWithLineMetrics, isVisibleLine and<br/>visibleLines were deleted; Line is back to<br/>id · name · former? · mode · provider ·<br/>selected · distanceMiles?"]
+
   classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
-  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
+  classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
   class view,readouts,listed key
-  class writeback,stamp,fresh cycle
+  class gone surface
 ```
 
 ---
@@ -401,8 +397,12 @@ than its props list suggests.
 
 `OutputArea` is `React.lazy` on purpose: it pulls in Chart.js and MapLibre, and keeping them out of
 the entry chunk lets the header and line table paint first. Note the gate — expanding the line
-selector *unmounts* `OutputArea` rather than hiding it, so the chart and map rebuild from scratch
-on collapse. `App.tsx:156-159` flags this.
+selector *hides* `OutputArea` rather than unmounting it (#168). The wrapper is `display: contents`
+when visible, so `OutputArea`'s own root stays the grid item and the layout is identical to the
+conditional render it replaced; `display: none` when expanded takes it out of the grid entirely.
+Unmounting used to tear down the Chart.js canvas and the MapLibre instance, so every collapse paid
+for a fresh WebGL context, basemap style and tiles. Both libraries watch their container with a
+ResizeObserver, so they re-measure themselves when the box comes back.
 
 ```mermaid
 flowchart TB
@@ -420,8 +420,8 @@ flowchart TB
     ls --> ltr
   end
 
-  gate{"isLineSelectorExpanded?"}
-  unmounted["nothing rendered —<br/>OutputArea unmounts entirely<br/>(TODO at App.tsx:156-159)"]
+  gate{"isLineSelectorExpanded?<br/>a CSS gate, not a mount gate"}
+  hidden["display: none —<br/>OutputArea stays mounted (#168),<br/>chart canvas and map instance survive"]
   susp["Suspense fallback"]
 
   subgraph rightPane["OutputArea — React.lazy chunk"]
@@ -444,16 +444,15 @@ flowchart TB
   app --> drs
   app --> leftPane
   app --> gate
-  gate -- "true" --> unmounted
-  gate -- "false" --> susp --> oa
+  gate -- "true" --> hidden
+  gate -- "false — display: contents" --> susp --> oa
+  hidden -. "same subtree, still mounted" .-> oa
   app --> footer
 
   app -. "spreads the whole hook state<br/>{...userDashboardInputState}" .-> ls
 
   classDef structural fill:#dce9f4,stroke:#0072bc,stroke-width:1.5px,color:#44403c
-  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
   class oa,chart,summary,ctxlog,mapCmp structural
-  class unmounted pending
 ```
 
 ---
@@ -464,11 +463,10 @@ All shared state lives in one custom hook: four slices, no Redux, no Zustand, no
 slice is seeded once from the URL in a lazy `useState` initialiser, so a shared link reconstructs
 the view before the first render rather than after it.
 
-`visibleLines` is the only derived value in the store, and its memo key is
-`JSON.stringify(lines)` rather than `lines` — see the next diagram for why. Since #154 nothing in
-`src/` reads it but the hook's own spec; `listedReadouts` computes the same rule over readouts
-instead. The rule it encodes is still live, though — `selectAllVisibleLines` shares
-`isVisibleLine` with it.
+The store derives **nothing**. It did — a `visibleLines` memo held the line-table's filter rule —
+but #167 deleted it along with the write-back, and `listedReadouts` now owns that rule, working
+over Line Readouts in `App`. The payoff is that `lines` changes identity only when a user actually
+does something, which is what let the next diagram's dependency keys go away.
 
 ```mermaid
 flowchart TB
@@ -487,7 +485,7 @@ flowchart TB
 
     subgraph linesSlice["Lines"]
       direction TB
-      lines["lines: Line[]<br/>createLinesData()<br/>sorted by name"]
+      lines["lines: Line[]<br/>createLinesData(selectedIds)<br/>sorted by name"]
     end
 
     subgraph filterSlice["Filters"]
@@ -503,28 +501,30 @@ flowchart TB
     end
   end
 
-  visible["visibleLines — the store's one derived value<br/>useMemo keyed on JSON.stringify(lines) + searchText"]
+  nothingDerived["The store derives nothing (#167).<br/>Every derived value now lives in App's memos,<br/>so `lines` changes identity only on a real user action."]
   consumer["buildRidershipView · LineSelector · OutputArea<br/>all read these nine values and nothing else"]
 
   urlIn --> store
   bundledMeta --> linesSlice
-  store --> visible --> consumer
+  store --> nothingDerived --> consumer
 
   classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
-  class visible key
+  class nothingDerived key
 ```
 
 ---
 
 ## Mutators, effects, and local state
 
-Everything that writes. Four of the five mutators touch `lines`, which is why that one array is the
-hinge the whole store turns on.
+Everything that writes. Three mutators touch `lines`, which is why that one array is the hinge the
+whole store turns on, and one effect syncs the URL.
 
-The `JSON.stringify` dependency keys at `App.tsx:116`, `useUserDashboardInput.ts:168` and `:264` are
-load-bearing, not sloppiness: `lines` is a fresh array on every derivation, so reference equality
-would fire these effects forever. `CLAUDE.md` asks you not to "fix" them. The real fix is removing
-the write-back that mints the array (ADR-0005), not changing the keys.
+There used to be three `JSON.stringify` dependency keys here, load-bearing because the write-back
+minted a fresh `lines` array on every derivation and reference equality would have fired the
+effects forever. Removing the write-back (ADR-0005, #167) was the real fix, and all three keys went
+with it — the URL effect now keys on `lines` directly. Two guards survive in `LineTableRow`, for
+`ridershipRecords` and `chartDataset`, which genuinely are new references each render. Don't "fix"
+those.
 
 What is *not* in the store matters too. Expansion, the fetched records, sort state, the context-log
 disclosure and every MapLibre handle stay local, so none of them participate in the derivation
@@ -534,21 +534,19 @@ above.
 flowchart TB
   subgraph mutators["Mutators the hook returns"]
     direction LR
-    selectionMutators["onToggleSelectLine(line)<br/>clearSelections()<br/>selectAllVisibleLines()"]
-    updateMetrics["updateLinesWithLineMetrics(consolidated)"]
+    selectionMutators["onToggleSelectLine(line)<br/>clearSelections()<br/>selectAllListedLines(ids)"]
     setters["the eight setters —<br/>dates · dayOfWeek · search · modes<br/>aggregate · context logs"]
   end
 
-  lines["lines: Line[]<br/>four of the five mutators write here"]
+  lines["lines: Line[]<br/>the three selection mutators write here"]
   otherSlices["the window, filter and toggle slices"]
 
-  subgraph effects["The two effects inside the hook"]
+  subgraph effects["The one effect inside the hook"]
     direction LR
-    modeSync["modes → per-line `visible`<br/>useEffect([modes])"]
-    urlSync["state → history.replaceState<br/>deps include JSON.stringify(lines)"]
+    urlSync["state → history.replaceState<br/>deps are the raw slices, `lines` included"]
   end
 
-  keys["Three JSON.stringify dependency keys —<br/>App.tsx:116 · hook :168 · hook :264.<br/>Load-bearing: `lines` is a fresh array every derivation,<br/>so reference equality would fire these forever."]
+  keys["No JSON.stringify keys left in the hook or App (#167).<br/>`lines` changes identity only on a real user action now,<br/>so the sync effect keys on it directly.<br/>Two guards remain in LineTableRow, for<br/>ridershipRecords and chartDataset."]
 
   subgraph local["Component-local state — deliberately not in the store"]
     direction LR
@@ -560,7 +558,6 @@ flowchart TB
   end
 
   selectionMutators --> lines
-  updateMetrics --> lines
   setters --> otherSlices
 
   lines --> effects
@@ -568,10 +565,8 @@ flowchart TB
   effects --> keys
   keys --> local
 
-  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
-  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
-  class updateMetrics cycle
-  class keys pending
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  class keys key
 ```
 
 ---
@@ -647,18 +642,17 @@ flowchart TB
 
 ## Domain type model
 
-The types and how they relate. Read `Line` from the top down: identity and metadata first, then a
-block of optional derived figures that ADR-0005 says do not belong there. `LineSelection` is the
-same information minus that block — it is what `buildRidershipView` actually accepts, and `Line`
-satisfies it structurally, which is what keeps derived figures from being handed back into the
-module that produced them.
+The types and how they relate. `Line` is identity and metadata, and nothing else — the block of
+optional derived figures it used to carry was deleted in #167, which is what ADR-0005 asked for.
+`LineSelection` is a narrower view of the same information: it is what `buildRidershipView`
+actually accepts, and `Line` satisfies it structurally, which keeps derived figures from being
+handed back into the module that produced them.
 
-`LineReadout` is the destination, and since #154 it is where every consumer reads from:
-`Line & Partial<LineMetrics> & Partial<LineCoverage>`, derived per window and thrown away. The
-optional block on `Line` survives anyway, because the write-back that fills it is still running —
-so both shapes carry the figures today, and only one of them is what renders. `Month` is
-ADR-0006's replacement for the seven encodings a month currently has; it exists with a full spec
-and still has no production caller.
+`LineReadout` is where every consumer reads from: `Line & Partial<LineMetrics> &
+Partial<LineCoverage>`, derived per window and thrown away. There is now exactly one shape carrying
+the figures, and it is the one that renders. `Month` is ADR-0006's replacement for the several
+encodings a month has; it exists with a full spec and still has no production caller — #144, #145
+and #146 are the migration onto it.
 
 ```mermaid
 classDiagram
@@ -677,18 +671,10 @@ classDiagram
     +name: string
     +mode: Bus | Rail
     +provider: DO | PT
+    +former?: string
     +selected: boolean
-    +visible: boolean
     +distanceMiles?: number
-    --derived, still written back — ADR-0005 says these do not belong here--
-    +averageRidership?: number
-    +changeInRidership?: number
-    +startingRidership?: number
-    +endingRidership?: number
-    +ridersPerMile?: number
-    +coveredFrom?: string
-    +coveredTo?: string
-    +isPartialCoverage?: boolean
+    --no derived figures live here — ADR-0005, deleted in #167--
   }
 
   class LineSelection {
@@ -775,7 +761,6 @@ classDiagram
   Line --> LineReadout
   LineMetrics --> LineReadout
   LineCoverage --> LineReadout
-  LineMetrics ..> Line : the write-back today
 ```
 
 ---
@@ -943,6 +928,10 @@ The one imperative corner of an otherwise declarative app. MapLibre owns its own
 `Map.tsx` holds everything in refs and the component never re-renders on map state: one
 `useEffect([])` builds the map, adds the two layers once the style has loaded, and tears it all
 down on unmount.
+
+In practice that teardown almost never runs: since #168 expanding the line selector hides
+`OutputArea` with CSS rather than unmounting it, so the instance built on first paint is usually the
+only one a session ever has.
 
 Layer order is load-bearing — `lines-all` paints every route dimmed underneath, `lines-selected`
 paints the chosen ones on top in brand colour, so selection reads as emphasis rather than as the
@@ -1181,8 +1170,10 @@ One click traced through every layer, to show how the pieces above compose. The 
 the hook mints a new `lines` array; the URL is rewritten; `buildRidershipView` re-derives the entire
 view in one pass; chart, table, summary and map all update from that one result.
 
-The `par` block is the write-back cycle seen live: rendering and re-deriving happen alongside each
-other, and the loop settles only because the second pass produces figures identical to the first.
+It is worth reading as a straight line, because that is now what it is. Derive, join the figures
+onto readouts, narrow to the listed rows, render. Nothing feeds back into the store, so there is no
+second pass to settle — the D Line appears in the table with its figures and a partial-coverage
+label on the same commit that draws it purple on the map.
 
 ```mermaid
 sequenceDiagram
@@ -1211,15 +1202,13 @@ sequenceDiagram
   View-->>App: months · datasets · consolidated<br/>events · metrics · coverage
   deactivate View
 
-  par Render
-    App->>OA: datasets, months, events
-    OA->>Map: lines
-    Map->>Map: setFilter — the D Line lights up in brand purple
-  and Write-back
-    App->>Hook: updateLinesWithLineMetrics(consolidated)
-    Hook->>Hook: setLines — stamps 8 derived fields
-    Note right of Hook: a NEW lines array re-enters the memo above.<br/>It settles because the second pass produces<br/>identical figures. ADR-0005 removes it.
-  end
+  App->>App: buildLineReadouts(lines, metrics, coverage)
+  App->>App: listedReadouts — mode on, name matches, has figures
+  Note right of App: one pass. No array re-enters the memo above:<br/>the write-back ADR-0005 objected to was deleted in #167.
+
+  App->>OA: datasets, months, events, readouts
+  OA->>Map: lines
+  Map->>Map: setFilter — the D Line lights up in brand purple
 
   Note over App,Map: the table now lists the D Line with its figures<br/>and a partial-coverage label — its data begins 2025-09
   Hook-->>U: the address bar is a link to exactly this view
@@ -1229,58 +1218,78 @@ sequenceDiagram
 
 ## Documentation and decision map
 
-Which document governs what, and where the code has not caught up. `CONTEXT.md` outranks the source
-by its own rule — where a term there conflicts with a name in the code, the code is what's out of
-date.
+Two orders, and they are not the same. **Reading order** is the disclosure gradient a newcomer
+walks — README, then the vocabulary, then how the derivation runs, then a guide for whatever
+you're actually doing, then the ADRs when you want the reasoning. `docs/README.md` is the hub that
+states it. **Authority order** is who wins on conflict: `CONTEXT.md` outranks the source by its own
+rule — where a term there conflicts with a name in the code, the code is what's out of date — then
+the ADRs, then the prose. `CLAUDE.md` sits at the bottom because it holds no facts of its own; it
+is a pointer file, so it cannot contradict anything.
 
-All six ADRs are accepted, but two are only half-landed, and differently. 0006's `month.ts` exists
-with a full spec and no production caller at all. 0005 got its consumers in #154 — the line table,
-summary panel, map and popup all read a Line Readout now — but not its deletion: the write-back
-still stamps eight figures onto every `Line` on every derivation. Finishing it is the most
-actionable thing in this whole set, and the remaining work is subtraction rather than addition.
+Of the seven ADRs, one is superseded and one is half-landed. 0003 deferred a `src/utils/`
+reorganisation; 0007 replaces its pause with a standing rule, and the reorg itself is now tracked
+in #170, blocked on the month migration. 0006's `month.ts` exists with a full spec and still no
+production caller — #144, #145 and #146 are the migration onto it, and they are the most actionable
+thing in this set. 0005 is done: #154 moved every consumer onto Line Readouts and #167 deleted the
+write-back, so no `Line` carries a derived figure any more.
 
 ```mermaid
 flowchart TB
-  subgraph authority["Authority order"]
+  subgraph reading["Reading order — progressive disclosure"]
     direction TB
-    ctx["CONTEXT.md — the ubiquitous language.<br/>Where a term conflicts with a name in the<br/>source, the term wins."]
-    adrs["docs/adr/ — six decisions, all accepted"]
-    claude["CLAUDE.md — working notes"]
-    readme["README.md — runbooks"]
-    ctx --> adrs --> claude --> readme
+    r0["README.md — what it is, quickstart,<br/>repo map, where to go next"]
+    r1["CONTEXT.md — the ubiquitous language"]
+    r2["docs/how-it-works.md — the derivation,<br/>the conventions, the module rule"]
+    r3["docs/guides/ — testing · ci · data<br/>read only when you are doing that thing"]
+    r4["docs/adr/ — the why, when you need it"]
+    r0 --> r1 --> r2 --> r3 --> r4
+  end
+
+  hub["docs/README.md — the hub.<br/>Names every document and this order."]
+  hub -.-> reading
+
+  subgraph authority["Authority order — who wins on conflict"]
+    direction TB
+    ctx["CONTEXT.md — where a term conflicts<br/>with a name in the source, the term wins"]
+    adrs["docs/adr/ — seven decisions"]
+    prose["docs/how-it-works.md · docs/guides/"]
+    pointer["CLAUDE.md — pointer file, no facts of its own"]
+    ctx --> adrs --> prose --> pointer
   end
 
   subgraph landed["Decided and in force"]
     direction TB
     a1["0001 — the offset Month Window<br/>→ buildRidershipView.ts"]
     a2["0002 — the view returns Chart.js types<br/>→ RidershipView.datasets"]
-    a3["0003 — one domain folder<br/>→ src/ridership/index.ts"]
     a4["0004 — one nullable Line Metrics shape<br/>→ lineMetrics.ts"]
+    a5["0005 — figures live on a Line Readout.<br/>#154 moved the consumers, #167 deleted<br/>the write-back. Fully landed."]
+    a7["0007 — a folder with an index.ts is a<br/>sealed module; src/ is flat by default"]
   end
 
   subgraph half["Accepted, only half landed"]
     direction TB
-    a5["0005 — figures live on a Line Readout.<br/>#154 moved every consumer onto readouts;<br/>App.tsx:114 still stamps the eight fields onto Line."]
-    a6["0006 — a month is {year, month}.<br/>utils/month.ts has both rules and its own spec,<br/>and no production caller; the filters still do Date arithmetic."]
+    a6["0006 — a month is {year, month}.<br/>utils/month.ts has the rules and its own spec<br/>and no production caller yet; #144 #145 #146 migrate onto it."]
   end
 
-  subgraph planning["Planning — intent, not decisions"]
+  subgraph superseded["Superseded"]
     direction TB
-    review["architecture-review-2026-08-05.md<br/>six candidates; 1 landed,<br/>5 (URL contract) and 6 (CSV seam) unscheduled"]
-    plans["src/plans/ — 7 design notes"]
-    agents["docs/agents/ · perf/BASELINE.md"]
+    a3["0003 — one domain folder.<br/>Superseded by 0007; the utils/ reorg it<br/>deferred is now tracked in #170."]
   end
 
   adrs --> landed
   adrs --> half
-  plans --> review --> adrs
+  adrs --> superseded
+  a3 -.->|superseded by| a7
 
   classDef authorityC fill:#f0e5f1,stroke:#a05da5,stroke-width:1.5px,color:#44403c
   classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
   classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
+  classDef entry fill:#dce9f4,stroke:#0072bc,stroke-width:1.5px,color:#44403c
   class ctx authorityC
-  class a5,a6 pending
+  class a6 pending
+  class a3 pending
   class landed surface
+  class hub,r0 entry
 ```
 
 ---

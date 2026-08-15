@@ -13,8 +13,8 @@ flowchart TB
     ls --> ltr
   end
 
-  gate{"isLineSelectorExpanded?"}
-  unmounted["nothing rendered —<br/>OutputArea unmounts entirely<br/>(TODO at App.tsx:156-159)"]
+  gate{"isLineSelectorExpanded?<br/>a CSS gate, not a mount gate"}
+  hidden["display: none —<br/>OutputArea stays mounted (#168),<br/>chart canvas and map instance survive"]
   susp["Suspense fallback"]
 
   subgraph rightPane["OutputArea — React.lazy chunk"]
@@ -37,13 +37,12 @@ flowchart TB
   app --> drs
   app --> leftPane
   app --> gate
-  gate -- "true" --> unmounted
-  gate -- "false" --> susp --> oa
+  gate -- "true" --> hidden
+  gate -- "false — display: contents" --> susp --> oa
+  hidden -. "same subtree, still mounted" .-> oa
   app --> footer
 
   app -. "spreads the whole hook state<br/>{...userDashboardInputState}" .-> ls
 
   classDef structural fill:#dce9f4,stroke:#0072bc,stroke-width:1.5px,color:#44403c
-  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
   class oa,chart,summary,ctxlog,mapCmp structural
-  class unmounted pending
