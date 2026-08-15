@@ -75,13 +75,17 @@ reconciliation caveat.
 
 ## Decisions that are settled
 
-- **Bus grain is stop × line, direction collapsed.** Halves the payload — measured
-  over `data/raw/`, 14,851 → 8,797 rows/month for 2025-07 … 11 and 14,927 → 8,838 for
-  2026-01 … 05 — and costs nothing renderable, because `STOP_NAME` is a name and not a
-  `stop_id`, so both directions of a street share one name and therefore one
-  coordinate. (Grouping on the raw name gives 8,841; name normalisation folds three
-  further pairs that are spelling variants of one stop, e.g. `Pacific / RR-- Xing` and
+- **Bus grain is stop × line, direction collapsed.** Cuts the payload by ~41% —
+  measured over `data/raw/`: 14,851 → 8,797 rows/month for 2025-07 … 11, 15,146 →
+  8,953 for 2025-12, and 14,927 → 8,838 for 2026-01 … 05. It costs nothing
+  renderable, because `STOP_NAME` is a name and not a `stop_id`, so both directions of
+  a street share one name and therefore one coordinate. (Grouping on the raw name
+  gives 8,841 for the last five months; name normalisation folds three further pairs
+  that are spelling variants of one stop, e.g. `Pacific / RR-- Xing` and
   `Pacific / RR-Xing`.) Reopenable: `stop_times.txt` could recover direction later.
+  2025-12 is the outlier month — 40 bus stops appear at once, an Altadena/Fair Oaks/
+  Lake/Lincoln/Mariposa corridor plus `bus:little-tokyo-arts-district-station` on
+  line 30 — and 8 disappear the month after.
 - **No stop-total-across-lines rollup.** 79% of stops serve exactly one line, so the
   rollup would be ~77% the size of the detail table. Sum client-side.
 - **Selection is the clutter control, not zoom-gating.** Max 154 stops on one bus
@@ -105,10 +109,22 @@ reconciliation caveat.
    the failure that would undo that lazy-load.
 3. **Non-deterministic write ordering** → a phantom multi-megabyte diff every run.
    Explicit sorts on both the rows and the stops dictionary.
-4. **Stop sums ≠ line totals** — genuine and unavoidable, two independent causes.
-   Documented as a tolerance; not engineered away.
+4. **Stop sums ≠ line totals** — genuine and unavoidable. Documented as a tolerance;
+   not engineered away. **The plan's `< 0.02` figure was a guess and the data
+   disagrees**: measured over all 1,252 line-months, median 0.04% / p95 0.49% /
+   max 2.35%, with three at or above 2% (line 211 at 2026-01, 2025-10 and 2025-07).
+   PR 3's `--check` needs a looser bound or a named-exceptions list. Note also that
+   for this window the days-weighted average contributes **nothing** — the Excel
+   importer hardcodes `Days = 1` — so the whole spread is per-stop rounding.
 5. **Alias rot** — a rename silently splits a series. The rename guard (PR 3) fails
    the ingest when a key appears and another disappears in the same month.
+   **A same-month rule is too narrow for the churn actually in this data.**
+   `bus:san-vicente-fairfax` runs 2025-07 → 2025-12 and
+   `bus:san-vicente-orange-grove` runs 2025-12 → 2026-05: same line 28, same
+   corridor, comparable boardings, and **one month of overlap**, so the add lands in
+   2025-12 and the drop in 2026-01 and a same-month guard sees neither. Bus deltas
+   are `+40/-0` at 2025-12 and `+0/-8` at 2026-01, never both in one month. Widen it
+   to a ±1-month window, or compare first-seen/last-seen across the whole series.
 6. **805-under-802 at stop grain** — any aggregation skipping `extract_leaf_rows`
    attributes D Line stations to the B Line. Covered structurally plus a dedicated
    test.

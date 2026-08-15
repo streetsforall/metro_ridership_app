@@ -9,10 +9,12 @@
     "stopped using onto the one it uses now, so a renamed stop keeps one continuous",
     "series instead of splitting into two. Chains are followed; cycles raise.",
     "",
-    "Both tables are empty because no rename occurs inside the 2025-07..2026-05",
-    "station-level window that this pipeline currently ingests. The known rail",
-    "renames (e.g. 'APU Station' -> 'APU / Citrus College Station') are GTFS-side",
-    "mismatches, not ridership-side ones, and belong to the geometry join."
+    "Both tables are empty because no month in the 2025-07..2026-05 window has both",
+    "an added and a dropped key, which is the signature a rename leaves. The one",
+    "ambiguous case — line 28's san-vicente-fairfax -> san-vicente-orange-grove — is",
+    "left alone on purpose; see scripts/README.md. The known rail renames (e.g. 'APU",
+    "Station' -> 'APU / Citrus College Station') are GTFS-side mismatches, not",
+    "ridership-side ones, and belong to the geometry join."
   ],
   "bus": {},
   "rail": {}
