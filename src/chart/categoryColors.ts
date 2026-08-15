@@ -74,6 +74,27 @@ export function categoryTextColor(category: EventCategory | undefined): string {
   return colors[categoryHue(category)]['400'];
 }
 
+/**
+ * Chip fill and text for a category.
+ *
+ * Tailwind class names can't be built at runtime — the JIT scanner only sees
+ * literals — so these resolve to hex and go on as inline styles, the same way
+ * the row's rule colour does.
+ *
+ * `100`/`800` rather than the marker's `500`: the chip is the one place the
+ * palette carries *text*, so it is the one place contrast is load-bearing
+ * rather than decorative. Every pair clears AA comfortably — amber is tightest
+ * at 6.37:1 — where the `500` the chart fills with would be unreadable behind
+ * text at 2.15–4.76:1 on this pane.
+ */
+export function categoryChip(category: EventCategory | undefined): {
+  backgroundColor: string;
+  color: string;
+} {
+  const hue = categoryHue(category);
+  return { backgroundColor: colors[hue]['100'], color: colors[hue]['800'] };
+}
+
 /** "headway_change" → "Headway change", for the panel's category label. */
 export function formatCategory(category: EventCategory | undefined): string {
   if (!category) return 'Service change';

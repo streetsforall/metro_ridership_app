@@ -41,7 +41,12 @@ export {
   RANGE_SELECT_EVENTS,
   DRAG_THRESHOLD_PX,
 } from './rangeSelect';
-export { categoryColor, categoryTextColor, formatCategory } from './categoryColors';
+export {
+  categoryColor,
+  categoryTextColor,
+  categoryChip,
+  formatCategory,
+} from './categoryColors';
 export {
   eventDateToLabel,
   labelToEventDate,

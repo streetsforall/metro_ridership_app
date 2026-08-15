@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TransitEvent } from '../@types/events.types';
 import {
+  categoryChip,
   categoryColor,
   eventDateToLabel,
   formatCategory,
@@ -95,17 +96,31 @@ export default function ContextLogPanel({
                     isPinned ? 'rounded-sm ring-2 ring-stone-400' : ''
                   }`}
                 >
-                  <span className="text-stone-400 whitespace-nowrap shrink-0">
+                  {/* The left rail carries the date alone, and that is what keeps every row's
+                      columns aligned. Dates are uniform in this monospace face — "Mar 2020" is
+                      the same width as "Dec 2025" — so a date-only rail is a fixed width
+                      without one being declared, and it cannot shift when the window's mix of
+                      categories changes.
+
+                      The chip therefore sits in the flexible column instead, under the title.
+                      It is the one place the palette carries text, so it is the one place
+                      contrast is load-bearing; the rule down the row's left edge is the
+                      marker's exact 500, which ties the row to its dot on the chart but is far
+                      too low-contrast to sit behind text. */}
+                  <span className="shrink-0 text-stone-400 whitespace-nowrap">
                     {formatEventDate(event.date)}
                   </span>
-                  <span className="block">
+                  <span className="block min-w-0">
                     <span className="block font-medium text-stone-700">
                       {event.title}
                     </span>
-                    <span className="block text-stone-500">{event.description}</span>
-                    <span className="mt-0.5 block text-xs uppercase tracking-wider text-stone-400">
+                    <span
+                      className="my-1 inline-block rounded px-1.5 py-0.5 text-[0.65rem] uppercase tracking-wider whitespace-nowrap"
+                      style={categoryChip(event.category)}
+                    >
                       {formatCategory(event.category)}
                     </span>
+                    <span className="block text-stone-500">{event.description}</span>
                   </span>
                 </button>
               </li>

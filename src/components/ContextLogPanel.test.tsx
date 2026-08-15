@@ -89,6 +89,59 @@ describe('ContextLogPanel category colors', () => {
     expect(screen.getByText('Headway change')).toBeTruthy();
   });
 
+  /**
+   * The chip is the one place the palette carries text, so it uses 100/800
+   * rather than the marker's 500 — every pair clears AA, where the 500 behind
+   * text would not.
+   */
+  it('fills the chip with the category 100 and sets 800 text on it', () => {
+    renderPanel([makeTransitEvent({ category: 'opening' })]);
+    const chip = screen.getByText('Opening');
+    const expected = document.createElement('div');
+    expected.style.backgroundColor = colors.emerald['100'];
+    expected.style.color = colors.emerald['800'];
+    expect(chip.style.backgroundColor).toBe(expected.style.backgroundColor);
+    expect(chip.style.color).toBe(expected.style.color);
+  });
+
+  it('gives no two categories the same chip fill', () => {
+    const categories: EventCategory[] = [
+      'opening',
+      'extension',
+      'closure',
+      'route_change',
+      'headway_change',
+      'hours_change',
+      'fare_change',
+      'disruption',
+      'service_change',
+    ];
+    const { container } = renderPanel(
+      categories.map((category, i) =>
+        makeTransitEvent({ id: `e${i}`, category }),
+      ),
+    );
+    const fills = Array.from(
+      container.querySelectorAll('#context-log-panel li span[style]'),
+    )
+      .map((el) => (el as HTMLElement).style.backgroundColor)
+      .filter(Boolean);
+    expect(new Set(fills).size).toBe(categories.length);
+  });
+
+  /**
+   * The rail is the date alone precisely so a window's mix of categories cannot
+   * move it. A chip in there makes every row's columns depend on the longest
+   * category label present.
+   */
+  it('keeps the chip out of the date rail', () => {
+    const { container } = renderPanel([
+      makeTransitEvent({ category: 'headway_change' }),
+    ]);
+    const rail = container.querySelector('#context-log-panel li button > span');
+    expect(rail?.textContent).toBe('Jan 2022');
+  });
+
   it('falls back to slate for an unknown category', () => {
     const { container } = renderPanel([
       makeTransitEvent({ category: 'not_a_real_category' as EventCategory }),
