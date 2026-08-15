@@ -64,10 +64,14 @@ test('a failed ridership fetch does not crash the app', async ({ page }) => {
   );
 
   // Liveness, not just "something painted": React state still drives the tree. Expanding the
-  // line selector unmounts the output area (App.tsx renders it only when collapsed), and
+  // line selector hides the output area (App.tsx keeps it mounted and toggles `display`), and
   // collapsing brings it back. A crashed or wedged render fails one of these.
+  //
+  // Hidden, not absent: the node deliberately stays in the DOM so the Chart.js canvas and the
+  // MapLibre instance are not rebuilt on every collapse, so this asserts on visibility rather
+  // than on count.
   await page.locator('#expand-toggle').click();
-  await expect(page.locator('#output-placeholder')).toHaveCount(0);
+  await expect(page.locator('#output-placeholder')).toBeHidden();
   await page.locator('#expand-toggle').click();
   await expect(page.locator('#output-placeholder')).toBeVisible();
 
