@@ -224,9 +224,9 @@ describe('an empty series', () => {
 });
 
 describe('input is not mutated', () => {
-  // The array handed in is the live ridershipRecords array inside ridershipByLine,
-  // which also backs the row sparklines and the CSV export — sorting it in place
-  // reorders data other callers are reading.
+  // The array handed in is the live ridershipRecords array inside the Consolidated
+  // Ridership, which also backs the row sparklines and the CSV export — sorting it
+  // in place reorders data other callers are reading.
   const unsorted = () => [
     at(2022, 3, 1000),
     at(2022, 1, 2000),

@@ -67,7 +67,7 @@ export function alignToMonthAxis(
 
 /**
  * The months that actually exist in the current window: the union across every line
- * in `ridershipByLine`.
+ * in `consolidated`.
  *
  * Deliberately derived from the records rather than from the selected
  * `startDate`/`endDate`. The Month Window `buildRidershipView` applies is offset on
@@ -81,10 +81,10 @@ export function alignToMonthAxis(
  * draws a row — and a coverage label — for lines the chart never plots.
  */
 export function buildWindowMonthAxis(
-  ridershipByLine: ConsolidatedRidership,
+  consolidated: ConsolidatedRidership,
 ): string[] {
   return buildMonthAxis(
-    Object.values(ridershipByLine).map((record) => record.ridershipRecords),
+    Object.values(consolidated).map((record) => record.ridershipRecords),
   );
 }
 
@@ -109,12 +109,12 @@ export interface LineCoverage {
  * that the UI stops implying they all mean the same period.
  */
 export function buildCoverageByLine(
-  ridershipByLine: ConsolidatedRidership,
+  consolidated: ConsolidatedRidership,
 ): Record<string, LineCoverage> {
-  const windowMonths = buildWindowMonthAxis(ridershipByLine);
+  const windowMonths = buildWindowMonthAxis(consolidated);
   const coverage: Record<string, LineCoverage> = {};
 
-  for (const [lineId, record] of Object.entries(ridershipByLine)) {
+  for (const [lineId, record] of Object.entries(consolidated)) {
     // Reusing buildMonthAxis for a single line dedupes and sorts it the same way the
     // window span was built, so the two are directly comparable.
     const months = buildMonthAxis([record.ridershipRecords]);
