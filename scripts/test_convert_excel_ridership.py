@@ -15,8 +15,12 @@ import convert_excel_ridership as ce
 from convert_excel_ridership import (
     parse_filename,
     aggregate_to_line_ridership,
+    aggregate_to_stop_ridership,
+    extract_leaf_rows,
     convert_zip,
     DAYTYPE_MAP,
+    LEAF_VALUE_COLS,
+    STOP_OUTPUT_COLS,
     ZIP_FILENAME_RE,
     INNER_FILENAME_RE,
 )
@@ -448,6 +452,256 @@ class TestConvertZip:
         zip_path.write_bytes(_make_test_zip({"notes.txt": b"nothing here"}))
         with pytest.raises(ValueError, match="No .*files found"):
             convert_zip(zip_path)
+
+
+# ---------------------------------------------------------------------------
+# extract_leaf_rows — the single source of truth for what counts as an observation
+# ---------------------------------------------------------------------------
+
+class TestExtractLeafRows:
+    def test_bus_total_direction_rows_dropped(self):
+        leaf = extract_leaf_rows(_make_bus_df_with_totals(), mode="Bus")
+        assert len(leaf) == 4
+        assert "Total" not in set(leaf["DIRECTION"])
+
+    def test_rail_line_and_route_total_rows_dropped(self):
+        leaf = extract_leaf_rows(_make_rail_df_with_totals(), mode="Rail")
+        assert len(leaf) == 2
+        assert "Total" not in set(leaf["STATION_ORDER"].astype(str))
+
+    def test_rail_line_resolved_to_route(self):
+        """ROUTE 805 (D/Purple) is nested under LINE 802 (B/Red) in the export.
+        The resolution lives here, so every aggregation inherits it."""
+        leaf = extract_leaf_rows(_make_nested_route_rail_df(), mode="Rail")
+        assert sorted(set(leaf["LINE"])) == [802, 805]
+
+    def test_rail_nonnumeric_route_falls_back_to_line(self):
+        leaf = extract_leaf_rows(_make_rail_df(), mode="Rail")
+        assert set(leaf["LINE"]) == {807}
+
+    def test_all_leaf_value_columns_coerced_to_numbers(self):
+        df = pd.DataFrame({
+            "STOP_NAME": ["Stop A"],
+            "LINE":      [90],
+            "DIRECTION": ["IB"],
+            "WD_ONS":    ["150"],   "WD_OFFS": ["140"],           "WD_ACT": ["290"],
+            "SA_ONS":    ["80"],    "SA_OFFS": [float("nan")],    "SA_ACT": ["155"],
+            "SU_ONS":    ["60"],    "SU_OFFS": ["55"],            "SU_ACT": ["115"],
+        })
+        leaf = extract_leaf_rows(df, mode="Bus")
+        for col in LEAF_VALUE_COLS:
+            assert pd.api.types.is_numeric_dtype(leaf[col])
+        assert leaf.iloc[0]["SA_OFFS"] == 0.0
+
+    def test_returns_a_copy(self):
+        """Callers mutate the result; the raw frame must not follow."""
+        df = _make_bus_df()
+        leaf = extract_leaf_rows(df, mode="Bus")
+        leaf["WD_ONS"] = 0.0
+        assert df["WD_ONS"].iloc[0] == 100.0
+
+
+# ---------------------------------------------------------------------------
+# aggregate_to_stop_ridership
+# ---------------------------------------------------------------------------
+
+def _make_bus_df_one_stop_two_directions() -> pd.DataFrame:
+    """One line, one stop name, both directions — the collapse case."""
+    return pd.DataFrame({
+        "STOP_NAME": ["Vermont / Wilshire", "Vermont / Wilshire"],
+        "LINE":      [204,                  204],
+        "DIRECTION": ["North",              "South"],
+        "WD_ONS":    [100.0,                120.0],
+        "WD_OFFS":   [90.0,                 130.0],
+        "WD_ACT":    [190.0,                250.0],
+        "SA_ONS":    [60.0,                 70.0],
+        "SA_OFFS":   [55.0,                 75.0],
+        "SA_ACT":    [115.0,                145.0],
+        "SU_ONS":    [40.0,                 50.0],
+        "SU_OFFS":   [35.0,                 55.0],
+        "SU_ACT":    [75.0,                 105.0],
+    })
+
+
+def _make_nested_route_rail_df() -> pd.DataFrame:
+    """Two stations on ROUTE 802 (B/Red) and two on ROUTE 805 (D/Purple), both
+    filed by Metro under LINE 802 — the shape that has mis-attributed the Purple
+    Line's riders to the Red Line before."""
+    return pd.DataFrame({
+        "LINE":          [802,   802,   802,   802],
+        "ROUTE":         ["802", "802", "805", "805"],
+        "STATION_ORDER": ["4001-Union Station - Metro Red & Purple Lines",
+                          "4002-Civic Center / Grand Park Station",
+                          "5006-Wilshire / Vermont Station",
+                          "5007-Wilshire / Normandie Station"],
+        "WD_ONS":        [100.0, 200.0, 40.0,  60.0],
+        "WD_OFFS":       [110.0, 190.0, 45.0,  55.0],
+        "WD_ACT":        [210.0, 390.0, 85.0,  115.0],
+        "SA_ONS":        [10.0,  20.0,  4.0,   6.0],
+        "SA_OFFS":       [11.0,  19.0,  5.0,   5.0],
+        "SA_ACT":        [21.0,  39.0,  9.0,   11.0],
+        "SU_ONS":        [5.0,   15.0,  2.0,   8.0],
+        "SU_OFFS":       [6.0,   14.0,  3.0,   7.0],
+        "SU_ACT":        [11.0,  29.0,  5.0,   15.0],
+    })
+
+
+class TestAggregateToStopRidership:
+    def test_output_columns_match_the_frozen_schema(self):
+        result = aggregate_to_stop_ridership(_make_bus_df(), year=2026, month=1, mode="Bus")
+        assert list(result.columns) == STOP_OUTPUT_COLS
+
+    def test_activity_columns_dropped(self):
+        """*_ACT equals ons + offs; it is recomputed client-side, never shipped."""
+        result = aggregate_to_stop_ridership(_make_bus_df(), year=2026, month=1, mode="Bus")
+        assert not [c for c in result.columns if c.endswith("_act")]
+
+    def test_metadata_fields_populated(self):
+        result = aggregate_to_stop_ridership(_make_bus_df(), year=2026, month=2, mode="Bus")
+        assert set(result["year"]) == {2026}
+        assert set(result["month"]) == {2}
+        assert set(result["mode"]) == {"Bus"}
+
+    def test_one_row_per_line_per_stop(self):
+        result = aggregate_to_stop_ridership(_make_bus_df(), year=2026, month=1, mode="Bus")
+        assert len(result) == 4
+        assert not result.duplicated(subset=["line", "stop_key"]).any()
+
+    def test_bus_direction_collapsed(self):
+        """Both directions of a stop share a name and therefore a coordinate; the
+        grain is stop x line, not stop x line x direction."""
+        result = aggregate_to_stop_ridership(
+            _make_bus_df_one_stop_two_directions(), year=2026, month=1, mode="Bus"
+        )
+        assert len(result) == 1
+        row = result.iloc[0]
+        assert row["stop_key"] == "bus:vermont-wilshire"
+        assert row["wd_ons"] == 220.0    # 100 + 120
+        assert row["wd_offs"] == 220.0   # 90 + 130
+
+    def test_alightings_preserved(self):
+        """Offs are new signal — the line-level pipeline discards them entirely."""
+        result = aggregate_to_stop_ridership(_make_bus_df(), year=2026, month=1, mode="Bus")
+        stop_a = result[result["stop_key"] == "bus:stop-a"].iloc[0]
+        assert stop_a["wd_offs"] == 90.0
+        assert stop_a["sa_offs"] == 55.0
+        assert stop_a["su_offs"] == 35.0
+
+    def test_bus_total_direction_rows_excluded(self):
+        with_totals = aggregate_to_stop_ridership(
+            _make_bus_df_with_totals(), year=2026, month=1, mode="Bus"
+        )
+        without = aggregate_to_stop_ridership(
+            _make_bus_df(), year=2026, month=1, mode="Bus"
+        )
+        pd.testing.assert_frame_equal(with_totals, without)
+
+    def test_rail_total_rows_excluded(self):
+        with_totals = aggregate_to_stop_ridership(
+            _make_rail_df_with_totals(), year=2026, month=1, mode="Rail"
+        )
+        without = aggregate_to_stop_ridership(
+            _make_rail_df(), year=2026, month=1, mode="Rail"
+        )
+        pd.testing.assert_frame_equal(with_totals, without)
+
+    def test_station_order_parsed_for_rail(self):
+        result = aggregate_to_stop_ridership(
+            _make_nested_route_rail_df(), year=2026, month=5, mode="Rail"
+        )
+        union = result[result["stop_key"] == "rail:union-station"].iloc[0]
+        assert union["station_order"] == 4001
+        assert union["stop_name"] == "Union Station"
+
+    def test_station_order_is_null_for_bus(self):
+        result = aggregate_to_stop_ridership(_make_bus_df(), year=2026, month=1, mode="Bus")
+        assert result["station_order"].isna().all()
+
+    def test_rows_sorted_deterministically(self):
+        """An unstable order would produce a phantom multi-megabyte diff on write."""
+        result = aggregate_to_stop_ridership(
+            _make_nested_route_rail_df(), year=2026, month=5, mode="Rail"
+        )
+        expected = result.sort_values(["line", "stop_key"]).reset_index(drop=True)
+        pd.testing.assert_frame_equal(result, expected)
+
+
+class TestDLineNotAttributedToBLine:
+    """ROUTE 805 (D/Purple) is nested under LINE 802 (B/Red) in Metro's export.
+    Any aggregation that skips extract_leaf_rows files the D Line's stations under
+    the B Line. This has bitten the line-level pipeline before; it must not bite
+    the stop level."""
+
+    def test_d_line_stations_are_filed_under_805(self):
+        result = aggregate_to_stop_ridership(
+            _make_nested_route_rail_df(), year=2026, month=5, mode="Rail"
+        )
+        purple_stops = set(result[result["line"] == 805]["stop_key"])
+        assert purple_stops == {
+            "rail:wilshire-vermont-station",
+            "rail:wilshire-normandie-station",
+        }
+
+    def test_b_line_does_not_carry_the_d_lines_stations(self):
+        result = aggregate_to_stop_ridership(
+            _make_nested_route_rail_df(), year=2026, month=5, mode="Rail"
+        )
+        red_stops = set(result[result["line"] == 802]["stop_key"])
+        assert red_stops == {"rail:union-station", "rail:civic-center-grand-park-station"}
+        assert "rail:wilshire-vermont-station" not in red_stops
+
+    def test_b_line_boardings_exclude_the_d_lines(self):
+        result = aggregate_to_stop_ridership(
+            _make_nested_route_rail_df(), year=2026, month=5, mode="Rail"
+        )
+        red = result[result["line"] == 802]["wd_ons"].sum()
+        purple = result[result["line"] == 805]["wd_ons"].sum()
+        assert red == 300.0     # 100 + 200, Red only
+        assert purple == 100.0  # 40 + 60, Purple broken out
+
+
+class TestReconciliationInvariant:
+    """Per-line sums at stop grain equal the line-level Riders for the same frame,
+    asserted **pre-rounding**. This is the single best guard that the leaf-row rule
+    has not forked between the two aggregations.
+
+    Note this is an invariant of one frame, not of the shipped files: line ridership
+    additionally passes through process_ridership's days-weighted average and each
+    stop is rounded on write, so `ridership.json` and the stop files will not agree
+    to the digit. See scripts/README.md.
+    """
+
+    DAYTYPES = [("wd_ons", "DX"), ("sa_ons", "SA"), ("su_ons", "SU")]
+
+    def _assert_reconciles(self, df, mode):
+        stops = aggregate_to_stop_ridership(df, year=2026, month=1, mode=mode)
+        lines = aggregate_to_line_ridership(df, year=2026, month=1, mode=mode)
+        for stop_col, daytype in self.DAYTYPES:
+            per_line = stops.groupby("line")[stop_col].sum()
+            expected = lines[lines["DayType"] == daytype].set_index("Line")["Riders"]
+            assert set(per_line.index) == set(expected.index)
+            for line_id, total in per_line.items():
+                assert total == pytest.approx(expected[line_id]), (
+                    f"{mode} line {line_id} {daytype}"
+                )
+
+    def test_bus(self):
+        self._assert_reconciles(_make_bus_df(), "Bus")
+
+    def test_bus_with_total_rows(self):
+        self._assert_reconciles(_make_bus_df_with_totals(), "Bus")
+
+    def test_bus_with_collapsed_directions(self):
+        self._assert_reconciles(_make_bus_df_one_stop_two_directions(), "Bus")
+
+    def test_rail(self):
+        self._assert_reconciles(_make_rail_df(), "Rail")
+
+    def test_rail_with_total_rows(self):
+        self._assert_reconciles(_make_rail_df_with_totals(), "Rail")
+
+    def test_rail_with_nested_routes(self):
+        self._assert_reconciles(_make_nested_route_rail_df(), "Rail")
 
 
 # ---------------------------------------------------------------------------
