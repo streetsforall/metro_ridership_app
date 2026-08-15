@@ -13,6 +13,10 @@ Coverage is **2025-07 → 2026-06, 12 months, both modes** — 11 at the time th
 written, plus 2026-06 from #176. Everything before that is line-level only and stays
 untouched.
 
+> Figures elsewhere on this page that PR 1 measured — the row counts under *Decisions*,
+> the 1,252 line-months under *Named risks* — were taken over 2025-07 → 2026-05 and have
+> not been re-measured since.
+
 ## The five PRs
 
 Tick a row when its PR merges. This table is the batch's shared reference — later
@@ -21,7 +25,7 @@ PRs update it rather than restating their own scope.
 | PR | Contents | Gate | Status |
 | --- | --- | --- | --- |
 | **1** | `stop_identity.py`, `stop_aliases.json`, the `extract_leaf_rows` refactor, `aggregate_to_stop_ridership`, tests. **No data change.** | `pytest scripts/` green with the six existing test files unmodified; a full re-ingest produces byte-for-byte what it produced at the base commit (see below) | ☑ [#173](https://github.com/streetsforall/metro_ridership_app/pull/173) |
-| **2** | `fetch_stop_locations.py`, `src/data/stop_locations.json`, `scripts/README.md`, tests | Match rate reported; unmatched reviewed and aliases extended | ☐ |
+| **2** | `fetch_stop_locations.py`, `src/data/stop_locations.json`, `scripts/README.md`, tests | Match rate reported; unmatched reviewed and aliases extended | ☑ [#179](https://github.com/streetsforall/metro_ridership_app/pull/179) — bus 6,756/6,785 · rail 110/110 |
 | **3** | `stop_ridership.py`, `update_ridership.py` wiring, the two data files, `DATA_RELEASE_NOTES.md` | Reconciliation within tolerance; two runs byte-identical | ☐ |
 | **4** | Vite plugin, manifest, `src/stops/`, `stops.types.ts`, the `isInMonthWindow` extraction, vitest specs. **No visible UI.** | `ANALYZE=1 npm run build` — entry chunk unchanged; no visual baseline moves | ☐ |
 | **5** | Map layer, `#stop-panel`, URL state, `mapPopup` addition, Playwright baselines | New baselines only; `visual.spec.ts`'s six must **not** move | ☐ |
@@ -107,6 +111,48 @@ before, `42,747 → 42,753` records, writing six zero rows for line 106; after, 
 `update_ridership.py`'s `diff_against_current` moved in step — a pad is not a pending
 correction, and without that `--overwrite` reported 8 corrections where 1 was real.
 
+## What PR 2 found and fixed
+
+**The stop-grain ingest could not read `data/raw/` at all.** `06-2026-Bus.xlsx` has one
+leaf row — line 155, 2.9 weekday boardings — whose `STOP_NAME` is blank.
+`extract_leaf_rows` keeps it, because the bus rule filters on `DIRECTION`, and
+`stop_identity._require_text` then raises `ValueError: Stop name is missing (nan)` by
+design. So `aggregate_to_stop_ridership` raised on the whole archive. It was not
+reachable when PR 1 was written: the month arrived in #176, afterwards.
+
+Fixed in `aggregate_to_stop_ridership`, and **deliberately not in `extract_leaf_rows`.**
+Those riders are a real observation of line 155 — what is missing is *where* they
+boarded, not whether they did. Dropping them upstream would take them out of the line
+totals too and quietly restate committed history in `ridership.json`. So the line keeps
+them, the stop grain does not, and the drop is printed. That is the one case where the
+per-line reconciliation is not exact; the test suite says so.
+
+**Risk 7 is real, and the fix is to write no coordinate.** `STOP_NAME` is a corner pair
+and LA reuses corner pairs across cities: `Main / Pico` exists in downtown LA and in
+Santa Monica, 21 km apart. 39 stops centroided across more than 200 m, 12 of them across
+more than 5 km.
+
+Route shapes turn out to resolve almost none of it. The reporting lines for such a key
+are the union over *both* places — `bus:main-pico` reports on lines 10, 30, 33 and 55,
+and those serve both intersections — so the shapes of the reporting lines cover both and
+filter nothing. Only one stop was rescued that way (`bus:mission-broadway`, 8.5 km →
+25 m, dropping members no reporting line runs past). `stop_times.txt` would not help
+either, for the same reason: the key is genuinely two places, and one dot per `stop_key`
+cannot represent that.
+
+So a group still more than 1 km wide gets **no coordinate**, and goes to `unmatched` with
+`reason: "ambiguous-name"` — the already-designed "has ridership, no geometry" path, so
+the ranked table and the series keep it and only the map skips it. **No stop in the file
+now carries a coordinate known to be wrong**, which is what PR 5 would otherwise have had
+to work around. 16 bus stops are in this state; the widest remaining centroid is 899 m.
+
+**Match rate: bus 6,756/6,785 (99.6%), rail 110/110 (100%)** against the feeds of
+2026-06-07. Rail reaches 100% via ten `stop_aliases.json` entries. The 29 bus stops
+without coordinates are 16 `ambiguous-name` plus 13 `no-gtfs-match`, all **kept** in
+`src/data/stop_locations.json`. Rail is 110 places rather than the 116 names in the
+export because platform suffixes fold — `Union Station - A Line` and `Union Station -
+Metro Red & Purple Lines` are one station.
+
 ## The contract PR 1 freezes
 
 PRs 2–5 read these and do not restate them.
@@ -189,9 +235,11 @@ reconciliation caveat.
 6. **805-under-802 at stop grain** — any aggregation skipping `extract_leaf_rows`
    attributes D Line stations to the B Line. Covered structurally plus a dedicated
    test.
-7. **Bus centroid ambiguity** — two sides of a street are ~20 m apart and fine at
-   `maxZoom: 16`; a name reused by two distinct places is not. PR 2 emits `spread_m`
-   and warns above ~200 m.
+7. **Bus centroid ambiguity** — **settled in PR 2.** Two sides of a street are ~20 m
+   apart and fine at `maxZoom: 16`; a name reused by two distinct places is not. Every
+   stop carries `spread_m`, and a group still more than 1 km wide after route-shape
+   narrowing gets **no coordinate** rather than a midpoint in neither place. 16 bus
+   stops. See *What PR 2 found and fixed*.
 8. **Playwright project topology** — the `map` project runs once, not per viewport,
    and the two viewport projects `testIgnore` `map.spec.ts`. A feature spanning WebGL
    and DOM needs two specs in two projects.

@@ -523,6 +523,71 @@ def _make_bus_df_one_stop_two_directions() -> pd.DataFrame:
     })
 
 
+def _make_bus_df_with_unnamed_stop() -> pd.DataFrame:
+    """A leaf row carrying riders and no stop name — the shape of the row in
+    06-2026-Bus.xlsx that used to take the whole ingest down."""
+    return pd.DataFrame({
+        "STOP_NAME": ["Vermont / Wilshire", None,  "   "],
+        "LINE":      [204,                  155,   155],
+        "DIRECTION": ["North",              "East", "West"],
+        "WD_ONS":    [100.0,                2.9,   1.1],
+        "WD_OFFS":   [90.0,                 1.6,   0.4],
+        "WD_ACT":    [190.0,                4.5,   1.5],
+        "SA_ONS":    [60.0,                 4.5,   0.0],
+        "SA_OFFS":   [55.0,                 0.0,   0.0],
+        "SA_ACT":    [115.0,                4.5,   0.0],
+        "SU_ONS":    [40.0,                 1.0,   0.0],
+        "SU_OFFS":   [35.0,                 3.0,   0.0],
+        "SU_ACT":    [75.0,                 4.0,   0.0],
+    })
+
+
+class TestUnnamedStopRows:
+    """A row can carry riders and no stop name. `stop_identity` refuses to invent an
+    identity for it, so before this was handled `aggregate_to_stop_ridership` raised on
+    any file containing one — which `data/raw/06-2026-Bus.xlsx` does."""
+
+    def test_stop_grain_does_not_raise(self):
+        result = aggregate_to_stop_ridership(
+            _make_bus_df_with_unnamed_stop(), year=2026, month=6, mode="Bus"
+        )
+        assert list(result["stop_key"]) == ["bus:vermont-wilshire"]
+
+    def test_a_name_with_no_keyable_characters_is_dropped_too(self):
+        """Blank is not the only way a name can fail: `stop_key` also refuses one with
+        no alphanumerics. The filter asks it rather than guessing the rule."""
+        df = _make_bus_df_with_unnamed_stop()
+        df.loc[1, "STOP_NAME"] = "---"
+        df.loc[2, "STOP_NAME"] = "///"
+        result = aggregate_to_stop_ridership(df, year=2026, month=6, mode="Bus")
+        assert list(result["stop_key"]) == ["bus:vermont-wilshire"]
+
+    def test_the_nameless_riders_stay_in_the_line_total(self):
+        """Dropping them upstream in extract_leaf_rows would take them out of the line
+        totals too, quietly restating committed history in ridership.json. Those riders
+        really did board line 155; only where is missing."""
+        lines = aggregate_to_line_ridership(
+            _make_bus_df_with_unnamed_stop(), year=2026, month=6, mode="Bus"
+        )
+        weekday = lines[lines["DayType"] == "DX"].set_index("Line")["Riders"]
+        assert weekday[155] == pytest.approx(4.0)
+
+    def test_leaf_rows_still_carries_them(self):
+        leaf = extract_leaf_rows(_make_bus_df_with_unnamed_stop(), "Bus")
+        assert len(leaf) == 3
+
+    def test_it_says_so_on_stdout(self, capsys):
+        """Silently discarding rows is how a pipeline loses data nobody notices."""
+        aggregate_to_stop_ridership(
+            _make_bus_df_with_unnamed_stop(), year=2026, month=6, mode="Bus"
+        )
+        assert "2 leaf row(s) have no usable stop name" in capsys.readouterr().out
+
+    def test_a_fully_named_frame_prints_nothing(self, capsys):
+        aggregate_to_stop_ridership(_make_bus_df(), year=2026, month=1, mode="Bus")
+        assert capsys.readouterr().out == ""
+
+
 def _make_nested_route_rail_df() -> pd.DataFrame:
     """Two stations on ROUTE 802 (B/Red) and two on ROUTE 805 (D/Purple), both
     filed by Metro under LINE 802 — the shape that has mis-attributed the Purple

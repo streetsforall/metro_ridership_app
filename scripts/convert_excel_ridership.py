@@ -199,6 +199,10 @@ def aggregate_to_stop_ridership(df: pd.DataFrame, year: int, month: int, mode: s
     Rail keeps `station_order` as an ordering attribute. It is **not** an identity —
     it is scoped to the route, so Union Station carries three different numbers in
     the same month. See `stop_identity`.
+
+    Leaf rows with **no stop name** are dropped here and reported on stdout. They stay
+    in the line totals, so they are the one thing that breaks the otherwise exact
+    reconciliation with `aggregate_to_line_ridership`. See the comment at the filter.
     """
     leaf = extract_leaf_rows(df, mode)
     aliases = stop_identity.load_aliases()
@@ -213,8 +217,41 @@ def aggregate_to_stop_ridership(df: pd.DataFrame, year: int, month: int, mode: s
         leaf["station_order"] = pd.array([None] * len(leaf), dtype="Int64")
         raw_names = list(leaf["STOP_NAME"])
 
-    leaf["stop_key"] = [stop_identity.stop_key(mode, name, aliases) for name in raw_names]
-    leaf["stop_name"] = [stop_identity.display_stop_name(mode, name) for name in raw_names]
+    # A leaf row can carry riders and no usable stop name: 06-2026-Bus.xlsx has one on
+    # line 155, 2.9 weekday boardings, whose STOP_NAME is blank. `stop_identity` refuses
+    # to invent an identity for it, so without this the whole ingest raises on that file.
+    #
+    # The condition is "`stop_key` refused it", asked by catching rather than predicted by
+    # a second rule — blank is not the only way a name can fail, and a name of "-" or "///"
+    # has no keyable characters either. `fetch_stop_locations._collect_members` screens the
+    # GTFS side the same way, so the two sides of the join agree on what has an identity.
+    #
+    # Dropped **here and not in `extract_leaf_rows`**, which is the deliberate part. Those
+    # riders are a real observation of line 155 — what is missing is where they boarded,
+    # not whether they did. Dropping them upstream would take them out of the line totals
+    # too and quietly restate committed history in `ridership.json`. So the line keeps
+    # them and the stop grain does not, which is the one case where the per-line sums
+    # below do not reconcile exactly.
+    keys, names, keyable = [], [], []
+    for raw in raw_names:
+        try:
+            key = stop_identity.stop_key(mode, raw, aliases)
+        except ValueError:
+            keyable.append(False)
+            continue
+        keys.append(key)
+        names.append(stop_identity.display_stop_name(mode, raw))
+        keyable.append(True)
+
+    if not all(keyable):
+        print(
+            f"  {year}-{month:02d} {mode}: {keyable.count(False)} leaf row(s) have no "
+            "usable stop name; dropped at stop grain, still counted in the line total"
+        )
+        leaf = leaf[keyable].copy()
+
+    leaf["stop_key"] = keys
+    leaf["stop_name"] = names
 
     grouped = leaf.groupby(["LINE", "stop_key"], as_index=False).agg(
         # One display name and one sequence number per key, chosen deterministically
