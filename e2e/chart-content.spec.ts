@@ -103,5 +103,11 @@ test('narrow date window', async ({ page }) => {
  */
 test('event markers across categories', async ({ page }) => {
   await gotoChart(page, '?lines=801,804&start=2020-01&end=2023-12&day=wkday');
-  await shootChart(page, 'chart-event-markers.png');
+  // The default `maxDiffPixelRatio: 0.01` cannot see this, which is not a guess: regenerating the
+  // other ten chart baselines against this palette left all ten byte-identical, because a handful
+  // of thin dashed rules on a ~462,000 px crop never reaches 1%. An absolute budget is what makes
+  // the shot able to fail at all. Calibrated by mutation — collapsing `route_change` onto amber
+  // moves 460 px across its three markers, so ~153 px per marker, and 120 catches even a
+  // single-category regression while leaving room for antialiasing drift.
+  await shootChart(page, 'chart-event-markers.png', { maxDiffPixels: 120 });
 });
