@@ -44,11 +44,16 @@ class TestNormaliseStopName:
     def test_slash_spacing_unified(self, raw):
         assert normalise_stop_name(raw) == "103rd / central"
 
-    def test_none_is_empty(self):
-        assert normalise_stop_name(None) == ""
-
     def test_non_string_coerced(self):
         assert normalise_stop_name(1001) == "1001"
+
+    @pytest.mark.parametrize("missing", [None, float("nan")])
+    def test_missing_name_raises(self, missing):
+        """A blank cell must fail loudly. Left to `str()`, NaN becomes the string
+        "nan" — a plausible-looking stop whose figures are the sum of every
+        blank-named row on its line, and nothing surfaces that."""
+        with pytest.raises(ValueError, match="Stop name is missing"):
+            normalise_stop_name(missing)
 
 
 # ---------------------------------------------------------------------------
@@ -201,6 +206,12 @@ class TestStopKey:
     def test_empty_name_raises(self):
         with pytest.raises(ValueError, match="no usable characters"):
             stop_key("Bus", "   ")
+
+    @pytest.mark.parametrize("missing", [None, float("nan")])
+    def test_missing_name_raises(self, missing):
+        """`stop_key("Bus", float("nan"))` must not quietly become `bus:nan`."""
+        with pytest.raises(ValueError, match="Stop name is missing"):
+            stop_key("Bus", missing)
 
 
 # ---------------------------------------------------------------------------

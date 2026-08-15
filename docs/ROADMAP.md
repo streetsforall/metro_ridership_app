@@ -19,7 +19,7 @@ PRs update it rather than restating their own scope.
 
 | PR | Contents | Gate | Status |
 | --- | --- | --- | --- |
-| **1** | `stop_identity.py`, `stop_aliases.json`, the `extract_leaf_rows` refactor, `aggregate_to_stop_ridership`, tests. **No data change.** | `pytest scripts/` green with the six existing test files unmodified; a full re-ingest leaves `src/data/ridership.json` unchanged | ☐ |
+| **1** | `stop_identity.py`, `stop_aliases.json`, the `extract_leaf_rows` refactor, `aggregate_to_stop_ridership`, tests. **No data change.** | `pytest scripts/` green with the six existing test files unmodified; a full re-ingest produces byte-for-byte what it produced at the base commit (see below) | ☐ |
 | **2** | `fetch_stop_locations.py`, `src/data/stop_locations.json`, `scripts/README.md`, tests | Match rate reported; unmatched reviewed and aliases extended | ☐ |
 | **3** | `stop_ridership.py`, `update_ridership.py` wiring, the two data files, `DATA_RELEASE_NOTES.md` | Reconciliation within tolerance; two runs byte-identical | ☐ |
 | **4** | Vite plugin, manifest, `src/stops/`, `stops.types.ts`, the `isInMonthWindow` extraction, vitest specs. **No visible UI.** | `ANALYZE=1 npm run build` — entry chunk unchanged; no visual baseline moves | ☐ |
@@ -28,6 +28,23 @@ PRs update it rather than restating their own scope.
 1 → 2 → 3 are pipeline-serial. 4 can start once PR 1's schema is fixed. PR 3 carries
 the multi-megabyte data diff alone, so its review is "is the data right", not "is the
 code right"; the 4/5 split means exactly one PR touches visual baselines.
+
+### About PR 1's gate
+
+It was originally written as "`git diff --stat src/data/ridership.json` empty after a
+full re-ingest". **That is not satisfiable, and was not satisfiable before any of this
+work started.** A re-ingest at the base commit already adds five rows — `line_name: 106`
+at 2026-01 … 2026-05, all zero — because `fill_missing_months` synthesises them and the
+committed file does not have them. So the committed `ridership.json` is not the fixed
+point of its own pipeline.
+
+Judge the gate against a **control run at the base commit**, not against the committed
+file: the re-ingest must produce byte-for-byte what it produced before the change. PR 1
+does (`sha256 f03df3a9…` for both runs).
+
+Someone should decide before PR 3 whether those five rows are genuinely-missing line 106
+data or a stale commit of `ridership.json`, because PR 3 is the one that rewrites these
+files for real.
 
 ## The contract PR 1 freezes
 
@@ -58,10 +75,13 @@ reconciliation caveat.
 
 ## Decisions that are settled
 
-- **Bus grain is stop × line, direction collapsed.** Halves the payload
-  (14,927 → 8,841 rows/month) and costs nothing renderable, because `STOP_NAME` is a
-  name and not a `stop_id` — both directions of a street share one name and therefore
-  one coordinate. Reopenable: `stop_times.txt` could recover direction later.
+- **Bus grain is stop × line, direction collapsed.** Halves the payload — measured
+  over `data/raw/`, 14,851 → 8,797 rows/month for 2025-07 … 11 and 14,927 → 8,838 for
+  2026-01 … 05 — and costs nothing renderable, because `STOP_NAME` is a name and not a
+  `stop_id`, so both directions of a street share one name and therefore one
+  coordinate. (Grouping on the raw name gives 8,841; name normalisation folds three
+  further pairs that are spelling variants of one stop, e.g. `Pacific / RR-- Xing` and
+  `Pacific / RR-Xing`.) Reopenable: `stop_times.txt` could recover direction later.
 - **No stop-total-across-lines rollup.** 79% of stops serve exactly one line, so the
   rollup would be ~77% the size of the detail table. Sum client-side.
 - **Selection is the clutter control, not zoom-gating.** Max 154 stops on one bus

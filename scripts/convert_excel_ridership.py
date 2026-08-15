@@ -197,7 +197,8 @@ def aggregate_to_stop_ridership(df: pd.DataFrame, year: int, month: int, mode: s
     which way riders board, recoverable later only from GTFS `stop_times.txt`.
 
     Rail keeps `station_order` as an ordering attribute. It is **not** an identity —
-    the number renumbers whenever the route changes. See `stop_identity`.
+    it is scoped to the route, so Union Station carries three different numbers in
+    the same month. See `stop_identity`.
     """
     leaf = extract_leaf_rows(df, mode)
     aliases = stop_identity.load_aliases()
@@ -216,9 +217,9 @@ def aggregate_to_stop_ridership(df: pd.DataFrame, year: int, month: int, mode: s
     leaf["stop_name"] = [stop_identity.display_stop_name(mode, name) for name in raw_names]
 
     grouped = leaf.groupby(["LINE", "stop_key"], as_index=False).agg(
-        # One display name and one sequence number per key, chosen deterministically:
-        # a name that differs only in case or spacing still folds onto one key, and
-        # a station's sequence number moves when the route is extended.
+        # One display name and one sequence number per key, chosen deterministically
+        # rather than arbitrarily: names that differ only in case or spacing fold onto
+        # one key, and a group could in principle carry more than one sequence number.
         stop_name=("stop_name", "min"),
         station_order=("station_order", "min"),
         **{col.lower(): (col, "sum") for col in LEAF_VALUE_COLS},

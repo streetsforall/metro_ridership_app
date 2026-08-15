@@ -6,9 +6,18 @@ row identifies its stop by `STOP_NAME` alone; a rail row identifies its station 
 `STATION_ORDER`, which looks like `"1001-Downtown Long Beach Station"`.
 
 The numeric prefix on `STATION_ORDER` is a **per-route sequence, not an identity**.
-It renumbers whenever Metro's route changes: rail leaf rows went 112 -> 124 between
-2025-07 and 2025-12 as the D Line extension landed, moving every downstream number.
-Keying on it would split a station's history in two.
+It is scoped to the route, so one station carries a different number on every route
+that calls there: in 2025-12 Union Station is `1026` on the A Line, `4001` on the B
+Line and `5001` on the D Line — same station, same month, three numbers. Nothing
+downstream could join on that.
+
+The sequence space also moves as the network does. Rail leaf rows went 112 -> 124 at
+2025-09, when the A Line's Foothill extension added four stations and ROUTE 805
+(D/Purple) was first reported as its own route rather than folded into 802; then
+124 -> 127 at 2026-05 as the D Line extension opened. Those particular additions
+were appended rather than inserted, so no existing number happened to shift across
+2025-07 .. 2026-05 — but that is an observation about eleven months, not a guarantee,
+and it is not what the identity rests on.
 
 So a stop's identity is its **normalised name**, plus a hand-maintained alias table
 for the cases where Metro renames a stop between months
@@ -58,11 +67,12 @@ def normalise_stop_name(raw: object) -> str:
     This is *not* a display string — it is lower-case. Use `display_stop_name` for
     anything a reader will see, and `stop_key` for anything used as an identity.
 
+    Raises on a missing name (`None` or NaN) rather than inventing one.
+
     >>> normalise_stop_name("  103rd  /Central ")
     '103rd / central'
     """
-    text = "" if raw is None else str(raw)
-    text = unicodedata.normalize("NFKC", text)
+    text = unicodedata.normalize("NFKC", _require_text(raw))
     text = re.sub(r"\s*/\s*", " / ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text.casefold()
@@ -112,7 +122,7 @@ def display_stop_name(mode: str, raw: object) -> str:
     Companion to `normalise_stop_name`, which case-folds and therefore cannot be
     shown to anyone.
     """
-    text = unicodedata.normalize("NFKC", "" if raw is None else str(raw))
+    text = unicodedata.normalize("NFKC", _require_text(raw))
     text = re.sub(r"\s*/\s*", " / ", text)
     text = re.sub(r"\s+", " ", text).strip()
     if mode == "Rail":
@@ -168,6 +178,19 @@ def _read_aliases(path: Path) -> dict[str, dict[str, str]]:
     return {k: v for k, v in raw.items() if not k.startswith("_")}
 
 
+def _require_text(raw: object) -> str:
+    """Coerce a cell to text, refusing the two ways a name can be absent.
+
+    A missing name must fail loudly. Left to `str()`, `None` becomes `"none"` and a
+    NaN becomes `"nan"` — a plausible-looking stop whose figures are the sum of every
+    blank-named row on its line. Nothing surfaces that until someone reads the map.
+    """
+    # `raw != raw` is the NaN test; it keeps this module free of pandas.
+    if raw is None or raw != raw:
+        raise ValueError(f"Stop name is missing ({raw!r}).")
+    return str(raw)
+
+
 def _slugify(text: str) -> str:
     ascii_text = (
         unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii")
@@ -190,6 +213,6 @@ def _resolve_alias(prefix: str, slug: str, aliases: dict[str, dict[str, str]]) -
         chain.append(target)
         slug = target
     raise ValueError(
-        f"Alias chain for {prefix}:{slug!r} exceeds {_MAX_ALIAS_HOPS} hops; "
-        "collapse it in stop_aliases.json."
+        f"Alias chain for {prefix}:{chain[0]!r} exceeds {_MAX_ALIAS_HOPS} hops "
+        f"({' -> '.join(chain)}); collapse it in stop_aliases.json."
     )

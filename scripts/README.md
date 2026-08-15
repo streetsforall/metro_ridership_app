@@ -276,9 +276,18 @@ pipeline in behind them.
 | `stop_key(mode, name, aliases)` | `"bus:vermont-wilshire"`, `"rail:union-station"` |
 
 > **`STATION_ORDER`'s numeric prefix is not an identity.** It is a per-route
-> sequence that renumbers whenever the route changes — rail leaf rows went 112 →
-> 124 between 2025-07 and 2025-12 as the D Line extension landed, moving every
-> downstream number with them. Keying on it would split a station's history in two.
+> sequence, so one station carries a different number on every route that calls
+> there: in 2025-12 Union Station is `1026` on the A Line, `4001` on the B Line and
+> `5001` on the D Line — same station, same month, three numbers. There is no join
+> to be made on that.
+>
+> The sequence space also moves as the network does. Rail leaf rows went 112 → 124
+> at **2025-09**, when the A Line's Foothill extension added four stations *and*
+> ROUTE 805 was first reported as its own route instead of being folded into 802;
+> then 124 → 127 at **2026-05** as the D Line extension opened. Those additions
+> happened to be appended rather than inserted, so no existing number shifted across
+> 2025-07 → 2026-05 — an observation about eleven months, not a guarantee.
+>
 > A stop's identity is its normalised name, plus the alias table below.
 
 Keys are URL-safe slugs by construction (`^(bus|rail):[a-z0-9-]+$`), which is what
