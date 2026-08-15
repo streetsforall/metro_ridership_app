@@ -125,7 +125,7 @@ export const eventGutterPlugin: Plugin<'line'> = {
    * unless the plugin that draws them also hit-tests them. `afterEvent` is the
    * one hook Chart.js notifies for every canvas event regardless of plot area.
    *
-   * See ADR-0009. Anything later drawn below the plot needs the same treatment.
+   * See ADR-0010. Anything later drawn below the plot needs the same treatment.
    */
   afterEvent(chart, args) {
     const { onGutterClick, onGutterHover } = readOptions(chart);

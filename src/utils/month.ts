@@ -1,5 +1,5 @@
 /**
- * A month, and the two rules for whether one falls inside a Month Window.
+ * A month, and the rule for whether one falls inside a Month Window.
  *
  * A month is a year and a 1-based month number — not a `Date`. A `Date` is a
  * timestamp: it carries a day, an hour and a timezone that a month does not have, its
@@ -80,31 +80,22 @@ export const displayMonth = (m: Month): string =>
 /**
  * Is `m` inside the window, **inclusive of both ends**?
  *
- * This is the **Event Window** rule (`CONTEXT.md`). It deliberately disagrees with
- * `containsOffset` below, which applies to the same window. Reconciling them would
- * change which events appear for a given URL — see ADR-0001.
+ * The one statement of the app's one window rule, and the whole of it. Ask for
+ * Jan 2022 – Dec 2022 and you get January through December — in the chart, in the stop
+ * panel and in the context log alike.
+ *
+ * There used to be a second rule beside this one, `containsOffset` — `S <= R <= E - 2`
+ * — which the chart and the stop panel filtered through while only the context log used
+ * this one, so for a single date range the log ran two months past the chart's
+ * right-hand edge. That rule is gone; see
+ * `docs/adr/0009-the-two-window-rules-are-one-rule.md`.
+ *
+ * Production reaches this through two `Date`-shaped adapters that differ only in what
+ * they are handed: `src/ridership/monthWindow.ts` takes a record's `{year, month}`,
+ * `src/ridership/eventWindow.ts` takes an event's `"YYYY-MM"`. Do not restate the rule
+ * at a call site.
  */
 export function contains(w: MonthWindow, m: Month): boolean {
   const r = ordinal(m);
   return r >= ordinal(w.start) && r <= ordinal(w.end);
-}
-
-/**
- * Is `m` inside the window under the **Month Window** rule — `S <= R <= E - 2`?
- *
- * The start month is included; the end month **and the month immediately before it**
- * are excluded. This reads like a bug and is not: it is the behaviour the app has
- * always had, users have shared URLs against it, and `e2e/chart-content.spec.ts`
- * renders windows through it into committed PNG baselines. See
- * `docs/adr/0001-ridership-month-window-is-deliberately-offset.md`.
- *
- * Derived from the `Date` comparison it replaces. With bounds built as
- * `new Date(y, m - 1)` and records as `new Date(r.year, r.month)`, the strict
- * comparison `start < record < end` is `S < R + 1 < E`, i.e. `S <= R <= E - 2`. The
- * boundary tests in `month.test.ts`, not this derivation, are what make that safe;
- * ADR-0006 carries the working.
- */
-export function containsOffset(w: MonthWindow, m: Month): boolean {
-  const r = ordinal(m);
-  return r >= ordinal(w.start) && r <= ordinal(w.end) - 2;
 }

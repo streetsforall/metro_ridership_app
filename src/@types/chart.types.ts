@@ -30,7 +30,7 @@ declare module 'chart.js' {
       /**
        * A click below the Month Axis rule, resolved to a month. The gutter sits
        * outside `chartArea`, where Chart.js dispatches no click of its own —
-       * see ADR-0009.
+       * see ADR-0010.
        */
       onGutterClick?: (monthIndex: number) => void;
       /** The month under the pointer in the gutter, or null on leaving it. */

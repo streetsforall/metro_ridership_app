@@ -37,7 +37,7 @@ checked-in 7 MB file rather than a build artifact.
 
 `update_ridership.py` is the incremental path: when Metro publishes a single new month, it merges
 that month into the canonical file instead of rebuilding it from every workbook. Every script has
-a `test_*.py` sibling — six in all.
+a `test_*.py` of its own in `scripts/tests/`.
 
 ## 04-build-pipeline — The build pipeline
 
@@ -165,13 +165,17 @@ a sparkline for every **visible** line and needs the wider union across all of `
 
 ## 13-month-windows — Month Window, Event Window, Month Axis
 
-The single most surprising thing in the codebase. One user choice produces two windows that
-disagree by two months: records use `S ≤ R ≤ E − 2` — the start month is in, the end month **and
-the month before it** are out — while the context log uses an ordinary inclusive range.
+One rule — `S ≤ R ≤ E`, inclusive on both ends — stated once as `contains` in `utils/month.ts` and
+reached through two adapters that differ only in what they accept: a record's `{year, month}`, or an
+event's `"YYYY-MM"`. The chart, the stop panel and the context log therefore cover exactly the same
+months for a given date range.
 
-This reads like an off-by-one and is not. It is long-standing behaviour, users have shared URLs
-against it, and `e2e/chart-content.spec.ts` renders windows through it into committed PNG
-baselines, so normalising it would change what every existing link shows. ADR-0001 accepts it.
+This used to be the single most surprising thing in the codebase. One user choice produced two
+windows that disagreed by two months: records used `S ≤ R ≤ E − 2` — the end month **and the month
+before it** were out — while the context log used an ordinary inclusive range. The offset was an
+accident of `Date`'s 0-based months that ADR-0001 chose to keep rather than risk changing, and it
+meant the chart hid the two most recent months of whatever range you asked for. ADR-0009 removed it
+and regenerated the baselines that had pinned it.
 
 The Month Axis is derived after filtering: one shared axis for every series, because Chart.js
 appends any label missing from `labels` to the end and a per-series axis scrambles the rest.
@@ -216,8 +220,9 @@ reads it; don't delete it.
 
 ## 17-test-unit-and-python — Unit and Python suites
 
-Vitest runs 20 co-located specs in jsdom. One of them is not a code test at all:
-`src/data/transit-events.test.ts` refuses to let an event ship without a source URL — the type
+Vitest runs the specs in jsdom, each in a `__tests__/` folder beside the code it covers. One of
+them is not a code test at all: `src/data/__tests__/transit-events.test.ts` refuses to let an
+event ship without a source URL — the type
 makes `source` optional so fixtures stay cheap, and the guardrail closes the gap.
 
 The Python side mirrors the pipeline exactly, one spec per script.
@@ -264,7 +269,8 @@ is a pointer file, so it cannot contradict anything.
 
 Of the seven ADRs, one is superseded and one is half-landed. 0003 deferred a `src/utils/`
 reorganisation; 0007 replaces its pause with a standing rule, and the reorg itself is now tracked
-in #170, blocked on the month migration. 0006's `month.ts` exists with a full spec and still no
-production caller — #144, #145 and #146 are the migration onto it, and they are the most actionable
-thing in this set. 0005 is done: #154 moved every consumer onto Line Readouts and #167 deleted the
+in #170, blocked on the month migration. 0006's `month.ts` now has its first production callers:
+both window rules are stated there and reached through the adapters in `src/ridership/`. #144, #145
+and #146 — the rest of the migration, moving the app's other month encodings onto `Month` — are
+still the most actionable thing in this set. 0005 is done: #154 moved every consumer onto Line Readouts and #167 deleted the
 write-back, so no `Line` carries a derived figure any more.

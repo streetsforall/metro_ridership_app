@@ -39,8 +39,14 @@ npm run test:e2e:update:linux  # rewrite the Linux baselines in Docker
 npm run docs:architecture      # regenerate the diagram set
 ```
 
-One test file: `npx vitest run src/ridership/lineMetrics.test.ts`, or filter by name with `-t`.
-Vitest runs with globals enabled — no per-file imports of `describe`/`it`/`expect`.
+Specs live in a `__tests__/` folder inside the directory they cover, so their relative imports
+sit one level deeper than the module's — `vi.mock()` paths included.
+
+One test file: `npx vitest run src/ridership/__tests__/lineMetrics.test.ts`, or filter by name
+with `-t`.
+**Every spec imports `describe`/`it`/`expect` from `vitest`.** `vitest.config.ts` sets
+`globals: true` so the runtime doesn't need them, but `tsconfig.app.json` doesn't list
+`vitest/globals`, so `tsc -b` doesn't see them and `npm run build` fails without the import.
 
 Python pipeline: `pip install -r scripts/requirements.txt`, then `pytest scripts/`.
 
@@ -57,9 +63,15 @@ Each one has cost someone real time. The reasoning is in `docs/`; this is the sh
   module and `index.ts` is its entire public surface — [ADR-0007](docs/adr/0007-a-folder-with-an-index-is-a-sealed-module.md).
 - **Don't "fix" the two `JSON.stringify` dependency guards in `LineTableRow`.** `ridershipRecords`
   and `chartDataset` are new references every render.
-- **Don't silently change the Month Window's off-by-one.** It is intended and pinned by the
-  committed chart baselines — [ADR-0001](docs/adr/0001-ridership-month-window-is-deliberately-offset.md).
-  The Event Window disagreeing with it is also intended.
+- **Don't restate the window rule at a call site, and don't add a second one.** It is stated once, as
+  `contains` in [`src/utils/month.ts`](src/utils/month.ts) — `S ≤ R ≤ E`, inclusive both ends — and
+  reached through the `Date`-shaped adapters `isInMonthWindow` and `isInEventWindow` in
+  `src/ridership/`. A second copy is how the chart and the stop panel start disagreeing about which
+  months a URL shows. The app carried two rules for years and the chart hid two months of data as a
+  result — [ADR-0009](docs/adr/0009-the-two-window-rules-are-one-rule.md), superseding
+  [ADR-0001](docs/adr/0001-ridership-month-window-is-deliberately-offset.md).
+- **Don't hand a window bound a day or a time.** Every producer builds `new Date(y, m - 1)`, midnight
+  on the first, and both adapters read only the year and month off it.
 - **Don't set `spanGaps`** on the chart. A month a line doesn't report is a gap, not a zero.
 - **Don't make `fill_missing_months` pad anything but a line's leading gap**, and don't let its pads
   become `0` before `merge_ridership` has backfilled them. A pad is NaN so the merge can tell it from

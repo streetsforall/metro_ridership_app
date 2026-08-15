@@ -7,6 +7,7 @@ import {
   type LineCoverage,
 } from './chartData';
 import { lineMetrics, type LineMetrics } from './lineMetrics';
+import { isInEventWindow } from './eventWindow';
 import { isInMonthWindow } from './monthWindow';
 import { getLineColor, getLineNames } from '../utils/lines';
 import transitEventsData from '../data/transit-events.json';
@@ -197,8 +198,9 @@ export function buildRidershipView(input: RidershipViewInput): RidershipView {
   const allEvents = inputEvents ?? (transitEventsData as TransitEvent[]);
 
   /**
-   * The Event Window: inclusive on both ends and 1-based, unlike the Month
-   * Window above. Preserve the disagreement.
+   * The Event Window predicate is `isInEventWindow` and is inclusive on both ends,
+   * unlike the Month Window above — see `./eventWindow`. The disagreement is
+   * deliberate; do not restate either rule here.
    *
    * The selection set here reads the **live** selection (`lines.filter(l =>
    * l.selected)`), not the Selection Snapshot the datasets filter on. That is
@@ -211,14 +213,10 @@ export function buildRidershipView(input: RidershipViewInput): RidershipView {
   const selectedLineIds = new Set(
     lines.filter((l) => l.selected).map((l) => l.id),
   );
-  const startYYYYMM = startDate.getFullYear() * 100 + (startDate.getMonth() + 1);
-  const endYYYYMM = endDate.getFullYear() * 100 + (endDate.getMonth() + 1);
 
   const events = allEvents
     .filter((event) => {
-      const [year, month] = event.date.split('-').map(Number);
-      const eventYYYYMM = year * 100 + month;
-      if (eventYYYYMM < startYYYYMM || eventYYYYMM > endYYYYMM) return false;
+      if (!isInEventWindow(event, startDate, endDate)) return false;
       if (event.line_ids.length === 0) return true;
       return event.line_ids.some((id) => selectedLineIds.has(id));
     })

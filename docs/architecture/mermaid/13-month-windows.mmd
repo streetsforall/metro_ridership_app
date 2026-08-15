@@ -1,23 +1,17 @@
 flowchart TB
   choice["One user choice — start 2025-01, end 2025-06"]
 
-  subgraph monthWindow["Month Window — records, chart, metrics"]
+  onePlace["utils/month.ts — contains()<br/>S ≤ R ≤ E, inclusive both ends.<br/>The one statement of the rule."]
+
+  subgraph adapters["Two adapters, one rule — they differ only in what they accept"]
     direction TB
-    mwRule["S ≤ R ≤ E − 2"]
-    mwMeaning["start included · end month AND<br/>the month before it excluded"]
-    mwMonths["2025-01 · 02 · 03 · 04"]
-    mwRule --> mwMeaning --> mwMonths
+    mw["ridership/monthWindow.ts<br/>isInMonthWindow(record {year, month})<br/>records · chart · metrics · stop panel"]
+    ew["ridership/eventWindow.ts<br/>isInEventWindow(event 'YYYY-MM')<br/>context log"]
   end
 
-  subgraph eventWindow["Event Window — context log"]
-    direction TB
-    ewRule["S ≤ R ≤ E"]
-    ewMeaning["inclusive both ends, correctly 1-based"]
-    ewMonths["2025-01 · 02 · 03 · 04 · 05 · 06"]
-    ewRule --> ewMeaning --> ewMonths
-  end
+  months["2025-01 · 02 · 03 · 04 · 05 · 06<br/>the same six months, everywhere"]
 
-  keep["Two months apart, from the same choice.<br/>Preserved, not reconciled — shared URLs and the<br/>committed chart baselines both depend on it. ADR-0001"]
+  was["Until ADR-0009 the chart used a second rule, S ≤ R ≤ E − 2,<br/>and stopped at 2025-04 while the log showed through 06.<br/>The offset hid the two most recent months asked for.<br/>Removed, with the chart baselines regenerated."]
 
   subgraph axis["Month Axis — derived after filtering"]
     direction TB
@@ -27,16 +21,13 @@ flowchart TB
     axisDef --> axisGap --> axisTwo
   end
 
-  onePlace["utils/month.ts — containsOffset() and contains()<br/>encode both rules once. Landed and tested;<br/>the production path still does Date arithmetic. ADR-0006"]
+  choice --> onePlace
+  onePlace --> mw
+  onePlace --> ew
+  mw --> months
+  ew --> months
+  months --> axis
+  months -.-> was
 
-  choice --> monthWindow
-  choice --> eventWindow
-  mwMonths --> keep
-  ewMonths --> keep
-  keep --> axis
-  keep --> onePlace
-
-  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
-  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
-  class keep cycle
-  class onePlace pending
+  classDef gone fill:#e7e5e4,stroke:#a8a29e,stroke-width:1.5px,color:#57534e
+  class was gone

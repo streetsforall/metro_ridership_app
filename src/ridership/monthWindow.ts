@@ -1,44 +1,46 @@
+import { contains, monthOf, type Month } from '../utils/month';
+
 /**
- * The Month Window predicate — the one copy.
+ * The Month Window predicate — the `Date`-shaped adapter in front of `contains`.
  *
- * ## The Month Window is deliberately offset
+ * A record at calendar-month ordinal `R` is included when `S <= R <= E`. Both ends are
+ * in: ask for Jan 2022 – Dec 2022 and you get Jan through December.
  *
- * A record at calendar-month ordinal `R` is included when `S <= R <= E - 2`: the
- * start month is included, and **the end month and the month immediately before it
- * are excluded**. This is intended, not an off-by-one bug — the app has always
- * behaved this way, users have shared URLs against it, and
- * `e2e/chart-content.spec.ts` renders windows through it into committed PNG
- * baselines. See
- * `docs/adr/0001-ridership-month-window-is-deliberately-offset.md`.
+ * ## This used to exclude the last two months
  *
- * The `Date` arithmetic below is the original comparison **verbatim** rather than
- * restated as an ordinal comparison, precisely so it cannot drift. `new Date(year,
- * month)` treats `month` as 0-based while the data stores it 1-based, and the window
- * bounds are built as `new Date(year, month - 1)`; the strict comparison on both ends
- * is what produces the offset. ADR-0001 records why copy-paste beat algebra here:
- * copy-paste is provably non-drifting, algebra is only provably equivalent if the
- * algebra is right.
+ * Until ADR-0009 the rule here was `S <= R <= E - 2` — the end month and the month
+ * before it were dropped, so the chart hid the two most recent months of whatever
+ * range you asked for, including the newest data in the app. That was an accident of
+ * `Date`'s 0-based months that ADR-0001 chose to keep rather than risk changing. It is
+ * now gone, deliberately, with the chart baselines regenerated against it. See
+ * `docs/adr/0009-the-two-window-rules-are-one-rule.md`.
  *
- * **Callers must not restate this.** It has two derivations now — the chart's
- * Ridership View and the stop panel's Stop View — and if either restated it the two
- * panels would disagree about which months are on screen for the same URL.
+ * The Event Window used to disagree with this one by exactly those two months. It no
+ * longer does — `eventWindow.ts` calls the same `contains`, and the two differ only in
+ * the shape of what they are handed.
  *
- * Note `src/utils/month.ts` states the same rule a second time as `containsOffset`,
- * over `Month`/`MonthWindow` ordinals. That is not a fork: it has no production
- * caller and is the landing site for the month migration ADR-0007 tracks as #144 /
- * #145 / #146, whose whole point is to replace this arithmetic without changing these
- * boundaries. Until that migration lands, production goes through this function.
+ * **Callers must not restate this.** It has two derivations — the chart's Ridership
+ * View and the stop panel's Stop View — and if either restated it the two panels
+ * would disagree about which months are on screen for the same URL.
+ *
+ * **This adapter assumes the bounds are month-aligned** — `new Date(y, m - 1)`,
+ * midnight on the first. Every producer is: `parseMonthParam`, `DefaultStartDate`,
+ * `dataDefaultEndDate`, the chart drag's `labelToDate`, and `DateRangeSelector`,
+ * which mutates an already-aligned date with `setMonth`/`setFullYear` only. A bound
+ * carrying a day or a time is truncated to its month here. ADR-0006 is the standing
+ * argument for why bounds should not be `Date`s at all.
  */
 export function isInMonthWindow(
   record: { year: number; month: number },
   startDate: Date,
   endDate: Date,
 ): boolean {
-  const metricDate = new Date(record.year, record.month);
-  if (
-    startDate.getTime() >= metricDate.getTime() ||
-    endDate.getTime() <= metricDate.getTime()
-  )
-    return false;
-  return true;
+  return contains(
+    { start: boundToMonth(startDate), end: boundToMonth(endDate) },
+    record,
+  );
 }
+
+/** A month-aligned window bound as the month it names. `Date`'s month is 0-based. */
+const boundToMonth = (bound: Date): Month =>
+  monthOf(bound.getFullYear(), bound.getMonth() + 1);

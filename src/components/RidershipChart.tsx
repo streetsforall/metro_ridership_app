@@ -214,7 +214,7 @@ export default function RidershipChart({
          * `onClick` nor a hover retarget, so the plugin hit-tests its own strip
          * and reports a month here. Both land on the same setters the plot
          * drives, which is what makes a triangle's readout identical to the
-         * column's — see ADR-0009.
+         * column's — see ADR-0010.
          */
         onGutterClick: pinIndex,
         onGutterHover: setHoverIndex,

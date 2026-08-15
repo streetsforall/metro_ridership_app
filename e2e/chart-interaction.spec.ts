@@ -16,7 +16,8 @@ import { gotoDashboard, desktopOnly } from './helpers';
  * `end` otherwise defaults to `dataDefaultEndDate`, which advances on every
  * ridership refresh. It renders three context-log rows, the first being
  * **2020-03 "COVID-19 Service Reductions"**, and a Month Window of 2019-06
- * through 2020-10 on the axis.
+ * through 2020-12 on the axis — both ends inclusive. It ran to 2020-10 until
+ * ADR-0009 removed the two-month offset.
  */
 const WINDOW = '?logs=1&lines=801&start=2019-06&end=2020-12&day=wkday';
 
@@ -141,7 +142,7 @@ test('Home and End jump to the ends of the axis', async ({ page }) => {
 
   await plot(page).focus();
   await page.keyboard.press('End');
-  await expect(tooltip(page)).toContainText('Oct 2020');
+  await expect(tooltip(page)).toContainText('Dec 2020');
 
   await page.keyboard.press('Home');
   await expect(tooltip(page)).toContainText('Jun 2019');
@@ -161,7 +162,7 @@ test('the focused month is announced to screen readers', async ({ page }) => {
 /**
  * The gutter sits outside `chartArea`, where Chart.js dispatches no click and
  * retargets no hover, so these pass only because the plugin hit-tests the strip
- * itself. See ADR-0009 — and note that a plugin-order regression breaks the
+ * itself. See ADR-0010 — and note that a plugin-order regression breaks the
  * hover case here rather than at the unit seam.
  *
  * 2020-03 is the first log row's month, which the window is chosen to include.
