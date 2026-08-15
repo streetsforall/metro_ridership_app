@@ -205,17 +205,76 @@ class TestFillMissingMonths:
         result = fill_missing_months(df)
         assert len(result) == 1
 
-    def test_missing_line_filled_with_zeros(self):
-        """Line 2 has data for Jan; line 4 does not.  Line 4 should get a zero row."""
+    def test_leading_gap_padded(self):
+        """Line 4 starts reporting in Feb; it gets a pad row for Jan."""
+        df = pd.DataFrame([
+            self._base(line_name=2, month=1),
+            self._base(line_name=2, month=2),
+            self._base(line_name=4, month=2),
+        ])
+        result = fill_missing_months(df)
+
+        pad = result[(result["line_name"] == 4) & (result["month"] == 1)]
+        assert len(pad) == 1
+        assert pd.isna(pad.iloc[0]["est_wkday_ridership"])
+
+    def test_pad_rows_are_null_not_zero(self):
+        """Pads must stay NaN so merge_ridership can tell them from a line that
+        genuinely reported zero riders."""
         df = pd.DataFrame([
             self._base(line_name=2, month=1),
             self._base(line_name=4, month=2),
         ])
         result = fill_missing_months(df)
-        # 2 lines × 2 months = 4 rows
+
+        pad = result[(result["line_name"] == 4) & (result["month"] == 1)]
+        assert pad[pr.RIDERSHIP_COLS[3:]].isnull().all().all()
+
+    def test_trailing_gap_not_padded(self):
+        """The line-106 shape: a line that stops reporting mid-batch gets no
+        rows for the months after its last report.  A zero row there would
+        assert the line ran and carried nobody."""
+        df = pd.DataFrame([
+            self._base(line_name=2, month=m) for m in (1, 2, 3)
+        ] + [
+            self._base(line_name=106, month=1),
+        ])
+        result = fill_missing_months(df)
+
+        trailing = result[(result["line_name"] == 106) & (result["month"] > 1)]
+        assert trailing.empty
         assert len(result) == 4
-        missing = result[(result["line_name"] == 2) & (result["month"] == 2)]
-        assert missing.iloc[0]["est_wkday_ridership"] == 0
+
+    def test_interior_gap_not_padded(self):
+        """A line that reported, paused, and resumed keeps a real gap."""
+        df = pd.DataFrame([
+            self._base(line_name=2, month=m) for m in (1, 2, 3)
+        ] + [
+            self._base(line_name=4, month=1),
+            self._base(line_name=4, month=3),
+        ])
+        result = fill_missing_months(df)
+
+        gap = result[(result["line_name"] == 4) & (result["month"] == 2)]
+        assert gap.empty
+
+    def test_all_zero_report_is_not_treated_as_missing(self):
+        """Line 60 genuinely reported zeros in 2026-01.  Reported-ness comes
+        from the merge, not the values, so such a row is kept as reported — and
+        therefore still anchors where padding stops."""
+        df = pd.DataFrame([
+            self._base(line_name=2, month=1),
+            self._base(line_name=2, month=2),
+            self._base(line_name=60, month=1, est_wkday_ridership=0.0,
+                       est_sat_ridership=0.0, est_sun_ridership=0.0),
+        ])
+        result = fill_missing_months(df)
+
+        jan = result[(result["line_name"] == 60) & (result["month"] == 1)]
+        assert len(jan) == 1
+        assert jan.iloc[0]["est_wkday_ridership"] == 0
+        # Feb is trailing for line 60, so it is absent rather than padded.
+        assert result[(result["line_name"] == 60) & (result["month"] == 2)].empty
 
     def test_existing_values_preserved(self):
         df = pd.DataFrame([
@@ -304,6 +363,69 @@ class TestMergeRidership:
 
         assert final.equals(current)
 
+    def test_pad_does_not_overwrite_existing_value(self, tmp_path, monkeypatch):
+        """The regression this whole backfill exists for: a pad row (NaN) must
+        never replace a real committed figure with a zero."""
+        make_ridership_json([self._rec(month=1, est_wkday_ridership=4062.0)],
+                            tmp_path / "r.json")
+        monkeypatch.setattr(pr, "RIDERSHIP_PATH", tmp_path / "r.json")
+
+        new_df = pd.DataFrame([self._rec(
+            month=1, est_wkday_ridership=float("nan"),
+            est_sat_ridership=float("nan"), est_sun_ridership=float("nan"),
+        )])
+        final, _ = merge_ridership(new_df)
+
+        assert final.iloc[0]["est_wkday_ridership"] == 4062.0
+        assert final.iloc[0]["est_sat_ridership"] == 500.0
+
+    def test_genuine_zero_report_still_wins(self, tmp_path, monkeypatch):
+        """A line that really reported zero riders is not a pad: it overwrites
+        the existing value like any other new figure.  This is what a mask
+        keyed on ``== 0`` instead of ``isnull`` would get wrong."""
+        make_ridership_json([self._rec(month=1, est_wkday_ridership=4062.0)],
+                            tmp_path / "r.json")
+        monkeypatch.setattr(pr, "RIDERSHIP_PATH", tmp_path / "r.json")
+
+        new_df = pd.DataFrame([self._rec(
+            month=1, est_wkday_ridership=0.0,
+            est_sat_ridership=0.0, est_sun_ridership=0.0,
+        )])
+        final, _ = merge_ridership(new_df)
+
+        assert final.iloc[0]["est_wkday_ridership"] == 0.0
+
+    def test_unbacked_pad_written_as_zero(self, tmp_path, monkeypatch):
+        """A pad for a key ridership.json has never seen is zero-filled, not
+        left as a JSON null."""
+        make_ridership_json([self._rec(month=1)], tmp_path / "r.json")
+        monkeypatch.setattr(pr, "RIDERSHIP_PATH", tmp_path / "r.json")
+
+        new_df = pd.DataFrame([self._rec(
+            month=2, est_wkday_ridership=float("nan"),
+            est_sat_ridership=float("nan"), est_sun_ridership=float("nan"),
+        )])
+        final, _ = merge_ridership(new_df)
+
+        feb = final[final["month"] == 2].iloc[0]
+        assert feb["est_wkday_ridership"] == 0.0
+        assert not final.isnull().any().any()
+
+    def test_append_only_zero_fills_pads(self, tmp_path, monkeypatch):
+        """prefer_new=False appends pads too; they must not reach the JSON as
+        nulls."""
+        make_ridership_json([self._rec(month=1)], tmp_path / "r.json")
+        monkeypatch.setattr(pr, "RIDERSHIP_PATH", tmp_path / "r.json")
+
+        new_df = pd.DataFrame([self._rec(
+            month=2, est_wkday_ridership=float("nan"),
+            est_sat_ridership=float("nan"), est_sun_ridership=float("nan"),
+        )])
+        final, _ = merge_ridership(new_df, prefer_new=False)
+
+        assert final[final["month"] == 2].iloc[0]["est_wkday_ridership"] == 0.0
+        assert not final.isnull().any().any()
+
     def test_append_only_preserves_existing_on_conflict(self, tmp_path, monkeypatch):
         """prefer_new=False: an existing key keeps its old value; only absent
         keys are added."""
@@ -321,6 +443,95 @@ class TestMergeRidership:
         assert jan["est_wkday_ridership"] == 999.0  # existing preserved
         assert feb["est_wkday_ridership"] == 555.0  # new appended
         assert len(final) == 2 and len(current) == 1
+
+
+# ---------------------------------------------------------------------------
+# compute_ridership -> fill_missing_months -> merge_ridership
+#
+# The padding hazard only shows up end-to-end: fill_missing_months manufactures
+# rows for months a line never reported, and merge_ridership lets new data win.
+# ---------------------------------------------------------------------------
+
+class TestIngestPipeline:
+    def _raw(self, month, line, riders):
+        """One month of one line, all three DayTypes at the same figure."""
+        return [
+            dict(year=2026, month=month, line=line, daytype=dt, riders=riders,
+                 shakeup=202512, provider="DO", mode="Bus", days=20)
+            for dt in ("DX", "SA", "SU")
+        ]
+
+    def _ingest(self, raw_rows, tmp_path, monkeypatch, existing):
+        make_ridership_json(existing, tmp_path / "r.json")
+        monkeypatch.setattr(pr, "RIDERSHIP_PATH", tmp_path / "r.json")
+        new_df = fill_missing_months(compute_ridership(make_raw(raw_rows)))
+        final, _ = merge_ridership(new_df)
+        return final
+
+    def _rec(self, month, line, riders):
+        return dict(year=2026, month=month, line_name=line,
+                    est_wkday_ridership=float(riders),
+                    est_sat_ridership=float(riders),
+                    est_sun_ridership=float(riders))
+
+    # merge_ridership reads ridership.json as a DataFrame, so it needs at least
+    # one row to have columns to merge on.  This one is outside every batch's
+    # range and so never participates.
+    _UNRELATED = dict(year=2020, month=1, line_name=999,
+                      est_wkday_ridership=1.0, est_sat_ridership=1.0,
+                      est_sun_ridership=1.0)
+
+    def test_pause_and_resume_does_not_zero_committed_history(
+        self, tmp_path, monkeypatch
+    ):
+        """Line 4 reported in Jan and Mar but not Feb.  A batch spanning Jan–Mar
+        pads Feb; that pad must not overwrite the real Feb figure already in
+        ridership.json."""
+        raw = (
+            self._raw(1, 2, 1000) + self._raw(2, 2, 1100) + self._raw(3, 2, 1200)
+            + self._raw(1, 4, 500) + self._raw(3, 4, 600)
+        )
+        final = self._ingest(raw, tmp_path, monkeypatch, existing=[
+            self._rec(1, 4, 500), self._rec(2, 4, 550), self._rec(3, 4, 600),
+        ])
+
+        feb = final[(final["line_name"] == 4) & (final["month"] == 2)]
+        assert len(feb) == 1
+        assert feb.iloc[0]["est_wkday_ridership"] == 550.0
+
+    def test_discontinued_line_gets_no_trailing_zero_rows(
+        self, tmp_path, monkeypatch
+    ):
+        """The line-106 case: line 106 stops reporting after Jan.  A Jan–Mar
+        batch must not write Feb/Mar rows claiming it carried nobody."""
+        raw = (
+            self._raw(1, 2, 1000) + self._raw(2, 2, 1100) + self._raw(3, 2, 1200)
+            + self._raw(1, 106, 4062)
+        )
+        final = self._ingest(raw, tmp_path, monkeypatch, existing=[
+            self._rec(1, 106, 4062),
+        ])
+
+        assert final[(final["line_name"] == 106) & (final["month"] > 1)].empty
+        assert len(final) == 4
+
+    def test_line_start_is_padded_with_zeros(self, tmp_path, monkeypatch):
+        """The line-74 case, and the reason padding exists at all: a line whose
+        first report falls mid-batch gets zeros for the months before it."""
+        raw = (
+            self._raw(1, 2, 1000) + self._raw(2, 2, 1100) + self._raw(3, 2, 1200)
+            + self._raw(3, 74, 2979)
+        )
+        final = self._ingest(raw, tmp_path, monkeypatch, existing=[self._UNRELATED])
+
+        line74 = final[final["line_name"] == 74].sort_values("month")
+        assert list(line74["month"]) == [1, 2, 3]
+        assert list(line74["est_wkday_ridership"]) == [0.0, 0.0, 2979.0]
+
+    def test_no_nulls_reach_the_output(self, tmp_path, monkeypatch):
+        raw = self._raw(1, 2, 1000) + self._raw(2, 2, 1100) + self._raw(2, 74, 900)
+        final = self._ingest(raw, tmp_path, monkeypatch, existing=[self._UNRELATED])
+        assert not final.isnull().any().any()
 
 
 # ---------------------------------------------------------------------------

@@ -68,8 +68,10 @@ def load_and_compute(
     """Load each input file and compute its wide per-line ridership.
 
     fill_missing_months is applied *per file* (i.e. per delivered batch) so a
-    line that ran in one archive's months is only zero-filled within that
-    archive's range — never cross-joined into unrelated months from other files.
+    line that ran in one archive's months is only padded within that archive's
+    range — never cross-joined into unrelated months from other files.  Its pads
+    come back as NaN; merge_ridership resolves them against committed history
+    and zeroes the rest.
 
     Returns:
       new_df   -- combined wide ridership (KEYS deduped; loose-xlsx vs. zip
@@ -111,7 +113,10 @@ def diff_against_current(new_df: pd.DataFrame, overwrite: bool) -> dict:
     both = merged[merged["_merge"] == "both"]
     changed = pd.Series(False, index=both.index)
     for col in VALUE_COLS:
-        changed |= both[f"{col}_new"].astype(float) != both[f"{col}_old"].astype(float)
+        new_vals = both[f"{col}_new"].astype(float)
+        # A NaN is a fill_missing_months pad, not a figure.  merge_ridership
+        # backfills it from the existing record, so it is never a correction.
+        changed |= new_vals.notna() & (new_vals != both[f"{col}_old"].astype(float))
     updated_count = int(changed.sum()) if overwrite else 0
 
     return {
