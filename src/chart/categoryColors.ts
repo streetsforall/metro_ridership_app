@@ -17,7 +17,7 @@ import type { EventCategory } from '../@types/events.types';
  *   sky               costs something different (fare)
  *   slate             generic, uncategorised (service_change)
  *
- * Only the hue is stored; callers pick the weight, which keeps the marker (500)
+ * Only the hue is stored; callers pick the weight, which keeps the gutter (500)
  * and the tooltip's title text (400, for contrast on stone-800) in the same
  * family without a second nine-entry table to keep in sync. All nine 400s clear
  * AA on stone-800 — red is the tightest at 5.48:1 — so no slot needs an
@@ -64,7 +64,7 @@ function categoryHue(category: EventCategory | undefined): CategoryHue {
   return CATEGORY_COLOR[category as EventCategory] ?? DEFAULT_CATEGORY_HUE;
 }
 
-/** Marker/border color for an event's category. */
+/** Gutter/border color for an event's category. */
 export function categoryColor(category: EventCategory | undefined): string {
   return colors[categoryHue(category)]['500'];
 }
@@ -81,7 +81,7 @@ export function categoryTextColor(category: EventCategory | undefined): string {
  * literals — so these resolve to hex and go on as inline styles, the same way
  * the row's rule colour does.
  *
- * `100`/`800` rather than the marker's `500`: the chip is the one place the
+ * `100`/`800` rather than the gutter's `500`: the chip is the one place the
  * palette carries *text*, so it is the one place contrast is load-bearing
  * rather than decorative. Every pair clears AA comfortably — amber is tightest
  * at 6.37:1 — where the `500` the chart fills with would be unreadable behind

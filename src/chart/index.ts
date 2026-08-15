@@ -9,7 +9,7 @@ import {
   Legend,
 } from 'chart.js';
 import { hoverCrosshairPlugin } from './hoverCrosshair';
-import { eventMarkersPlugin } from './eventMarkers';
+import { eventGutterPlugin } from './eventGutter';
 import { rangeSelectPlugin } from './rangeSelect';
 
 /**
@@ -29,12 +29,12 @@ ChartJS.register(
   Tooltip,
   Legend,
   hoverCrosshairPlugin,
-  eventMarkersPlugin,
+  eventGutterPlugin,
   rangeSelectPlugin,
 );
 
 export { hoverCrosshairPlugin } from './hoverCrosshair';
-export { eventMarkersPlugin, groupEventsByMonthIndex } from './eventMarkers';
+export { eventGutterPlugin, groupEventsByMonthIndex } from './eventGutter';
 export {
   rangeSelectPlugin,
   consumeDragSuppression,

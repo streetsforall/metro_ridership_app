@@ -40,6 +40,13 @@ ordering of the others. A month a line does not report is a **gap** in that line
 zero.
 _Avoid_: labels, months list, x-axis categories
 
+**Event Gutter**:
+The strip below the Month Axis rule where a month's Transit Events are drawn, one triangle per
+distinct category. Chart.js does not hit-test outside its plot area, so the gutter's pointer
+handling belongs to the chart plugin that draws it rather than to the chart's own element
+callbacks.
+_Avoid_: marker strip, axis dots, annotation row
+
 **Selection Snapshot**:
 Whether a line was selected at the moment its records were grouped, recorded once per line rather
 than re-checked per record. It is a property of the Ridership View, not of the line — the same line

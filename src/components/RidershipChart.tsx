@@ -203,7 +203,7 @@ export default function RidershipChart({
           );
         },
       },
-      eventMarkers: {
+      eventGutter: {
         events: transitEvents,
         focusedIndex: activeIndex,
         highlightedIndex,

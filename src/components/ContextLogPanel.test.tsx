@@ -59,7 +59,7 @@ describe('ContextLogPanel rendering', () => {
 
 /**
  * The palette is shared with the chart's dots and covered exhaustively in
- * `src/chart/eventMarkers.test.ts`. What matters here is that the panel reads
+ * `src/chart/eventGutter.test.ts`. What matters here is that the panel reads
  * from that same table and still spells the category out, because these hues run
  * 2.15–4.76:1 on the pane's white and must never be the sole signal.
  */
@@ -91,7 +91,7 @@ describe('ContextLogPanel category colors', () => {
 
   /**
    * The chip is the one place the palette carries text, so it uses 100/800
-   * rather than the marker's 500 — every pair clears AA, where the 500 behind
+   * rather than the gutter's 500 — every pair clears AA, where the 500 behind
    * text would not.
    */
   it('fills the chip with the category 100 and sets 800 text on it', () => {

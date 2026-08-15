@@ -144,19 +144,19 @@ describe('RidershipChart wiring', () => {
     expect(capturedOptions?.plugins?.tooltip?.enabled).toBe(false);
   });
 
-  it('passes the events to the marker plugin', () => {
+  it('passes the events to the gutter plugin', () => {
     renderChart();
-    expect(capturedOptions?.plugins?.eventMarkers?.events).toHaveLength(1);
+    expect(capturedOptions?.plugins?.eventGutter?.events).toHaveLength(1);
   });
 
-  it('tells the marker plugin which month the log is hovering', () => {
+  it('tells the gutter plugin which month the log is hovering', () => {
     renderChart({ highlightedMonth: '2020 6' });
-    expect(capturedOptions?.plugins?.eventMarkers?.highlightedIndex).toBe(5);
+    expect(capturedOptions?.plugins?.eventGutter?.highlightedIndex).toBe(5);
   });
 
   it('reports no highlight for a month that is off the axis', () => {
     renderChart({ highlightedMonth: '1999 1' });
-    expect(capturedOptions?.plugins?.eventMarkers?.highlightedIndex).toBeNull();
+    expect(capturedOptions?.plugins?.eventGutter?.highlightedIndex).toBeNull();
   });
 });
 

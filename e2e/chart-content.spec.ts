@@ -74,12 +74,12 @@ test('narrow date window', async ({ page }) => {
 });
 
 /**
- * Context-log markers, at several category colours in one frame.
+ * Event Gutter shapes, at several category colours in one frame.
  *
  * These render on **every** chart, not only under `logs=1` — `buildRidershipView` returns
- * `events` unconditionally and `OutputArea` hands them straight to the `eventMarkers` plugin.
- * So every baseline in this file already contains markers; what none of them pinned is that
- * the markers differ *from each other* by category. This case does.
+ * `events` unconditionally and `OutputArea` hands them straight to the `eventGutter` plugin.
+ * So every baseline in this file already contains gutter shapes; what none of them pinned is
+ * that the shapes differ *from each other* by category. This case does.
  *
  * `start=2020-01&end=2023-12` with 801 + 804 puts six events in the Event Window, spanning
  * five distinct hues:
@@ -101,13 +101,13 @@ test('narrow date window', async ({ page }) => {
  * themselves are committed data, so this only rebases if `transit-events.json` gains an entry
  * inside 2020-01..2023-12 with an empty `line_ids` or naming 801/804.
  */
-test('event markers across categories', async ({ page }) => {
+test('event gutter across categories', async ({ page }) => {
   await gotoChart(page, '?lines=801,804&start=2020-01&end=2023-12&day=wkday');
   // The default `maxDiffPixelRatio: 0.01` cannot see this, which is not a guess: regenerating the
   // other ten chart baselines against this palette left all ten byte-identical, because a handful
   // of thin dashed rules on a ~462,000 px crop never reaches 1%. An absolute budget is what makes
   // the shot able to fail at all. Calibrated by mutation — collapsing `route_change` onto amber
-  // moves 460 px across its three markers, so ~153 px per marker, and 120 catches even a
+  // moves 460 px across its three shapes, so ~153 px per shape, and 120 catches even a
   // single-category regression while leaving room for antialiasing drift.
-  await shootChart(page, 'chart-event-markers.png', { maxDiffPixels: 120 });
+  await shootChart(page, 'chart-event-gutter.png', { maxDiffPixels: 120 });
 });

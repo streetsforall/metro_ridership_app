@@ -79,7 +79,7 @@ export default function ContextLogPanel({
             const month = eventDateToLabel(event.date);
             const isPinned = month === pinnedMonth;
             return (
-              /* The rule carries the same category color as the chart marker, so a row
+              /* The rule carries the same category color as the chart's gutter shape, so a row
                  and its dot read as the same thing. It is decoration only — the
                  category is also spelled out below, because these hues run 2.15–4.76:1
                  on the pane's white and must never be the sole signal. Nine categories
@@ -117,7 +117,7 @@ export default function ContextLogPanel({
                       The chip therefore sits in the flexible column instead, under the title.
                       It is the one place the palette carries text, so it is the one place
                       contrast is load-bearing; the rule down the row's left edge is the
-                      marker's exact 500, which ties the row to its dot on the chart but is far
+                      gutter's exact 500, which ties the row to its dot on the chart but is far
                       too low-contrast to sit behind text. */}
                   <span className="shrink-0 text-stone-400 whitespace-nowrap">
                     {formatEventDate(event.date)}

@@ -10,7 +10,7 @@ export interface CustomChartData {
 declare module 'chart.js' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface PluginOptionsByType<TType extends ChartType> {
-    eventMarkers?: {
+    eventGutter?: {
       events?: TransitEvent[];
       /** Month index the tooltip is describing, from hover, keyboard, or a pin. */
       focusedIndex?: number | null;

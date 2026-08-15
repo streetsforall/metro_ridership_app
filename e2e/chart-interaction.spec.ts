@@ -7,7 +7,7 @@ import { gotoDashboard, desktopOnly } from './helpers';
  *
  * Deliberately snapshot-free. Everything asserted here is real DOM — the readout
  * is an HTML tooltip, not canvas — so text and attributes pin the behaviour
- * without adding baselines that a marker-radius tweak would rebase. The canvas
+ * without adding baselines that a gutter-radius tweak would rebase. The canvas
  * side (the axis dots themselves) is covered by `chart-content.spec.ts`.
  *
  * ## The pinned window: `start=2019-06&end=2020-12`
