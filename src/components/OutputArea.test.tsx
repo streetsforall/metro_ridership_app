@@ -491,7 +491,10 @@ describe('eventMarkers plugin hover', () => {
  * adding a tenth category to the union breaks this file at compile time, which
  * is how a new category gets a color instead of silently inheriting the default.
  */
-const EXPECTED_HUE: Record<EventCategory, { '400': string; '500': string }> = {
+const EXPECTED_HUE: Record<
+  EventCategory,
+  { '100': string; '400': string; '500': string; '800': string }
+> = {
   opening: colors.emerald,
   extension: colors.teal,
   closure: colors.red,
@@ -625,6 +628,43 @@ describe('context log panel category colors', () => {
       ALL_CATEGORIES.map((category) => panelEvent(category, category)),
     );
     expect(new Set(rowBorders(container)).size).toBe(ALL_CATEGORIES.length);
+  });
+
+  /** jsdom normalizes background-color the same way; go through an element for both. */
+  const asColor = (prop: 'backgroundColor' | 'color', value: string) => {
+    const el = document.createElement('div');
+    el.style[prop] = value;
+    return el.style[prop];
+  };
+
+  const chips = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll<HTMLElement>('#context-log-panel li span[style]'));
+
+  /**
+   * The chip is the one place the palette carries *text*, so it is the one place
+   * contrast is load-bearing rather than decorative — 100 behind 800, never the
+   * 500 the chart strokes with, which would be unreadable under text.
+   */
+  it('fills each chip from its category, light behind dark', () => {
+    const { container } = renderPanel(
+      ALL_CATEGORIES.map((category) => panelEvent(category, category)),
+    );
+    expect(
+      chips(container).map((chip) => [chip.style.backgroundColor, chip.style.color]),
+    ).toEqual(
+      ALL_CATEGORIES.map((category) => [
+        asColor('backgroundColor', EXPECTED_HUE[category]['100']),
+        asColor('color', EXPECTED_HUE[category]['800']),
+      ]),
+    );
+  });
+
+  it('gives no two chips the same fill', () => {
+    const { container } = renderPanel(
+      ALL_CATEGORIES.map((category) => panelEvent(category, category)),
+    );
+    const fills = chips(container).map((chip) => chip.style.backgroundColor);
+    expect(new Set(fills).size).toBe(ALL_CATEGORIES.length);
   });
 
   it('also spells the category out, so color is not the only signal', () => {

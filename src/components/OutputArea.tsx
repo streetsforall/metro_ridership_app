@@ -126,6 +126,27 @@ function categoryTextColor(category: EventCategory | undefined): string {
   return colors[categoryHue(category)]['400'];
 }
 
+/**
+ * Chip fill and text for a category.
+ *
+ * Tailwind class names can't be built at runtime — the JIT scanner only sees
+ * literals — so these resolve to hex and go on as inline styles, the same way
+ * the row's rule colour does.
+ *
+ * `100`/`800` rather than the marker's `500`: the chip is the one place the
+ * palette carries *text*, so it is the one place contrast is load-bearing
+ * rather than decorative. Every pair clears AA comfortably — amber is tightest
+ * at 6.37:1 — where the `500` the chart strokes with would be unreadable behind
+ * text at 2.15–4.76:1 on this pane.
+ */
+function categoryChip(category: EventCategory | undefined): {
+  backgroundColor: string;
+  color: string;
+} {
+  const hue = categoryHue(category);
+  return { backgroundColor: colors[hue]['100'], color: colors[hue]['800'] };
+}
+
 /** "headway_change" → "Headway change", for the panel's category label. */
 function formatCategory(category: EventCategory | undefined): string {
   if (!category) return 'Service change';
@@ -487,22 +508,24 @@ export default function OutputArea({
                   className="flex gap-3 text-sm border-l-2 pl-3"
                   style={{ borderColor: categoryColor(event.category) }}
                 >
-                  <span className="text-stone-400 whitespace-nowrap shrink-0">
-                    {formatEventDate(event.date)}
-                  </span>
+                  {/* Date and category form a metadata rail: what happened is on the right,
+                      when and what-kind on the left, each aligned down the column. The chip
+                      is what lets colour actually mean something here — the rule beside it is
+                      the marker's exact 500, which ties the row to its mark on the chart but
+                      is far too low-contrast to sit behind text. */}
+                  <div className="shrink-0 flex flex-col items-start gap-1">
+                    <span className="text-stone-400 whitespace-nowrap">
+                      {formatEventDate(event.date)}
+                    </span>
+                    <span
+                      className="rounded px-1.5 py-0.5 text-[0.65rem] uppercase tracking-wider whitespace-nowrap"
+                      style={categoryChip(event.category)}
+                    >
+                      {formatCategory(event.category)}
+                    </span>
+                  </div>
                   <div>
-                    {/* Category sits beside the title, not under the description, so the row
-                        leads with what kind of event it is. It keeps the panel header's
-                        small-caps treatment rather than the title's, because that contrast is
-                        what marks it as a label and not part of the title — `items-baseline`
-                        seats the smaller text on the title's baseline, and `flex-wrap` lets it
-                        drop below at narrow widths instead of squeezing the title. */}
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      <p className="font-medium text-stone-700">{event.title}</p>
-                      <span className="text-xs uppercase tracking-wider text-stone-400 whitespace-nowrap">
-                        {formatCategory(event.category)}
-                      </span>
-                    </div>
+                    <p className="font-medium text-stone-700">{event.title}</p>
                     <p className="text-stone-500">{event.description}</p>
                   </div>
                 </li>
