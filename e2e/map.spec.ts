@@ -149,6 +149,43 @@ test('map — selecting a line updates the layer filter without a reload', async
 });
 
 /**
+ * Expanding the line selector hides the output area; it does not unmount it (App.tsx).
+ *
+ * Identity is checked by stamping the live map instance and reading the stamp back after the
+ * round trip: a torn-down-and-rebuilt map publishes a fresh `window.__metroMap` with no stamp,
+ * which is the regression this guards — a new MapLibre instance means a new WebGL context and
+ * the basemap style, glyphs and tiles fetched all over again on every collapse.
+ */
+test('map — survives a table-view round trip without re-initialising', async ({ page }) => {
+  await gotoMap(page, SELECTED_LINE_IDS);
+
+  await page.evaluate(() => {
+    (window.__metroMap as unknown as { __e2eStamp?: string }).__e2eStamp = 'original';
+  });
+
+  await page.locator('#expand-toggle').click();
+  await expect(page.locator('table thead')).toBeVisible();
+  // Hidden, but still in the DOM.
+  await expect(page.locator('#lineMap')).toBeHidden();
+
+  await page.locator('#expand-toggle').click();
+  await expect(page.locator('#lineMap')).toBeVisible();
+
+  expect(
+    await page.evaluate(
+      () => (window.__metroMap as unknown as { __e2eStamp?: string }).__e2eStamp,
+    ),
+  ).toBe('original');
+
+  // And it is still a working map after coming back from a zero-sized container: MapLibre's
+  // ResizeObserver re-measures on show, so the canvas has real dimensions and still draws.
+  await waitForMapIdle(page);
+  const selected = await renderedLineIds(page, 'lines-selected');
+  expect(selected.length).toBeGreaterThan(0);
+  expect(selected.filter((id) => !SELECTED_LINE_IDS.includes(id))).toEqual([]);
+});
+
+/**
  * `#lineMap` is a fixed `height: 400px; width: 100%` (src/components/Map.css), so narrowing the
  * viewport does not change the geometry the map draws — it changes the canvas aspect ratio, and
  * with it where MapLibre's NavigationControl and compact attribution control sit relative to the
