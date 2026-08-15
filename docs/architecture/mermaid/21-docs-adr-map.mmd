@@ -1,0 +1,41 @@
+flowchart TB
+  subgraph authority["Authority order"]
+    direction TB
+    ctx["CONTEXT.md — the ubiquitous language.<br/>Where a term conflicts with a name in the<br/>source, the term wins."]
+    adrs["docs/adr/ — six decisions, all accepted"]
+    claude["CLAUDE.md — working notes"]
+    readme["README.md — runbooks"]
+    ctx --> adrs --> claude --> readme
+  end
+
+  subgraph landed["Decided and in force"]
+    direction TB
+    a1["0001 — the offset Month Window<br/>→ buildRidershipView.ts"]
+    a2["0002 — the view returns Chart.js types<br/>→ RidershipView.datasets"]
+    a3["0003 — one domain folder<br/>→ src/ridership/index.ts"]
+    a4["0004 — one nullable Line Metrics shape<br/>→ lineMetrics.ts"]
+  end
+
+  subgraph half["Accepted, only half landed"]
+    direction TB
+    a5["0005 — figures live on a Line Readout.<br/>#154 moved every consumer onto readouts;<br/>App.tsx:114 still stamps the eight fields onto Line."]
+    a6["0006 — a month is {year, month}.<br/>utils/month.ts has both rules and its own spec,<br/>and no production caller; the filters still do Date arithmetic."]
+  end
+
+  subgraph planning["Planning — intent, not decisions"]
+    direction TB
+    review["architecture-review-2026-08-05.md<br/>six candidates; 1 landed,<br/>5 (URL contract) and 6 (CSV seam) unscheduled"]
+    plans["src/plans/ — 7 design notes"]
+    agents["docs/agents/ · perf/BASELINE.md"]
+  end
+
+  adrs --> landed
+  adrs --> half
+  plans --> review --> adrs
+
+  classDef authorityC fill:#f0e5f1,stroke:#a05da5,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
+  class ctx authorityC
+  class a5,a6 pending
+  class landed surface

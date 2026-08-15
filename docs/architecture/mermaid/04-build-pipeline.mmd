@@ -1,0 +1,53 @@
+flowchart TB
+  canonical[("src/data/ridership.json<br/>~42K rows, keys repeated")]
+
+  subgraph plugin["vite/ridership-data-plugin.ts — one cached encode()"]
+    direction TB
+    encode["encode()<br/>read once, walk once"]
+    blob["columnar blob<br/>cols + rows, minified"]
+    bounds["bounds<br/>minYear · maxYear · maxMonth"]
+    encode --> blob
+    encode --> bounds
+  end
+
+  subgraph hooks["Plugin hooks"]
+    direction TB
+    serveOrEmit["configureServer — dev middleware on /ridership.json<br/>generateBundle — emitFile asset<br/>two paths, one identical blob"]
+    resolveLoad["resolveId + load<br/>virtual:ridership-bounds"]
+  end
+
+  subgraph out["dist/"]
+    direction TB
+    ridAsset[/"ridership.json"/]
+    entryChunk[/"entry chunk"/]
+    lazyChunk[/"OutputArea-*.js + .css<br/>Chart.js + MapLibre"/]
+    geoAsset[/"metro_lines.geojson"/]
+  end
+
+  subgraph consumers["Consumers"]
+    direction TB
+    appFetch["App.tsx — fetch('/ridership.json')"]
+    dateRange["utils/dataDateRange.ts<br/>selectable window"]
+  end
+
+  swc["plugin-react-swc"]
+  ssl["plugin-basic-ssl<br/>serve only"]
+  vis["visualizer<br/>ANALYZE=1"]
+  registered["Registered in vite.config.ts<br/>AND vitest.config.ts"]
+
+  canonical --> encode
+  blob --> serveOrEmit
+  bounds --> resolveLoad
+
+  serveOrEmit --> ridAsset
+  ridAsset -- "dev middleware, or preview / static host" --> appFetch
+  resolveLoad --> dateRange
+
+  swc --> entryChunk
+  entryChunk -. "React.lazy" .-> lazyChunk
+  ssl --> out
+  vis --> out
+  registered -.-> encode
+
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  class blob,bounds key

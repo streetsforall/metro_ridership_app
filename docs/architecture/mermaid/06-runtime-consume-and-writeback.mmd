@@ -1,0 +1,38 @@
+flowchart TB
+  view["RidershipView<br/>months · datasets · consolidated<br/>events · metrics · coverage"]
+
+  outputArea["OutputArea<br/>chart · summary · context log · map"]
+  lineSelector["LineSelector<br/>builds its own wider axis from consolidated —<br/>the table draws every VISIBLE line,<br/>the chart only the SELECTED ones"]
+  mapCmp["Map<br/>selection filter · mapPopup"]
+
+  subgraph loop["The write-back cycle — still running"]
+    writeback["updateLinesWithLineMetrics(consolidated)<br/>useEffect keyed on JSON.stringify — App.tsx:113-116"]
+    stamp["stamps 8 derived fields onto every Line"]
+    fresh["a new lines array<br/>re-enters the same useMemo"]
+    writeback --> stamp --> fresh
+  end
+
+  hook["useUserDashboardInput — holds lines.<br/>isVisibleLine still reads the stamped fields,<br/>which is what keeps the cycle load-bearing."]
+
+  subgraph replacement["ADR-0005's Line Readout — the consumers moved onto it (#154)"]
+    readouts["buildLineReadouts(lines, metrics, coverage)<br/>App.tsx:98"]
+    listed["listedReadouts(readouts, searchText, modes)<br/>App.tsx:103"]
+    readouts --> listed
+  end
+
+  view -- "datasets · months · events" --> outputArea
+  view -- "consolidated" --> lineSelector
+  view -- "consolidated" --> writeback
+  view -. "metrics + coverage, already returned" .-> readouts
+
+  fresh --> hook
+  hook --> view
+
+  readouts -- "lines={readouts}" --> outputArea
+  listed -- "lines={listed}" --> lineSelector
+  outputArea --> mapCmp
+
+  classDef key fill:#dff2f1,stroke:#0fada8,stroke-width:1.5px,color:#44403c
+  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
+  class view,readouts,listed key
+  class writeback,stamp,fresh cycle

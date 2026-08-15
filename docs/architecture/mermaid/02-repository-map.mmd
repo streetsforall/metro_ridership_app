@@ -1,0 +1,40 @@
+flowchart LR
+  root(["metro_ridership_app/"])
+
+  app["The application<br/><b>src/</b>"]
+  pipeline["Data authoring"]
+  tooling["Build and verification"]
+  writing["Prose — the system's memory"]
+
+  root --> app
+  root --> pipeline
+  root --> tooling
+  root --> writing
+
+  app --> cmp["components/ — 8 components, 7 specs"]
+  app --> hooks["hooks/ — the only store"]
+  app --> rid["ridership/ — the one domain folder"]
+  app --> utils["utils/ — lines · month · queryParams<br/>ridershipData · dataDateRange · mapPopup"]
+  app --> types["@types/ — domain types"]
+  app --> dataDir["data/ — bundled JSON + the dataset"]
+  app --> misc["assets/ · plans/ · test/<br/>App.tsx · main.tsx · index.css"]
+
+  pipeline --> dataN["data/raw/ — source workbooks"]
+  pipeline --> scriptsN["scripts/ — pipeline + 6 Python specs"]
+  pipeline --> nbN["notebooks/ — Jupyter scrapers"]
+  pipeline --> publicN["public/ — geojson, favicon"]
+
+  tooling --> viteN["vite/ — ridership-data-plugin.ts"]
+  tooling --> e2eN["e2e/ — Playwright specs + baselines"]
+  tooling --> ghN[".github/workflows/ci.yml"]
+  tooling --> cfgN["configs — vite · vitest · playwright<br/>eslint · tailwind · tsconfig ×4"]
+
+  writing --> ctxN["CONTEXT.md — the ubiquitous language"]
+  writing --> adrN["docs/adr/ — six decisions"]
+  writing --> archN["docs/architecture/ — these diagrams"]
+  writing --> otherN["docs/agents/ · architecture review<br/>CLAUDE.md · README.md · perf/"]
+
+  classDef structural fill:#dce9f4,stroke:#0072bc,stroke-width:1.5px,color:#44403c
+  classDef authority fill:#f0e5f1,stroke:#a05da5,stroke-width:1.5px,color:#44403c
+  class rid,hooks structural
+  class ctxN authority

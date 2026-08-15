@@ -1,0 +1,24 @@
+flowchart TB
+  importers["Outside the seam<br/>App.tsx · useUserDashboardInput.ts · LineSelector.tsx<br/>LineTableRow.tsx · OutputArea.tsx · SummaryData.tsx · Map.tsx"]
+  utilsLines["src/utils/lines.ts · src/utils/mapPopup.ts<br/>import type only — no runtime edge back in"]
+
+  idx["src/ridership/index.ts<br/>THE ENTIRE PUBLIC SURFACE"]
+
+  stable["Exported<br/>buildRidershipView + its input and view types<br/>alignToMonthAxis · buildCoverageByLine · buildWindowMonthAxis<br/>lineMetrics · buildLineReadouts + LineReadout"]
+
+  impl["Module-private implementation<br/>buildRidershipView.ts · lineMetrics.ts · lineReadouts.ts"]
+  chartData["chartData.ts — also module-private<br/>timeKey · buildMonthAxis · buildAggregateSeries"]
+
+  bad["import '../ridership/chartData'<br/>— visibly past the seam, ADR-0003"]
+
+  importers --> idx
+  utilsLines -.-> idx
+  idx --> stable
+  stable --- impl
+  impl --> chartData
+  bad -.-> chartData
+
+  classDef surface fill:#e8f3e2,stroke:#58a738,stroke-width:1.5px,color:#44403c
+  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
+  class idx surface
+  class bad cycle

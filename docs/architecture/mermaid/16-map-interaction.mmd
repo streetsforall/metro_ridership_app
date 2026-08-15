@@ -1,0 +1,35 @@
+sequenceDiagram
+  autonumber
+  participant OA as OutputArea
+  participant M as Map.tsx
+  participant ML as MapLibre
+  participant Spec as e2e/map.spec.ts
+
+  rect rgb(239, 233, 219)
+    Note over OA,ML: Selection sync — useEffect([lines])
+    OA->>M: lines changed
+    M->>M: linesRef.current = lines
+    alt style not loaded yet
+      M-->>M: return — the 'load' handler applies it
+    else loaded
+      M->>ML: setFilter 'lines-selected' to the selected ids
+    end
+  end
+
+  rect rgb(232, 243, 226)
+    Note over ML,M: Hover popup
+    ML-->>M: mousemove with features
+    M->>ML: setFeatureState hover false on the old id, true on the new
+    M->>M: linesRef.current.find(l => l.id === line_id)
+    M->>ML: popup.setHTML(buildPopupHTML(name, lineData))
+    Note over M: reads the ref, not the closure — the handler was<br/>installed inside 'load' and captured the mount-time array
+    ML-->>M: mouseleave
+    M->>ML: clear hover state, remove popup
+  end
+
+  rect rgb(253, 242, 214)
+    Note over M,Spec: The test seam
+    M->>M: window.__metroMap = map.current
+    Spec->>M: await __metroMap idle, queryRenderedFeatures()
+    Note over Spec: its own Playwright project — SwiftShader ANGLE,<br/>deviceScaleFactor 1, blank style stub
+  end

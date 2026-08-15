@@ -1,0 +1,38 @@
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant Hook as useUserDashboardInput
+  participant App as App
+  participant View as buildRidershipView
+  participant OA as OutputArea
+  participant Map as Map
+
+  U->>Hook: check the D Line (805) via LineTableRow
+  Hook->>Hook: setLines — new array, one flag flipped
+  Hook->>Hook: URL effect fires on JSON.stringify(lines)
+  Note over Hook: replaceState '?start=…&lines=805&day=weekday'
+
+  Hook-->>App: new state, re-render
+  App->>View: records · lines · window · dayOfWeek · aggregate
+
+  activate View
+  View->>View: group under the Month Window,<br/>snapshotting `selected` once per line
+  View->>View: coverage · per-line metrics
+  View->>View: shared month axis, then align each line
+  View->>View: aggregate last, if enabled
+  View->>View: Event Window filter, against the LIVE selection
+  View-->>App: months · datasets · consolidated<br/>events · metrics · coverage
+  deactivate View
+
+  par Render
+    App->>OA: datasets, months, events
+    OA->>Map: lines
+    Map->>Map: setFilter — the D Line lights up in brand purple
+  and Write-back
+    App->>Hook: updateLinesWithLineMetrics(consolidated)
+    Hook->>Hook: setLines — stamps 8 derived fields
+    Note right of Hook: a NEW lines array re-enters the memo above.<br/>It settles because the second pass produces<br/>identical figures. ADR-0005 removes it.
+  end
+
+  Note over App,Map: the table now lists the D Line with its figures<br/>and a partial-coverage label — its data begins 2025-09
+  Hook-->>U: the address bar is a link to exactly this view

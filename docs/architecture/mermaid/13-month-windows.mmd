@@ -1,0 +1,42 @@
+flowchart TB
+  choice["One user choice — start 2025-01, end 2025-06"]
+
+  subgraph monthWindow["Month Window — records, chart, metrics"]
+    direction TB
+    mwRule["S ≤ R ≤ E − 2"]
+    mwMeaning["start included · end month AND<br/>the month before it excluded"]
+    mwMonths["2025-01 · 02 · 03 · 04"]
+    mwRule --> mwMeaning --> mwMonths
+  end
+
+  subgraph eventWindow["Event Window — context log"]
+    direction TB
+    ewRule["S ≤ R ≤ E"]
+    ewMeaning["inclusive both ends, correctly 1-based"]
+    ewMonths["2025-01 · 02 · 03 · 04 · 05 · 06"]
+    ewRule --> ewMeaning --> ewMonths
+  end
+
+  keep["Two months apart, from the same choice.<br/>Preserved, not reconciled — shared URLs and the<br/>committed chart baselines both depend on it. ADR-0001"]
+
+  subgraph axis["Month Axis — derived after filtering"]
+    direction TB
+    axisDef["chronological union of the<br/>selected lines' months"]
+    axisGap["a month a line does not report<br/>is a gap (null), never a zero"]
+    axisTwo["buildMonthAxis → the chart's axis<br/>buildWindowMonthAxis → the table's wider axis"]
+    axisDef --> axisGap --> axisTwo
+  end
+
+  onePlace["utils/month.ts — containsOffset() and contains()<br/>encode both rules once. Landed and tested;<br/>the production path still does Date arithmetic. ADR-0006"]
+
+  choice --> monthWindow
+  choice --> eventWindow
+  mwMonths --> keep
+  ewMonths --> keep
+  keep --> axis
+  keep --> onePlace
+
+  classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class keep cycle
+  class onePlace pending

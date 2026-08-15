@@ -70,17 +70,33 @@ Tests use [Vitest](https://vitest.dev/) with `@testing-library/react` for compon
 
 ### End-to-end / visual regression tests
 
-[Playwright](https://playwright.dev/) screenshots three full-page views — the default dashboard, the dashboard with a line selected, and the expanded line-selector table — at two viewports (desktop 1280×800, mobile 390×844), and compares them against committed baselines. That's 6 screenshots per run. The map is masked out of every one, because a live MapLibre map over third-party tiles never renders identically twice.
+[Playwright](https://playwright.dev/) screenshots the app and compares against committed baselines. Nine specs, **35 Linux baselines** in total.
 
-[`e2e/map.spec.ts`](e2e/map.spec.ts) covers the map separately, in its own `map` project (one run, not per-viewport). It gets determinism by stubbing the basemap: every off-localhost request is fulfilled with a blank style — one solid background layer, no sources — so no tiles, sprites or glyphs are fetched and the only thing that paints is the route geometry the app loads from same-origin `public/metro_lines.geojson`. That's the part that actually regresses when line data or map styling changes. Two more screenshots per run.
+Most specs run in two projects — desktop 1280×800 and mobile 390×844 — so one `toHaveScreenshot` call yields two baselines. A few are gated to one viewport with `desktopOnly()` ([`e2e/helpers.ts`](e2e/helpers.ts)), either because the view has no meaningful mobile form or because an element crop would be clipped at the narrow viewport edge.
 
-[`e2e/chart-content.spec.ts`](e2e/chart-content.spec.ts) covers what the ridership chart itself *draws*: one line, several lines, the aggregate series, a non-weekday statistic, and a narrow date window — five views × the two viewports, so ten more screenshots. Each is driven purely by the query string, since all dashboard state is URL-addressable.
+| Spec | Covers | Baselines |
+| --- | --- | --- |
+| [`visual.spec.ts`](e2e/visual.spec.ts) | full page — default dashboard, a line selected, the expanded selector | 6 |
+| [`chart-content.spec.ts`](e2e/chart-content.spec.ts) | what the chart *draws* — one line, several, aggregate, Saturday, a narrow window | 10 |
+| [`line-filters.spec.ts`](e2e/line-filters.spec.ts) | search, rail-only mode, the empty-mode state (desktop) | 5 |
+| [`summary-tiles.spec.ts`](e2e/summary-tiles.spec.ts) | the summary pane — a negative change, several lines | 4 |
+| [`map.spec.ts`](e2e/map.spec.ts) | all lines dimmed, selected in brand colours, selected at phone width | 3 |
+| [`context-logs.spec.ts`](e2e/context-logs.spec.ts) | the context-log panel open (plus two absence assertions, no shots) | 2 |
+| [`responsive-tablet.spec.ts`](e2e/responsive-tablet.spec.ts) | 768×1024 via a file-level `test.use`, not a fourth project | 2 |
+| [`table-view.spec.ts`](e2e/table-view.spec.ts) | sort chrome and ordering, a partial-coverage row (desktop) | 2 |
+| [`loading.spec.ts`](e2e/loading.spec.ts) | the output pane mid-fetch, and that a failed fetch doesn't crash (desktop) | 1 |
 
-These are **element-scoped** — cropped to the `#ridership-chart` pane rather than shot full-page — for a reason worth keeping. On a full-page capture the chart is a small fraction of the frame, and `maxDiffPixelRatio` is measured against the whole page, so a chart drawing the wrong series, the wrong brand colours or the wrong axis stays comfortably under the threshold and passes. Cropping to the pane makes the graph most of its own frame, which is why these specs also run a tighter tolerance (`maxDiffPixelRatio: 0.01`) than the full-page set. The pane rather than the bare `<canvas>`: its padding and background give a stable box, and `#lineMap` sits outside it, so no mask is needed.
+The map is masked out of every full-page shot, because a live MapLibre map over third-party tiles never renders identically twice.
+
+#### Why some shots are element-scoped
+
+Five specs — `chart-content`, `summary-tiles`, `table-view`, `line-filters` and `context-logs` — crop to a pane through `shootPane()` rather than shooting full-page, and that is worth keeping. On a full-page capture the subject is a small fraction of the frame, and `maxDiffPixelRatio` is measured against the whole page — so a chart drawing the wrong series, the wrong brand colours or the wrong axis stays comfortably under the threshold and passes. Cropping makes the subject most of its own frame, which is why `shootPane` also applies a tighter tolerance (`maxDiffPixelRatio: 0.01`, [`e2e/helpers.ts`](e2e/helpers.ts)) than the full-page set's `0.02`. It parks the mouse at (0,0) first, so a stray cursor can't leave a hover state in the shot.
+
+Prefer an id'd pane over a bare `<canvas>` or a `.pane`-plus-`.first()` selector: the pane's padding and background give a stable box even when its contents resize, an id is a named element rather than a DOM-order accident, and `#lineMap` sits outside these panes, so no mask is needed.
 
 The Chart.js intro animation is disabled under test via `prefers-reduced-motion`, which [`src/components/OutputArea.tsx`](src/components/OutputArea.tsx) honours and `playwright.config.ts` emulates. That is a real accessibility behaviour rather than a test-only hook; making the canvas paint its final frame immediately is a side benefit.
 
-That's 18 screenshots per run in total.
+[`e2e/map.spec.ts`](e2e/map.spec.ts) runs in its own `map` project — once, not per-viewport — and gets determinism by stubbing the basemap: every off-localhost request is fulfilled with a blank style, one solid background layer and no sources, so no tiles, sprites or glyphs are fetched and the only thing that paints is the route geometry the app loads from same-origin `public/metro_lines.geojson`. That is the part that actually regresses when line data or map styling changes.
 
 ```bash
 npm run test:e2e               # run the suite (builds, serves, compares)
@@ -93,7 +109,7 @@ Tests run against the production build served by `vite preview`, not the dev ser
 
 #### Only the Linux baselines are committed
 
-Playwright names each snapshot after the OS that captured it, and font rendering differs enough between platforms to cause false diffs. CI runs on Linux, so [`e2e/visual.spec.ts-snapshots/`](e2e/visual.spec.ts-snapshots/) commits only the Linux set:
+Playwright names each snapshot after the OS that captured it, and font rendering differs enough between platforms to cause false diffs. CI runs on Linux, so every `*-snapshots/` directory commits only the Linux set:
 
 | Suffix | Used by | In git? | Regenerate with |
 | --- | --- | --- | --- |
@@ -120,7 +136,7 @@ The explicit `=all` is load-bearing. `--update-snapshots` takes an *optional* mo
 
 #### The map suite
 
-Beyond the two screenshots, [`e2e/map.spec.ts`](e2e/map.spec.ts) asserts on what MapLibre actually rendered — the layer stack, and the `line_id`s each layer paints, read back with `queryRenderedFeatures`. Those assertions fail with a list of line IDs instead of a pixel count, so they localise a broken selection filter far faster than a diff image does; the screenshots are there for the things IDs can't express (colour, width, opacity, draw order).
+Beyond its three screenshots, [`e2e/map.spec.ts`](e2e/map.spec.ts) asserts on what MapLibre actually rendered — the layer stack, and the `line_id`s each layer paints, read back with `queryRenderedFeatures`. Those assertions fail with a list of line IDs instead of a pixel count, so they localise a broken selection filter far faster than a diff image does; the screenshots are there for the things IDs can't express (colour, width, opacity, draw order).
 
 Two pieces make it deterministic and are worth not breaking:
 
@@ -136,6 +152,16 @@ npm run lint
 ```
 
 Uses ESLint with TypeScript, React hooks, and React refresh plugins. Fix lint errors before opening a pull request.
+
+### Architecture diagrams
+
+```bash
+npm run docs:architecture
+```
+
+[`docs/architecture/`](docs/architecture/) holds a whole-system diagram plus one per subsystem — data flow, state, the URL contract, the `src/ridership/` seam, the month windows, test topology, CI. Read them as [`diagrams.md`](docs/architecture/diagrams.md) on GitHub, or open the generated `architecture.html` / `architecture.pdf`.
+
+Edit the mermaid source in [`docs/architecture/mermaid/`](docs/architecture/mermaid/) or the prose in `captions.md`, then re-run the command — all three outputs are generated and committed. It is not wired into CI, and the build is reproducible, so a rebuild with no source change produces no diff.
 
 ## Continuous integration
 

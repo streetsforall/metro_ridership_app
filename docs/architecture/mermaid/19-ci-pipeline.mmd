@@ -1,0 +1,33 @@
+flowchart LR
+  trigger["push to main<br/>pull_request to main"]
+  conc["one in-flight run per ref —<br/>PR runs cancelled when superseded,<br/>main runs never are"]
+
+  subgraph buildJob["Job: build — ubuntu-latest"]
+    direction TB
+    setup["checkout · setup-node from .node-version · npm ci"]
+    resolve["resolve the Playwright version<br/>from package-lock.json → job output"]
+    lint["npm run lint"]
+    test["npm run test"]
+    buildStep["npm run build<br/>tsc -b also type-checks e2e/"]
+    upload["upload dist/"]
+    setup --> resolve --> lint --> test --> buildStep --> upload
+  end
+
+  subgraph e2eJob["Job: e2e — needs build"]
+    direction TB
+    container["container playwright:v{version}-noble<br/>--ipc=host — the default 64MB /dev/shm<br/>crashes Chromium mid-screenshot"]
+    prep["checkout · cache ~/.npm · npm ci<br/>browsers come from the image"]
+    download["download dist/ · verify index.html"]
+    runE2e["npm run test:e2e — preview only, never rebuilds"]
+    onFail["on failure: upload report + the<br/>-actual / -diff triplets and traces"]
+    container --> prep --> download --> runE2e --> onFail
+  end
+
+  noDeploy["No deploy job and no deploy target in the repo.<br/>CI never runs the Python pipeline —<br/>it consumes the committed JSON."]
+
+  trigger --> conc --> setup
+  upload -- "dist artifact + version output" --> container
+  onFail --> noDeploy
+
+  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
+  class noDeploy pending
