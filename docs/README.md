@@ -27,7 +27,7 @@ Then read whichever guide matches what you're about to do. Don't read them all.
 | [`guides/ci.md`](guides/ci.md) | The two CI jobs, and a symptom-to-fix table | CI is red |
 | [`guides/data.md`](guides/data.md) | Ingesting new ridership data | You have new files from a records request |
 | [`../scripts/README.md`](../scripts/README.md) | The Python pipeline in full — records requests, every script, compression | Working on the pipeline itself |
-| [`adr/`](adr/) | Seven decisions, with the reasoning | You want to know *why*, or you're about to change something one of them covers |
+| [`adr/`](adr/) | Eight decisions, with the reasoning | You want to know *why*, or you're about to change something one of them covers |
 | [`architecture/diagrams.md`](architecture/diagrams.md) | 21 diagrams — system, data, state, URL, seams, tests, CI | You'd rather see it than read it |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Conventions, and the one docs rule | Before your first PR |
 | [`../DATA_RELEASE_NOTES.md`](../DATA_RELEASE_NOTES.md) | What data landed when | Tracing a change in the numbers |
@@ -44,6 +44,7 @@ Then read whichever guide matches what you're about to do. Don't read them all.
 | [0005](adr/0005-derived-figures-live-on-line-readouts.md) | Derived figures live on Line Readouts, never on `Line` | accepted, fully landed |
 | [0006](adr/0006-a-month-is-a-year-and-a-month-not-a-date.md) | A month is a year and a month, not a `Date` | accepted, **half landed** — `month.ts` has no production caller yet |
 | [0007](adr/0007-a-folder-with-an-index-is-a-sealed-module.md) | A folder with an `index.ts` is a sealed module; `src/` is flat by default | accepted |
+| [0008](adr/0008-panel-layout-is-a-tailwind-grid-with-url-synced-settings.md) | Panel layout is a Tailwind grid with URL-synced settings; dockview was reverted | accepted |
 
 ## Not for humans
 
