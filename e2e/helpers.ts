@@ -131,9 +131,9 @@ export function desktopOnly(): void {
  * Per-shot tolerance override.
  *
  * `maxDiffPixelRatio` is the wrong instrument when the subject is a few thin strokes on a large
- * pane: 8 dashed event markers are ~1,900 px of a ~462,000 px chart crop, so recolouring *every*
+ * pane: 8 dashed event-gutter shapes are ~1,900 px of a ~462,000 px chart crop, so recolouring *every*
  * one of them moves 0.4% and sails under the 1% default. A shot whose subject is that small needs
- * an absolute `maxDiffPixels` instead — see `chart-content.spec.ts`'s marker case.
+ * an absolute `maxDiffPixels` instead — see `chart-content.spec.ts`'s event-gutter case.
  */
 type ShotTolerance = { maxDiffPixels?: number; maxDiffPixelRatio?: number };
 

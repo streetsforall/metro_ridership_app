@@ -22,7 +22,7 @@ export interface ChartTooltipProps {
   /** x-axis labels, `"YYYY M"`. */
   months: string[];
   datasets: ChartDataset<'line', CustomChartData[]>[];
-  /** Events for this month, already grouped by the marker plugin's mapping. */
+  /** Events for this month, already grouped by the Event Gutter plugin's mapping. */
   events: TransitEvent[];
   /** Crosshair position in canvas pixels. */
   caret: { x: number; y: number } | null;
@@ -41,7 +41,7 @@ export interface ChartTooltipProps {
  * Rendered as HTML rather than painted into the canvas, which is what lets an
  * event description wrap, a source link be clicked, and a screen reader read any
  * of it. The canvas box this replaces could do none of the three, and it only
- * appeared within 6px of an event marker — so the ridership figures and the
+ * appeared within 6px of an event shape — so the ridership figures and the
  * reason they moved were never on screen together.
  */
 export default function ChartTooltip({

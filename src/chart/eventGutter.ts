@@ -38,7 +38,7 @@ const MULTI_EVENT_DOT_RADIUS = 5.5;
 /** Extra radius for the focused (hovered/pinned) or log-highlighted month. */
 const EMPHASIS_RADIUS = 2;
 
-export interface EventMarkersOptions {
+export interface EventGutterOptions {
   events?: TransitEvent[];
   /** Month index the tooltip is currently describing, hover or pinned. */
   focusedIndex?: number | null;
@@ -47,14 +47,14 @@ export interface EventMarkersOptions {
 }
 
 /** Fields stashed on the chart instance for the click handler to read back. */
-export type ChartWithMarkers = ChartJS<'line'> & {
+export type ChartWithEventGutter = ChartJS<'line'> & {
   $eventsByIndex?: Map<number, TransitEvent[]>;
 };
 
-function readOptions(chart: ChartJS): EventMarkersOptions {
+function readOptions(chart: ChartJS): EventGutterOptions {
   return (
-    (chart.options.plugins as Record<string, EventMarkersOptions | undefined>)
-      .eventMarkers ?? {}
+    (chart.options.plugins as Record<string, EventGutterOptions | undefined>)
+      .eventGutter ?? {}
   );
 }
 
@@ -68,11 +68,11 @@ function readOptions(chart: ChartJS): EventMarkersOptions {
  * into the month tooltip, which is reachable from anywhere in the column instead
  * of from a 6px band around the rule.
  */
-export const eventMarkersPlugin: Plugin<'line'> = {
-  id: 'eventMarkers',
+export const eventGutterPlugin: Plugin<'line'> = {
+  id: 'eventGutter',
 
   afterDraw(chart) {
-    const c = chart as ChartWithMarkers;
+    const c = chart as ChartWithEventGutter;
     const { events = [], focusedIndex, highlightedIndex } = readOptions(chart);
     const labels = (chart.data.labels ?? []) as string[];
 

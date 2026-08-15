@@ -7,7 +7,7 @@ filter, `"YYYY M"` on the chart axis, `y * 12 + m` in the axis sort, `"YYYY-MM"`
 `transit-events.json` and the URL, and a 0-based `<option value>` in the month picker. A converter
 existed purely to bridge two of them — `formatMonthKey`, `"YYYY M"` → `"YYYY-MM"` — and the chart
 label format was re-derived by hand in `src/components/OutputArea.tsx` from a third encoding, so a
-change to `timeKey` would have made every event marker silently fail to draw.
+change to `timeKey` would have made every Event Gutter shape silently fail to draw.
 
 We introduce `src/utils/month.ts`: a `Month` is `{ year: number; month: number }` with a **1-based**
 month, a `MonthWindow` is a pair of them, and the two window-containment rules are functions over
@@ -76,7 +76,7 @@ boundary tests rather than this derivation are what make it safe.
   is a leaf value module that should not know a chart exists. `OutputArea` reaches it through
   `src/ridership/index.ts`, which is a legal crossing of
   [ADR-0003](0003-one-domain-folder-not-a-repo-wide-reorganisation.md)'s seam.
-- **The event markers can no longer silently fail.** They matched a hand-built `"YYYY M"` string
+- **The Event Gutter shapes can no longer silently fail.** They matched a hand-built `"YYYY M"` string
   against the axis, and `indexOf` returning `-1` drew nothing and reported nothing. They now compare
   `Month` values, so a mismatch is a type error rather than a missing annotation.
 - **Both window rules sit adjacent in one file, and their disagreement is pinned by a test.** The

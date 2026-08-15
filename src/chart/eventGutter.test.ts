@@ -1,13 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import colors from 'tailwindcss/colors';
-import { eventMarkersPlugin, groupEventsByMonthIndex } from './eventMarkers';
+import { eventGutterPlugin, groupEventsByMonthIndex } from './eventGutter';
 import type { EventCategory, TransitEvent } from '../@types/events.types';
 import { makeTransitEvent } from '../test/builders';
 
 // Called as a method on the plugin object, not extracted from it, so the
 // unbound-method rule stays satisfied.
 type AfterDraw = (chart: unknown, args: unknown, opts: unknown) => void;
-const plugin = eventMarkersPlugin as unknown as { afterDraw: AfterDraw };
+const plugin = eventGutterPlugin as unknown as { afterDraw: AfterDraw };
 const afterDraw: AfterDraw = (chart, args, opts) =>
   plugin.afterDraw(chart, args, opts);
 
@@ -38,7 +38,7 @@ const makeChart = (
   events: TransitEvent[],
   options: { focusedIndex?: number | null; highlightedIndex?: number | null } = {},
 ) => ({
-  options: { plugins: { eventMarkers: { events, ...options } } },
+  options: { plugins: { eventGutter: { events, ...options } } },
   data: { labels: LABELS },
   scales: { x: { getPixelForValue: (i: number) => 50 + i * 25 } },
   chartArea: { top: 10, bottom: 200, left: 0, right: 400 },
@@ -104,7 +104,7 @@ describe('groupEventsByMonthIndex', () => {
   });
 });
 
-describe('event marker dots', () => {
+describe('event gutter dots', () => {
   it('draws the dot on the x-axis baseline at the month position', () => {
     // Month 3 is index 2 → getPixelForValue(2) = 100; baseline is chartArea.bottom.
     const [dot] = arcsFor([eventAt(3)]);
@@ -201,7 +201,7 @@ const EXPECTED_HUE: Record<EventCategory, { '400': string; '500': string }> = {
 
 const ALL_CATEGORIES = Object.keys(EXPECTED_HUE) as EventCategory[];
 
-describe('event marker category colors', () => {
+describe('event gutter category colors', () => {
   /** One category per month, so fill N in the log is category N. */
   const oneEachMonth = (categories: EventCategory[]) =>
     categories.map((category, i) => eventAt(i + 1, { category }));
@@ -218,7 +218,7 @@ describe('event marker category colors', () => {
    * regression the nine-hue palette exists to prevent, and the one a grouped
    * palette cannot express.
    */
-  it('gives no two categories the same marker color', () => {
+  it('gives no two categories the same gutter color', () => {
     const fills = fillsFor(oneEachMonth(ALL_CATEGORIES));
     expect(new Set(fills).size).toBe(ALL_CATEGORIES.length);
   });

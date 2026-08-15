@@ -56,7 +56,7 @@ because an element crop would clip at the narrow viewport edge.
 | Spec | Covers | Baselines |
 | --- | --- | --- |
 | [`visual.spec.ts`](../../e2e/visual.spec.ts) | full page — default dashboard, a line selected, the expanded selector | 6 |
-| [`chart-content.spec.ts`](../../e2e/chart-content.spec.ts) | what the chart *draws* — one line, several, aggregate, Saturday, a narrow window, event markers at several category colours | 12 |
+| [`chart-content.spec.ts`](../../e2e/chart-content.spec.ts) | what the chart *draws* — one line, several, aggregate, Saturday, a narrow window, Event Gutter shapes at several category colours | 12 |
 | [`line-filters.spec.ts`](../../e2e/line-filters.spec.ts) | search, rail-only mode, the empty-mode state (desktop) | 5 |
 | [`summary-tiles.spec.ts`](../../e2e/summary-tiles.spec.ts) | the summary pane — a negative change, several lines | 4 |
 | [`map.spec.ts`](../../e2e/map.spec.ts) | all lines dimmed, selected in brand colours, selected at phone width | 3 |
@@ -80,7 +80,7 @@ the full-page set's `0.02`. It parks the mouse at (0,0) first, so a stray cursor
 state in the shot.
 
 **A ratio is still the wrong instrument when the subject is a few thin strokes.** The chart's event
-markers are ~1,900 px of a ~462,000 px crop, so recolouring *every* marker moves 0.4% and passes at
+shapes are ~1,900 px of a ~462,000 px crop, so recolouring *every* shape moves 0.4% and passes at
 `0.01` — which is not a hypothetical: regenerating the ten other `chart-content` baselines against
 the nine-hue palette left all ten byte-identical. `shootPane`/`shootChart` take an optional
 `{ maxDiffPixels }` for these, which replaces the ratio rather than adding to it. Calibrate it by
