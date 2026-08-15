@@ -93,8 +93,12 @@ than its props list suggests.
 
 `OutputArea` is `React.lazy` on purpose: it pulls in Chart.js and MapLibre, and keeping them out of
 the entry chunk lets the header and line table paint first. Note the gate — expanding the line
-selector *unmounts* `OutputArea` rather than hiding it, so the chart and map rebuild from scratch
-on collapse. `App.tsx:156-159` flags this.
+selector *hides* `OutputArea` rather than unmounting it (#168). The wrapper is `display: contents`
+when visible, so `OutputArea`'s own root stays the grid item and the layout is identical to the
+conditional render it replaced; `display: none` when expanded takes it out of the grid entirely.
+Unmounting used to tear down the Chart.js canvas and the MapLibre instance, so every collapse paid
+for a fresh WebGL context, basemap style and tiles. Both libraries watch their container with a
+ResizeObserver, so they re-measure themselves when the box comes back.
 
 ## 08-state-slices — State slices
 
@@ -190,6 +194,10 @@ The one imperative corner of an otherwise declarative app. MapLibre owns its own
 `Map.tsx` holds everything in refs and the component never re-renders on map state: one
 `useEffect([])` builds the map, adds the two layers once the style has loaded, and tears it all
 down on unmount.
+
+In practice that teardown almost never runs: since #168 expanding the line selector hides
+`OutputArea` with CSS rather than unmounting it, so the instance built on first paint is usually the
+only one a session ever has.
 
 Layer order is load-bearing — `lines-all` paints every route dimmed underneath, `lines-selected`
 paints the chosen ones on top in brand colour, so selection reads as emphasis rather than as the

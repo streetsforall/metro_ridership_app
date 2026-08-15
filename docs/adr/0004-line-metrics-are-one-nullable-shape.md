@@ -34,7 +34,7 @@ the `NaN` check did. Nothing observable changes.
 
 **`LineMetrics` does not absorb `coveredFrom` / `coveredTo` / `isPartialCoverage`.** Folding the
 eight derived fields into one shape is tempting, and candidate 2 will want one shape to return. But
-`isPartialCoverage` is defined against `buildWindowMonthAxis(ridershipByLine)` — the union of every
+`isPartialCoverage` is defined against `buildWindowMonthAxis(consolidated)` — the union of every
 line's months — so it cannot be computed from one line's records. Merging it would force
 `lineMetrics` to accept the whole `ConsolidatedRidership` map, turning a per-line function into a
 whole-view one and spending the depth this change buys. The two shapes have two different scopes,
