@@ -42,9 +42,41 @@ Judge the gate against a **control run at the base commit**, not against the com
 file: the re-ingest must produce byte-for-byte what it produced before the change. PR 1
 does (`sha256 f03df3a9…` for both runs).
 
-Someone should decide before PR 3 whether those five rows are genuinely-missing line 106
-data or a stale commit of `ridership.json`, because PR 3 is the one that rewrites these
-files for real.
+#### Settled: the committed file is right, the five rows are wrong
+
+Neither answer in the original framing was correct — `ridership.json` is not stale, and
+line 106 is not missing data. **Line 106 was discontinued.** It ran normally to the end
+of 2025 (158 stops, 4,062 weekday boardings in 2025-12), is absent from every export
+from 2026-01 on — the *only* line dropped anywhere in the 11-month window — and is gone
+from `public/metro_lines.geojson`, so Metro's own GTFS no longer carries it either.
+
+A zero row asserts the line ran and carried nobody. Writing five of them would draw
+line 106 plunging from 4,062 to a five-month flatline along the axis, which reads as a
+ridership collapse rather than a line that ended. `CLAUDE.md` already has the words for
+this: *a month a line doesn't report is a gap, not a zero.*
+
+The rows appear because `fill_missing_months` cross-joins **the batch's** month range
+with **the batch's** line set. Incremental ingests each covered a narrow range, so a line
+that starts or stops mid-window was never padded across months outside its own batch. One
+full re-ingest spans all 11 months at once and pads everything. Line 74 is the mirror
+image and is already in the committed file — five zeros for 2025-07 … 11, then real data
+from 2025-12 — because its batch's range covered those months. So the file's working
+convention is **pad the start, not the end**: at 2026-05 there are 114 lines and not one
+with zero weekday ridership.
+
+**Action for PR 3: none, beyond not "fixing" it.** Do not chase a clean
+`git diff src/data/ridership.json` after a full re-ingest, and do not add the five rows.
+
+**Separately — a live footgun PR 3 must not walk into.** `merge_ridership`'s docstring
+promises that "gaps in new data (within its date range) are backfilled from existing data
+before the concat, preserving non-zero historical values." That backfill is
+**unreachable**: its mask is `isnull(new) & notnull(old)`, but `fill_missing_months` has
+already `.fillna(0)`'d every gap, so the new side is never null (0 nulls survive it).
+Meanwhile `pd.concat([merged, current]).drop_duplicates(keep="first")` lets the new rows
+win. So a wide-range re-ingest **can overwrite real committed ridership with zeros**, and
+the guard that is supposed to prevent exactly that does not run. Today it only surfaces as
+five insertions because line 106's rows are absent rather than present-and-nonzero.
+Nobody has fixed this; it is in `process_ridership.py`, which is out of scope for PR 1.
 
 ## The contract PR 1 freezes
 
