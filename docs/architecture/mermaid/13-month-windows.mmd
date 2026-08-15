@@ -27,7 +27,7 @@ flowchart TB
     axisDef --> axisGap --> axisTwo
   end
 
-  onePlace["utils/month.ts — containsOffset() and contains()<br/>encode both rules once. Landed and tested;<br/>the production path still does Date arithmetic. ADR-0006"]
+  onePlace["utils/month.ts — containsOffset() and contains()<br/>state both rules once, and production goes through them.<br/>ridership/monthWindow.ts and ridership/eventWindow.ts are<br/>the Date-shaped adapters in front. ADR-0001 · ADR-0006"]
 
   choice --> monthWindow
   choice --> eventWindow
@@ -37,6 +37,4 @@ flowchart TB
   keep --> onePlace
 
   classDef cycle fill:#fbe0e1,stroke:#eb131b,stroke-width:1.5px,color:#44403c
-  classDef pending fill:#fdf2d6,stroke:#fdb913,stroke-width:1.5px,color:#44403c
   class keep cycle
-  class onePlace pending

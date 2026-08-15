@@ -40,7 +40,9 @@ npm run docs:architecture      # regenerate the diagram set
 ```
 
 One test file: `npx vitest run src/ridership/lineMetrics.test.ts`, or filter by name with `-t`.
-Vitest runs with globals enabled — no per-file imports of `describe`/`it`/`expect`.
+**Every spec imports `describe`/`it`/`expect` from `vitest`.** `vitest.config.ts` sets
+`globals: true` so the runtime doesn't need them, but `tsconfig.app.json` doesn't list
+`vitest/globals`, so `tsc -b` doesn't see them and `npm run build` fails without the import.
 
 Python pipeline: `pip install -r scripts/requirements.txt`, then `pytest scripts/`.
 
@@ -60,6 +62,12 @@ Each one has cost someone real time. The reasoning is in `docs/`; this is the sh
 - **Don't silently change the Month Window's off-by-one.** It is intended and pinned by the
   committed chart baselines — [ADR-0001](docs/adr/0001-ridership-month-window-is-deliberately-offset.md).
   The Event Window disagreeing with it is also intended.
+- **Don't restate either window rule at a call site.** Each is stated once, in
+  [`src/utils/month.ts`](src/utils/month.ts) — `containsOffset` and `contains` — and reached through
+  the `Date`-shaped adapters `isInMonthWindow` and `isInEventWindow` in `src/ridership/`. A second
+  copy is how the panels start disagreeing about which months a URL shows.
+- **Don't hand a window bound a day or a time.** Every producer builds `new Date(y, m - 1)`, midnight
+  on the first, and both adapters read only the year and month off it.
 - **Don't set `spanGaps`** on the chart. A month a line doesn't report is a gap, not a zero.
 - **Don't make `fill_missing_months` pad anything but a line's leading gap**, and don't let its pads
   become `0` before `merge_ridership` has backfilled them. A pad is NaN so the merge can tell it from

@@ -83,6 +83,10 @@ export const displayMonth = (m: Month): string =>
  * This is the **Event Window** rule (`CONTEXT.md`). It deliberately disagrees with
  * `containsOffset` below, which applies to the same window. Reconciling them would
  * change which events appear for a given URL — see ADR-0001.
+ *
+ * The one statement of the rule. Production reaches it through
+ * `src/ridership/eventWindow.ts`, which adapts the `Date` bounds and the `"YYYY-MM"`
+ * event date the context log actually carries. Do not restate it at a call site.
  */
 export function contains(w: MonthWindow, m: Month): boolean {
   const r = ordinal(m);
@@ -103,6 +107,13 @@ export function contains(w: MonthWindow, m: Month): boolean {
  * comparison `start < record < end` is `S < R + 1 < E`, i.e. `S <= R <= E - 2`. The
  * boundary tests in `month.test.ts`, not this derivation, are what make that safe;
  * ADR-0006 carries the working.
+ *
+ * The one statement of the rule. Production reaches it through
+ * `src/ridership/monthWindow.ts`, which adapts the `Date` bounds; both the chart's
+ * Ridership View and the stop panel's Stop View filter through that adapter.
+ * `monthWindow.test.ts` runs the two forms against each other over every window pair
+ * in a decade, which is what let the `Date` arithmetic be retired. Do not restate this
+ * at a call site.
  */
 export function containsOffset(w: MonthWindow, m: Month): boolean {
   const r = ordinal(m);

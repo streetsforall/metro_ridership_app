@@ -173,6 +173,12 @@ This reads like an off-by-one and is not. It is long-standing behaviour, users h
 against it, and `e2e/chart-content.spec.ts` renders windows through it into committed PNG
 baselines, so normalising it would change what every existing link shows. ADR-0001 accepts it.
 
+Each rule is stated exactly once, in `utils/month.ts` — `containsOffset` and `contains` — and
+production reaches it through a `Date`-shaped adapter (`ridership/monthWindow.ts`,
+`ridership/eventWindow.ts`). Two copies of a rule this surprising is how the chart and the stop
+panel would start disagreeing about which months one URL shows; ADR-0001's addendum carries the
+argument and the test that licensed retiring the original `Date` arithmetic.
+
 The Month Axis is derived after filtering: one shared axis for every series, because Chart.js
 appends any label missing from `labels` to the end and a per-series axis scrambles the rest.
 
@@ -264,7 +270,8 @@ is a pointer file, so it cannot contradict anything.
 
 Of the seven ADRs, one is superseded and one is half-landed. 0003 deferred a `src/utils/`
 reorganisation; 0007 replaces its pause with a standing rule, and the reorg itself is now tracked
-in #170, blocked on the month migration. 0006's `month.ts` exists with a full spec and still no
-production caller — #144, #145 and #146 are the migration onto it, and they are the most actionable
-thing in this set. 0005 is done: #154 moved every consumer onto Line Readouts and #167 deleted the
+in #170, blocked on the month migration. 0006's `month.ts` now has its first production callers:
+both window rules are stated there and reached through the adapters in `src/ridership/`. #144, #145
+and #146 — the rest of the migration, moving the app's other month encodings onto `Month` — are
+still the most actionable thing in this set. 0005 is done: #154 moved every consumer onto Line Readouts and #167 deleted the
 write-back, so no `Line` carries a derived figure any more.
