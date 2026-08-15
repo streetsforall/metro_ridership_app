@@ -155,7 +155,7 @@ export function listedReadouts({
  * May return a NETWORK_INVALID_REQUEST.
  * Will need to have CSV export logic in a backend when that happens.
  */
-export const generateCSV = (ridershipByLine: ConsolidatedRidership): string => {
+export const generateCSV = (consolidated: ConsolidatedRidership): string => {
   let csvContent = 'data:text/csv;charset=utf-8,';
 
   // Add headers to CSV.
@@ -164,7 +164,7 @@ export const generateCSV = (ridershipByLine: ConsolidatedRidership): string => {
   csvContent += headers;
 
   // Get selected lines
-  const ridershipBySelectedLine = Object.values(ridershipByLine).filter(
+  const ridershipBySelectedLine = Object.values(consolidated).filter(
     (line) => line.selected,
   );
 

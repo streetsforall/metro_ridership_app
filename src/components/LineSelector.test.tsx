@@ -12,7 +12,7 @@ vi.mock('react-chartjs-2', () => ({
 const mockLine: LineReadout = makeLineReadout();
 
 const defaultProps = {
-  ridershipByLine: {} as ConsolidatedRidership,
+  consolidated: {} as ConsolidatedRidership,
   lines: [] as LineReadout[],
   setLines: vi.fn(),
   onToggleSelectLine: vi.fn(),

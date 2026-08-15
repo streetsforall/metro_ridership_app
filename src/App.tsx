@@ -136,7 +136,7 @@ function App() {
           <LineSelector
             {...userDashboardInputState}
             lines={listed}
-            ridershipByLine={consolidated}
+            consolidated={consolidated}
             isExpanded={isLineSelectorExpanded}
             setIsExpanded={setIsLineSelectorExpanded}
           />

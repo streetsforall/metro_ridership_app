@@ -136,7 +136,7 @@ const toggleSortDirection = (sortDirection: SortDirection): SortDirection => {
 };
 
 interface LineSelectorProps {
-  ridershipByLine: ConsolidatedRidership;
+  consolidated: ConsolidatedRidership;
   lines: LineReadout[];
   /**
    * The Line state setter. Still `Line[]`: readouts are derived per Month Window
@@ -162,7 +162,7 @@ export default function LineSelector(props: LineSelectorProps) {
     useState<ColumnHeaderState[]>(columnStates);
   const [isCopied, setIsCopied] = useState(false);
   const {
-    ridershipByLine,
+    consolidated,
     lines,
     dayOfWeek,
     onToggleSelectLine,
@@ -185,8 +185,8 @@ export default function LineSelector(props: LineSelectorProps) {
    * scales differ.
    */
   const monthAxis: string[] = useMemo(
-    () => buildWindowMonthAxis(ridershipByLine),
-    [ridershipByLine],
+    () => buildWindowMonthAxis(consolidated),
+    [consolidated],
   );
 
   const onExpandClick = (): void => {
@@ -383,7 +383,7 @@ export default function LineSelector(props: LineSelectorProps) {
             <tbody>
               {sortedLines.map((line, id) => {
                 const consolidatedRecord: ConsolidatedRecord =
-                  ridershipByLine[line.id];
+                  consolidated[line.id];
 
                 return (
                   <LineTableRow
@@ -409,7 +409,7 @@ export default function LineSelector(props: LineSelectorProps) {
 
       <a
         id="download-csv"
-        href={generateCSV(ridershipByLine)}
+        href={generateCSV(consolidated)}
         download="metro_ridership.csv"
         className="button flex gap-2 items-center justify-center"
       >
