@@ -67,6 +67,12 @@ caught up with a rename — the same silent-divergence bug the alias table exist
 prevent. The unmatched names go into the JSON *and* print as a paste-ready
 `stop_aliases.json` fragment.
 
+**Keep the output pretty-printed.** `fetch_metro_lines.py` minifies
+`public/metro_lines.geojson` because that file is fetched at runtime, where whitespace is
+pure overhead. This one is different: it is where a wrong alias silently moves a dot, so
+the diff has to be readable by whoever reviews the change. Minifying would save ~0.7 MB
+of the 1.6 MB and cost the only review anyone can do of it.
+
 There is deliberately **no timestamp** in `generated_from`. The file is committed, and a
 wall-clock stamp would produce a diff on every run whether or not the geometry moved.
 Feed identity stands in for it: `feed_start_date`/`feed_end_date` where the feed carries
