@@ -7,6 +7,7 @@ import {
   type LineCoverage,
 } from './chartData';
 import { lineMetrics, type LineMetrics } from './lineMetrics';
+import { isInMonthWindow } from './monthWindow';
 import { getLineColor, getLineNames } from '../utils/lines';
 import transitEventsData from '../data/transit-events.json';
 import type { CustomChartData } from '../@types/chart.types';
@@ -71,11 +72,9 @@ export interface RidershipView {
  *
  * A record at calendar-month ordinal `R` is included when `S <= R <= E - 2`: the
  * start month is included, and **the end month and the month immediately before
- * it are excluded**. This is intended, not an off-by-one bug — the app has always
- * behaved this way, users have shared URLs against it, and
- * `e2e/chart-content.spec.ts` renders windows through it into committed PNG
- * baselines. The `Date` arithmetic below is copied verbatim rather than restated
- * as an ordinal comparison, precisely so it cannot drift. See
+ * it are excluded**. This is intended, not an off-by-one bug. The rule and the
+ * `Date` arithmetic that implements it live in `./monthWindow`, which is the one
+ * copy; this module calls it rather than restating it. See
  * `docs/adr/0001-ridership-month-window-is-deliberately-offset.md`.
  *
  * The Event Window, applied further down, is **inclusive on both ends** and
@@ -97,19 +96,12 @@ export function buildRidershipView(input: RidershipViewInput): RidershipView {
   const consolidatedRidership: ConsolidatedRidership = {};
 
   /**
-   * Group raw records by line ID, skipping any outside the selected date window.
-   * new Date(year, month) treats month as 0-based, but the data stores it as
-   * 1-based, so the comparison is effectively off by one month —
-   * preserved from the original implementation.
+   * Group raw records by line ID, skipping any outside the Month Window. The
+   * predicate is `isInMonthWindow` and is deliberately offset — see `./monthWindow`.
    */
   if (records) {
     for (const record of records) {
-      const metricDate = new Date(record.year, record.month);
-      if (
-        startDate.getTime() >= metricDate.getTime() ||
-        endDate.getTime() <= metricDate.getTime()
-      )
-        continue;
+      if (!isInMonthWindow(record, startDate, endDate)) continue;
 
       if (!consolidatedRidership[record.line_name]?.ridershipRecords) {
         /**

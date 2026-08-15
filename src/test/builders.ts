@@ -26,6 +26,7 @@ import type {
   RidershipRecord,
 } from '../@types/metrics.types';
 import type { TransitEvent } from '../@types/events.types';
+import type { StopPlace, StopRecord } from '../@types/stops.types';
 
 /**
  * A Line. Defaults to the A Line (801) — the shape four of the five factories
@@ -85,6 +86,44 @@ export const makeConsolidatedRidership = (
     ridershipRecords,
     ...overrides,
   },
+});
+
+/**
+ * A Stop Place. Defaults to a located bus stop — the common case, and the one the map
+ * layer actually draws. Override `lat`/`lon` with `null` for the unmatched-stop case,
+ * which is kept rather than dropped.
+ */
+export const makeStopPlace = (
+  overrides: Partial<StopPlace> = {},
+): StopPlace => ({
+  key: 'bus:vermont-wilshire',
+  name: 'Vermont / Wilshire',
+  lat: 34.0625,
+  lon: -118.2914,
+  mode: 'Bus',
+  stationOrder: null,
+  ...overrides,
+});
+
+/**
+ * A Stop Ridership Record. Alightings default slightly below boardings so a test that
+ * does not state its own numbers still distinguishes the two — reading one where the
+ * other was meant is the failure mode these figures exist to catch.
+ */
+export const makeStopRecord = (
+  overrides: Partial<StopRecord> = {},
+): StopRecord => ({
+  year: 2025,
+  month: 7,
+  stop_key: 'bus:vermont-wilshire',
+  line_name: 204,
+  wkday_ons: 1000,
+  wkday_offs: 900,
+  sat_ons: 600,
+  sat_offs: 550,
+  sun_ons: 400,
+  sun_offs: 350,
+  ...overrides,
 });
 
 /** A Transit Event. `line_ids: []` means system-wide. */
