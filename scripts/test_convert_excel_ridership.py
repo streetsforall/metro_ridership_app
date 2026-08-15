@@ -553,6 +553,15 @@ class TestUnnamedStopRows:
         )
         assert list(result["stop_key"]) == ["bus:vermont-wilshire"]
 
+    def test_a_name_with_no_keyable_characters_is_dropped_too(self):
+        """Blank is not the only way a name can fail: `stop_key` also refuses one with
+        no alphanumerics. The filter asks it rather than guessing the rule."""
+        df = _make_bus_df_with_unnamed_stop()
+        df.loc[1, "STOP_NAME"] = "---"
+        df.loc[2, "STOP_NAME"] = "///"
+        result = aggregate_to_stop_ridership(df, year=2026, month=6, mode="Bus")
+        assert list(result["stop_key"]) == ["bus:vermont-wilshire"]
+
     def test_the_nameless_riders_stay_in_the_line_total(self):
         """Dropping them upstream in extract_leaf_rows would take them out of the line
         totals too, quietly restating committed history in ridership.json. Those riders
@@ -572,7 +581,7 @@ class TestUnnamedStopRows:
         aggregate_to_stop_ridership(
             _make_bus_df_with_unnamed_stop(), year=2026, month=6, mode="Bus"
         )
-        assert "2 leaf row(s) have no stop name" in capsys.readouterr().out
+        assert "2 leaf row(s) have no usable stop name" in capsys.readouterr().out
 
     def test_a_fully_named_frame_prints_nothing(self, capsys):
         aggregate_to_stop_ridership(_make_bus_df(), year=2026, month=1, mode="Bus")

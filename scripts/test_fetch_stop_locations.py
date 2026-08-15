@@ -25,8 +25,10 @@ from fetch_stop_locations import (
     group_rail_stops,
     haversine_m,
     join_locations,
+    build_line_shapes,
     max_pairwise_m,
     near_any_point,
+    needing_alias,
     refine_by_line,
     spread_warnings,
     stop_candidates,
@@ -445,6 +447,75 @@ def test_ambiguous_threshold_is_configurable():
     stops, unmatched, _ = join_locations(ridership, candidates, ambiguous_m=50_000.0)
     assert unmatched == []
     assert stops["bus:main-pico"]["spread_m"] > 20_000
+
+
+# --- build_line_shapes ---
+
+def _get_file(**files):
+    """A fake `fetch_gtfs` reader backed by pre-built rows."""
+    return lambda name: files.get(name, [])
+
+
+def test_build_line_shapes_maps_a_line_to_its_points():
+    get_file = _get_file(**{
+        "routes.txt": [{"route_id": "30-100", "route_short_name": "30", "route_long_name": ""}],
+        "trips.txt": [{"route_id": "30-100", "shape_id": "s1"}],
+        "shapes.txt": [
+            {"shape_id": "s1", "shape_pt_sequence": "1", "shape_pt_lat": "34.0", "shape_pt_lon": "-118.0"},
+            {"shape_id": "s1", "shape_pt_sequence": "2", "shape_pt_lat": "34.1", "shape_pt_lon": "-118.1"},
+        ],
+    })
+    assert build_line_shapes(get_file, "Bus") == {30: [(34.0, -118.0), (34.1, -118.1)]}
+
+def test_build_line_shapes_keeps_every_shape_not_the_longest():
+    """get_coord_arrays picks the longest shape per bus route to keep the geojson small.
+    Here a stop on a short branch is exactly what has to be found, so all shapes count."""
+    get_file = _get_file(**{
+        "routes.txt": [{"route_id": "30-100", "route_short_name": "30", "route_long_name": ""}],
+        "trips.txt": [{"route_id": "30-100", "shape_id": "main"},
+                      {"route_id": "30-100", "shape_id": "branch"}],
+        "shapes.txt": [
+            {"shape_id": "main", "shape_pt_sequence": "1", "shape_pt_lat": "34.0", "shape_pt_lon": "-118.0"},
+            {"shape_id": "main", "shape_pt_sequence": "2", "shape_pt_lat": "34.1", "shape_pt_lon": "-118.1"},
+            {"shape_id": "branch", "shape_pt_sequence": "1", "shape_pt_lat": "34.9", "shape_pt_lon": "-118.9"},
+        ],
+    })
+    assert (34.9, -118.9) in build_line_shapes(get_file, "Bus")[30]
+
+def test_build_line_shapes_skips_routes_it_cannot_resolve():
+    get_file = _get_file(**{
+        "routes.txt": [{"route_id": "X-1", "route_short_name": "X", "route_long_name": ""}],
+        "trips.txt": [{"route_id": "X-1", "shape_id": "s1"}],
+        "shapes.txt": [{"shape_id": "s1", "shape_pt_sequence": "1", "shape_pt_lat": "34.0", "shape_pt_lon": "-118.0"}],
+    })
+    assert build_line_shapes(get_file, "Bus") == {}
+
+def test_build_line_shapes_resolves_rail_line_ids():
+    get_file = _get_file(**{
+        "routes.txt": [{"route_id": "801", "route_short_name": "", "route_long_name": "Metro A Line"}],
+        "trips.txt": [{"route_id": "801", "shape_id": "s1"}],
+        "shapes.txt": [{"shape_id": "s1", "shape_pt_sequence": "1", "shape_pt_lat": "34.0", "shape_pt_lon": "-118.0"}],
+    })
+    assert list(build_line_shapes(get_file, "Rail")) == [801]
+
+def test_build_line_shapes_is_empty_without_shapes():
+    assert build_line_shapes(_get_file(), "Bus") == {}
+
+
+# --- needing_alias / alias_stub ---
+
+def test_only_missing_stops_are_offered_an_alias():
+    """An ambiguous name is one GTFS *does* list, twice. Aliasing it would fold it onto
+    one of the two places and assert a location the data does not support."""
+    unmatched = [
+        {"stop_key": "bus:pico-union", "reason": "no-gtfs-match"},
+        {"stop_key": "bus:main-pico", "reason": "ambiguous-name"},
+    ]
+    assert [u["stop_key"] for u in needing_alias(unmatched)] == ["bus:pico-union"]
+
+def test_alias_stub_offers_nothing_for_an_ambiguous_name():
+    unmatched = [{"stop_key": "bus:main-pico", "reason": "ambiguous-name"}]
+    assert json.loads(alias_stub(needing_alias(unmatched))) == {"bus": {}, "rail": {}}
 
 
 # --- alias_stub ---

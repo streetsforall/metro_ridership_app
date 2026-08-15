@@ -35,8 +35,13 @@ python scripts/fetch_stop_locations.py
 # or, equivalently
 npm run fetch-stops
 
-python scripts/fetch_stop_locations.py --spread-warn 100   # tighten the warning
+python scripts/fetch_stop_locations.py --spread-warn 100   # report more; changes no output
+python scripts/fetch_stop_locations.py --ambiguous 2000    # changes which stops get coordinates
 ```
+
+`--spread-warn` only decides what is printed and what `spread_m` is compared against in
+the provenance block. `--ambiguous` is the one that changes the data: above it, a stop
+gets no coordinate at all.
 
 Re-run it after `data/raw/` gains a month, or when Metro republishes a feed.
 

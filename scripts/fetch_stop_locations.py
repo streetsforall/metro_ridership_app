@@ -27,8 +27,9 @@ stub so the table can be extended.
 
 **Bus stops sharing a name are centroided.** `STOP_NAME` is a name and not a `stop_id`,
 so the two sides of a street are one ridership row and must become one dot. That is
-fine at ~20 m, which is what 4,945 of these groups are. `spread_m` (the widest pairwise
-distance in the group) is emitted for every stop and warned on above `SPREAD_WARN_M`.
+fine at the median of 41 m across the 4,929 groups that have more than one member.
+`spread_m` (the widest pairwise distance in the group) is emitted for every stop and
+warned on above `SPREAD_WARN_M`.
 
 **A name used by two different places gets no coordinate.** LA reuses intersection
 names between cities: `Main / Pico` is downtown *and* in Santa Monica, 21 km apart, so
@@ -99,9 +100,10 @@ NEAR_LINE_M = 150.0
 # intersection in downtown LA and another in Santa Monica, 21 km apart. Such a stop gets
 # **no** coordinate rather than the midpoint, and is reported as `ambiguous-name`.
 #
-# Set well above any real stop's footprint: the widest genuine one in the feed is a
-# transit centre at ~250 m, and the tightest genuinely-ambiguous one left after
-# `refine_by_line` is ~1.5 km, so the gap either side of 1 km is large.
+# The gap it sits in, measured rather than assumed: the widest group that survives is
+# `bus:sunset-marquez` at 899.5 m, and the tightest genuinely-ambiguous one left after
+# `refine_by_line` is `bus:foothill-osborne` at 1,485.4 m. Nothing lies between. Moving
+# this constant below ~900 m starts discarding real stops.
 AMBIGUOUS_M = 1_000.0
 
 # GTFS `location_type`: 0 (or blank) is a stop/platform, 1 a parent station, 2 an
@@ -390,7 +392,6 @@ def join_locations(
     ridership: dict[str, dict],
     candidates: dict[str, list[dict]],
     line_shapes: dict[int, list[tuple[float, float]]] | None = None,
-    threshold: float = SPREAD_WARN_M,
     ambiguous_m: float = AMBIGUOUS_M,
 ) -> tuple[dict[str, dict], list[dict], list[dict]]:
     """Attach geometry to the stops that have ridership.
@@ -429,7 +430,10 @@ def join_locations(
             continue
 
         located = _summarise_group(entry["mode"], members)
-        if line_shapes and located["spread_m"] > threshold:
+        # Gated on `ambiguous_m`, not on the warning threshold: narrowing exists to
+        # rescue a stop that would otherwise lose its coordinate, and a 300 m group is
+        # not in that danger. `--spread-warn` stays purely cosmetic.
+        if line_shapes and located["spread_m"] > ambiguous_m:
             kept = refine_by_line(members, entry["lines"], line_shapes)
             narrowed = _summarise_group(entry["mode"], kept)
             if narrowed["spread_m"] < located["spread_m"]:
@@ -457,6 +461,16 @@ def join_locations(
 
         stops[key] = located
     return stops, unmatched, refined
+
+
+def needing_alias(unmatched: list[dict]) -> list[dict]:
+    """The unmatched entries an alias could actually fix.
+
+    Only `no-gtfs-match`. An `ambiguous-name` stop is one GTFS *does* list, twice, in two
+    places — aliasing it would fold it onto one of them and assert a location the data
+    does not support. Offering it in the paste-ready stub would be advice that is wrong.
+    """
+    return [u for u in unmatched if u.get("reason") == "no-gtfs-match"]
 
 
 def alias_stub(unmatched: list[dict]) -> str:
@@ -528,7 +542,10 @@ def build_document(
             "spread_warn_m": spread_warn_m,
             "near_line_m": NEAR_LINE_M,
             "ambiguous_m": ambiguous_m,
-            "refined_by_line": len(refined),
+            # The whole record, not a count: a narrowed stop's entry is otherwise
+            # indistinguishable from an ordinary group, and the evidence that its dot
+            # moved 8.5 km would exist only in a console someone has since closed.
+            "refined_by_line": sorted(refined, key=lambda r: r["stop_key"]),
         },
         "stops": {key: stops[key] for key in sorted(stops)},
         "unmatched": sorted(unmatched, key=lambda u: u["stop_key"]),
@@ -591,10 +608,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {len(rows):,} stops.txt rows -> {len(keyed):,} keyed locations")
         candidates.update(keyed)
         print("  Reading route shapes to tell same-named stops apart...")
-        line_shapes.update(build_line_shapes(get_file, mode))
+        # Merged rather than replaced: 901 and 910 resolve in both feeds, and the bus
+        # feed is read second.
+        for line_id, points in build_line_shapes(get_file, mode).items():
+            line_shapes.setdefault(line_id, []).extend(points)
 
     stops, unmatched, refined = join_locations(
-        ridership, candidates, line_shapes, args.spread_warn, args.ambiguous
+        ridership, candidates, line_shapes, args.ambiguous
     )
 
     print("\nMatch rate:")
@@ -627,7 +647,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  {stop['spread_m']:>9.1f} m  {stop['stop_key']:<38} "
                   f"(line {', '.join(str(n) for n in stop['lines'])})")
 
-    missing = [u for u in unmatched if u["reason"] == "no-gtfs-match"]
+    missing = needing_alias(unmatched)
     if missing:
         print(f"\n{len(missing)} stop(s) GTFS does not list at all. They are kept in the "
               "output and are simply absent from the map layer.")

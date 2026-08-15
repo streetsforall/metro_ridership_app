@@ -50,7 +50,17 @@
     "spread_warn_m": 200.0,
     "near_line_m": 150.0,
     "ambiguous_m": 1000.0,
-    "refined_by_line": 1
+    "refined_by_line": [
+      {
+        "stop_key": "bus:mission-broadway",
+        "spread_before_m": 8518.1,
+        "spread_after_m": 24.7,
+        "dropped_gtfs_stop_ids": [
+          "13731",
+          "5303"
+        ]
+      }
+    ]
   },
   "stops": {
     "bus:10231-sunland": {
