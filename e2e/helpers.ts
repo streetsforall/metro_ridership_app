@@ -10,9 +10,11 @@ import { expect, test, type Page } from '@playwright/test';
 
 /**
  * The MapLibre map is WebGL over third-party basemap tiles and never renders identically twice,
- * so full-page snapshots mask it out. Its container is a fixed 400px (see Map.css), so masking
- * does not shift page layout. Element-scoped chart shots do not need this — `#lineMap` sits in a
- * sibling pane, outside the crop.
+ * so full-page snapshots mask it out. A mask paints over the element's own box and takes nothing
+ * out of layout, so this does not move anything around it — which matters more now that the
+ * container is elastic (`flex: 1` over a 400px floor, see Map.css) rather than a fixed 400px:
+ * the masked box tracks whatever height the summary beside it drives. Element-scoped chart shots
+ * do not need this — `#lineMap` sits in a sibling pane, outside the crop.
  */
 export const mapMask = (page: Page) => [page.locator('#lineMap')];
 
@@ -33,7 +35,10 @@ export const mapMask = (page: Page) => [page.locator('#lineMap')];
  * The `document.fonts.ready` await here settles the shell's own faces. A caller that goes on to
  * wait for later-mounting content must await it again afterwards — see `gotoDashboard`.
  */
-export async function gotoDashboardShell(page: Page, search = ''): Promise<void> {
+export async function gotoDashboardShell(
+  page: Page,
+  search = '',
+): Promise<void> {
   // Chart.js `responsive: true` observes its container via ResizeObserver and, during a
   // full-page capture, enters a 1px resize feedback loop that oscillates the document width
   // frame-to-frame — so the screenshot can never stabilise its dimensions. Stubbing

@@ -98,17 +98,18 @@ export default function OutputArea({
        * it the row falls back to one column so the map spans the full width
        * rather than sitting in a 2fr track with a hole next to it.
        *
-       * `items-start` stops the two panes stretching to a common height. The
-       * map's container is a fixed 400px (Map.css) while the summary grows with
-       * the number of selected lines, so a stretched map pane is 400px of map
-       * over an arbitrary amount of empty background.
+       * The two panes stretch to a common height, and the map fills its pane
+       * rather than sitting at a fixed height inside a taller one — see
+       * `#lineMap` in Map.css, which is why the pane is a flex column. The row
+       * is as tall as whichever side is taller: the summary grows with the
+       * number of selected lines, and the map holds a 400px floor below that.
        */}
       <div
-        className={`grid gap-4 items-start grid-cols-[1fr] ${hasSelection ? 'lg:grid-cols-[2fr_3fr]' : ''}`}
+        className={`grid gap-4 grid-cols-[1fr] ${hasSelection ? 'lg:grid-cols-[2fr_3fr]' : ''}`}
       >
         {hasSelection && <SummaryData lines={lines} />}
 
-        <div className="pane">
+        <div className="pane flex flex-col">
           <Map lines={lines} />
         </div>
       </div>
