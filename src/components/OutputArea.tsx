@@ -491,11 +491,19 @@ export default function OutputArea({
                     {formatEventDate(event.date)}
                   </span>
                   <div>
-                    <p className="font-medium text-stone-700">{event.title}</p>
+                    {/* Category sits beside the title, not under the description, so the row
+                        leads with what kind of event it is. It keeps the panel header's
+                        small-caps treatment rather than the title's, because that contrast is
+                        what marks it as a label and not part of the title — `items-baseline`
+                        seats the smaller text on the title's baseline, and `flex-wrap` lets it
+                        drop below at narrow widths instead of squeezing the title. */}
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <p className="font-medium text-stone-700">{event.title}</p>
+                      <span className="text-xs uppercase tracking-wider text-stone-400 whitespace-nowrap">
+                        {formatCategory(event.category)}
+                      </span>
+                    </div>
                     <p className="text-stone-500">{event.description}</p>
-                    <p className="mt-0.5 text-xs uppercase tracking-wider text-stone-400">
-                      {formatCategory(event.category)}
-                    </p>
                   </div>
                 </li>
               ))}
