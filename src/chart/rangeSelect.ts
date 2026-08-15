@@ -1,5 +1,6 @@
 import type { Chart as ChartJS, Plugin } from 'chart.js';
 import colors from 'tailwindcss/colors';
+import { monthIndexAtPixel } from './months';
 
 /**
  * Pixels the cursor must travel between mousedown and mouseup before the
@@ -50,15 +51,6 @@ function readOptions(chart: ChartJS): RangeSelectOptions {
     (chart.options.plugins as Record<string, RangeSelectOptions | undefined>)
       .rangeSelect ?? {}
   );
-}
-
-/** Pixel → month index, clamped to the axis so a drag off the edge still lands. */
-function indexAtPixel(chart: ChartJS, pixel: number): number {
-  const { left, right } = chart.chartArea;
-  const clamped = Math.min(Math.max(pixel, left), right);
-  const lastIndex = ((chart.data.labels ?? []).length || 1) - 1;
-  const value = chart.scales.x.getValueForPixel(clamped) ?? 0;
-  return Math.min(Math.max(Math.round(value), 0), lastIndex);
 }
 
 /**
@@ -112,8 +104,8 @@ export const rangeSelectPlugin: Plugin<'line'> = {
         args.changed = true;
         if (Math.abs(state.currentX - state.startX) < DRAG_THRESHOLD_PX) return;
 
-        const a = indexAtPixel(chart, state.startX);
-        const b = indexAtPixel(chart, state.currentX);
+        const a = monthIndexAtPixel(chart, state.startX);
+        const b = monthIndexAtPixel(chart, state.currentX);
         const [startIndex, endIndex] = a <= b ? [a, b] : [b, a];
         if (endIndex - startIndex + 1 < MIN_MONTHS) return;
 
