@@ -28,7 +28,7 @@ Then read whichever guide matches what you're about to do. Don't read them all.
 | [`guides/data.md`](guides/data.md) | Ingesting new ridership data | You have new files from a records request |
 | [`../scripts/README.md`](../scripts/README.md) | The Python pipeline in full — records requests, every script, compression | Working on the pipeline itself |
 | [`ROADMAP.md`](ROADMAP.md) | The stop-level ridership batch — five PRs, the contract they share, the named risks | You're picking up one of those PRs, or wondering where stop data is up to |
-| [`adr/`](adr/) | Eight decisions, with the reasoning | You want to know *why*, or you're about to change something one of them covers |
+| [`adr/`](adr/) | Ten decisions, with the reasoning | You want to know *why*, or you're about to change something one of them covers |
 | [`architecture/diagrams.md`](architecture/diagrams.md) | 21 diagrams — system, data, state, URL, seams, tests, CI | You'd rather see it than read it |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Conventions, and the one docs rule | Before your first PR |
 | [`../DATA_RELEASE_NOTES.md`](../DATA_RELEASE_NOTES.md) | What data landed when | Tracing a change in the numbers |
@@ -47,6 +47,7 @@ Then read whichever guide matches what you're about to do. Don't read them all.
 | [0007](adr/0007-a-folder-with-an-index-is-a-sealed-module.md) | A folder with an `index.ts` is a sealed module; `src/` is flat by default | accepted |
 | [0008](adr/0008-panel-layout-is-a-tailwind-grid-with-url-synced-settings.md) | Panel layout is a Tailwind grid with URL-synced settings; dockview was reverted | accepted |
 | [0009](adr/0009-the-two-window-rules-are-one-rule.md) | One window rule, inclusive on both ends — the chart's two-month offset is gone | accepted, **supersedes 0001** |
+| [0010](adr/0010-the-event-gutter-hit-tests-itself.md) | The Event Gutter hit-tests itself, because Chart.js will not | accepted |
 
 ## Not for humans
 

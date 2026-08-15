@@ -4,22 +4,32 @@ import { eventGutterPlugin, groupEventsByMonthIndex } from '../eventGutter';
 import type { EventCategory, TransitEvent } from '../../@types/events.types';
 import { makeTransitEvent } from '../../test/builders';
 
-// Called as a method on the plugin object, not extracted from it, so the
+// Called as methods on the plugin object, not extracted from it, so the
 // unbound-method rule stays satisfied.
 type AfterDraw = (chart: unknown, args: unknown, opts: unknown) => void;
-const plugin = eventGutterPlugin as unknown as { afterDraw: AfterDraw };
+type GutterEventArgs = {
+  event: { type: string; x?: number | null; y?: number | null };
+  inChartArea: boolean;
+};
+type AfterEvent = (chart: unknown, args: GutterEventArgs, opts: unknown) => void;
+const plugin = eventGutterPlugin as unknown as {
+  afterDraw: AfterDraw;
+  afterEvent: AfterEvent;
+};
 const afterDraw: AfterDraw = (chart, args, opts) =>
   plugin.afterDraw(chart, args, opts);
+const afterEvent: AfterEvent = (chart, args, opts) =>
+  plugin.afterEvent(chart, args, opts);
 
 const makeCtx = () => ({
   save: vi.fn(),
   restore: vi.fn(),
   beginPath: vi.fn(),
   closePath: vi.fn(),
-  moveTo: vi.fn(),
-  lineTo: vi.fn(),
-  // Typed so `arc.mock.calls` yields numbers rather than any, which the
-  // geometry assertions below compare against.
+  // Typed so `.mock.calls` yields numbers rather than any, which the geometry
+  // assertions below compare against.
+  moveTo: vi.fn<(x: number, y: number) => void>(),
+  lineTo: vi.fn<(x: number, y: number) => void>(),
   arc: vi.fn<
     (x: number, y: number, radius: number, start: number, end: number) => void
   >(),
@@ -34,22 +44,64 @@ const makeCtx = () => ({
 /** Twelve months of 2020, the axis every case here draws against. */
 const LABELS = Array.from({ length: 12 }, (_, i) => `2020 ${i + 1}`);
 
-const makeChart = (
-  events: TransitEvent[],
-  options: { focusedIndex?: number | null; highlightedIndex?: number | null } = {},
-) => ({
-  options: { plugins: { eventGutter: { events, ...options } } },
+type ChartOverrides = {
+  focusedIndex?: number | null;
+  highlightedIndex?: number | null;
+  onGutterClick?: (index: number) => void;
+  onGutterHover?: (index: number | null) => void;
+};
+
+const makeChart = (events: TransitEvent[], options: ChartOverrides = {}) => ({
+  options: { plugins: { eventGutter: { transitEvents: events, ...options } } },
   data: { labels: LABELS },
-  scales: { x: { getPixelForValue: (i: number) => 50 + i * 25 } },
+  scales: {
+    x: {
+      getPixelForValue: (i: number) => 50 + i * 25,
+      getValueForPixel: (px: number) => (px - 50) / 25,
+    },
+  },
   chartArea: { top: 10, bottom: 200, left: 0, right: 400 },
   ctx: makeCtx(),
 });
 
-/** The fillStyle in force at each fill() — one per dot, or per wedge. */
-const fillsFor = (
-  events: TransitEvent[],
-  options?: { focusedIndex?: number | null; highlightedIndex?: number | null },
-) => {
+/** The baseline the gutter must never paint on. See `makeChart`. */
+const AXIS_BASELINE = 200;
+
+/** Every (x, y) the plugin painted, across all three path primitives. */
+const pointsFor = (events: TransitEvent[], options?: ChartOverrides) => {
+  const chart = makeChart(events, options);
+  afterDraw(chart, {}, {});
+  return [
+    ...chart.ctx.moveTo.mock.calls,
+    ...chart.ctx.lineTo.mock.calls,
+    ...chart.ctx.arc.mock.calls.map(([x, y]) => [x, y] as [number, number]),
+  ].map(([x, y]) => ({ x, y }));
+};
+
+/**
+ * One triangle per `beginPath`, as {apex, left, right} — the plugin draws each
+ * as moveTo(apex) then lineTo(right) then lineTo(left).
+ */
+const trianglesFor = (events: TransitEvent[], options?: ChartOverrides) => {
+  const chart = makeChart(events, options);
+  afterDraw(chart, {}, {});
+  const apexes = chart.ctx.moveTo.mock.calls;
+  const corners = chart.ctx.lineTo.mock.calls;
+  return apexes.map((apex, i) => {
+    const right = corners[i * 2];
+    const left = corners[i * 2 + 1];
+    return {
+      apexX: apex[0],
+      apexY: apex[1],
+      baseY: left[1],
+      width: right[0] - left[0],
+      height: left[1] - apex[1],
+    };
+  });
+};
+
+/** The fillStyle in force at each fill() — one per triangle. */
+const fillsFor = (events: TransitEvent[], options?: ChartOverrides) => {
   const chart = makeChart(events, options);
   const fills: string[] = [];
   chart.ctx.fill = vi.fn(() => {
@@ -57,16 +109,6 @@ const fillsFor = (
   });
   afterDraw(chart, {}, {});
   return fills;
-};
-
-/** The (x, y, radius) of each arc drawn, ring included. */
-const arcsFor = (
-  events: TransitEvent[],
-  options?: { focusedIndex?: number | null; highlightedIndex?: number | null },
-) => {
-  const chart = makeChart(events, options);
-  afterDraw(chart, {}, {});
-  return chart.ctx.arc.mock.calls.map(([x, y, r]) => ({ x, y, r }));
 };
 
 const eventAt = (month: number, overrides: Partial<TransitEvent> = {}) =>
@@ -104,58 +146,73 @@ describe('groupEventsByMonthIndex', () => {
   });
 });
 
-describe('event gutter dots', () => {
-  it('draws the dot on the x-axis baseline at the month position', () => {
-    // Month 3 is index 2 → getPixelForValue(2) = 100; baseline is chartArea.bottom.
-    const [dot] = arcsFor([eventAt(3)]);
-    expect(dot.x).toBe(100);
-    expect(dot.y).toBe(200);
-  });
-
+describe('event gutter triangles', () => {
   /**
-   * The regression the dots exist to prevent. A full-height rule is a moveTo to
-   * chartArea.top followed by a lineTo to the bottom; a single-category dot
-   * touches neither, so this fails the moment one comes back.
+   * The regression this whole change exists to prevent, and the reason it is
+   * asserted here rather than left to a screenshot: a Line reporting zero riders
+   * is drawn along `chartArea.bottom`, so anything the gutter paints on that row
+   * hides it. The D Line's flat run from 2020-07 to 2025-07 is the case that
+   * surfaced it, and no pixel budget can articulate "not on this one row".
    */
-  it('draws no vertical rule through the plot', () => {
-    const chart = makeChart([eventAt(3)]);
-    afterDraw(chart, {}, {});
-    expect(chart.ctx.lineTo).not.toHaveBeenCalled();
-    expect(chart.ctx.moveTo).not.toHaveBeenCalled();
+  it('paints nothing on the axis baseline', () => {
+    const painted = pointsFor([
+      eventAt(3),
+      eventAt(5, { id: 'a', category: 'opening' }),
+      eventAt(5, { id: 'b', category: 'closure' }),
+    ]);
+    expect(painted).not.toHaveLength(0);
+    painted.forEach((point) => {
+      expect(point.y).toBeGreaterThan(AXIS_BASELINE);
+    });
   });
 
-  it('draws one dot and one ring for a single-event month', () => {
-    expect(arcsFor([eventAt(3)])).toHaveLength(2);
+  it("centres a month's triangle on its position on the axis", () => {
+    // Month 3 is index 2 → getPixelForValue(2) = 100.
+    const [triangle] = trianglesFor([eventAt(3)]);
+    expect(triangle.apexX).toBe(100);
   });
 
-  it('draws a larger dot for a month holding more than one event', () => {
-    const [single] = arcsFor([eventAt(3)]);
-    const [multi] = arcsFor([
+  it('points the triangle up, apex nearest the axis', () => {
+    const [triangle] = trianglesFor([eventAt(3)]);
+    expect(triangle.apexY).toBeGreaterThan(AXIS_BASELINE);
+    expect(triangle.baseY).toBeGreaterThan(triangle.apexY);
+  });
+
+  it('draws one triangle for a single-category month', () => {
+    expect(trianglesFor([eventAt(3)])).toHaveLength(1);
+  });
+
+  it('draws a larger triangle for a month holding more than one event', () => {
+    const [single] = trianglesFor([eventAt(3)]);
+    const [multi] = trianglesFor([
       eventAt(3, { id: 'a' }),
       eventAt(3, { id: 'b' }),
     ]);
-    expect(multi.r).toBeGreaterThan(single.r);
+    expect(multi.width).toBeGreaterThan(single.width);
+    expect(multi.height).toBeGreaterThan(single.height);
   });
 
   it('enlarges the focused month', () => {
-    const [plain] = arcsFor([eventAt(3)]);
-    const [focused] = arcsFor([eventAt(3)], { focusedIndex: 2 });
-    expect(focused.r).toBe(plain.r + 2);
+    const [plain] = trianglesFor([eventAt(3)]);
+    const [focused] = trianglesFor([eventAt(3)], { focusedIndex: 2 });
+    expect(focused.width).toBeGreaterThan(plain.width);
+    expect(focused.height).toBeGreaterThan(plain.height);
   });
 
   it('enlarges the month highlighted from the context log', () => {
-    const [plain] = arcsFor([eventAt(3)]);
-    const [highlighted] = arcsFor([eventAt(3)], { highlightedIndex: 2 });
-    expect(highlighted.r).toBe(plain.r + 2);
+    const [plain] = trianglesFor([eventAt(3)]);
+    const [highlighted] = trianglesFor([eventAt(3)], { highlightedIndex: 2 });
+    expect(highlighted.width).toBeGreaterThan(plain.width);
   });
 
   it('leaves other months at their base size when one is focused', () => {
-    const dots = arcsFor([eventAt(3), eventAt(7)], { focusedIndex: 2 });
-    // [dot, ring] per month, in insertion order.
-    expect(dots[0].r).toBeGreaterThan(dots[2].r);
+    const [focused, other] = trianglesFor([eventAt(3), eventAt(7)], {
+      focusedIndex: 2,
+    });
+    expect(focused.width).toBeGreaterThan(other.width);
   });
 
-  it('rings the dot in the page background so it reads over the axis rule', () => {
+  it('rings each triangle in the page background so it reads over the axis rule', () => {
     const chart = makeChart([eventAt(3)]);
     const strokes: string[] = [];
     chart.ctx.stroke = vi.fn(() => {
@@ -168,7 +225,7 @@ describe('event gutter dots', () => {
   it('draws nothing when no event lands on the axis', () => {
     const chart = makeChart([makeTransitEvent({ date: '2019-04' })]);
     afterDraw(chart, {}, {});
-    expect(chart.ctx.arc).not.toHaveBeenCalled();
+    expect(chart.ctx.moveTo).not.toHaveBeenCalled();
   });
 
   it('caches the grouping on the chart for the click handler', () => {
@@ -177,6 +234,174 @@ describe('event gutter dots', () => {
     };
     afterDraw(chart, {}, {});
     expect(chart.$eventsByIndex?.get(2)).toHaveLength(1);
+  });
+});
+
+/**
+ * Months sit roughly fifteen pixels apart at a full desktop window, so a mixed
+ * month wider than the cap bleeds into its neighbours and the reader can no
+ * longer tell which month a triangle belongs to.
+ */
+describe('event gutter mixed-category months', () => {
+  const GROUP_WIDTH_CAP = 14;
+
+  /** Total painted extent of a month's group, gaps included. */
+  const groupWidth = (triangles: ReturnType<typeof trianglesFor>) => {
+    const lefts = triangles.map((t) => t.apexX - t.width / 2);
+    const rights = triangles.map((t) => t.apexX + t.width / 2);
+    return Math.max(...rights) - Math.min(...lefts);
+  };
+
+  it('draws one triangle per distinct category', () => {
+    const triangles = trianglesFor([
+      eventAt(3, { id: 'a', category: 'opening' }),
+      eventAt(3, { id: 'b', category: 'fare_change' }),
+    ]);
+    expect(triangles).toHaveLength(2);
+  });
+
+  it('keeps a mixed month inside the width cap', () => {
+    const triangles = trianglesFor([
+      eventAt(3, { id: 'a', category: 'opening' }),
+      eventAt(3, { id: 'b', category: 'fare_change' }),
+    ]);
+    expect(groupWidth(triangles)).toBeLessThanOrEqual(GROUP_WIDTH_CAP);
+  });
+
+  it('shares one baseline across the group', () => {
+    const triangles = trianglesFor([
+      eventAt(3, { id: 'a', category: 'opening' }),
+      eventAt(3, { id: 'b', category: 'fare_change' }),
+    ]);
+    expect(triangles[0].baseY).toBe(triangles[1].baseY);
+  });
+
+  it('centres the group on the month', () => {
+    const triangles = trianglesFor([
+      eventAt(3, { id: 'a', category: 'opening' }),
+      eventAt(3, { id: 'b', category: 'fare_change' }),
+    ]);
+    const lefts = triangles.map((t) => t.apexX - t.width / 2);
+    const rights = triangles.map((t) => t.apexX + t.width / 2);
+    const centre = (Math.min(...lefts) + Math.max(...rights)) / 2;
+    expect(centre).toBeCloseTo(100);
+  });
+
+  /**
+   * The data holds nine categories but has never put more than two in one month
+   * — 2020-12 and 2023-06 are the only mixed ones. The cap must degrade rather
+   * than assume that, so this synthesises the month the data has not produced.
+   */
+  it('holds the cap for a month carrying three categories', () => {
+    const triangles = trianglesFor([
+      eventAt(3, { id: 'a', category: 'opening' }),
+      eventAt(3, { id: 'b', category: 'fare_change' }),
+      eventAt(3, { id: 'c', category: 'closure' }),
+    ]);
+    expect(triangles).toHaveLength(3);
+    expect(groupWidth(triangles)).toBeLessThanOrEqual(GROUP_WIDTH_CAP);
+  });
+
+  it('holds the cap for a month carrying every category at once', () => {
+    const triangles = trianglesFor(
+      ALL_CATEGORIES.map((category, i) =>
+        eventAt(3, { id: `all-${i}`, category }),
+      ),
+    );
+    expect(triangles).toHaveLength(ALL_CATEGORIES.length);
+    expect(groupWidth(triangles)).toBeLessThanOrEqual(GROUP_WIDTH_CAP);
+  });
+
+  it('still paints nothing on the axis baseline when capped', () => {
+    const painted = pointsFor(
+      ALL_CATEGORIES.map((category, i) =>
+        eventAt(3, { id: `all-${i}`, category }),
+      ),
+    );
+    painted.forEach((point) => {
+      expect(point.y).toBeGreaterThan(AXIS_BASELINE);
+    });
+  });
+});
+
+/**
+ * Chart.js dispatches `onClick` only inside `chartArea` and does not retarget a
+ * hover outside it, so the gutter resolves its own pointer events. See ADR-0010.
+ */
+describe('event gutter hit-testing', () => {
+  const below = (type: string, x: number) => ({
+    event: { type, x, y: AXIS_BASELINE + 8 },
+    inChartArea: false,
+  });
+
+  it('pins the month under a click below the axis', () => {
+    const onGutterClick = vi.fn();
+    const chart = makeChart([eventAt(3)], { onGutterClick });
+    afterEvent(chart, below('click', 100), {});
+    expect(onGutterClick).toHaveBeenCalledWith(2);
+  });
+
+  it('reports the month under a hover below the axis', () => {
+    const onGutterHover = vi.fn();
+    const chart = makeChart([eventAt(3)], { onGutterHover });
+    afterEvent(chart, below('mousemove', 100), {});
+    expect(onGutterHover).toHaveBeenCalledWith(2);
+  });
+
+  /** Two routes to one pin is the thing ADR-0010 exists to prevent. */
+  it('stays silent inside the plot, where Chart.js already dispatches', () => {
+    const onGutterClick = vi.fn();
+    const onGutterHover = vi.fn();
+    const chart = makeChart([eventAt(3)], { onGutterClick, onGutterHover });
+    afterEvent(
+      chart,
+      { event: { type: 'click', x: 100, y: 150 }, inChartArea: true },
+      {},
+    );
+    afterEvent(
+      chart,
+      { event: { type: 'mousemove', x: 100, y: 150 }, inChartArea: true },
+      {},
+    );
+    expect(onGutterClick).not.toHaveBeenCalled();
+    expect(onGutterHover).not.toHaveBeenCalled();
+  });
+
+  /** The margins left and right of the plot are not the gutter. */
+  it('stays silent outside the plot but above the axis', () => {
+    const onGutterClick = vi.fn();
+    const chart = makeChart([eventAt(3)], { onGutterClick });
+    afterEvent(
+      chart,
+      { event: { type: 'click', x: 100, y: AXIS_BASELINE }, inChartArea: false },
+      {},
+    );
+    expect(onGutterClick).not.toHaveBeenCalled();
+  });
+
+  it('clears the hover when the pointer leaves the canvas', () => {
+    const onGutterHover = vi.fn();
+    const chart = makeChart([eventAt(3)], { onGutterHover });
+    afterEvent(
+      chart,
+      { event: { type: 'mouseout', x: null, y: null }, inChartArea: false },
+      {},
+    );
+    expect(onGutterHover).toHaveBeenCalledWith(null);
+  });
+
+  it('clamps a click past the end of the axis to the last month', () => {
+    const onGutterClick = vi.fn();
+    const chart = makeChart([eventAt(3)], { onGutterClick });
+    afterEvent(chart, below('click', 5000), {});
+    expect(onGutterClick).toHaveBeenCalledWith(LABELS.length - 1);
+  });
+
+  it('resolves a month with no event, as the axis strip always did', () => {
+    const onGutterClick = vi.fn();
+    const chart = makeChart([eventAt(3)], { onGutterClick });
+    afterEvent(chart, below('click', 175), {});
+    expect(onGutterClick).toHaveBeenCalledWith(5);
   });
 });
 
@@ -233,10 +458,10 @@ describe('event gutter category colors', () => {
 
   /**
    * A month can mix categories, and the palette is the only thing carrying
-   * category on the chart. Splitting the dot keeps a mixed month visibly mixed
-   * rather than silently reporting whichever event happened to sort first.
+   * category on the chart. One triangle per category keeps a mixed month visibly
+   * mixed rather than silently reporting whichever event happened to sort first.
    */
-  it('splits a mixed month into one wedge per category present', () => {
+  it('gives a mixed month one triangle per category present', () => {
     const fills = fillsFor([
       eventAt(3, { id: 'a', category: 'opening' }),
       eventAt(3, { id: 'b', category: 'fare_change' }),
@@ -244,7 +469,7 @@ describe('event gutter category colors', () => {
     expect(fills).toEqual([colors.emerald['500'], colors.sky['500']]);
   });
 
-  it('draws one wedge, not two, when a month repeats a category', () => {
+  it('draws one triangle, not two, when a month repeats a category', () => {
     const fills = fillsFor([
       eventAt(3, { id: 'a', category: 'opening' }),
       eventAt(3, { id: 'b', category: 'opening' }),

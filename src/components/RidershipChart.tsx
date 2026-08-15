@@ -65,6 +65,14 @@ export default function RidershipChart({
   const handleChartRef = useCallback(
     (instance: ChartJS<'line', CustomChartData[]> | null | undefined) => {
       setChart(instance ?? null);
+      /**
+       * Test seam, on the same terms as `window.__metroMap`: nothing in the app
+       * reads it. The Event Gutter is painted into the canvas, so a spec aiming
+       * at a triangle has no element to locate and would otherwise have to guess
+       * `chartArea.bottom` from the plot's box.
+       */
+      if (instance) window.__metroChart = instance as unknown as ChartJS<'line'>;
+      else delete window.__metroChart;
     },
     [],
   );
@@ -135,16 +143,7 @@ export default function RidershipChart({
       { intersect: false },
       false,
     );
-    if (found.length) {
-      pinIndex(found[0].index);
-      return;
-    }
-
-    // Nothing under the pointer means the axis strip below the plot, where the
-    // dots live. Fall back to the scale so a click on a dot still pins.
-    const value = chart.scales.x.getValueForPixel(event.x ?? 0);
-    if (value === undefined) return;
-    pinIndex(Math.min(Math.max(Math.round(value), 0), months.length - 1));
+    if (found.length) pinIndex(found[0].index);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -204,9 +203,21 @@ export default function RidershipChart({
         },
       },
       eventGutter: {
-        events: transitEvents,
+        // Not `events` — Chart.js reads that key as a plugin's event-type
+        // filter, which silently stops the gutter hearing any pointer event.
+        // See `src/@types/chart.types.ts`.
+        transitEvents,
         focusedIndex: activeIndex,
         highlightedIndex,
+        /**
+         * The gutter sits outside `chartArea`, where Chart.js dispatches neither
+         * `onClick` nor a hover retarget, so the plugin hit-tests its own strip
+         * and reports a month here. Both land on the same setters the plot
+         * drives, which is what makes a triangle's readout identical to the
+         * column's — see ADR-0010.
+         */
+        onGutterClick: pinIndex,
+        onGutterHover: setHoverIndex,
       },
       hoverCrosshair: {
         // Hover already moves Chart.js's own active element, so only the two
@@ -239,6 +250,16 @@ export default function RidershipChart({
         },
         grid: {
           color: colors.stone['300'],
+        },
+        /**
+         * Reserves the Event Gutter. Chart.js lays the axis out from its tick
+         * padding, so asking for the strip here is what keeps the triangles from
+         * ever colliding with the rotated month labels or the MONTH title — at
+         * any window width, rather than at the widths someone happened to check.
+         * It costs a little plot height; the height floor below is unchanged.
+         */
+        ticks: {
+          padding: 16,
         },
         title: {
           display: true,

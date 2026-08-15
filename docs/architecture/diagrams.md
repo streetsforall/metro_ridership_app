@@ -1252,7 +1252,7 @@ flowchart TB
   subgraph authority["Authority order — who wins on conflict"]
     direction TB
     ctx["CONTEXT.md — where a term conflicts<br/>with a name in the source, the term wins"]
-    adrs["docs/adr/ — nine decisions"]
+    adrs["docs/adr/ — ten decisions"]
     prose["docs/how-it-works.md · docs/guides/"]
     pointer["CLAUDE.md — pointer file, no facts of its own"]
     ctx --> adrs --> prose --> pointer
@@ -1261,6 +1261,7 @@ flowchart TB
   subgraph landed["Decided and in force"]
     direction TB
     a9["0009 — one window rule, inclusive both ends<br/>→ utils/month.ts contains()"]
+    a10["0010 — the Event Gutter hit-tests itself<br/>→ chart/eventGutter.ts afterEvent"]
     a2["0002 — the view returns Chart.js types<br/>→ RidershipView.datasets"]
     a4["0004 — one nullable Line Metrics shape<br/>→ lineMetrics.ts"]
     a5["0005 — figures live on a Line Readout.<br/>#154 moved the consumers, #167 deleted<br/>the write-back. Fully landed."]

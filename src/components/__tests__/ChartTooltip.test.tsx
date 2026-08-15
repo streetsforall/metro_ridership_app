@@ -180,6 +180,31 @@ describe('ChartTooltip pinning', () => {
   });
 
   /**
+   * The clamped description and the missing source link are both undone by
+   * pinning, and nothing on screen said so — a reader who hit a truncated
+   * description had no reason to believe there was more.
+   */
+  it('advertises the pin while hovering a month that has an event', () => {
+    renderTooltip({ events: [makeTransitEvent({ date: '2020-06' })] });
+    expect(screen.getByText(/Click to pin/)).toBeTruthy();
+  });
+
+  /** Noise on an ordinary month, where clicking reveals nothing further. */
+  it('leaves the hint off a month with no event', () => {
+    renderTooltip({ events: [] });
+    expect(screen.queryByText(/Click to pin/)).toBeNull();
+  });
+
+  it('replaces the hint with how to unpin once pinned', () => {
+    renderTooltip({
+      events: [makeTransitEvent({ date: '2020-06' })],
+      isPinned: true,
+    });
+    expect(screen.queryByText(/Click to pin/)).toBeNull();
+    expect(screen.getByText(/press Esc to unpin/)).toBeTruthy();
+  });
+
+  /**
    * Unclamped, a long description makes the box taller than half the plot and
    * buries the series it is annotating under the cursor. Pinning is the reader
    * asking for the whole thing.

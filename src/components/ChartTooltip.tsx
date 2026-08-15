@@ -136,6 +136,16 @@ export default function ChartTooltip({
         </div>
       ))}
 
+      {/* The clamp above and the missing source link are both undone by pinning,
+          and nothing on screen said so — a reader who hit a truncated
+          description had no reason to believe there was more. "Click" rather
+          than a pointer-type branch, matching the unpin hint it gives way to. */}
+      {!isPinned && events.length > 0 && (
+        <p className="mt-2 text-stone-400">
+          Click to pin and read the full description
+        </p>
+      )}
+
       {isPinned && (
         <p className="mt-2 text-stone-400">Click again or press Esc to unpin</p>
       )}

@@ -64,8 +64,9 @@ test('focused readout — description clamped, no link', async ({ page }) => {
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('End');
 
-  // 2020-10 is the last month of the window and carries no event, so this is also the readout's
-  // plain shape: heading and ridership rows, nothing else.
+  // 2020-12 is the last month of the window since ADR-0009 made both ends inclusive, and it
+  // carries one event line 801 sees — "NextGen Bus Plan Phase 1", network-wide. So the shot is
+  // heading, ridership row, the clamped event block, and the pin hint.
   const tooltip = page.locator(TOOLTIP);
   await expect(tooltip).toHaveAttribute('data-pinned', 'false');
   await expect(tooltip).toContainText('Dec 2020');
