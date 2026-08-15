@@ -37,7 +37,7 @@ checked-in 7 MB file rather than a build artifact.
 
 `update_ridership.py` is the incremental path: when Metro publishes a single new month, it merges
 that month into the canonical file instead of rebuilding it from every workbook. Every script has
-a `test_*.py` sibling — six in all.
+a `test_*.py` of its own in `scripts/tests/`.
 
 ## 04-build-pipeline — The build pipeline
 
@@ -222,8 +222,9 @@ reads it; don't delete it.
 
 ## 17-test-unit-and-python — Unit and Python suites
 
-Vitest runs 20 co-located specs in jsdom. One of them is not a code test at all:
-`src/data/transit-events.test.ts` refuses to let an event ship without a source URL — the type
+Vitest runs the specs in jsdom, each in a `__tests__/` folder beside the code it covers. One of
+them is not a code test at all: `src/data/__tests__/transit-events.test.ts` refuses to let an
+event ship without a source URL — the type
 makes `source` optional so fixtures stay cheap, and the guardrail closes the gap.
 
 The Python side mirrors the pipeline exactly, one spec per script.

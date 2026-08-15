@@ -165,7 +165,7 @@ checked-in 7 MB file rather than a build artifact.
 
 `update_ridership.py` is the incremental path: when Metro publishes a single new month, it merges
 that month into the canonical file instead of rebuilding it from every workbook. Every script has
-a `test_*.py` sibling — six in all.
+a `test_*.py` of its own in `scripts/tests/`.
 
 ```mermaid
 flowchart LR
@@ -1028,8 +1028,9 @@ sequenceDiagram
 
 ## Unit and Python suites
 
-Vitest runs 20 co-located specs in jsdom. One of them is not a code test at all:
-`src/data/transit-events.test.ts` refuses to let an event ship without a source URL — the type
+Vitest runs the specs in jsdom, each in a `__tests__/` folder beside the code it covers. One of
+them is not a code test at all: `src/data/__tests__/transit-events.test.ts` refuses to let an
+event ship without a source URL — the type
 makes `source` optional so fixtures stay cheap, and the guardrail closes the gap.
 
 The Python side mirrors the pipeline exactly, one spec per script.
@@ -1045,18 +1046,18 @@ flowchart TB
     excl["excludes e2e/** and .claude/**"]
   end
 
-  subgraph specs["20 specs, co-located with the code"]
+  subgraph specs["specs, in a __tests__/ folder beside the code"]
     direction LR
     uDomain["src/ridership/ — buildRidershipView<br/>chartData · lineMetrics · lineReadouts"]
     uUtils["src/utils/ — lines · month · queryParams<br/>ridershipData · dataDateRange · mapPopup"]
     uHook["src/hooks/useUserDashboardInput"]
     uComp["src/components/ — 7 specs"]
-    uApp["src/App.test.tsx"]
+    uApp["src/__tests__/App.test.tsx"]
   end
 
-  guard["src/data/transit-events.test.ts<br/>not a code test — a data guardrail.<br/>Every event must carry a source URL."]
+  guard["src/data/__tests__/transit-events.test.ts<br/>not a code test — a data guardrail.<br/>Every event must carry a source URL."]
 
-  subgraph py["Python — 6 specs, one per pipeline script"]
+  subgraph py["Python — scripts/tests/, one per pipeline script"]
     direction LR
     pyRid["test_convert_excel_ridership<br/>test_process_ridership<br/>test_update_ridership"]
     pyGeo["test_fetch_metro_lines<br/>test_compute_line_distances"]

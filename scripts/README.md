@@ -168,7 +168,7 @@ against independent sources so wrong dates don't ship. For each event it:
 
 Exits non-zero if an opening date or a shakeup claim disagrees with the data.
 The offline schema/date checks also run in CI via
-`src/data/transit-events.test.ts`.
+`src/data/__tests__/transit-events.test.ts`.
 
 ```bash
 python scripts/check_transit_events.py
@@ -614,6 +614,11 @@ pytest scripts/
 # from scripts/
 cd scripts && pytest
 ```
+
+The tests live in `scripts/tests/`, one `test_<script>.py` per script. They import the modules
+under test by bare name (`import process_ridership`) — `scripts/` is a flat directory of
+standalone entry points, not a package — so `scripts/tests/conftest.py` puts `scripts/` on
+`sys.path`. Without it, collection fails on the first import.
 
 Tests use the live `public/metro_lines.geojson` file as a fixture, so
 `fetch_metro_lines` must have been run at least once before the integration

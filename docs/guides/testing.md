@@ -10,8 +10,15 @@ npm run test        # run all tests once
 npm run test:watch  # watch mode
 ```
 
-Vitest with `@testing-library/react`, jsdom. Specs live next to the code under `src/`.
-`vitest.config.ts` excludes `e2e/**` (Playwright's) and `.claude/**` (throwaway worktrees).
+Vitest with `@testing-library/react`, jsdom. Specs live in a `__tests__/` folder inside the
+directory they cover — `src/ridership/lineMetrics.ts` is tested by
+`src/ridership/__tests__/lineMetrics.test.ts` — so a source directory lists only source.
+Imports are therefore one level deeper than the module: `'../lineMetrics'` for the subject,
+`'../../test/builders'` for shared fixtures. **`vi.mock()` paths obey the same rule**, and get
+it wrong and the mock silently does nothing rather than failing.
+
+`vitest.config.ts` sets no `include`, so the default glob picks up `__tests__/` at any depth; it
+excludes `e2e/**` (Playwright's) and `.claude/**` (throwaway worktrees).
 
 **Import `describe`/`it`/`expect` from `vitest` in every spec.** `vitest.config.ts` does set
 `globals: true`, so the runtime would not need them — but `tsconfig.app.json` does not list
@@ -22,7 +29,7 @@ is on.
 One file:
 
 ```bash
-npx vitest run src/ridership/lineMetrics.test.ts
+npx vitest run src/ridership/__tests__/lineMetrics.test.ts
 ```
 
 Or filter by name with `-t`. Shared fixtures are in [`src/test/builders.ts`](../../src/test/builders.ts).
@@ -188,6 +195,11 @@ The data-processing scripts have their own suite:
 pip install -r scripts/requirements.txt
 pytest scripts/
 ```
+
+They live in `scripts/tests/`, one `test_<script>.py` per script. The tests import the modules
+under test by bare name (`import process_ridership`) because `scripts/` is a flat directory of
+standalone entry points, not a package — so `scripts/tests/conftest.py` puts `scripts/` on
+`sys.path`. Delete that file and every import in the suite breaks at collection.
 
 Run `npm run fetch-lines` first — several script tests use `public/metro_lines.geojson` as a
 fixture. See [`scripts/README.md`](../../scripts/README.md).
