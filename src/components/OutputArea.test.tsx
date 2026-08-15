@@ -484,16 +484,38 @@ describe('eventMarkers plugin hover', () => {
   });
 });
 
+/**
+ * The palette contract, restated independently of the component so the tests
+ * fail on a table edit rather than following it. Order is `EventCategory`'s own,
+ * and the list is exhaustive by construction — `Record<EventCategory, …>` means
+ * adding a tenth category to the union breaks this file at compile time, which
+ * is how a new category gets a color instead of silently inheriting the default.
+ */
+const EXPECTED_HUE: Record<EventCategory, { '400': string; '500': string }> = {
+  opening: colors.emerald,
+  extension: colors.teal,
+  closure: colors.red,
+  route_change: colors.violet,
+  headway_change: colors.amber,
+  hours_change: colors.orange,
+  fare_change: colors.sky,
+  disruption: colors.rose,
+  service_change: colors.slate,
+};
+
+const ALL_CATEGORIES = Object.keys(EXPECTED_HUE) as EventCategory[];
+
 describe('event marker category colors', () => {
   type AfterDraw = (chart: unknown, args: unknown, opts: unknown) => void;
   const markerPlugin = () =>
     ChartJS.registry.getPlugin('eventMarkers') as unknown as { afterDraw: AfterDraw };
 
-  // One event per label, so marker N in the stroke log is category N.
-  const labels = ['2020 1', '2020 2', '2020 3', '2020 4'];
+  // One event per label, so marker N in the stroke log is category N. Nine
+  // labels, because the widest case drives every category through in one pass.
+  const labels = Array.from({ length: 9 }, (_, i) => `2020 ${i + 1}`);
   const makeEvent = (index: number, category: EventCategory): TransitEvent => ({
     id: `event-${index}`,
-    date: `2020-0${index + 1}`,
+    date: `2020-${String(index + 1).padStart(2, '0')}`,
     line_ids: [801],
     title: `Event ${index}`,
     description: `Description ${index}`,
@@ -524,26 +546,27 @@ describe('event marker category colors', () => {
     return strokes;
   };
 
-  it('resolves a different marker color for closure than for headway_change', () => {
-    const [closure, headway] = strokesFor(['closure', 'headway_change']);
-    expect(closure).not.toBe(headway);
-    expect(closure).toBe(colors.rose['500']);
-    expect(headway).toBe(colors.amber['500']);
+  it('strokes every category in its own hue', () => {
+    expect(strokesFor(ALL_CATEGORIES)).toEqual(
+      ALL_CATEGORIES.map((category) => EXPECTED_HUE[category]['500']),
+    );
   });
 
-  it('strokes each marker in its own category hue', () => {
-    expect(strokesFor(['opening', 'closure', 'fare_change', 'route_change'])).toEqual([
-      colors.emerald['500'],
-      colors.rose['500'],
-      colors.sky['500'],
-      colors.amber['500'],
-    ]);
+  /**
+   * The mutation guard. The assertion above pins the table row by row, but only
+   * this one fails when two categories are collapsed onto a shared color — the
+   * regression the nine-hue palette exists to prevent, and the one a grouped
+   * palette cannot express.
+   */
+  it('gives no two categories the same marker color', () => {
+    const strokes = strokesFor(ALL_CATEGORIES);
+    expect(new Set(strokes).size).toBe(ALL_CATEGORIES.length);
   });
 
-  it('falls back to amber for a category outside the union', () => {
+  it('falls back to slate for a category outside the union', () => {
     // Events are fetched data, so an unknown category can dodge the type at runtime.
     const rogue = 'not_a_real_category' as EventCategory;
-    expect(strokesFor([rogue])).toEqual([colors.amber['500']]);
+    expect(strokesFor([rogue])).toEqual([colors.slate['500']]);
   });
 
   it('borders the hovered tooltip in the hovered event category color', () => {
@@ -551,15 +574,6 @@ describe('event marker category colors', () => {
     const strokes = strokesFor(['opening', 'disruption'], 1);
     expect(strokes).toHaveLength(3);
     expect(strokes[2]).toBe(colors.rose['500']);
-  });
-
-  it('groups the remaining categories onto their shared hues', () => {
-    expect(strokesFor(['extension', 'disruption', 'hours_change', 'service_change'])).toEqual([
-      colors.emerald['500'],
-      colors.rose['500'],
-      colors.amber['500'],
-      colors.amber['500'],
-    ]);
   });
 });
 
@@ -591,20 +605,26 @@ describe('context log panel category colors', () => {
     return el.style.borderColor;
   };
 
+  const rowBorders = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll('#context-log-panel li')).map(
+      (row) => (row as HTMLElement).style.borderColor,
+    );
+
   it('tints each row with its category color', () => {
-    const { container } = renderPanel([
-      panelEvent('closed', 'closure'),
-      panelEvent('rescheduled', 'headway_change'),
-    ]);
-    const rows = Array.from(container.querySelectorAll('#context-log-panel li'));
-    expect(rows).toHaveLength(2);
-    expect(rows[0].getAttribute('style')).not.toBe(rows[1].getAttribute('style'));
-    expect((rows[0] as HTMLElement).style.borderColor).toBe(
-      asBorderColor(colors.rose['500']),
+    const { container } = renderPanel(
+      ALL_CATEGORIES.map((category) => panelEvent(category, category)),
     );
-    expect((rows[1] as HTMLElement).style.borderColor).toBe(
-      asBorderColor(colors.amber['500']),
+    expect(rowBorders(container)).toEqual(
+      ALL_CATEGORIES.map((category) => asBorderColor(EXPECTED_HUE[category]['500'])),
     );
+  });
+
+  /** Same mutation guard as the markers: a shared hue is the failure mode. */
+  it('gives no two rows the same rule color', () => {
+    const { container } = renderPanel(
+      ALL_CATEGORIES.map((category) => panelEvent(category, category)),
+    );
+    expect(new Set(rowBorders(container)).size).toBe(ALL_CATEGORIES.length);
   });
 
   it('also spells the category out, so color is not the only signal', () => {
@@ -612,20 +632,22 @@ describe('context log panel category colors', () => {
     expect(screen.getByText('Headway change')).toBeTruthy();
   });
 
-  it('falls back to amber for an unknown category', () => {
+  it('falls back to slate for an unknown category', () => {
     const { container } = renderPanel([
       panelEvent('mystery', 'not_a_real_category' as EventCategory),
     ]);
     const row = container.querySelector('#context-log-panel li') as HTMLElement;
-    expect(row.style.borderColor).toBe(asBorderColor(colors.amber['500']));
+    expect(row.style.borderColor).toBe(asBorderColor(colors.slate['500']));
   });
 
-  it('falls back to amber when an event carries no category at all', () => {
+  it('falls back to slate when an event carries no category at all', () => {
     const missing = panelEvent('untyped', 'opening');
     delete (missing as Partial<TransitEvent>).category;
     const { container } = renderPanel([missing]);
     const row = container.querySelector('#context-log-panel li') as HTMLElement;
-    expect(row.style.borderColor).toBe(asBorderColor(colors.amber['500']));
+    // Same hue as an explicit service_change — both mean "something changed,
+    // nobody said what", and the label agrees with the color.
+    expect(row.style.borderColor).toBe(asBorderColor(colors.slate['500']));
     expect(screen.getByText('Service change')).toBeTruthy();
   });
 });
