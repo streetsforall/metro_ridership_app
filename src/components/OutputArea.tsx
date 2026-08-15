@@ -109,7 +109,20 @@ export default function OutputArea({
       >
         {hasSelection && <SummaryData lines={lines} />}
 
-        <div className="pane flex flex-col">
+        {/**
+         * The map pane drops `.pane`'s 2rem padding and clips instead. Every
+         * other pane frames text, which needs the inset; the map is a single
+         * edge-to-edge surface, and 2rem of background around it reads as the
+         * map failing to fill its card. `#lineMap` already carries
+         * `border-radius: inherit` — which only ever meant anything if the map
+         * reached the pane's corners — and `overflow-hidden` is what makes the
+         * MapLibre canvas honour that radius rather than square off over it.
+         *
+         * `!p-0` rather than `p-0`: `.pane` is declared in index.css *after*
+         * `@tailwind utilities`, so at equal specificity it wins on source
+         * order and a plain padding utility is silently ignored.
+         */}
+        <div className="pane !p-0 overflow-hidden flex flex-col">
           <Map lines={lines} />
         </div>
       </div>
