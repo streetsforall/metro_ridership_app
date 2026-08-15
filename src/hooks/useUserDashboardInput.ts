@@ -37,8 +37,19 @@ export interface UserDashboardInputState {
   isAggregateVisible: boolean;
   toggleIsAggregateVisible: () => void;
 
+  showChart: boolean;
+  toggleShowChart: () => void;
+
+  showSummary: boolean;
+  toggleShowSummary: () => void;
+
+  showMap: boolean;
+  toggleShowMap: () => void;
+
   showContextLogs: boolean;
   toggleShowContextLogs: () => void;
+
+  resetPanelSettings: () => void;
 
   onToggleSelectLine: (line: Line) => void;
   clearSelections: () => void;
@@ -109,6 +120,28 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     return params.get('aggregate') === '1';
   });
 
+  /**
+   * Panel visibility. Three of the four panels are on by default and one — the
+   * context log — is off, so the params they write are asymmetric: `chart=0`,
+   * `summary=0` and `map=0` appear only when a panel is switched off, `logs=1`
+   * only when it is switched on. Either way nothing is written for a panel left
+   * at its default, so a default view's URL is unchanged.
+   */
+  const [showChart, setShowChart] = useState<boolean>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('chart') !== '0';
+  });
+
+  const [showSummary, setShowSummary] = useState<boolean>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('summary') !== '0';
+  });
+
+  const [showMap, setShowMap] = useState<boolean>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('map') !== '0';
+  });
+
   const [showContextLogs, setShowContextLogs] = useState<boolean>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('logs') === '1';
@@ -129,10 +162,25 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     if (!modes.includes('bus')) params.set('buses', '0');
     if (!modes.includes('train')) params.set('trains', '0');
     if (isAggregateVisible) params.set('aggregate', '1');
+    if (!showChart) params.set('chart', '0');
+    if (!showSummary) params.set('summary', '0');
+    if (!showMap) params.set('map', '0');
     if (showContextLogs) params.set('logs', '1');
 
     window.history.replaceState(null, '', `?${params.toString()}`);
-  }, [startDate, endDate, dayOfWeek, searchText, modes, lines, isAggregateVisible, showContextLogs]);
+  }, [
+    startDate,
+    endDate,
+    dayOfWeek,
+    searchText,
+    modes,
+    lines,
+    isAggregateVisible,
+    showChart,
+    showSummary,
+    showMap,
+    showContextLogs,
+  ]);
 
   /**
    * Select every row the table is currently showing, on top of whatever is already
@@ -179,8 +227,32 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     );
   };
 
+  const toggleShowChart = (): void => {
+    setShowChart((prevShowChart: boolean) => !prevShowChart);
+  };
+
+  const toggleShowSummary = (): void => {
+    setShowSummary((prevShowSummary: boolean) => !prevShowSummary);
+  };
+
+  const toggleShowMap = (): void => {
+    setShowMap((prevShowMap: boolean) => !prevShowMap);
+  };
+
   const toggleShowContextLogs = (): void => {
     setShowContextLogs((prevShowContextLogs: boolean) => !prevShowContextLogs);
+  };
+
+  /**
+   * Put every Panel Settings choice back to its default. Because the sync effect
+   * writes a param only for a non-default value, this is also what drops
+   * `chart`/`summary`/`map`/`logs` out of the URL.
+   */
+  const resetPanelSettings = (): void => {
+    setShowChart(true);
+    setShowSummary(true);
+    setShowMap(true);
+    setShowContextLogs(false);
   };
 
   return {
@@ -194,8 +266,15 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     setLines,
     isAggregateVisible,
     toggleIsAggregateVisible,
+    showChart,
+    toggleShowChart,
+    showSummary,
+    toggleShowSummary,
+    showMap,
+    toggleShowMap,
     showContextLogs,
     toggleShowContextLogs,
+    resetPanelSettings,
     searchText,
     setSearchText,
     modes,

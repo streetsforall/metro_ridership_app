@@ -6,7 +6,7 @@ import { gotoDashboard, shootChart } from './helpers';
  *
  * `visual.spec.ts` shoots the whole page, where the chart is a small fraction of the frame —
  * small enough that a chart rendering the wrong series, the wrong colours or the wrong axis
- * still lands under the full-page `maxDiffPixelRatio`. These tests crop to `#ridership-chart`
+ * still lands under the full-page `maxDiffPixelRatio`. These tests crop to `#chart-panel`
  * and tighten the tolerance, so the graph is pinned on its own terms.
  *
  * Each case is driven purely by the query string, which `useUserDashboardInput.ts` parses in its
@@ -37,7 +37,7 @@ import { gotoDashboard, shootChart } from './helpers';
  */
 async function gotoChart(page: Page, search: string): Promise<void> {
   await gotoDashboard(page, search);
-  await expect(page.locator('#ridership-chart')).toBeVisible();
+  await expect(page.locator('#chart-panel')).toBeVisible();
   await expect(page.getByText('Please select a Metro line.')).toHaveCount(0);
 }
 

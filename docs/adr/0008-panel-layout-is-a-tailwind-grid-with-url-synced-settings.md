@@ -67,10 +67,13 @@ query parameter cannot be shared, which is the property this decision protects. 
 drag-resizing fails both tests — which is the honest reason it is not on offer, and a fair argument
 for revisiting `#83` the day continuous resizing genuinely matters.
 
-The regions are to be called **panels**, matching the Panel Settings control the user will see. The
-ids are inconsistent today — `line-selector-pane`, `ridership-chart`, `summary-data`,
-`context-log-panel`, `map` — and settle on `<name>-panel` when the Panel Settings work lands. The
-`.pane` class in `src/index.css` is a style hook, not a name, and keeps its spelling.
+The regions are called **panels**, matching the Panel Settings control the user sees. The ids were
+inconsistent — `line-selector-pane`, `ridership-chart`, `summary-data`, `context-log-panel`, `map` —
+and settled on `<name>-panel` when the Panel Settings work landed: `line-selector-panel`,
+`chart-panel`, `summary-panel`, `context-log-panel`, `map-panel`, with toggles at
+`panel-<name>-toggle`. Two names are deliberately untouched. The `.pane` class in `src/index.css` is
+a style hook, not a name, and keeps its spelling; and `#lineMap` is the MapLibre container *inside*
+`#map-panel`, which both the map instance and `mapMask` in `e2e/helpers.ts` bind to.
 
 The panel arrangement is not domain language and does not appear in [`CONTEXT.md`](../../CONTEXT.md).
 The glossary describes what the Ridership View *is*; where its pieces sit on screen is not part of

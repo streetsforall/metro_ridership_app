@@ -165,5 +165,5 @@ export async function shootChart(
   name: string,
   tolerance: ShotTolerance = {},
 ): Promise<void> {
-  await shootPane(page, '#ridership-chart', name, tolerance);
+  await shootPane(page, '#chart-panel', name, tolerance);
 }

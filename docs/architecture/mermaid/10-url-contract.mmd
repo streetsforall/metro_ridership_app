@@ -7,7 +7,7 @@ flowchart TB
     lazyInit --> parsers --> fallback
   end
 
-  subgraph pairs["The nine parameters"]
+  subgraph pairs["The twelve parameters"]
     direction LR
 
     subgraph always["Always written"]
@@ -27,6 +27,9 @@ flowchart TB
       direction TB
       p6["buses=0"]
       p7["trains=0"]
+      p10["chart=0"]
+      p11["summary=0"]
+      p12["map=0"]
     end
 
     subgraph whenOn["Written only when ON"]

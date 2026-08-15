@@ -157,7 +157,7 @@ test('panel is absent without logs=1', async ({ page }) => {
   // `showContextLogs` leg of the three-way gate.
   await gotoDashboard(page, '?lines=801&start=2019-06&end=2020-12&day=wkday');
 
-  await expect(page.locator('#ridership-chart')).toBeVisible();
+  await expect(page.locator('#chart-panel')).toBeVisible();
   await expect(page.locator('#context-log-panel')).toHaveCount(0);
 });
 

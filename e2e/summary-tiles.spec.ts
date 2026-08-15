@@ -6,7 +6,7 @@ import { gotoDashboard, shootPane } from './helpers';
  *
  * `visual.spec.ts` shoots the whole page, where these tiles are a small strip of a 1.2 MB frame —
  * small enough that a wrong figure, a lost tile or the wrong change colour still lands under the
- * full-page `maxDiffPixelRatio`. Cropping to `#summary-data` makes a regression here a small,
+ * full-page `maxDiffPixelRatio`. Cropping to `#summary-panel` makes a regression here a small,
  * legible diff. The component is worth pinning on its own: its comments document two separate
  * real horizontal-overflow bugs caused by min-content width leaking into a `1fr` grid track, it
  * has three layout branches, a conditional red/green change colour, and two conditionally
@@ -41,11 +41,11 @@ test('single rail line with a negative change', async ({ page }) => {
 
   // Asserted, not merely assumed from the PNG: if the underlying figure ever flips positive the
   // baseline would still "pass" as a green diff-free render of the wrong branch.
-  await expect(page.locator('#summary-data [aria-label="Change"]')).toHaveText(
+  await expect(page.locator('#summary-panel [aria-label="Change"]')).toHaveText(
     /^-/,
   );
 
-  await shootPane(page, '#summary-data', 'summary-negative-change.png');
+  await shootPane(page, '#summary-panel', 'summary-negative-change.png');
 });
 
 test('several rail lines', async ({ page }) => {
@@ -61,10 +61,10 @@ test('several rail lines', async ({ page }) => {
     '?lines=804,901,910&start=2015-01&end=2019-12&day=wkday',
   );
 
-  await expect(page.locator('#summary-data [aria-label="Change"]')).toHaveText(
+  await expect(page.locator('#summary-panel [aria-label="Change"]')).toHaveText(
     /^\+/,
   );
-  await expect(page.locator('#summary-data .pane')).toHaveCount(4);
+  await expect(page.locator('#summary-panel .pane')).toHaveCount(4);
 
-  await shootPane(page, '#summary-data', 'summary-all-tiles.png');
+  await shootPane(page, '#summary-panel', 'summary-all-tiles.png');
 });

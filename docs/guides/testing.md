@@ -64,6 +64,7 @@ because an element crop would clip at the narrow viewport edge.
 | [`responsive-tablet.spec.ts`](../../e2e/responsive-tablet.spec.ts) | 768×1024 via a file-level `test.use`, not a fourth project | 2 |
 | [`table-view.spec.ts`](../../e2e/table-view.spec.ts) | sort chrome and ordering, a partial-coverage row (desktop) | 2 |
 | [`loading.spec.ts`](../../e2e/loading.spec.ts) | the output pane mid-fetch, and that a failed fetch doesn't crash (desktop) | 1 |
+| [`panel-settings.spec.ts`](../../e2e/panel-settings.spec.ts) | the Panel Settings disclosure, each panel's visibility param, and that a default view writes none of them (no shots) | 0 |
 
 The map is masked out of every full-page shot, because a live MapLibre map over third-party tiles
 never renders identically twice.
