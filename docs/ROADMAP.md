@@ -9,8 +9,13 @@ stop/station-level with ons, offs and activity for all three day types;
 `aggregate_to_line_ridership` used to `groupby("LINE").sum()` and discard stop
 identity, offs and activity at ingest. Nothing needs to be acquired.
 
-Coverage is **2025-07 → 2026-05, 11 months, both modes**. Everything before that is
+Coverage is **2025-07 → 2026-06, 12 months, both modes**. Everything before that is
 line-level only and stays untouched.
+
+> Read as 11 months until PR 2. `data/raw/2026-06_2026-06.zip` landed in #176, between
+> PR 1 and PR 2, and the count was not updated with it. Figures elsewhere on this page
+> that PR 1 measured — the row counts under *Decisions*, the 1,252 line-months under
+> *Named risks* — were taken over 2025-07 → 2026-05 and have not been re-measured since.
 
 ## The five PRs
 
@@ -19,8 +24,8 @@ PRs update it rather than restating their own scope.
 
 | PR | Contents | Gate | Status |
 | --- | --- | --- | --- |
-| **1** | `stop_identity.py`, `stop_aliases.json`, the `extract_leaf_rows` refactor, `aggregate_to_stop_ridership`, tests. **No data change.** | `pytest scripts/` green with the six existing test files unmodified; a full re-ingest produces byte-for-byte what it produced at the base commit (see below) | ☐ |
-| **2** | `fetch_stop_locations.py`, `src/data/stop_locations.json`, `scripts/README.md`, tests | Match rate reported; unmatched reviewed and aliases extended | ☐ |
+| **1** | `stop_identity.py`, `stop_aliases.json`, the `extract_leaf_rows` refactor, `aggregate_to_stop_ridership`, tests. **No data change.** | `pytest scripts/` green with the six existing test files unmodified; a full re-ingest produces byte-for-byte what it produced at the base commit (see below) | ☑ #173 |
+| **2** | `fetch_stop_locations.py`, `src/data/stop_locations.json`, `scripts/README.md`, tests | Match rate reported; unmatched reviewed and aliases extended | ☑ bus 6,772/6,785 · rail 110/110 |
 | **3** | `stop_ridership.py`, `update_ridership.py` wiring, the two data files, `DATA_RELEASE_NOTES.md` | Reconciliation within tolerance; two runs byte-identical | ☐ |
 | **4** | Vite plugin, manifest, `src/stops/`, `stops.types.ts`, the `isInMonthWindow` extraction, vitest specs. **No visible UI.** | `ANALYZE=1 npm run build` — entry chunk unchanged; no visual baseline moves | ☐ |
 | **5** | Map layer, `#stop-panel`, URL state, `mapPopup` addition, Playwright baselines | New baselines only; `visual.spec.ts`'s six must **not** move | ☐ |
@@ -77,6 +82,39 @@ win. So a wide-range re-ingest **can overwrite real committed ridership with zer
 the guard that is supposed to prevent exactly that does not run. Today it only surfaces as
 five insertions because line 106's rows are absent rather than present-and-nonzero.
 Nobody has fixed this; it is in `process_ridership.py`, which is out of scope for PR 1.
+
+## What PR 2 found
+
+Two things later PRs need, and one number.
+
+**PR 3 will crash on `data/raw/` as it stands.** `06-2026-Bus.xlsx` has one leaf row —
+line 155, 2.9 weekday boardings — whose `STOP_NAME` is blank. `extract_leaf_rows` keeps
+it, because the bus rule filters on `DIRECTION`, and `stop_identity._require_text` then
+raises `ValueError: Stop name is missing (nan)` by design. So
+`aggregate_to_stop_ridership` cannot currently be run over `data/raw/` at all. It was
+not reachable when PR 1 was written: the month arrived in #176, afterwards. The fix
+belongs in `extract_leaf_rows` — drop nameless leaf rows there, where "Total" rows are
+already dropped — and it is a one-line change PR 3 must make before it can ingest
+anything. PR 2 works around it locally in `fetch_stop_locations.drop_unnamed_rows`;
+that workaround should be deleted once the ingest handles it.
+
+**39 bus stops get a centroid that is in the wrong place** — risk 7, now measured.
+`STOP_NAME` is a corner pair and LA reuses corner pairs across cities: `Main / Pico`
+exists in downtown LA and in Santa Monica, 21 km apart, and there are 11 more above
+5 km. The ordinary case is fine — 4,945 stops group more than one GTFS stop and the
+median spread among them is 41 m, which is two sides of a street. Every stop carries
+`spread_m` so the map layer can act on it; **PR 5 should hide or flag stops above a
+threshold rather than drawing a dot in the ocean between two neighbourhoods.** The real
+fix is line-aware disambiguation — GTFS `stop_times.txt` × `trips.txt` says which stops
+a route actually serves, which resolves nearly all 39 — but it changes the join's grain
+from `stop_key` to `(line, stop_key)` and so is not PR 2's to make.
+
+**Match rate: bus 6,772/6,785 (99.8%), rail 110/110 (100%)** against the feeds of
+2026-06-07. Rail reaches 100% via ten `stop_aliases.json` entries; the 13 unmatched bus
+stops are listed in `src/data/stop_locations.json`'s `unmatched` and are **kept**, not
+dropped. Rail is 110 places rather than the 116 names in the export because platform
+suffixes fold — `Union Station - A Line` and `Union Station - Metro Red & Purple Lines`
+are one station.
 
 ## The contract PR 1 freezes
 

@@ -21,6 +21,97 @@ python scripts/fetch_metro_lines.py
 npm run fetch-lines
 ```
 
+### `fetch_stop_locations.py`
+
+Gives the stop-level ridership its geometry. The Excel exports carry no coordinates, so
+the join is by **name**: both the export and GTFS `stops.txt` go through
+[`stop_identity.stop_key`](#stop_identity), which is what guarantees the keys written
+here are the keys `aggregate_to_stop_ridership` produces. Writes
+`src/data/stop_locations.json`.
+
+```bash
+python scripts/fetch_stop_locations.py
+
+# or, equivalently
+npm run fetch-stops
+
+python scripts/fetch_stop_locations.py --spread-warn 100   # tighten the warning
+```
+
+Re-run it after `data/raw/` gains a month, or when Metro republishes a feed.
+
+```json
+{ "generated_from": { "gtfs": {...}, "ridership": {...}, "stop_keys": {...}, "matched": {...} },
+  "stops": { "bus:vermont-wilshire": { "name": "Vermont / Wilshire", "lat": 34.06, "lon": -118.29,
+                                       "mode": "Bus", "gtfs_stop_ids": ["111","222"], "spread_m": 40.2 } },
+  "unmatched": [ { "stop_key": "bus:pico-union", "name": "Pico / Union", "mode": "Bus", "lines": [30] } ] }
+```
+
+Only stops that **have ridership** are written. The bus feed carries 11,892 stops and
+the exports mention 6,785 of them; the rest would be most of a megabyte nothing reads.
+
+**Bus — one dot per name, by centroid.** `STOP_NAME` is a name and not a `stop_id`, so
+the two sides of a street are already one ridership row and must become one dot.
+`spread_m` is the widest pairwise distance in the group and every stop carries it.
+
+**Rail — one dot per station, preferring the parent.** Rows are filtered to
+`location_type` 0 and 1, entrances (`2`) excluded, and where Metro models a station as a
+parent plus platforms only the parent contributes. That sidesteps the platform-suffix
+problem wherever a parent exists, and it is also where the clean name lives: GTFS calls
+the C Line platform `Crenshaw C-Line Station` and its parent `Crenshaw Station`.
+
+**Unmatched stops are kept, not dropped.** A stop with ridership and no geometry still
+belongs in the series and in the ranked table; it is simply absent from the map layer.
+Dropping it would change a line's stop count between months depending on when GTFS last
+caught up with a rename — the same silent-divergence bug the alias table exists to
+prevent. The unmatched names go into the JSON *and* print as a paste-ready
+`stop_aliases.json` fragment.
+
+There is deliberately **no timestamp** in `generated_from`. The file is committed, and a
+wall-clock stamp would produce a diff on every run whether or not the geometry moved.
+Feed identity stands in for it: `feed_start_date`/`feed_end_date` where the feed carries
+them — Metro's rail feed publishes them blank — plus a sha256 of the `stops.txt` rows
+actually used.
+
+#### Match rate, and the two things it doesn't tell you
+
+Against the feeds published 2026-06-07, over all twelve months in `data/raw/`:
+
+```
+bus   6,772 / 6,785   (99.8%)      rail   110 / 110   (100%)
+```
+
+Rail is 110 places rather than the export's 116 names because platform suffixes fold —
+`Union Station - A Line` and `Union Station - Metro Red & Purple Lines` are one station.
+
+**A high match rate is not a promise the dot is right.** 39 bus stops centroid across
+more than 200 m, and 12 of those across more than 5 km, because LA reuses corner pairs
+between cities: `Main / Pico` is in downtown LA *and* in Santa Monica, and the centroid
+is in neither. The ordinary case is fine — 4,945 stops group more than one GTFS stop and
+the median spread among them is 41 m, which is two sides of a street. The script prints
+every offender worst-first; `spread_m` ships so the map layer can act on it. The real fix
+is line-aware disambiguation (`stop_times.txt` × `trips.txt` says which stops a route
+actually serves), which changes the join's grain from `stop_key` to `(line, stop_key)`.
+
+**Thirteen bus stops have no geometry at all.** One is junk Metro left in the export
+(`Do Not Announce This Stop!`, on seven lines); the rest are stops GTFS no longer lists.
+Naming their successors takes a map, not the data, so none of them is aliased.
+
+#### Adding an alias
+
+Run the script, read the unmatched list, and confirm each one *before* believing it:
+
+1. **Check the sequence, not the name.** The export's rail `STATION_ORDER` numbers
+   stations along the route, so an unmatched name is pinned by its neighbours. `Aviation
+   Station` sits at 3010 on line 803 between `Hawthorne / Lennox` (3009) and `Aviation
+   Century` (3011) — which is exactly where GTFS puts `Aviation / Imperial Station`, and
+   *not* where it puts `Aviation / Century Station`. On names alone that one is a coin
+   flip.
+2. **Check the coordinates.** Two stations can share a name: GTFS `Crenshaw Station` is
+   the C Line's, at Crenshaw & I-105, while the K Line's Crenshaw stations are all
+   `Expo / Crenshaw ...`. Confirm the dot is where the line goes.
+3. Add the entry, re-run, and confirm the count moved by exactly what you expected.
+
 ### `compute_line_distances.py`
 
 Reads `public/metro_lines.geojson` and writes one-way route distances (in
@@ -314,20 +405,43 @@ commentary and are ignored by the loader.
 
 Provenance — this file is **not** regenerated by the pipeline:
 
-- Hand-edited. Add an entry when a rename is observed, mapping the name Metro has
-  stopped using onto the one it uses now.
-- **Both tables ship empty.** Checked across all four archives in `data/raw/`: no
-  month in the 2025-07 → 2026-05 window has both an added and a dropped key, which
+- Hand-edited. Add an entry when a rename is observed, folding one spelling of a stop
+  onto the canonical slug for that place. See
+  [Adding an alias](#adding-an-alias) for how to confirm one before believing it.
+- **The bus table is empty.** Checked across all five archives in `data/raw/`: no
+  month in the 2025-07 → 2026-06 window has both an added and a dropped key, which
   is the signature a rename leaves.
-- **One case is ambiguous and deliberately left alone.** On line 28,
+- **One bus case is ambiguous and deliberately left alone.** On line 28,
   `bus:san-vicente-fairfax` runs 2025-07 → 2025-12 and
   `bus:san-vicente-orange-grove` runs 2025-12 → 2026-05 — same corridor, comparable
   boardings, overlapping by one month. That is either a rename or a stop that moved
   two blocks, and the data cannot tell you which. Aliasing it would merge two series
-  on a guess; leaving it splits them honestly. Decide it with a map, in PR 2.
-- The known rail renames (`APU Station` → `APU / Citrus College Station` and
-  similar) are **GTFS-side** mismatches, not ridership-side ones. They belong to
-  the geometry join, and will be added there rather than here.
+  on a guess; leaving it splits them honestly. The geometry join adds one fact and not
+  the deciding one: GTFS no longer lists `San Vicente / Fairfax` at all, which is
+  consistent with either reading. Still unaliased.
+- **The rail table holds ten entries, all added by the geometry join** — they are
+  GTFS-side mismatches, not ridership-side ones. Each was confirmed against the
+  export's per-route station sequence *and* the GTFS coordinates:
+
+  | Export | GTFS | Confirmed by |
+  | --- | --- | --- |
+  | `AMC / LAX Station` | `LAX / Metro Transit Center` | terminus of 803 and 807 |
+  | `APU Station` | `APU / Citrus College Station` | A Line terminus |
+  | `Aviation Station` | `Aviation / Imperial Station` | 803 seq 3010, between Hawthorne / Lennox and Aviation / Century |
+  | `Grand Arts / Bunker Hill Station` | `Grand Ave Arts / Bunker Hill Station` | 804 seq 20 |
+  | `Harbor Station` | `Harbor Freeway Station` | 803 seq 3006 |
+  | `Long Beach Blvd Station` | `Lynwood Station` | 803 seq 3003, between Lakewood Blvd and Willowbrook — the station was renamed |
+  | `Martin Luther King Station` | `Martin Luther King Jr Station` | 807 seq 6002 |
+  | `Westchester Station` | `Westchester / Veterans Station` | 807 seq 6007 |
+
+- **Two entries run the other way**, GTFS spelling → export spelling:
+  `expo-crenshaw-e-line-station` and `expo-crenshaw-k-line-station` both fold onto
+  `expo-crenshaw-station`. GTFS carries *only* per-platform spellings for that
+  interchange and no clean one, so the export's spelling is the canonical slug and the
+  two platforms fold onto it — which is what `strip_rail_platform_suffix` would have
+  done had GTFS spelled the suffix `- K Line` rather than `K-Line`. The general rule is
+  "fold every variant onto one canonical slug"; which side is canonical depends on which
+  one still has a clean name.
 - The rename *guard* — fail an ingest when one key appears and another disappears
   in the same month — is not implemented yet. It belongs with the merge step, which
   is where a month is compared against the months already stored.
