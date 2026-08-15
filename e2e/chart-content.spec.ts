@@ -72,3 +72,36 @@ test('narrow date window', async ({ page }) => {
   await gotoChart(page, '?lines=801,802&start=2022-12&end=2023-12&day=wkday');
   await shootChart(page, 'chart-narrow-window.png');
 });
+
+/**
+ * Context-log markers, at several category colours in one frame.
+ *
+ * These render on **every** chart, not only under `logs=1` — `buildRidershipView` returns
+ * `events` unconditionally and `OutputArea` hands them straight to the `eventMarkers` plugin.
+ * So every baseline in this file already contains markers; what none of them pinned is that
+ * the markers differ *from each other* by category. This case does.
+ *
+ * `start=2020-01&end=2023-12` with 801 + 804 puts six events in the Event Window, spanning
+ * five distinct hues:
+ *
+ * | Event | Category | Hue |
+ * |---|---|---|
+ * | 2020-03 COVID-19 Service Reductions | `disruption` | rose |
+ * | 2020-04 COVID-19 Emergency Schedule | `hours_change` | orange |
+ * | 2020-12 NextGen Phase 1 | `route_change` | violet |
+ * | 2021-06 NextGen Phase 2 | `route_change` | violet |
+ * | 2021-10 GoPass Free Student Fares | `fare_change` | sky |
+ * | 2021-12 NextGen Phase 3 | `route_change` | violet |
+ * | 2022-12 Bus Service Restored | `headway_change` | amber |
+ * | 2023-06 Regional Connector Opening | `opening` | emerald |
+ *
+ * A window this wide is deliberate: the four `*_change` variants used to share one amber, and
+ * three of them are in frame here, so collapsing the palette back to groups is visible as a
+ * repeated hue rather than as a subtle shift. `end` is pinned per the rule above; the events
+ * themselves are committed data, so this only rebases if `transit-events.json` gains an entry
+ * inside 2020-01..2023-12 with an empty `line_ids` or naming 801/804.
+ */
+test('event markers across categories', async ({ page }) => {
+  await gotoChart(page, '?lines=801,804&start=2020-01&end=2023-12&day=wkday');
+  await shootChart(page, 'chart-event-markers.png');
+});
