@@ -67,6 +67,14 @@ function App() {
     toggleShowMap,
     showContextLogs,
     toggleShowContextLogs,
+    chartSize,
+    setChartSize,
+    mapSize,
+    setMapSize,
+    logSize,
+    setLogSize,
+    summarySplit,
+    setSummarySplit,
     resetPanelSettings,
   } = userDashboardInputState;
 
@@ -155,6 +163,14 @@ function App() {
           toggleShowMap={toggleShowMap}
           showContextLogs={showContextLogs}
           toggleShowContextLogs={toggleShowContextLogs}
+          chartSize={chartSize}
+          setChartSize={setChartSize}
+          mapSize={mapSize}
+          setMapSize={setMapSize}
+          logSize={logSize}
+          setLogSize={setLogSize}
+          summarySplit={summarySplit}
+          setSummarySplit={setSummarySplit}
           resetPanelSettings={resetPanelSettings}
         />
       </div>
@@ -215,6 +231,10 @@ function App() {
               showSummary={showSummary}
               showMap={showMap}
               showContextLogs={showContextLogs}
+              chartSize={chartSize}
+              mapSize={mapSize}
+              logSize={logSize}
+              summarySplit={summarySplit}
               isLoading={isLoading}
               onRangeSelect={handleRangeSelect}
             />

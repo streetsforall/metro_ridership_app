@@ -340,3 +340,105 @@ describe('releasing the pin by pressing outside', () => {
     expect(chartProps?.pinnedMonth).toBe('2023 2');
   });
 });
+
+/**
+ * OutputArea owns the two sizes that are layout rather than panel content — the
+ * split of the summary|map row, and the map's height floor. Both are asserted as
+ * classes, which is the whole point of the design: ADR-0008 keeps every size
+ * expressible as a fixed class precisely because the e2e `ResizeObserver` stub
+ * makes anything measured in JavaScript inert under Playwright.
+ *
+ * The chart's and the log's sizes only pass through here, so they are asserted
+ * as the props they arrive as.
+ */
+describe('panel sizes', () => {
+  const row = (container: HTMLElement) =>
+    container.querySelector('#map-panel')?.parentElement;
+
+  it('splits the row 40/60 by default', () => {
+    const { container } = renderWithEvents();
+    expect(row(container)?.className).toContain('lg:grid-cols-[2fr_3fr]');
+  });
+
+  it('splits the row evenly at 50', () => {
+    const { container } = renderWithEvents({ summarySplit: 50 });
+    expect(row(container)?.className).toContain('lg:grid-cols-[1fr_1fr]');
+  });
+
+  it('gives the map 70% at 30', () => {
+    const { container } = renderWithEvents({ summarySplit: 30 });
+    expect(row(container)?.className).toContain('lg:grid-cols-[3fr_7fr]');
+  });
+
+  /**
+   * With no summary beside it the map spans the row, so there is nothing to
+   * split — the split class must not appear at all rather than describing a
+   * one-column grid.
+   */
+  it('drops the split entirely when the summary is hidden', () => {
+    const { container } = renderWithEvents({ showSummary: false, summarySplit: 30 });
+    expect(row(container)?.className).not.toContain('lg:grid-cols-');
+  });
+
+  it('holds the map floor at 400px by default', () => {
+    const { container } = renderWithEvents();
+    expect(container.querySelector('#map-panel')?.className).toContain(
+      '[--map-min-height:400px]',
+    );
+  });
+
+  it('drops the map floor to 280px at small', () => {
+    const { container } = renderWithEvents({ mapSize: 'small' });
+    expect(container.querySelector('#map-panel')?.className).toContain(
+      '[--map-min-height:280px]',
+    );
+  });
+
+  it('raises the map floor to 560px at large', () => {
+    const { container } = renderWithEvents({ mapSize: 'large' });
+    expect(container.querySelector('#map-panel')?.className).toContain(
+      '[--map-min-height:560px]',
+    );
+  });
+
+  /**
+   * The floor is a custom property, not a height. A `min-height` is what lets
+   * the map keep filling a pane that a taller summary beside it stretched; a
+   * height would win that back into a fixed box.
+   */
+  it('never puts a height on the map panel', () => {
+    const { container } = renderWithEvents({ mapSize: 'large' });
+    expect(container.querySelector('#map-panel')?.className).not.toMatch(/\bh-\[/);
+  });
+
+  it('passes the chart size straight through', () => {
+    renderWithEvents({ chartSize: 'small' });
+    expect(chartProps?.size).toBe('small');
+  });
+
+  it('sizes the chart standard when nothing is passed', () => {
+    renderWithEvents();
+    expect(chartProps?.size).toBe('standard');
+  });
+
+  it('caps the context log at 32rem by default', () => {
+    const { container } = renderWithEvents();
+    expect(container.querySelector('#context-log-panel ol')?.className).toContain(
+      'max-h-[32rem]',
+    );
+  });
+
+  it('caps the context log at 16rem at small', () => {
+    const { container } = renderWithEvents({ logSize: 'small' });
+    expect(container.querySelector('#context-log-panel ol')?.className).toContain(
+      'max-h-[16rem]',
+    );
+  });
+
+  it('leaves the context log uncapped at large', () => {
+    const { container } = renderWithEvents({ logSize: 'large' });
+    const list = container.querySelector('#context-log-panel ol')?.className;
+    expect(list).not.toContain('max-h-');
+    expect(list).not.toContain('overflow-y-auto');
+  });
+});

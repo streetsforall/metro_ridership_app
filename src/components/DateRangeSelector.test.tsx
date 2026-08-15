@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import DateRangeSelector from './DateRangeSelector';
+import { render, screen, fireEvent, within } from '@testing-library/react';
+import DateRangeSelector, {
+  type DateRangeSelectorProps,
+} from './DateRangeSelector';
 import { daysOfWeek } from '../hooks/useUserDashboardInput';
 
 const defaultProps = {
@@ -18,8 +20,16 @@ const defaultProps = {
   toggleShowMap: vi.fn(),
   showContextLogs: false,
   toggleShowContextLogs: vi.fn(),
+  chartSize: 'standard',
+  setChartSize: vi.fn(),
+  mapSize: 'standard',
+  setMapSize: vi.fn(),
+  logSize: 'standard',
+  setLogSize: vi.fn(),
+  summarySplit: 40,
+  setSummarySplit: vi.fn(),
   resetPanelSettings: vi.fn(),
-};
+} satisfies DateRangeSelectorProps;
 
 /**
  * Panel Settings is collapsed on load, so every assertion about a control
@@ -210,6 +220,136 @@ describe('Panel Settings visibility checkboxes', () => {
       fireEvent.click(screen.getByRole('checkbox', { name: label }));
       expect(spy).toHaveBeenCalledOnce();
     });
+  });
+});
+
+/**
+ * Radix's `type="single"` ToggleGroup is a radiogroup: the root takes
+ * `role="group"` and each item `role="radio"` with `aria-checked`. Every
+ * assertion here goes through those roles rather than the ids, because the three
+ * size controls all offer a "Small"/"Standard"/"Large" and only the enclosing
+ * group tells them apart — which is the same thing a screen reader relies on.
+ */
+describe('Panel Settings size controls', () => {
+  const sizeControls = [
+    { name: 'Chart height', prop: 'chartSize', setter: 'setChartSize' },
+    { name: 'Map height', prop: 'mapSize', setter: 'setMapSize' },
+    { name: 'Context log height', prop: 'logSize', setter: 'setLogSize' },
+  ] as const;
+
+  /**
+   * Asserted per group rather than as a bare `radio` count: Day of Week is a
+   * RadioGroup too and its three items are on screen whether or not this
+   * disclosure is open.
+   */
+  it('are not reachable while the disclosure is collapsed', () => {
+    render(<DateRangeSelector {...defaultProps} />);
+    for (const name of [
+      'Chart height',
+      'Map height',
+      'Context log height',
+      'Summary | map split',
+    ]) {
+      expect(screen.queryByRole('group', { name })).toBeNull();
+    }
+  });
+
+  sizeControls.forEach(({ name, prop, setter }) => {
+    it(`renders the ${name} control with three steps`, () => {
+      render(<DateRangeSelector {...defaultProps} />);
+      openPanelSettings();
+      const group = within(screen.getByRole('group', { name }));
+      expect(group.getAllByRole('radio')).toHaveLength(3);
+    });
+
+    it(`marks Standard as the checked ${name} step by default`, () => {
+      render(<DateRangeSelector {...defaultProps} />);
+      openPanelSettings();
+      const group = within(screen.getByRole('group', { name }));
+      expect(
+        group.getByRole('radio', { name: 'Standard' }).getAttribute('aria-checked'),
+      ).toBe('true');
+    });
+
+    it(`reflects a non-default ${name} back onto its step`, () => {
+      render(<DateRangeSelector {...defaultProps} {...{ [prop]: 'large' }} />);
+      openPanelSettings();
+      const group = within(screen.getByRole('group', { name }));
+      expect(
+        group.getByRole('radio', { name: 'Large' }).getAttribute('aria-checked'),
+      ).toBe('true');
+    });
+
+    it(`calls ${setter} with the step that was clicked`, () => {
+      const spy = vi.fn();
+      render(<DateRangeSelector {...defaultProps} {...{ [setter]: spy }} />);
+      openPanelSettings();
+      const group = within(screen.getByRole('group', { name }));
+      fireEvent.click(group.getByRole('radio', { name: 'Small' }));
+      expect(spy).toHaveBeenCalledWith('small');
+    });
+
+    /**
+     * Radix emits `''` when the pressed item is clicked again. There is no
+     * fourth "no size" state, so that must reach the setter as nothing at all.
+     */
+    it(`ignores a click that would deselect the current ${name}`, () => {
+      const spy = vi.fn();
+      render(<DateRangeSelector {...defaultProps} {...{ [setter]: spy }} />);
+      openPanelSettings();
+      const group = within(screen.getByRole('group', { name }));
+      fireEvent.click(group.getByRole('radio', { name: 'Standard' }));
+      expect(spy).not.toHaveBeenCalled();
+    });
+  });
+
+  it('renders the split control with its three ratios', () => {
+    render(<DateRangeSelector {...defaultProps} />);
+    openPanelSettings();
+    const group = within(screen.getByRole('group', { name: 'Summary | map split' }));
+    expect(group.getByRole('radio', { name: '50/50' })).toBeTruthy();
+    expect(group.getByRole('radio', { name: '40/60' })).toBeTruthy();
+    expect(group.getByRole('radio', { name: '30/70' })).toBeTruthy();
+  });
+
+  it('checks 40/60 by default', () => {
+    render(<DateRangeSelector {...defaultProps} />);
+    openPanelSettings();
+    expect(
+      screen.getByRole('radio', { name: '40/60' }).getAttribute('aria-checked'),
+    ).toBe('true');
+  });
+
+  it('calls setSummarySplit with the ratio as a number', () => {
+    const setSummarySplit = vi.fn();
+    render(
+      <DateRangeSelector {...defaultProps} setSummarySplit={setSummarySplit} />,
+    );
+    openPanelSettings();
+    fireEvent.click(screen.getByRole('radio', { name: '30/70' }));
+    expect(setSummarySplit).toHaveBeenCalledWith(30);
+  });
+
+  /**
+   * Below `lg` the summary and map stack and the row is a single column, so the
+   * split has nothing to change. It is hidden with a Tailwind class rather than
+   * dropped from the tree — jsdom has no viewport to branch on, so the class is
+   * what there is to assert.
+   */
+  it('hides the split control below the lg breakpoint', () => {
+    render(<DateRangeSelector {...defaultProps} />);
+    openPanelSettings();
+    const wrapper =
+      screen.getByRole('group', { name: 'Summary | map split' }).parentElement;
+    expect(wrapper?.className).toContain('hidden');
+    expect(wrapper?.className).toContain('lg:flex');
+  });
+
+  it('leaves the three size controls visible at every width', () => {
+    render(<DateRangeSelector {...defaultProps} />);
+    openPanelSettings();
+    const wrapper = screen.getByRole('group', { name: 'Map height' }).parentElement;
+    expect(wrapper?.className).not.toContain('hidden');
   });
 });
 

@@ -7,6 +7,16 @@ import {
   paramToDayOfWeek,
   parseModesFromParams,
 } from '../utils/queryParams';
+import {
+  defaultPanelSize,
+  defaultSummarySplit,
+  panelSizeToParam,
+  parsePanelSize,
+  parseSummarySplit,
+  summarySplitToParam,
+  type PanelSize,
+  type SummarySplit,
+} from '../utils/panelSizes';
 import type { Line, LineJson } from '../@types/lines.types';
 import { daysOfWeek, type DayOfWeek } from '../@types/metrics.types';
 
@@ -48,6 +58,18 @@ export interface UserDashboardInputState {
 
   showContextLogs: boolean;
   toggleShowContextLogs: () => void;
+
+  chartSize: PanelSize;
+  setChartSize: (size: PanelSize) => void;
+
+  mapSize: PanelSize;
+  setMapSize: (size: PanelSize) => void;
+
+  logSize: PanelSize;
+  setLogSize: (size: PanelSize) => void;
+
+  summarySplit: SummarySplit;
+  setSummarySplit: (split: SummarySplit) => void;
 
   resetPanelSettings: () => void;
 
@@ -147,6 +169,31 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     return params.get('logs') === '1';
   });
 
+  /**
+   * Panel size. Same asymmetry as the visibility flags above and for the same
+   * reason: `standard` — and a 40/60 split — is what the app rendered before
+   * these controls existed, so only a step away from it writes a param.
+   */
+  const [chartSize, setChartSize] = useState<PanelSize>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return parsePanelSize(params.get('chartsize'));
+  });
+
+  const [mapSize, setMapSize] = useState<PanelSize>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return parsePanelSize(params.get('mapsize'));
+  });
+
+  const [logSize, setLogSize] = useState<PanelSize>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return parsePanelSize(params.get('logsize'));
+  });
+
+  const [summarySplit, setSummarySplit] = useState<SummarySplit>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return parseSummarySplit(params.get('split'));
+  });
+
   // Sync state → URL query params
   useEffect(() => {
     const params = new URLSearchParams();
@@ -167,6 +214,15 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     if (!showMap) params.set('map', '0');
     if (showContextLogs) params.set('logs', '1');
 
+    const chartSizeParam = panelSizeToParam(chartSize);
+    if (chartSizeParam) params.set('chartsize', chartSizeParam);
+    const mapSizeParam = panelSizeToParam(mapSize);
+    if (mapSizeParam) params.set('mapsize', mapSizeParam);
+    const logSizeParam = panelSizeToParam(logSize);
+    if (logSizeParam) params.set('logsize', logSizeParam);
+    const splitParam = summarySplitToParam(summarySplit);
+    if (splitParam) params.set('split', splitParam);
+
     window.history.replaceState(null, '', `?${params.toString()}`);
   }, [
     startDate,
@@ -180,6 +236,10 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     showSummary,
     showMap,
     showContextLogs,
+    chartSize,
+    mapSize,
+    logSize,
+    summarySplit,
   ]);
 
   /**
@@ -244,15 +304,20 @@ const useUserDashboardInput = (): UserDashboardInputState => {
   };
 
   /**
-   * Put every Panel Settings choice back to its default. Because the sync effect
-   * writes a param only for a non-default value, this is also what drops
-   * `chart`/`summary`/`map`/`logs` out of the URL.
+   * Put every Panel Settings choice back to its default — visibility and size
+   * both. Because the sync effect writes a param only for a non-default value,
+   * this is also what drops `chart`/`summary`/`map`/`logs` and
+   * `chartsize`/`mapsize`/`logsize`/`split` out of the URL.
    */
   const resetPanelSettings = (): void => {
     setShowChart(true);
     setShowSummary(true);
     setShowMap(true);
     setShowContextLogs(false);
+    setChartSize(defaultPanelSize);
+    setMapSize(defaultPanelSize);
+    setLogSize(defaultPanelSize);
+    setSummarySplit(defaultSummarySplit);
   };
 
   return {
@@ -274,6 +339,14 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     toggleShowMap,
     showContextLogs,
     toggleShowContextLogs,
+    chartSize,
+    setChartSize,
+    mapSize,
+    setMapSize,
+    logSize,
+    setLogSize,
+    summarySplit,
+    setSummarySplit,
     resetPanelSettings,
     searchText,
     setSearchText,

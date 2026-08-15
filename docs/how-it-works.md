@@ -103,11 +103,13 @@ These are the things that look like bugs and aren't.
   ([ADR-0004](adr/0004-line-metrics-are-one-nullable-shape.md)).
 
 - **All dashboard state syncs to the URL** (`start`, `end`, `day`, `lines`, `q`, `buses`, `trains`,
-  `aggregate`, `chart`, `summary`, `map`, `logs`) so a view is shareable — panel visibility included
+  `aggregate`, `chart`, `summary`, `map`, `logs`, `chartsize`, `mapsize`, `logsize`, `split`) so a
+  view is shareable — panel visibility and panel size included
   ([ADR-0008](adr/0008-panel-layout-is-a-tailwind-grid-with-url-synced-settings.md)). The canonical set lives in
   [`useUserDashboardInput.ts`](../src/hooks/useUserDashboardInput.ts): read from the URL in lazy
   `useState` initialisers, written back with `history.replaceState` in an effect.
-  [`queryParams.ts`](../src/utils/queryParams.ts) only holds the parse/format helpers. **New
+  [`queryParams.ts`](../src/utils/queryParams.ts) only holds the parse/format helpers, and
+  [`panelSizes.ts`](../src/utils/panelSizes.ts) the size vocabulary and its codec. **New
   dashboard state must be wired through both** the init readers and the sync effect.
 
 - **The ridership dataset is fetched, not bundled.** `src/data/ridership.json` stays the canonical

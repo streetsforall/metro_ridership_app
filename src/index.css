@@ -95,6 +95,28 @@ td {
   width: 2.25rem;
 }
 
+/*
+ * Text-labelled variant, for Panel Settings' size steps. The base item is a
+ * 2.25rem square sized around the mode filter's 16px icons; a word like
+ * "Standard" or a ratio like "40/60" has to take its width from its content.
+ * It sits after the base rule and matches its specificity, so it wins — a
+ * Tailwind utility would not, since these declarations follow
+ * `@tailwind utilities` in the source.
+ */
+.toggle-group-item--text {
+  /*
+   * The global `button` rule paints text white for dark-blue buttons, and an
+   * unselected item is white-on-white without this. The existing icon items
+   * never hit it — they carry an `<img>`, not text. The `[data-state='on']`
+   * rule below is more specific, so the selected step still reads white on
+   * dark blue.
+   */
+  color: #44403c;
+  font-size: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  width: auto;
+}
+
 .toggle-group-item:first-child {
   margin-left: 0;
   border-top-left-radius: 0.25rem;

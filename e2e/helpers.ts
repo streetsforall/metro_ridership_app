@@ -12,9 +12,13 @@ import { expect, test, type Page } from '@playwright/test';
  * The MapLibre map is WebGL over third-party basemap tiles and never renders identically twice,
  * so full-page snapshots mask it out. A mask paints over the element's own box and takes nothing
  * out of layout, so this does not move anything around it — which matters more now that the
- * container is elastic (`flex: 1` over a 400px floor, see Map.css) rather than a fixed 400px:
- * the masked box tracks whatever height the summary beside it drives. Element-scoped chart shots
- * do not need this — `#lineMap` sits in a sibling pane, outside the crop.
+ * container is elastic (`flex: 1` over a floor, see Map.css) rather than a fixed 400px: the masked
+ * box tracks whatever height the summary beside it drives. Element-scoped chart shots do not need
+ * this — `#lineMap` sits in a sibling pane, outside the crop.
+ *
+ * The floor is `min-height: var(--map-min-height, 400px)`, set by Panel Settings' map size as a
+ * class on `#map-panel`. Still nothing for a mask to care about — it binds to `#lineMap`, and
+ * whatever that element's box is at capture time is what gets painted over.
  */
 export const mapMask = (page: Page) => [page.locator('#lineMap')];
 

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import * as RadioGroup from '@radix-ui/react-radio-group';
+import * as ToggleGroup from '@radix-ui/react-toggle-group';
 import checkIcon from '../assets/check.svg';
 import { daysOfWeek, type DayOfWeek } from '../hooks/useUserDashboardInput';
 import { dataMinYear, dataMaxYear } from '../utils/dataDateRange';
+import type { PanelSize, SummarySplit } from '../utils/panelSizes';
 
 const yearOptions: number[] = Array.from(
   { length: dataMaxYear - dataMinYear + 1 },
@@ -32,10 +34,40 @@ export interface DateRangeSelectorProps {
   showContextLogs: boolean;
   toggleShowContextLogs: () => void;
 
+  chartSize: PanelSize;
+  setChartSize: (size: PanelSize) => void;
+
+  mapSize: PanelSize;
+  setMapSize: (size: PanelSize) => void;
+
+  logSize: PanelSize;
+  setLogSize: (size: PanelSize) => void;
+
+  summarySplit: SummarySplit;
+  setSummarySplit: (split: SummarySplit) => void;
+
   resetPanelSettings: () => void;
 }
 
 type IntervalEndpoint = 'start' | 'end';
+
+/**
+ * Every size control offers the same three steps, and the labels say what the
+ * step is rather than what it does — "Large" is honest about being one of three
+ * fixed choices in a way "Taller" would not be.
+ */
+const sizeOptions: { value: PanelSize; label: string }[] = [
+  { value: 'small', label: 'Small' },
+  { value: 'standard', label: 'Standard' },
+  { value: 'large', label: 'Large' },
+];
+
+/** Summary | map, as the summary's share. See `SummarySplit`. */
+const splitOptions: { value: SummarySplit; label: string }[] = [
+  { value: 50, label: '50/50' },
+  { value: 40, label: '40/60' },
+  { value: 30, label: '30/70' },
+];
 
 export default function DateRangeSelector({
   startDate,
@@ -52,6 +84,14 @@ export default function DateRangeSelector({
   toggleShowMap,
   showContextLogs,
   toggleShowContextLogs,
+  chartSize,
+  setChartSize,
+  mapSize,
+  setMapSize,
+  logSize,
+  setLogSize,
+  summarySplit,
+  setSummarySplit,
   resetPanelSettings,
 }: DateRangeSelectorProps) {
   /**
@@ -78,6 +118,54 @@ export default function DateRangeSelector({
       toggle: toggleShowContextLogs,
     },
   ];
+
+  /**
+   * One labelled row of mutually exclusive size steps.
+   *
+   * `display` comes from the caller rather than sitting in the base classes: the
+   * split control is `hidden lg:flex`, and `flex` alongside `hidden` would leave
+   * which one wins to their order in the generated stylesheet.
+   */
+  const sizeControl = <T extends string | number>(
+    id: string,
+    label: string,
+    value: T,
+    options: { value: T; label: string }[],
+    onChange: (value: T) => void,
+    display = 'flex',
+  ) => (
+    <div className={`${display} flex-col gap-1`}>
+      <span id={`${id}-label`} className="text-sm">
+        {label}
+      </span>
+
+      <ToggleGroup.Root
+        id={id}
+        className="toggle-group"
+        type="single"
+        aria-labelledby={`${id}-label`}
+        value={String(value)}
+        onValueChange={(next) => {
+          /* Radix emits '' when the pressed item is clicked again. There is no
+             "no size", so a deselect is a no-op rather than a fourth state. */
+          const selected = options.find((o) => String(o.value) === next);
+          if (selected) onChange(selected.value);
+        }}
+      >
+        {options.map((option) => (
+          <ToggleGroup.Item
+            key={option.value}
+            id={`${id}-${option.value}`}
+            className="toggle-group-item toggle-group-item--text"
+            value={String(option.value)}
+          >
+            {option.label}
+          </ToggleGroup.Item>
+        ))}
+      </ToggleGroup.Root>
+    </div>
+  );
+
   const getDateSetter = (
     intervalEndpoint: IntervalEndpoint,
   ): React.Dispatch<React.SetStateAction<Date>> => {
@@ -258,6 +346,46 @@ export default function DateRangeSelector({
                 </label>
               </div>
             ))}
+
+            {/**
+             * Size, below visibility. Every default here is what the app
+             * rendered before these controls existed, so "Standard" everywhere
+             * is the view the committed baselines hold and writes no param.
+             *
+             * The split is `hidden lg:flex` because that is exactly the range
+             * where the summary and map share a row. Below `lg` they stack and
+             * the row falls back to one column, which would make this a control
+             * with nothing to change.
+             */}
+            {sizeControl(
+              'panel-chart-size',
+              'Chart height',
+              chartSize,
+              sizeOptions,
+              setChartSize,
+            )}
+            {sizeControl(
+              'panel-map-size',
+              'Map height',
+              mapSize,
+              sizeOptions,
+              setMapSize,
+            )}
+            {sizeControl(
+              'panel-log-size',
+              'Context log height',
+              logSize,
+              sizeOptions,
+              setLogSize,
+            )}
+            {sizeControl(
+              'panel-split',
+              'Summary | map split',
+              summarySplit,
+              splitOptions,
+              setSummarySplit,
+              'hidden lg:flex',
+            )}
 
             <button
               id="panel-settings-reset"

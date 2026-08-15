@@ -7,6 +7,32 @@ import ContextLogPanel from './ContextLogPanel';
 import type { CustomChartData } from '../@types/chart.types';
 import type { LineReadout } from '../ridership';
 import type { TransitEvent } from '../@types/events.types';
+import type { PanelSize, SummarySplit } from '../utils/panelSizes';
+
+/**
+ * The map's `min-height` floor, as a CSS custom property on `#map-panel`. The
+ * property is what `#lineMap` reads (see Map.css) — the pane keeps driving the
+ * map's *floor* rather than its height, so an elastic map still fills a pane
+ * that a taller summary beside it has stretched.
+ *
+ * Written as whole class strings because Tailwind scans source text; a template
+ * built from the size would not be generated.
+ */
+const mapFloorClass: Record<PanelSize, string> = {
+  small: '[--map-min-height:280px]',
+  standard: '[--map-min-height:400px]',
+  large: '[--map-min-height:560px]',
+};
+
+/**
+ * The summary's share of the row, from `lg` up. Below that the panels stack and
+ * the row is one column, which is why the split control is hidden there.
+ */
+const splitClass: Record<SummarySplit, string> = {
+  50: 'lg:grid-cols-[1fr_1fr]',
+  40: 'lg:grid-cols-[2fr_3fr]',
+  30: 'lg:grid-cols-[3fr_7fr]',
+};
 
 interface OutputAreaProps {
   chartDatasets: ChartDataset<'line', CustomChartData[]>[];
@@ -19,6 +45,11 @@ interface OutputAreaProps {
   showMap?: boolean;
   /** Whether the context-log panel is enabled from the filter bar. */
   showContextLogs: boolean;
+  /** Panel Settings size choices. All default to the pre-setting values. */
+  chartSize?: PanelSize;
+  mapSize?: PanelSize;
+  logSize?: PanelSize;
+  summarySplit?: SummarySplit;
   /** True while the ridership dataset is still being fetched. */
   isLoading?: boolean;
   /** Set the month window from a drag across the chart. Labels are `"YYYY M"`. */
@@ -41,6 +72,10 @@ export default function OutputArea({
   showSummary = true,
   showMap = true,
   showContextLogs,
+  chartSize = 'standard',
+  mapSize = 'standard',
+  logSize = 'standard',
+  summarySplit = 40,
   isLoading = false,
   onRangeSelect,
 }: OutputAreaProps) {
@@ -106,6 +141,7 @@ export default function OutputArea({
           onPinnedMonthChange={setPinnedMonth}
           highlightedMonth={hoveredMonth}
           onRangeSelect={onRangeSelect}
+          size={chartSize}
         />
       ) : (
         /* Chart pane */
@@ -133,10 +169,11 @@ export default function OutputArea({
        * rather than sitting at a fixed height inside a taller one — see
        * `#lineMap` in Map.css, which is why the pane is a flex column. The row
        * is as tall as whichever side is taller: the summary grows with the
-       * number of selected lines, and the map holds a 400px floor below that.
+       * number of selected lines, and the map holds a floor below that — 400px
+       * by default, and whatever Panel Settings' map size says otherwise.
        */}
       <div
-        className={`grid gap-4 grid-cols-[1fr] ${isRowSplit ? 'lg:grid-cols-[2fr_3fr]' : ''}`}
+        className={`grid gap-4 grid-cols-[1fr] ${isRowSplit ? splitClass[summarySplit] : ''}`}
       >
         {isSummaryVisible && <SummaryData lines={lines} />}
 
@@ -154,7 +191,7 @@ export default function OutputArea({
          */}
         <div
           id="map-panel"
-          className={`pane flex-col ${showMap ? 'flex' : 'hidden'}`}
+          className={`pane flex-col ${mapFloorClass[mapSize]} ${showMap ? 'flex' : 'hidden'}`}
         >
           <Map lines={lines} />
         </div>
@@ -169,6 +206,7 @@ export default function OutputArea({
             setPinnedMonth((pinned) => (pinned === month ? null : month))
           }
           onHoverMonthChange={setHoveredMonth}
+          size={logSize}
         />
       )}
     </div>

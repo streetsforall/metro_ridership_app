@@ -186,8 +186,10 @@ test('map — survives a table-view round trip without re-initialising', async (
 });
 
 /**
- * `#lineMap` is a fixed `height: 400px; width: 100%` (src/components/Map.css), so narrowing the
- * viewport does not change the geometry the map draws — it changes the canvas aspect ratio, and
+ * `#lineMap` is `width: 100%` over a `min-height` floor that defaults to 400px
+ * (src/components/Map.css), and at this viewport there is no spare pane height to claim — the
+ * panels are stacked — so the floor is the height. Narrowing the viewport therefore does not
+ * change the geometry the map draws — it changes the canvas aspect ratio, and
  * with it where MapLibre's NavigationControl and compact attribution control sit relative to the
  * routes. That is the whole delta this baseline guards, and it is the part the 1280px shots above
  * cannot see.
@@ -228,4 +230,54 @@ test('map — layer stack is background, dimmed lines, then selected lines', asy
     .toBe(0.15);
   expect(await page.evaluate(() => window.__metroMap!.getPaintProperty('lines-selected', 'line-opacity')))
     .toBe(1);
+});
+
+/**
+ * Panel Settings' map size, against a real MapLibre instance.
+ *
+ * This belongs here and nowhere else. The size is a CSS floor, so `#lineMap`'s
+ * own box changes with no JavaScript involved — but MapLibre's GL canvas is
+ * sized imperatively by `trackResize`, which is a `ResizeObserver`, and
+ * `helpers.ts` stubs `ResizeObserver` out for every other suite. `gotoMap` does
+ * not, so this is the only place in the suite where the re-measure genuinely
+ * happens and can be asserted rather than assumed.
+ *
+ * The canvas is read through `getBoundingClientRect` rather than its `height`
+ * attribute: the attribute is in device pixels and this project pins
+ * `deviceScaleFactor: 1`, which would make the two agree here and quietly stop
+ * agreeing if that pin ever moved.
+ */
+const canvasHeight = (page: Page): Promise<number> =>
+  page.evaluate(
+    () => window.__metroMap!.getCanvas().getBoundingClientRect().height,
+  );
+
+test('map — the GL canvas follows the map size setting', async ({ page }) => {
+  await gotoMap(page, SELECTED_LINE_IDS);
+
+  // No line selected beside it would leave the summary shorter than the map, so
+  // the floor is the height. With a selection the pane may be taller; either way
+  // the canvas must never be *below* the floor it was given.
+  const standard = await canvasHeight(page);
+  expect(standard).toBeGreaterThanOrEqual(400);
+
+  await page.locator('#panel-settings-toggle').click();
+  await page.locator('#panel-map-size-large').click();
+
+  await expect.poll(() => canvasHeight(page)).toBeGreaterThanOrEqual(560);
+
+  // And it is still a drawing map at the new size, not just a taller element.
+  await waitForMapIdle(page);
+  const selected = await renderedLineIds(page, 'lines-selected');
+  expect(selected.length).toBeGreaterThan(0);
+});
+
+test('map — the GL canvas shrinks to the small floor too', async ({ page }) => {
+  await gotoMap(page);
+
+  await page.locator('#panel-settings-toggle').click();
+  await page.locator('#panel-map-size-small').click();
+
+  await expect.poll(() => canvasHeight(page)).toBeLessThan(400);
+  await expect.poll(() => canvasHeight(page)).toBeGreaterThanOrEqual(280);
 });
