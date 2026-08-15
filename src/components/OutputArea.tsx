@@ -18,7 +18,7 @@ import SummaryData from './SummaryData';
 import Map from './Map';
 import type { CustomChartData } from '../@types/chart.types';
 import type { LineReadout } from '../ridership';
-import type { TransitEvent } from '../@types/events.types';
+import type { EventCategory, TransitEvent } from '../@types/events.types';
 
 interface OutputAreaProps {
   chartDatasets: ChartDataset<'line', CustomChartData[]>[];
@@ -53,6 +53,107 @@ const hoverCrosshairPlugin: Plugin<'line'> = {
   },
 };
 
+/**
+ * Tailwind hue each context-log category is drawn in, so the taxonomy is legible
+ * on the chart instead of one undifferentiated amber.
+ *
+ * One hue per category, not one per group: the data exercises all nine, so a
+ * grouped palette would still render an opening and an extension — or all four
+ * of the `*_change` variants — as the same rule. The hues are still *chosen* in
+ * families, so the coarse reading survives a glance:
+ *
+ *   emerald / teal    more service (opening, extension)
+ *   red / rose        less service (closure, disruption)
+ *   amber / orange    runs differently (headway, hours)
+ *   violet            a different shape, not a different amount (route)
+ *   sky               costs something different (fare)
+ *   slate             generic, uncategorised (service_change)
+ *
+ * Only the hue is stored; callers pick the weight, which keeps the marker (500)
+ * and the tooltip's title text (400, for contrast on stone-800) in the same
+ * family without a second nine-entry table to keep in sync. All nine 400s clear
+ * AA on stone-800 — red is the tightest at 5.48:1 — so no slot needs an
+ * exception. The 500s run 2.15–4.76:1 on the panel's white, which is why the
+ * panel tints a rule rather than text.
+ */
+type CategoryHue =
+  | 'emerald'
+  | 'teal'
+  | 'red'
+  | 'rose'
+  | 'amber'
+  | 'orange'
+  | 'violet'
+  | 'sky'
+  | 'slate';
+
+const CATEGORY_COLOR: Record<EventCategory, CategoryHue> = {
+  opening: 'emerald',
+  extension: 'teal',
+  closure: 'red',
+  disruption: 'rose',
+  headway_change: 'amber',
+  hours_change: 'orange',
+  route_change: 'violet',
+  fare_change: 'sky',
+  service_change: 'slate',
+};
+
+/**
+ * Category of last resort. Also what an unrecognised category falls back to —
+ * deliberately the same hue as `service_change`, since that category *is* the
+ * schema's generic fallback. An unknown string and an explicit `service_change`
+ * mean the same thing to a reader: something changed, nobody said what.
+ */
+const DEFAULT_CATEGORY_HUE: CategoryHue = 'slate';
+
+/**
+ * Total lookup over `CATEGORY_COLOR`. The events are fetched data, so a category
+ * the union doesn't cover can reach here at runtime regardless of the types —
+ * those still render, in slate, rather than throwing or drawing nothing.
+ */
+function categoryHue(category: EventCategory | undefined): CategoryHue {
+  return CATEGORY_COLOR[category as EventCategory] ?? DEFAULT_CATEGORY_HUE;
+}
+
+/** Marker/border color for an event's category. */
+function categoryColor(category: EventCategory | undefined): string {
+  return colors[categoryHue(category)]['500'];
+}
+
+/** Lighter variant, for category-tinted text on the dark tooltip. */
+function categoryTextColor(category: EventCategory | undefined): string {
+  return colors[categoryHue(category)]['400'];
+}
+
+/**
+ * Chip fill and text for a category.
+ *
+ * Tailwind class names can't be built at runtime — the JIT scanner only sees
+ * literals — so these resolve to hex and go on as inline styles, the same way
+ * the row's rule colour does.
+ *
+ * `100`/`800` rather than the marker's `500`: the chip is the one place the
+ * palette carries *text*, so it is the one place contrast is load-bearing
+ * rather than decorative. Every pair clears AA comfortably — amber is tightest
+ * at 6.37:1 — where the `500` the chart strokes with would be unreadable behind
+ * text at 2.15–4.76:1 on this pane.
+ */
+function categoryChip(category: EventCategory | undefined): {
+  backgroundColor: string;
+  color: string;
+} {
+  const hue = categoryHue(category);
+  return { backgroundColor: colors[hue]['100'], color: colors[hue]['800'] };
+}
+
+/** "headway_change" → "Headway change", for the panel's category label. */
+function formatCategory(category: EventCategory | undefined): string {
+  if (!category) return 'Service change';
+  const words = category.replace(/_/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 interface EventMarkerHitbox {
   xPos: number;
   event: TransitEvent;
@@ -67,7 +168,7 @@ type ChartWithMarkers = ChartJS<'line'> & {
 // How close (px) the cursor must be to a marker's vertical line to hover it.
 const MARKER_HIT_RADIUS = 6;
 
-/** Draws an amber-bordered tooltip box for a hovered event marker. */
+/** Draws a category-colored tooltip box for a hovered event marker. */
 function drawEventTooltip(
   ctx: CanvasRenderingContext2D,
   hit: EventMarkerHitbox,
@@ -109,7 +210,7 @@ function drawEventTooltip(
   ctx.arcTo(boxX, boxY, boxX + boxW, boxY, r);
   ctx.closePath();
   ctx.fillStyle = colors.stone['800'];
-  ctx.strokeStyle = colors.amber['500'];
+  ctx.strokeStyle = categoryColor(event.category);
   ctx.lineWidth = 1;
   ctx.setLineDash([]);
   ctx.fill();
@@ -117,7 +218,7 @@ function drawEventTooltip(
 
   ctx.textBaseline = 'top';
   ctx.font = titleFont;
-  ctx.fillStyle = colors.amber['400'];
+  ctx.fillStyle = categoryTextColor(event.category);
   ctx.fillText(title, boxX + padX, boxY + padY);
   ctx.font = subFont;
   ctx.fillStyle = colors.stone['300'];
@@ -176,7 +277,6 @@ const eventMarkersPlugin: Plugin<'line'> = {
     ctx.save();
     ctx.setLineDash([3, 3]);
     ctx.lineWidth = 1.5;
-    ctx.strokeStyle = colors.amber['500'];
 
     events.forEach((event) => {
       // Chart labels are "YYYY M" (e.g. "2023 2"); event dates are "YYYY-MM"
@@ -186,6 +286,8 @@ const eventMarkersPlugin: Plugin<'line'> = {
 
       const xPos = x.getPixelForValue(idx);
       hitboxes.push({ xPos, event });
+      // Per-event: markers in range can span several categories.
+      ctx.strokeStyle = categoryColor(event.category);
       ctx.beginPath();
       ctx.moveTo(xPos, top);
       ctx.lineTo(xPos, bottom);
@@ -395,10 +497,33 @@ export default function OutputArea({
           {isContextLogOpen && (
             <ol className="flex flex-col gap-3 mt-3">
               {transitEvents.map((event) => (
-                <li key={event.id} className="flex gap-3 text-sm">
-                  <span className="text-stone-400 whitespace-nowrap shrink-0">
-                    {formatEventDate(event.date)}
-                  </span>
+                /* The rule carries the same category color as the chart marker, so a row
+                   and its marker read as the same thing. It is decoration only — the
+                   category is also spelled out below, because these hues run 2.15–4.76:1
+                   on the pane's white and must never be the sole signal. Nine categories
+                   also push past what color alone can carry: red/rose and amber/orange are
+                   deliberately close, and the label is what tells them apart. */
+                <li
+                  key={event.id}
+                  className="flex gap-3 text-sm border-l-2 pl-3"
+                  style={{ borderColor: categoryColor(event.category) }}
+                >
+                  {/* Date and category form a metadata rail: what happened is on the right,
+                      when and what-kind on the left, each aligned down the column. The chip
+                      is what lets colour actually mean something here — the rule beside it is
+                      the marker's exact 500, which ties the row to its mark on the chart but
+                      is far too low-contrast to sit behind text. */}
+                  <div className="shrink-0 flex flex-col items-start gap-1">
+                    <span className="text-stone-400 whitespace-nowrap">
+                      {formatEventDate(event.date)}
+                    </span>
+                    <span
+                      className="rounded px-1.5 py-0.5 text-[0.65rem] uppercase tracking-wider whitespace-nowrap"
+                      style={categoryChip(event.category)}
+                    >
+                      {formatCategory(event.category)}
+                    </span>
+                  </div>
                   <div>
                     <p className="font-medium text-stone-700">{event.title}</p>
                     <p className="text-stone-500">{event.description}</p>

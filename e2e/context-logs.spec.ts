@@ -45,6 +45,61 @@ test('context log panel renders its events', async ({ page }) => {
   await shootPane(page, '#context-log-panel', 'context-log-panel-open.png');
 });
 
+/**
+ * Every category, in one panel — the visual contract for the nine-hue palette.
+ *
+ * The window above holds `disruption`, `hours_change` and `route_change` only, so six of the
+ * nine rule colours were unpinned by it. `start=2020-03&end=2026-05` with lines 801 + 805
+ * renders 15 rows covering all nine:
+ *
+ * | Category | Hue | First row that carries it |
+ * |---|---|---|
+ * | `disruption` | rose | 2020-03 COVID-19 Service Reductions |
+ * | `hours_change` | orange | 2020-04 COVID-19 Emergency Schedule |
+ * | `route_change` | violet | 2020-12 NextGen Bus Plan Phase 1 |
+ * | `fare_change` | sky | 2021-10 GoPass Free Student Fares |
+ * | `headway_change` | amber | 2022-12 Bus Service Restored |
+ * | `opening` | emerald | 2023-06 Regional Connector Opening |
+ * | `closure` | red | 2025-05 D Line Closed for 70 Days |
+ * | `service_change` | slate | 2025-07 D Line Service Resumes |
+ * | `extension` | teal | 2025-09 A Line Foothill Extension |
+ *
+ * **805 appears here despite the file-header warning**, and the exception is narrow: the
+ * warning is about *ridership coverage* advancing each monthly refresh, which moves the chart's
+ * shape. This shot crops to `#context-log-panel`, which renders events and nothing else, and
+ * 805 is the only line carrying a `closure` or a `service_change`. Line 801 is what opens the
+ * `chartDatasets.length > 0` leg of the gate, so the panel does not depend on 805 having data.
+ *
+ * The nine category labels are asserted as **text** before the screenshot. That is what keeps
+ * this test meaningful under `--update-snapshots`, which would otherwise rebase a wrong view
+ * into a green baseline — and it doubles as the accessibility contract, since these hues run
+ * 2.15–4.76:1 on the pane's white and must never be the only signal.
+ */
+test('context log panel spans the category palette', async ({ page }) => {
+  await gotoDashboard(page, '?logs=1&lines=801,805&start=2020-03&end=2026-05&day=wkday');
+
+  const panel = page.locator('#context-log-panel');
+  await expect(panel).toBeVisible();
+  await expect(panel.locator('ol > li')).toHaveCount(15);
+
+  // formatCategory() output, one per EventCategory. All nine must be on screen.
+  for (const label of [
+    'Opening',
+    'Extension',
+    'Closure',
+    'Route change',
+    'Headway change',
+    'Hours change',
+    'Fare change',
+    'Disruption',
+    'Service change',
+  ]) {
+    await expect(panel.getByText(label, { exact: true }).first()).toBeVisible();
+  }
+
+  await shootPane(page, '#context-log-panel', 'context-log-panel-palette.png');
+});
+
 test('panel is absent without logs=1', async ({ page }) => {
   // Same line and window as the shot above; only `logs` differs, so this isolates the
   // `showContextLogs` leg of the three-way gate.

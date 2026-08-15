@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import OutputArea from './OutputArea';
 import { Chart as ChartJS, type ChartOptions } from 'chart.js';
+import colors from 'tailwindcss/colors';
 import type { LineReadout } from '../ridership';
 import { makeLineReadout } from '../test/builders';
-import type { TransitEvent } from '../@types/events.types';
+import type { EventCategory, TransitEvent } from '../@types/events.types';
 
 let capturedOptions: ChartOptions<'line'> | undefined;
 
@@ -387,6 +388,26 @@ describe('tooltip callbacks', () => {
   });
 });
 
+const makeCtx = () => ({
+  save: vi.fn(),
+  restore: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  stroke: vi.fn(),
+  setLineDash: vi.fn(),
+  measureText: vi.fn(() => ({ width: 40 })),
+  arcTo: vi.fn(),
+  closePath: vi.fn(),
+  fill: vi.fn(),
+  fillText: vi.fn(),
+  lineWidth: 0,
+  strokeStyle: '',
+  fillStyle: '',
+  font: '',
+  textBaseline: 'alphabetic' as CanvasTextBaseline,
+});
+
 describe('eventMarkers plugin hover', () => {
   type AfterEvent = (
     chart: unknown,
@@ -403,26 +424,6 @@ describe('eventMarkers plugin hover', () => {
     description: 'Extended westward to three new Westside stations.',
     category: 'extension',
   };
-
-  const makeCtx = () => ({
-    save: vi.fn(),
-    restore: vi.fn(),
-    beginPath: vi.fn(),
-    moveTo: vi.fn(),
-    lineTo: vi.fn(),
-    stroke: vi.fn(),
-    setLineDash: vi.fn(),
-    measureText: vi.fn(() => ({ width: 40 })),
-    arcTo: vi.fn(),
-    closePath: vi.fn(),
-    fill: vi.fn(),
-    fillText: vi.fn(),
-    lineWidth: 0,
-    strokeStyle: '',
-    fillStyle: '',
-    font: '',
-    textBaseline: 'alphabetic' as CanvasTextBaseline,
-  });
 
   const makeChart = (hoveredEventId: string | null = null) => ({
     $eventMarkers: [] as { xPos: number; event: TransitEvent }[],
@@ -480,5 +481,213 @@ describe('eventMarkers plugin hover', () => {
       expect.any(Number),
       expect.any(Number),
     );
+  });
+});
+
+/**
+ * The palette contract, restated independently of the component so the tests
+ * fail on a table edit rather than following it. Order is `EventCategory`'s own,
+ * and the list is exhaustive by construction — `Record<EventCategory, …>` means
+ * adding a tenth category to the union breaks this file at compile time, which
+ * is how a new category gets a color instead of silently inheriting the default.
+ */
+const EXPECTED_HUE: Record<
+  EventCategory,
+  { '100': string; '400': string; '500': string; '800': string }
+> = {
+  opening: colors.emerald,
+  extension: colors.teal,
+  closure: colors.red,
+  route_change: colors.violet,
+  headway_change: colors.amber,
+  hours_change: colors.orange,
+  fare_change: colors.sky,
+  disruption: colors.rose,
+  service_change: colors.slate,
+};
+
+const ALL_CATEGORIES = Object.keys(EXPECTED_HUE) as EventCategory[];
+
+describe('event marker category colors', () => {
+  type AfterDraw = (chart: unknown, args: unknown, opts: unknown) => void;
+  const markerPlugin = () =>
+    ChartJS.registry.getPlugin('eventMarkers') as unknown as { afterDraw: AfterDraw };
+
+  // One event per label, so marker N in the stroke log is category N. Nine
+  // labels, because the widest case drives every category through in one pass.
+  const labels = Array.from({ length: 9 }, (_, i) => `2020 ${i + 1}`);
+  const makeEvent = (index: number, category: EventCategory): TransitEvent => ({
+    id: `event-${index}`,
+    date: `2020-${String(index + 1).padStart(2, '0')}`,
+    line_ids: [801],
+    title: `Event ${index}`,
+    description: `Description ${index}`,
+    category,
+  });
+
+  /**
+   * Runs afterDraw over `categories` and returns the strokeStyle in force at each
+   * stroke() — the marker rules first, then the hovered tooltip's border if any.
+   */
+  const strokesFor = (categories: EventCategory[], hoveredIndex?: number) => {
+    const events = categories.map((category, i) => makeEvent(i, category));
+    const ctx = makeCtx();
+    const strokes: string[] = [];
+    ctx.stroke = vi.fn(() => {
+      strokes.push(ctx.strokeStyle);
+    });
+    const chart = {
+      $eventMarkers: [] as { xPos: number; event: TransitEvent }[],
+      $hoveredEventId: hoveredIndex === undefined ? null : `event-${hoveredIndex}`,
+      options: { plugins: { eventMarkers: { events } } },
+      data: { labels },
+      scales: { x: { getPixelForValue: (i: number) => 50 + i * 50 } },
+      chartArea: { top: 10, bottom: 200, left: 0, right: 300 },
+      ctx,
+    };
+    markerPlugin().afterDraw(chart, {}, {});
+    return strokes;
+  };
+
+  it('strokes every category in its own hue', () => {
+    expect(strokesFor(ALL_CATEGORIES)).toEqual(
+      ALL_CATEGORIES.map((category) => EXPECTED_HUE[category]['500']),
+    );
+  });
+
+  /**
+   * The mutation guard. The assertion above pins the table row by row, but only
+   * this one fails when two categories are collapsed onto a shared color — the
+   * regression the nine-hue palette exists to prevent, and the one a grouped
+   * palette cannot express.
+   */
+  it('gives no two categories the same marker color', () => {
+    const strokes = strokesFor(ALL_CATEGORIES);
+    expect(new Set(strokes).size).toBe(ALL_CATEGORIES.length);
+  });
+
+  it('falls back to slate for a category outside the union', () => {
+    // Events are fetched data, so an unknown category can dodge the type at runtime.
+    const rogue = 'not_a_real_category' as EventCategory;
+    expect(strokesFor([rogue])).toEqual([colors.slate['500']]);
+  });
+
+  it('borders the hovered tooltip in the hovered event category color', () => {
+    // Markers stroke first, so the tooltip border is the last stroke.
+    const strokes = strokesFor(['opening', 'disruption'], 1);
+    expect(strokes).toHaveLength(3);
+    expect(strokes[2]).toBe(colors.rose['500']);
+  });
+});
+
+describe('context log panel category colors', () => {
+  const panelEvent = (id: string, category: EventCategory): TransitEvent => ({
+    id,
+    date: '2023-02',
+    line_ids: [801],
+    title: `${id} title`,
+    description: `${id} description`,
+    category,
+  });
+
+  const renderPanel = (events: TransitEvent[]) =>
+    render(
+      <OutputArea
+        chartDatasets={[datasetFixture]}
+        months={['2023 2']}
+        lines={[]}
+        transitEvents={events}
+        showContextLogs={true}
+      />,
+    );
+
+  /** jsdom serializes inline colors its own way; normalize both sides the same. */
+  const asBorderColor = (value: string) => {
+    const el = document.createElement('div');
+    el.style.borderColor = value;
+    return el.style.borderColor;
+  };
+
+  const rowBorders = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll('#context-log-panel li')).map(
+      (row) => (row as HTMLElement).style.borderColor,
+    );
+
+  it('tints each row with its category color', () => {
+    const { container } = renderPanel(
+      ALL_CATEGORIES.map((category) => panelEvent(category, category)),
+    );
+    expect(rowBorders(container)).toEqual(
+      ALL_CATEGORIES.map((category) => asBorderColor(EXPECTED_HUE[category]['500'])),
+    );
+  });
+
+  /** Same mutation guard as the markers: a shared hue is the failure mode. */
+  it('gives no two rows the same rule color', () => {
+    const { container } = renderPanel(
+      ALL_CATEGORIES.map((category) => panelEvent(category, category)),
+    );
+    expect(new Set(rowBorders(container)).size).toBe(ALL_CATEGORIES.length);
+  });
+
+  /** jsdom normalizes background-color the same way; go through an element for both. */
+  const asColor = (prop: 'backgroundColor' | 'color', value: string) => {
+    const el = document.createElement('div');
+    el.style[prop] = value;
+    return el.style[prop];
+  };
+
+  const chips = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll<HTMLElement>('#context-log-panel li span[style]'));
+
+  /**
+   * The chip is the one place the palette carries *text*, so it is the one place
+   * contrast is load-bearing rather than decorative — 100 behind 800, never the
+   * 500 the chart strokes with, which would be unreadable under text.
+   */
+  it('fills each chip from its category, light behind dark', () => {
+    const { container } = renderPanel(
+      ALL_CATEGORIES.map((category) => panelEvent(category, category)),
+    );
+    expect(
+      chips(container).map((chip) => [chip.style.backgroundColor, chip.style.color]),
+    ).toEqual(
+      ALL_CATEGORIES.map((category) => [
+        asColor('backgroundColor', EXPECTED_HUE[category]['100']),
+        asColor('color', EXPECTED_HUE[category]['800']),
+      ]),
+    );
+  });
+
+  it('gives no two chips the same fill', () => {
+    const { container } = renderPanel(
+      ALL_CATEGORIES.map((category) => panelEvent(category, category)),
+    );
+    const fills = chips(container).map((chip) => chip.style.backgroundColor);
+    expect(new Set(fills).size).toBe(ALL_CATEGORIES.length);
+  });
+
+  it('also spells the category out, so color is not the only signal', () => {
+    renderPanel([panelEvent('rescheduled', 'headway_change')]);
+    expect(screen.getByText('Headway change')).toBeTruthy();
+  });
+
+  it('falls back to slate for an unknown category', () => {
+    const { container } = renderPanel([
+      panelEvent('mystery', 'not_a_real_category' as EventCategory),
+    ]);
+    const row = container.querySelector('#context-log-panel li') as HTMLElement;
+    expect(row.style.borderColor).toBe(asBorderColor(colors.slate['500']));
+  });
+
+  it('falls back to slate when an event carries no category at all', () => {
+    const missing = panelEvent('untyped', 'opening');
+    delete (missing as Partial<TransitEvent>).category;
+    const { container } = renderPanel([missing]);
+    const row = container.querySelector('#context-log-panel li') as HTMLElement;
+    // Same hue as an explicit service_change — both mean "something changed,
+    // nobody said what", and the label agrees with the color.
+    expect(row.style.borderColor).toBe(asBorderColor(colors.slate['500']));
+    expect(screen.getByText('Service change')).toBeTruthy();
   });
 });

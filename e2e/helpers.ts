@@ -122,7 +122,22 @@ export function desktopOnly(): void {
  * even if its contents resize, and an id is a named element rather than the DOM-order accident
  * that a `.pane`-plus-`.first()` selector relies on.
  */
-export async function shootPane(page: Page, selector: string, name: string): Promise<void> {
+/**
+ * Per-shot tolerance override.
+ *
+ * `maxDiffPixelRatio` is the wrong instrument when the subject is a few thin strokes on a large
+ * pane: 8 dashed event markers are ~1,900 px of a ~462,000 px chart crop, so recolouring *every*
+ * one of them moves 0.4% and sails under the 1% default. A shot whose subject is that small needs
+ * an absolute `maxDiffPixels` instead — see `chart-content.spec.ts`'s marker case.
+ */
+type ShotTolerance = { maxDiffPixels?: number; maxDiffPixelRatio?: number };
+
+export async function shootPane(
+  page: Page,
+  selector: string,
+  name: string,
+  tolerance: ShotTolerance = {},
+): Promise<void> {
   // hoverCrosshairPlugin draws a dashed line whenever the tooltip has active elements,
   // and interaction.intersect:false makes that trivially easy to trigger. Park the cursor.
   await page.mouse.move(0, 0);
@@ -130,11 +145,20 @@ export async function shootPane(page: Page, selector: string, name: string): Pro
     // Tighter than the config defaults: an element crop is a fraction of the full-page area, so
     // the same ratio would let a proportionally much larger regression through.
     threshold: 0.2,
-    maxDiffPixelRatio: 0.01,
+    // An explicit maxDiffPixels replaces the ratio rather than adding to it: Playwright treats
+    // whichever budgets are set as separate ceilings, so leaving the ratio in place would keep
+    // the looser one in play for callers that asked for the tighter one.
+    ...(tolerance.maxDiffPixels === undefined
+      ? { maxDiffPixelRatio: tolerance.maxDiffPixelRatio ?? 0.01 }
+      : { maxDiffPixels: tolerance.maxDiffPixels }),
   });
 }
 
 /** Screenshot the ridership chart pane. See `shootPane`. */
-export async function shootChart(page: Page, name: string): Promise<void> {
-  await shootPane(page, '#ridership-chart', name);
+export async function shootChart(
+  page: Page,
+  name: string,
+  tolerance: ShotTolerance = {},
+): Promise<void> {
+  await shootPane(page, '#ridership-chart', name, tolerance);
 }

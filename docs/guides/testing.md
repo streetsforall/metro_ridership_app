@@ -27,7 +27,7 @@ because tests that touch the date bounds need `virtual:ridership-bounds` to reso
 
 ## Visual regression
 
-Playwright screenshots the app and compares against committed baselines. **Nine specs, 35 Linux
+Playwright screenshots the app and compares against committed baselines. **Nine specs, 39 Linux
 baselines.**
 
 ```bash
@@ -56,11 +56,11 @@ because an element crop would clip at the narrow viewport edge.
 | Spec | Covers | Baselines |
 | --- | --- | --- |
 | [`visual.spec.ts`](../../e2e/visual.spec.ts) | full page — default dashboard, a line selected, the expanded selector | 6 |
-| [`chart-content.spec.ts`](../../e2e/chart-content.spec.ts) | what the chart *draws* — one line, several, aggregate, Saturday, a narrow window | 10 |
+| [`chart-content.spec.ts`](../../e2e/chart-content.spec.ts) | what the chart *draws* — one line, several, aggregate, Saturday, a narrow window, event markers at several category colours | 12 |
 | [`line-filters.spec.ts`](../../e2e/line-filters.spec.ts) | search, rail-only mode, the empty-mode state (desktop) | 5 |
 | [`summary-tiles.spec.ts`](../../e2e/summary-tiles.spec.ts) | the summary pane — a negative change, several lines | 4 |
 | [`map.spec.ts`](../../e2e/map.spec.ts) | all lines dimmed, selected in brand colours, selected at phone width | 3 |
-| [`context-logs.spec.ts`](../../e2e/context-logs.spec.ts) | the context-log panel open (plus two absence assertions, no shots) | 2 |
+| [`context-logs.spec.ts`](../../e2e/context-logs.spec.ts) | the context-log panel open, and a window spanning all nine event categories (plus two absence assertions, no shots) | 4 |
 | [`responsive-tablet.spec.ts`](../../e2e/responsive-tablet.spec.ts) | 768×1024 via a file-level `test.use`, not a fourth project | 2 |
 | [`table-view.spec.ts`](../../e2e/table-view.spec.ts) | sort chrome and ordering, a partial-coverage row (desktop) | 2 |
 | [`loading.spec.ts`](../../e2e/loading.spec.ts) | the output pane mid-fetch, and that a failed fetch doesn't crash (desktop) | 1 |
@@ -78,6 +78,14 @@ axis stays comfortably under the threshold and passes. Cropping makes the subjec
 frame, which is why `shootPane` also applies a tighter tolerance (`maxDiffPixelRatio: 0.01`) than
 the full-page set's `0.02`. It parks the mouse at (0,0) first, so a stray cursor can't leave a hover
 state in the shot.
+
+**A ratio is still the wrong instrument when the subject is a few thin strokes.** The chart's event
+markers are ~1,900 px of a ~462,000 px crop, so recolouring *every* marker moves 0.4% and passes at
+`0.01` — which is not a hypothetical: regenerating the ten other `chart-content` baselines against
+the nine-hue palette left all ten byte-identical. `shootPane`/`shootChart` take an optional
+`{ maxDiffPixels }` for these, which replaces the ratio rather than adding to it. Calibrate it by
+mutation — break the thing on purpose and read the pixel count out of the failure — rather than by
+picking a round number.
 
 Prefer an id'd pane over a bare `<canvas>` or a `.pane`-plus-`.first()` selector: the pane's padding
 and background give a stable box even when its contents resize, an id is a named element rather than
@@ -114,6 +122,14 @@ Your own platform's baselines are yours alone. The first local `npm run test:e2e
 nothing you do to them can turn CI red.
 
 **Never regenerate baselines to silence a diff you can't explain** — that deletes the evidence.
+
+That rule needs help from the specs, because `--update-snapshots` will happily bake a *wrong* view
+into a green baseline: a mistyped query param renders some other valid-looking page, and the
+regenerated PNG then asserts it forever. So a shot whose subject is the point of the test asserts
+that subject in the DOM first — `context-logs.spec.ts` checks its row count and all nine category
+labels as text before capturing, and `chart-content.spec.ts` proves the chart rendered rather than
+the "Please select a Metro line." placeholder. The screenshot pins the pixels; the assertions pin
+what the pixels are *of*.
 
 To regenerate one project or one suite:
 
