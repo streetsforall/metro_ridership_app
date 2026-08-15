@@ -92,7 +92,7 @@ and background give a stable box even when its contents resize, an id is a named
 a DOM-order accident, and `#lineMap` sits outside these panes, so no mask is needed.
 
 The Chart.js intro animation is disabled under test via `prefers-reduced-motion`, which
-[`OutputArea.tsx`](../../src/components/OutputArea.tsx) honours and `playwright.config.ts` emulates.
+[`RidershipChart.tsx`](../../src/components/RidershipChart.tsx) honours and `playwright.config.ts` emulates.
 That is a real accessibility behaviour rather than a test-only hook; making the canvas paint its
 final frame immediately is a side benefit.
 

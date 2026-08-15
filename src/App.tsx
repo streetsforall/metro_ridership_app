@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import DateRangeSelector from './components/DateRangeSelector';
 import Footer from './components/Footer';
 import Header from './components/Header';
@@ -10,6 +10,7 @@ import { buildLineReadouts, buildRidershipView } from './ridership';
 import { listedReadouts } from './utils/lines';
 import { decodeRidership, type ColumnarRidership } from './utils/ridershipData';
 import type { RidershipRecord } from './@types/metrics.types';
+import { labelToDate } from './chart/months';
 
 /**
  * OutputArea pulls in Chart.js and MapLibre GL. Lazy-loading it keeps MapLibre (the
@@ -104,6 +105,27 @@ function App() {
     [readouts, searchText, modes],
   );
 
+  /**
+   * A drag across the chart is just another way to set the month window, so it
+   * writes to the same two dates the pickers do. Everything downstream — the
+   * `start`/`end` query params, the pickers' displayed values, the rebuilt view —
+   * then follows for free, and the dragged range is as shareable as a typed one.
+   *
+   * Imported from `./chart/months` rather than the `./chart` barrel on purpose:
+   * the barrel registers Chart.js, and pulling that into App would undo the
+   * lazy-loading of OutputArea above.
+   */
+  const handleRangeSelect = useCallback(
+    (startMonth: string, endMonth: string) => {
+      const start = labelToDate(startMonth);
+      const end = labelToDate(endMonth);
+      if (!start || !end) return;
+      setStartDate(start);
+      setEndDate(end);
+    },
+    [setStartDate, setEndDate],
+  );
+
   return (
     /* Stretch full height */
     <div className="flex flex-col min-h-screen mx-4">
@@ -177,6 +199,7 @@ function App() {
               transitEvents={events}
               showContextLogs={showContextLogs}
               isLoading={isLoading}
+              onRangeSelect={handleRangeSelect}
             />
           </Suspense>
         </div>

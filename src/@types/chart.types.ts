@@ -12,6 +12,17 @@ declare module 'chart.js' {
   interface PluginOptionsByType<TType extends ChartType> {
     eventMarkers?: {
       events?: TransitEvent[];
+      /** Month index the tooltip is describing, from hover, keyboard, or a pin. */
+      focusedIndex?: number | null;
+      /** Month index of the context-log row under the cursor. */
+      highlightedIndex?: number | null;
+    };
+    hoverCrosshair?: {
+      focusedIndex?: number | null;
+      isPinned?: boolean;
+    };
+    rangeSelect?: {
+      onSelect?: (startIndex: number, endIndex: number) => void;
     };
   }
 }

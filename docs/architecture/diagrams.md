@@ -426,15 +426,19 @@ flowchart TB
 
   subgraph rightPane["OutputArea — React.lazy chunk"]
     direction TB
-    oa["OutputArea — container"]
-    chart["LineChart — #ridership-chart"]
+    oa["OutputArea — container,<br/>owns pinned + hovered month"]
+    chart["RidershipChart — #ridership-chart"]
+    tooltip["ChartTooltip — HTML readout"]
     summary["SummaryData"]
-    ctxlog["context-log panel"]
+    ctxlog["ContextLogPanel — #context-log-panel"]
     mapCmp["Map — #lineMap"]
     oa --> chart
     oa --> summary
     oa --> ctxlog
     oa --> mapCmp
+    chart --> tooltip
+    chart -. "pinned month" .-> ctxlog
+    ctxlog -. "hovered month" .-> chart
   end
 
   footer["Footer"]
