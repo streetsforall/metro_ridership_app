@@ -154,10 +154,24 @@ function App() {
         </div>
 
         {/**
-         * Only show right side if line selector not selected
-         * TODO: Change this from conditional rendering to conditional visibility; that way it doesn't rerender every time
+         * The right side is hidden while the line selector is expanded, not unmounted.
+         *
+         * Unmounting it tore down the Chart.js canvas and the MapLibre instance, so every
+         * collapse paid for a fresh map — new WebGL context, basemap style and tiles fetched
+         * again — plus a chart rebuilt from scratch. Both are ready to draw already; the only
+         * thing that changed is whether they are on screen.
+         *
+         * `contents` on the wrapper makes OutputArea's own root the grid item, exactly as it
+         * was when this was conditionally rendered, so the visible layout is unchanged. When
+         * expanded the wrapper is `display: none`, which takes it out of the grid entirely —
+         * the `grid-cols-[1fr]` above then has a single column with a single item in it, as
+         * before.
+         *
+         * Coming back is safe without a manual re-measure: Chart.js's responsive mode and
+         * MapLibre's `trackResize` both watch their container with a ResizeObserver, which
+         * fires again when the box goes from zero back to its real size.
          */}
-        {!isLineSelectorExpanded && (
+        <div className={isLineSelectorExpanded ? 'hidden' : 'contents'}>
           <Suspense
             fallback={
               <div className="flex flex-col gap-4 lg:min-h-[50vh]">
@@ -176,7 +190,7 @@ function App() {
               isLoading={isLoading}
             />
           </Suspense>
-        )}
+        </div>
       </div>
 
       <Footer />

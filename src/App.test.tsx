@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, waitFor } from '@testing-library/react';
+import { fireEvent, render, waitFor } from '@testing-library/react';
 import App from './App';
 import type { ChartDataset } from 'chart.js';
 import type { CustomChartData } from './@types/chart.types';
@@ -60,7 +60,25 @@ vi.mock('./components/OutputArea', () => ({
 vi.mock('./components/Header', () => ({ default: () => <div /> }));
 vi.mock('./components/Footer', () => ({ default: () => <div /> }));
 vi.mock('./components/DateRangeSelector', () => ({ default: () => <div /> }));
-vi.mock('./components/LineSelector', () => ({ default: () => <div /> }));
+// Stands in for the expand toggle inside the real LineSelector, so the App-level
+// consequence of expanding (see the output-area test at the bottom) is reachable.
+vi.mock('./components/LineSelector', () => ({
+  default: ({
+    isExpanded,
+    setIsExpanded,
+  }: {
+    isExpanded: boolean;
+    setIsExpanded: (update: (prev: boolean) => boolean) => void;
+  }) => (
+    <button
+      type="button"
+      data-testid="expand-toggle"
+      onClick={() => setIsExpanded((prev) => !prev)}
+    >
+      {isExpanded ? 'collapse' : 'expand'}
+    </button>
+  ),
+}));
 
 beforeEach(() => {
   capturedDatasets = [];
@@ -175,6 +193,32 @@ describe('App - context log panel', () => {
     await waitForDatasets(1);
 
     expect(queryByTestId('context-log-panel')).toBeNull();
+  });
+});
+
+describe('App - expanded line selector', () => {
+  it('hides the output area rather than unmounting it', async () => {
+    window.history.replaceState({}, '', '?lines=807');
+
+    const { getByTestId } = render(<App />);
+    await waitForDatasets(1);
+
+    // The wrapper div App puts around OutputArea; Suspense contributes no DOM.
+    const output = getByTestId('output-area');
+    const wrapper = output.parentElement!;
+    expect(wrapper.className).toContain('contents');
+
+    fireEvent.click(getByTestId('expand-toggle'));
+
+    // Identity, not presence: the same DOM node means React kept the subtree mounted,
+    // so the Chart.js canvas and the MapLibre instance below it survive the expand.
+    expect(getByTestId('output-area')).toBe(output);
+    expect(wrapper.className).toContain('hidden');
+
+    fireEvent.click(getByTestId('expand-toggle'));
+
+    expect(getByTestId('output-area')).toBe(output);
+    expect(wrapper.className).toContain('contents');
   });
 });
 
