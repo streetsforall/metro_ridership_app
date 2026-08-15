@@ -27,6 +27,6 @@
     "vitest.config.ts",
     "vite/ridership-data-plugin.ts",
     "vite/stop-ridership-plugin.ts",
-    "vite/stop-ridership-plugin.test.ts"
+    "vite/__tests__/stop-ridership-plugin.test.ts"
   ]
 }

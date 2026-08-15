@@ -39,7 +39,11 @@ npm run test:e2e:update:linux  # rewrite the Linux baselines in Docker
 npm run docs:architecture      # regenerate the diagram set
 ```
 
-One test file: `npx vitest run src/ridership/lineMetrics.test.ts`, or filter by name with `-t`.
+Specs live in a `__tests__/` folder inside the directory they cover, so their relative imports
+sit one level deeper than the module's — `vi.mock()` paths included.
+
+One test file: `npx vitest run src/ridership/__tests__/lineMetrics.test.ts`, or filter by name
+with `-t`.
 **Every spec imports `describe`/`it`/`expect` from `vitest`.** `vitest.config.ts` sets
 `globals: true` so the runtime doesn't need them, but `tsconfig.app.json` doesn't list
 `vitest/globals`, so `tsc -b` doesn't see them and `npm run build` fails without the import.
