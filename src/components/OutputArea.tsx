@@ -46,6 +46,9 @@ export default function OutputArea({
   const [hoveredMonth, setHoveredMonth] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
+  /** Whether any line is selected, and so whether there is anything to chart. */
+  const hasSelection = chartDatasets.length > 0;
+
   /**
    * A press anywhere outside this whole area releases the pin — scoped to the
    * area rather than to the chart, because the context log is the other half of
@@ -66,21 +69,17 @@ export default function OutputArea({
 
   return (
     <div ref={rootRef} className="flex flex-col gap-4 lg:min-h-[50vh] min-w-0">
-      {/* Only show chart and summary metrics if something selected */}
-      {chartDatasets.length > 0 ? (
-        <>
-          <RidershipChart
-            chartDatasets={chartDatasets}
-            months={months}
-            transitEvents={transitEvents}
-            pinnedMonth={pinnedMonth}
-            onPinnedMonthChange={setPinnedMonth}
-            highlightedMonth={hoveredMonth}
-            onRangeSelect={onRangeSelect}
-          />
-
-          <SummaryData lines={lines} />
-        </>
+      {/* Only show the chart if something is selected */}
+      {hasSelection ? (
+        <RidershipChart
+          chartDatasets={chartDatasets}
+          months={months}
+          transitEvents={transitEvents}
+          pinnedMonth={pinnedMonth}
+          onPinnedMonthChange={setPinnedMonth}
+          highlightedMonth={hoveredMonth}
+          onRangeSelect={onRangeSelect}
+        />
       ) : (
         /* Chart pane */
         <div
@@ -91,8 +90,31 @@ export default function OutputArea({
         </div>
       )}
 
+      {/**
+       * Summary and map share a row from `lg` up. The map is rendered here and
+       * nowhere else, in one JSX position that is never inside a branch: moving
+       * it between branches would unmount MapLibre whenever the last line is
+       * deselected, and the instance must survive that. With no summary beside
+       * it the row falls back to one column so the map spans the full width
+       * rather than sitting in a 2fr track with a hole next to it.
+       *
+       * `items-start` stops the two panes stretching to a common height. The
+       * map's container is a fixed 400px (Map.css) while the summary grows with
+       * the number of selected lines, so a stretched map pane is 400px of map
+       * over an arbitrary amount of empty background.
+       */}
+      <div
+        className={`grid gap-4 items-start grid-cols-[1fr] ${hasSelection ? 'lg:grid-cols-[2fr_3fr]' : ''}`}
+      >
+        {hasSelection && <SummaryData lines={lines} />}
+
+        <div className="pane">
+          <Map lines={lines} />
+        </div>
+      </div>
+
       {/* Context log panel — opt-in from the filter bar, and only when events exist and a line is selected */}
-      {showContextLogs && transitEvents.length > 0 && chartDatasets.length > 0 && (
+      {showContextLogs && transitEvents.length > 0 && hasSelection && (
         <ContextLogPanel
           events={transitEvents}
           pinnedMonth={pinnedMonth}
@@ -102,11 +124,6 @@ export default function OutputArea({
           onHoverMonthChange={setHoveredMonth}
         />
       )}
-
-      {/* Map always visible below chart */}
-      <div className="pane">
-        <Map lines={lines} />
-      </div>
     </div>
   );
 }
