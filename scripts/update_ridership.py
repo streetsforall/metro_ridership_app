@@ -8,11 +8,16 @@ month/line records aren't in ridership.json yet, and adds only those. Existing
 records are left untouched by default (append-only); pass --overwrite to let
 newer numbers replace existing months (e.g. Metro restatements).
 
+The same scan feeds the **stop grain**: src/data/stop_ridership.{bus,rail}.json,
+merged by stop_ridership.py under the same append-only / --overwrite semantics.
+Disable with --no-stops.
+
 Usage:
     python scripts/update_ridership.py                 # scan data/raw/
     python scripts/update_ridership.py path/ file.zip  # scan given paths
     python scripts/update_ridership.py --overwrite      # corrections win
     python scripts/update_ridership.py --dry-run        # report, write nothing
+    python scripts/update_ridership.py --no-stops       # line grain only
 
 When new data is added, a matching entry is prepended to DATA_RELEASE_NOTES.md
 (disable with --no-release-notes).
@@ -27,6 +32,7 @@ from pathlib import Path
 import pandas as pd
 
 import process_ridership as pr
+import stop_ridership
 from process_ridership import (
     compute_ridership,
     fill_missing_months,
@@ -151,9 +157,28 @@ def months_full(months: list[tuple[int, int]]) -> str:
     return f"{calendar.month_name[m0]} {y0} – {calendar.month_name[m1]} {y1}"
 
 
+def stop_bullet(stop_summary: dict[str, dict] | None) -> str:
+    """The stop-grain line of a release entry, or '' when --no-stops was passed.
+
+    Counts are per source workbook, not per app mode: G Line (901) and J Line (910)
+    BRT are delivered in the Bus export, so they are counted under Bus here and shown
+    under the train filter in the app.
+    """
+    if not stop_summary:
+        return ""
+    parts = [
+        f"{mode} +{summary['added']:,}"
+        for mode, summary in stop_summary.items()
+        if summary["added"]
+    ]
+    if not parts:
+        return ""
+    return f"- **Stop-level:** {', '.join(parts)} stop-months (`stop_ridership.*.json`)\n"
+
+
 def build_release_entry(
     new_months: set, coverage: dict[Path, set], raw_df: pd.DataFrame,
-    added: int, lines: int,
+    added: int, lines: int, stop_summary: dict[str, dict] | None = None,
 ) -> str:
     """Compose a DATA_RELEASE_NOTES.md entry matching the existing format."""
     sources = sorted(
@@ -167,6 +192,7 @@ def build_release_entry(
         f"- **Source:** {src_str}\n"
         f"- **Modes:** {modes}\n"
         f"- **Added:** {added} records across {lines} lines\n"
+        f"{stop_bullet(stop_summary)}"
         f"- Ingested via `update_ridership.py` on {date.today().isoformat()}.\n\n"
     )
 
@@ -186,6 +212,22 @@ def prepend_release_entry(entry: str) -> bool:
     updated = "".join(lines[:insert_at]) + entry + "".join(lines[insert_at:])
     RELEASE_NOTES_PATH.write_text(updated, encoding="utf-8")
     return True
+
+
+def report_stops(stop_summary: dict[str, dict], dry_run: bool) -> None:
+    """Print what the stop grain gained, one line per source workbook."""
+    verb = "would write" if dry_run else "wrote"
+    for mode, summary in stop_summary.items():
+        if not (summary["added"] or summary["updated"]):
+            print(f"stop ridership ({mode}): no new stop-months")
+            continue
+        detail = f"+{summary['added']:,} stop-months"
+        if summary["updated"]:
+            detail += f", {summary['updated']:,} corrected"
+        print(
+            f"stop ridership ({mode}): {detail} — {verb} {summary['rows']:,} rows "
+            f"across {summary['stops']:,} stops"
+        )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -210,6 +252,15 @@ def main(argv: list[str] | None = None) -> int:
         "--no-release-notes", action="store_true",
         help="do not update DATA_RELEASE_NOTES.md",
     )
+    parser.add_argument(
+        "--no-stops", action="store_true",
+        help="skip the stop grain (src/data/stop_ridership.{bus,rail}.json)",
+    )
+    parser.add_argument(
+        "--allow-new-stops", action="store_true",
+        help="accept a month that both gained and lost a stop key as genuinely new "
+             "stops rather than a rename (see stop_ridership.detect_renames)",
+    )
     args = parser.parse_args(argv)
 
     files = discover_inputs(args.paths)
@@ -224,6 +275,23 @@ def main(argv: list[str] | None = None) -> int:
 
     diff = diff_against_current(new_df, args.overwrite)
     added, lines = diff["new_records"], diff["new_lines"]
+
+    # Before the no-new-data return below, not after it: the stop payloads can be
+    # behind — or absent, as on a fresh clone — while ridership.json is current, and
+    # returning early would leave them that way with nothing said.
+    stop_summary = None
+    if not args.no_stops:
+        try:
+            stop_summary = stop_ridership.update_stop_ridership(
+                files,
+                prefer_new=args.overwrite,
+                dry_run=args.dry_run,
+                allow_new_stops=args.allow_new_stops,
+            )
+        except stop_ridership.RenameGuardError as error:
+            print(error)
+            return 1
+        report_stops(stop_summary, args.dry_run)
 
     if added == 0 and diff["updated_records"] == 0:
         print("no new data — ridership.json already up to date")
@@ -264,7 +332,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if added and not args.no_release_notes:
         entry = build_release_entry(
-            diff["new_months"], coverage, raw_df, added, lines
+            diff["new_months"], coverage, raw_df, added, lines, stop_summary
         )
         if prepend_release_entry(entry):
             print(f"release note added: {month_label(list(diff['new_months']))}")

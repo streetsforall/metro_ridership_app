@@ -10,9 +10,11 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 import convert_excel_ridership as ce
 import process_ridership as pr
+import stop_ridership as sr
 import update_ridership as ur
 from test_convert_excel_ridership import _make_test_zip, _make_xlsx_bytes
 
@@ -20,6 +22,20 @@ from test_convert_excel_ridership import _make_test_zip, _make_xlsx_bytes
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+@pytest.fixture(autouse=True)
+def stop_paths(tmp_path, monkeypatch):
+    """Redirect the stop payloads at tmp files for **every** test in this module.
+
+    `main()` now writes the stop grain too, so without this a test run would
+    overwrite the two committed multi-megabyte data files.
+    """
+    paths = {
+        "Bus": tmp_path / "stop_ridership.bus.json",
+        "Rail": tmp_path / "stop_ridership.rail.json",
+    }
+    monkeypatch.setattr(sr, "STOP_PATHS", paths)
+    return paths
 
 def _bus_row(line: int, direction: str, val: float) -> dict:
     return {
@@ -233,6 +249,85 @@ class TestReleaseNotesAndDryRun:
         ur.main([str(f), "--dry-run"])
         assert pr.RIDERSHIP_PATH.read_text(encoding="utf-8") == before_r
         assert notes.read_text(encoding="utf-8") == _SAMPLE_NOTES
+
+
+# ---------------------------------------------------------------------------
+# main — the stop grain
+# ---------------------------------------------------------------------------
+
+class TestStopGrain:
+    def _setup(self, tmp_path, monkeypatch):
+        _setup_data(
+            tmp_path, monkeypatch,
+            ridership_rows=[_rec(month=1, line=90, wk=100.0)],
+            meta_rows=[dict(line=90, mode="Bus", provider="DO")],
+        )
+        return _write_bus_xlsx(tmp_path, 2, 2026, [_bus_row(90, "IB", 222)])
+
+    def test_payloads_written_alongside_ridership(self, tmp_path, monkeypatch, stop_paths):
+        f = self._setup(tmp_path, monkeypatch)
+        assert ur.main([str(f), "--no-release-notes"]) == 0
+
+        payload = json.loads(stop_paths["Bus"].read_text(encoding="utf-8"))
+        assert payload["schema"] == sr.WIRE_SCHEMA
+        assert [stop["key"] for stop in payload["stops"]] == ["bus:stop-90"]
+
+    def test_no_stops_skips_them(self, tmp_path, monkeypatch, stop_paths):
+        f = self._setup(tmp_path, monkeypatch)
+        ur.main([str(f), "--no-release-notes", "--no-stops"])
+        assert not stop_paths["Bus"].exists()
+
+    def test_written_even_when_ridership_is_already_current(self, tmp_path, monkeypatch,
+                                                            stop_paths):
+        """The payloads can be behind — or absent, as on a fresh clone — while
+        ridership.json is up to date. The no-new-data return must not skip them."""
+        _setup_data(
+            tmp_path, monkeypatch,
+            ridership_rows=[_rec(month=1, line=90, wk=100.0, sa=100.0, su=100.0)],
+            meta_rows=[dict(line=90, mode="Bus", provider="DO")],
+        )
+        f = _write_bus_xlsx(tmp_path, 1, 2026, [_bus_row(90, "IB", 100)])
+
+        assert ur.main([str(f), "--no-release-notes"]) == 0
+        assert stop_paths["Bus"].exists()
+
+    def test_dry_run_writes_no_payload(self, tmp_path, monkeypatch, stop_paths):
+        f = self._setup(tmp_path, monkeypatch)
+        ur.main([str(f), "--dry-run", "--no-release-notes"])
+        assert not stop_paths["Bus"].exists()
+
+    def test_rename_guard_fails_the_run(self, tmp_path, monkeypatch, stop_paths, capsys):
+        _setup_data(
+            tmp_path, monkeypatch,
+            ridership_rows=[_rec(month=1, line=90, wk=100.0)],
+            meta_rows=[dict(line=90, mode="Bus", provider="DO")],
+        )
+        january = _write_bus_xlsx(tmp_path, 1, 2026, [dict(_bus_row(90, "IB", 100),
+                                                           STOP_NAME="Old Name")])
+        february = _write_bus_xlsx(tmp_path, 2, 2026, [dict(_bus_row(90, "IB", 100),
+                                                            STOP_NAME="New Name")])
+
+        assert ur.main([str(january), str(february), "--no-release-notes"]) == 1
+        assert "rename, not a new stop" in capsys.readouterr().out
+        assert not stop_paths["Bus"].exists()
+
+    def test_release_entry_gains_a_stop_bullet(self, tmp_path, monkeypatch, stop_paths):
+        _setup_data(
+            tmp_path, monkeypatch,
+            ridership_rows=[_rec(month=1, line=90, wk=100.0)],
+            meta_rows=[dict(line=90, mode="Bus", provider="DO")],
+        )
+        notes = tmp_path / "DATA_RELEASE_NOTES.md"
+        notes.write_text(_SAMPLE_NOTES, encoding="utf-8")
+        monkeypatch.setattr(ur, "RELEASE_NOTES_PATH", notes)
+        f = _write_bus_xlsx(tmp_path, 2, 2026, [_bus_row(90, "IB", 222)])
+
+        ur.main([str(f)])
+        assert "- **Stop-level:** Bus +1 stop-months" in notes.read_text(encoding="utf-8")
+
+    def test_stop_bullet_omitted_with_no_stops(self):
+        assert ur.stop_bullet(None) == ""
+        assert ur.stop_bullet({"Bus": {"added": 0}, "Rail": {"added": 0}}) == ""
 
 
 # ---------------------------------------------------------------------------
