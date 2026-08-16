@@ -1,6 +1,9 @@
 # A pin marks what is read; it never moves what is shown
 
-Status: accepted
+Status: accepted, **not yet implemented** —
+[#199](https://github.com/streetsforall/metro_ridership_app/issues/199) lands the release-first rule
+and [#200](https://github.com/streetsforall/metro_ridership_app/issues/200) the removal of the
+auto-move.
 
 A Pinned Month is a mark. It says *this is the Month everything is reporting on*, and that is the
 whole of its job. It does not decide which Month gets marked next, and it does not open, scroll or
@@ -57,11 +60,16 @@ costs the reader nothing they cannot read on the chart.
 
 - The pin toggle states the rule once, where the Pinned Month is owned. The chart and the panel both
   route through it rather than each deciding for itself; a second copy of the rule is how two
-  surfaces start disagreeing about what a click means.
+  surfaces start disagreeing about what a click means. That includes the Event Gutter's own click
+  path — [ADR-0010](0010-the-event-gutter-hit-tests-itself.md) already requires the gutter to land on
+  the *same* pin state the plot drives rather than a parallel copy, and this rule is a property of
+  that state rather than of any route into it.
 - Escape, the press-outside release and the keyboard pin path are unchanged. All three already
   release rather than retarget, which is the rule this generalises.
-- Completing a Range Selection still does not leave a Pinned Month behind. The suppression that
-  stops a promoted drag from also pinning is a separate mechanism and is untouched.
+- Completing a Range Selection still does not leave a Pinned Month behind. Nothing here changes that
+  outcome; the suppression that produces it is a separate mechanism, and it is
+  [#198](https://github.com/streetsforall/metro_ridership_app/issues/198) — not this decision — that
+  narrows it to fire only on a promoted drag.
 - The context-log panel's own collapse toggle, ordering and content are untouched. Only the
   automatic movement goes, and any state that existed solely to drive it goes with it.
 - Specs asserting that pinning opens or scrolls the panel are asserting a behaviour that is being
