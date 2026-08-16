@@ -63,8 +63,8 @@ _Avoid_: badge, tag, pill, category label
 **Month Readout**:
 What the chart says about one Month: its ridership per Line, then the Transit Events that Month
 carries — one at a time, through an Event Carousel. It has two layouts and picks between them from
-the width the chart measures for it, not
-from the viewport — a chart placed in a narrow panel on a wide screen is a narrow chart. Above the
+the width the chart measures for it, not from the viewport — a chart placed in a narrow panel on a
+wide screen is a narrow chart. Above the
 threshold it is a **floating box** beside the crosshair, flipping and clamping to stay inside the
 plot. Below it the box is most of the plot's width and the clamp overrides the gap holding it off
 the crosshair, so it becomes a **top strip** instead: full width, edge padding both sides, no flip

@@ -577,15 +577,56 @@ describe.each([
   /** Clamped rather than wrapping, so the position indicator can be believed. */
   it('stops at both ends rather than wrapping round', () => {
     const box = boxOf({ ...pinned, events: three });
-    expect(prevIn(box).disabled).toBe(true);
-    expect(nextIn(box).disabled).toBe(false);
+    const refused = (button: HTMLButtonElement) =>
+      button.getAttribute('aria-disabled') === 'true';
+
+    expect(refused(prevIn(box))).toBe(true);
+    expect(refused(nextIn(box))).toBe(false);
 
     fireEvent.click(nextIn(box));
     fireEvent.click(nextIn(box));
 
     expect(within(box).getByText('3 of 3')).toBeTruthy();
-    expect(nextIn(box).disabled).toBe(true);
-    expect(prevIn(box).disabled).toBe(false);
+    expect(refused(nextIn(box))).toBe(true);
+    expect(refused(prevIn(box))).toBe(false);
+
+    // And the refusal holds: a press on the refused end moves nothing.
+    fireEvent.click(nextIn(box));
+    expect(within(box).getByText('3 of 3')).toBeTruthy();
+  });
+
+  /**
+   * `aria-disabled`, not `disabled`. A control that disables itself at the end
+   * of the list is one the reader may well be standing on — Next, on the last
+   * event — and the real attribute makes it unfocusable mid-press, so the
+   * browser drops focus to the body. From there Escape and the arrow keys no
+   * longer reach the plot and the keyboard reader is stranded in the carousel.
+   */
+  it('keeps a refused control focusable', () => {
+    const box = boxOf({ ...pinned, events: three });
+
+    fireEvent.click(nextIn(box));
+    fireEvent.click(nextIn(box));
+
+    expect(nextIn(box).getAttribute('aria-disabled')).toBe('true');
+    expect(nextIn(box).disabled).toBe(false);
+  });
+
+  /**
+   * The other half of the same rule, and the one a stray `key` on the entry
+   * broke: stepping re-renders the readout, and if that remounts the control
+   * the reader pressed, focus is gone by the time they press it again.
+   */
+  it('leaves focus on the control that was pressed', () => {
+    const box = boxOf({ ...pinned, events: three });
+    const next = nextIn(box);
+    next.focus();
+    expect(document.activeElement).toBe(next);
+
+    fireEvent.click(next);
+
+    expect(within(box).getByText('2 of 3')).toBeTruthy();
+    expect(document.activeElement).toBe(nextIn(box));
   });
 
   /** Nothing to step through, and "1 of 1" is not information. */

@@ -39,7 +39,7 @@ because tests that touch the date bounds need `virtual:ridership-bounds` to reso
 
 ## Visual regression
 
-Playwright screenshots the app and compares against committed baselines. **Ten specs, 46 Linux
+Playwright screenshots the app and compares against committed baselines. **Ten specs, 47 Linux
 baselines.** An eleventh, [`chart-interaction.spec.ts`](../../e2e/chart-interaction.spec.ts), shoots
 nothing — the chart's interactive layer is an HTML tooltip and DOM attributes, so it is asserted
 rather than captured.
@@ -69,6 +69,13 @@ breakpoint, an element crop would clip at the narrow viewport edge, or — the t
 view *only* exists below a width the other project never reaches, so an ungated shot would file the
 wrong layout under a name promising the right one.
 
+The converse is worth stating too, because it looks like a missing gate: where sameness across the
+two layouts is the *requirement* rather than a property that happens to hold, the gate would be the
+bug. The Event Carousel is the case — one component and one behaviour on both the floating box and
+the strip, so a reader does not relearn the readout between a phone and a desktop — so
+`chart-interaction.spec.ts` runs its whole carousel block ungated and both projects execute the
+identical script.
+
 | Spec | Covers | Baselines |
 | --- | --- | --- |
 | [`visual.spec.ts`](../../e2e/visual.spec.ts) | full page — default dashboard, a line selected, the expanded selector | 6 |
@@ -76,7 +83,7 @@ wrong layout under a name promising the right one.
 | [`line-filters.spec.ts`](../../e2e/line-filters.spec.ts) | search, rail-only mode, the empty-mode state (desktop) | 5 |
 | [`summary-tiles.spec.ts`](../../e2e/summary-tiles.spec.ts) | the summary pane — a negative change, several lines | 4 |
 | [`map.spec.ts`](../../e2e/map.spec.ts) | all lines dimmed, selected in brand colours, selected at phone width | 3 |
-| [`chart-tooltip.spec.ts`](../../e2e/chart-tooltip.spec.ts) | the readout — the floating box pinned with its source link, focused with the description clamped, and focused on a month carrying an event (desktop); the strip it becomes on a narrow chart (mobile) | 4 |
+| [`chart-tooltip.spec.ts`](../../e2e/chart-tooltip.spec.ts) | the readout — the floating box pinned with its source link, focused with the description clamped, focused on a month carrying an event, and pinned on a month carrying several, where the Event Carousel puts Prev/Next and a position above one entry (desktop); the strip it becomes on a narrow chart (mobile) | 5 |
 | [`context-logs.spec.ts`](../../e2e/context-logs.spec.ts) | the context-log panel open, a window spanning all nine event categories, and a selected row wearing its band (plus two absence assertions, no shots) | 6 |
 | [`responsive-tablet.spec.ts`](../../e2e/responsive-tablet.spec.ts) | 768×1024 via a file-level `test.use`, not a fourth project | 2 |
 | [`table-view.spec.ts`](../../e2e/table-view.spec.ts) | sort chrome and ordering, a partial-coverage row (desktop) | 2 |

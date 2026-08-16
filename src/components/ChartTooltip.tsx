@@ -95,16 +95,29 @@ function ReadoutButton({
   return (
     <button
       type="button"
-      disabled={disabled}
+      /**
+       * `aria-disabled` rather than `disabled`, which is not a style choice.
+       * These controls disable themselves at the ends of the list, and a real
+       * `disabled` on the button the reader is *standing on* — Next, at the
+       * last event — makes it unfocusable mid-press, so the browser drops focus
+       * to the body and Escape and the arrows stop reaching the plot. This
+       * announces the same thing while keeping the button in the tab order; the
+       * press is refused below instead of by the platform.
+       */
+      aria-disabled={disabled || undefined}
       aria-label={label}
       aria-expanded={expanded}
       /* The same treatment as Select All / Clear All in `LineFilters`, down to
          the hex: a bold text action in the app's teal, no button chrome. One
          kind of inline action, one way of looking. */
-      className="shrink-0 border-none bg-transparent p-0 text-xs font-bold text-[#0fada8] disabled:text-stone-500"
+      className={`shrink-0 border-none bg-transparent p-0 text-xs font-bold ${
+        disabled ? 'text-stone-500' : 'text-[#0fada8]'
+      }`}
       onClick={(event) => {
+        // Stopped even when refused: a press that does nothing must still not
+        // fall through to the chart and release the pin.
         event.stopPropagation();
-        onPress();
+        if (!disabled) onPress();
       }}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') event.stopPropagation();
@@ -344,10 +357,13 @@ export default function ChartTooltip({
       )}
 
       {shownEvent && (
-        <div
-          key={shownEvent.id}
-          className="mt-2 border-t border-stone-600 pt-2 first-of-type:mt-2"
-        >
+        /* No `key` here. It carried the event's id back when this was a
+           `.map()` over every event and needed one; on a single node it only
+           tells React the subtree is a *different* element on every step, which
+           unmounts the focused Prev or Next along with it and drops focus to
+           the body — stranding a keyboard reader mid-carousel, where Escape and
+           the arrows no longer reach the plot at all. */
+        <div className="mt-2 border-t border-stone-600 pt-2 first-of-type:mt-2">
           {/* One event at a time, with the position first so the reader knows
               whether there is more before they read what is in front of them.
               A Month with a single event gets none of this — there is nothing

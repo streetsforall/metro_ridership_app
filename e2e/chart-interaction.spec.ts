@@ -200,6 +200,19 @@ test.describe('several events in one month', () => {
 
     await expect(tooltip(page)).toContainText('2 of 2');
     await expect(tooltip(page)).toHaveAttribute('data-pinned', 'true');
+
+    // Focus survives the step, which is the difference between a carousel a
+    // keyboard reader can use and one they fall out of after a single press.
+    // Two things took it away and both are guarded here rather than only in
+    // jsdom: a `key` on the entry remounted the button being pressed, and a
+    // real `disabled` at the end of the list made it unfocusable mid-press —
+    // "2 of 2" is the end, so this asserts on exactly that button.
+    await expect(next(page)).toBeFocused();
+    await expect(next(page)).toHaveAttribute('aria-disabled', 'true');
+
+    // And from there the plot is still reachable: Escape still releases.
+    await page.keyboard.press('Escape');
+    await expect(tooltip(page)).toHaveCount(0);
   });
 
   /** Escape still releases, from a control as from anywhere else. */
