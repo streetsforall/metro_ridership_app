@@ -215,10 +215,33 @@ describe('chart → ContextLogPanel', () => {
    * the cost of marking a row nobody can see, which the tooltip covers.
    */
   it('does not scroll any row into view when a month is pinned', () => {
+    // jsdom implements no `scrollIntoView`, so it has to be assigned onto the
+    // prototype rather than spied on — and put back afterwards. The assertion
+    // is a negative one, and a stub left on `Element.prototype` would arm every
+    // test declared after this one against a call it never made.
+    // Kept as a descriptor rather than a plain reference, which is both how you
+    // put an absent method back and what keeps `@typescript-eslint/unbound-method`
+    // quiet.
+    const original = Object.getOwnPropertyDescriptor(
+      Element.prototype,
+      'scrollIntoView',
+    );
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
-    renderPanel([opening, closure], { pinnedMonth: '2019 5' });
-    expect(scrollIntoView).not.toHaveBeenCalled();
+    try {
+      renderPanel([opening, closure], { pinnedMonth: '2019 5' });
+      // The pinned month is the second row's, and the panel opens by default —
+      // so this fixture did scroll before the change, and a render that dropped
+      // the rows cannot be what makes the assertion below pass.
+      expect(screen.getByRole('button', { name: /New Blue/ })).toBeTruthy();
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    } finally {
+      if (original) {
+        Object.defineProperty(Element.prototype, 'scrollIntoView', original);
+      } else {
+        delete (Element.prototype as Partial<Element>).scrollIntoView;
+      }
+    }
   });
 
   it('leaves a collapsed panel collapsed when a month is pinned', () => {
