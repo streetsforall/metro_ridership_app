@@ -69,7 +69,9 @@ plot. Below it the box is most of the plot's width and the clamp overrides the g
 the crosshair, so it becomes a **top strip** instead: full width, edge padding both sides, no flip
 and no clamp, capped at a third of the plot's height and scrolling within that. It sits *above* the
 chart rather than on any part of it, escaping the pane's padding and border to do so — the readout
-and the Month it describes stop competing for the same pixels, which is the whole of the mode. Distinct from a Line Readout, which is figures for one Line
+and the Month it describes stop competing for the same pixels, which is the whole of the mode. The
+cap is the reader's to lift: a pinned strip with anything under it offers **Expand**, which removes
+the ceiling rather than raising it, so nothing is left clipped. Distinct from a Line Readout, which is figures for one Line
 over the whole Month Window.
 _Caution_: "strip" is the Event Gutter's word too, and the two are different things at opposite ends
 of the plot. Say **top strip** or **Month Readout strip** where both are in play.

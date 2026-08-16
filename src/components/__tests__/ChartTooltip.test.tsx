@@ -450,13 +450,18 @@ describe('ChartTooltip expanding a capped readout', () => {
     expect(toggleIn(boxOf({ ...narrowPinned, isPinned: false }))).toBeNull();
   });
 
-  it('lifts the cap to the whole plot, and offers to put it back', () => {
+  /**
+   * No ceiling at all, rather than a larger one. A second cap still clips, so
+   * "Expand" would still mean "some of it" — which is the confusion the control
+   * was added to remove.
+   */
+  it('takes the ceiling off entirely, and offers to put it back', () => {
     const box = boxOf(narrowPinned);
     expect(box.style.maxHeight).toBe('100px');
 
     fireEvent.click(toggleIn(box) as HTMLElement);
 
-    expect(box.style.maxHeight).toBe('300px');
+    expect(box.style.maxHeight).toBe('');
     expect(box.dataset.expanded).toBe('true');
     expect(toggleIn(box)?.textContent).toBe('Collapse');
   });

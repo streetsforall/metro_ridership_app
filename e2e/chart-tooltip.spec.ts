@@ -228,8 +228,16 @@ test.describe('narrow chart', () => {
     if (!expanded || !movedPlot) throw new Error('the strip has no box');
 
     expect(expanded.height).toBeGreaterThan(strip.height);
-    // Still bounded, and still above the chart it is not allowed to cover.
-    expect(expanded.height).toBeLessThanOrEqual(plotHeight + 2);
+    // Still above the chart it is not allowed to cover.
     expect(expanded.y + expanded.height).toBeLessThanOrEqual(movedPlot.y);
+
+    // And nothing left behind a scroll — which is what Expand promises, and
+    // what a second, larger cap would have quietly broken. The Source link is
+    // the last thing in the entry, so it is the thing a ceiling clips first.
+    const scrolling = await tooltip.evaluate(
+      (node) => node.scrollHeight > node.clientHeight + 1,
+    );
+    expect(scrolling).toBe(false);
+    await expect(tooltip.getByRole('link', { name: 'Source' })).toBeVisible();
   });
 });

@@ -152,12 +152,16 @@ export default function ChartTooltip({
    * covering at this width.
    *
    * The cap stays measured against the plot even though the strip no longer
-   * touches it. Nothing below is at risk now, but an uncapped box would grow
-   * upward over the page instead, and a third of the plot is as good a ceiling
-   * for that as any. Expanded, the ceiling is the plot's whole height rather
-   * than none: the strip grows upward, and a box with no ceiling at all grows
-   * off the top of the viewport, where the reader cannot reach the end of what
-   * they just asked to see.
+   * touches it. Nothing below is at risk now, but it is what keeps a Month with
+   * several events from opening as a wall, and a third of the plot is as good a
+   * ceiling for that as any.
+   *
+   * Expanded, there is no ceiling at all. A second, larger cap was tried and is
+   * worse than none: it still clips, so "Expand" still means "some of it", which
+   * is the confusion the control was added to remove. Expand means the whole
+   * thing. The strip grows upward, so a long enough Month can reach past the top
+   * of the viewport — the reader scrolls the page to it, which is a thing they
+   * already know how to do, where a clipped readout gives them nothing to do.
    *
    * The floating box prefers the right of the crosshair, flips left when that
    * would overflow, then clamps — the same rule the canvas box used, in CSS
@@ -170,7 +174,9 @@ export default function ChartTooltip({
       right: EDGE_PADDING,
       bottom: '100%',
       marginBottom: EDGE_PADDING,
-      maxHeight: Math.max(0, plotHeight * (isExpanded ? 1 : STRIP_HEIGHT_SHARE)),
+      maxHeight: isExpanded
+        ? undefined
+        : Math.max(0, plotHeight * STRIP_HEIGHT_SHARE),
     };
   } else {
     const maxLeft = Math.max(EDGE_PADDING, containerWidth - TOOLTIP_WIDTH - EDGE_PADDING);
