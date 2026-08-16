@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useState, type CSSProperties } from 'react';
 import type { ChartDataset } from 'chart.js';
 import type { CustomChartData } from '../@types/chart.types';
 import type { TransitEvent } from '../@types/events.types';
@@ -88,6 +88,44 @@ export default function ChartTooltip({
   plotHeight,
   isPinned,
 }: ChartTooltipProps) {
+  const layout = tooltipLayoutFor(containerWidth);
+
+  /**
+   * Whether the reader has asked for the capped box to be opened up, and whether
+   * there is anything down there to open it for.
+   *
+   * Both live above the early return, because hooks cannot be called
+   * conditionally and the readout renders nothing for a month it has not got.
+   */
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [box, setBox] = useState<HTMLDivElement | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+
+  /** A new Month is a new readout; it opens collapsed, as this one did. */
+  useEffect(() => setIsExpanded(false), [index]);
+
+  /**
+   * "More to read" is not a property of the content — a single long description
+   * overflows a phone's strip and three events fit a desktop's box — so it is
+   * measured rather than counted: is the box scrolling anything?
+   *
+   * Only the strip is asked. It is the only layout with a ceiling, so it is the
+   * only one that can be hiding anything; the floating box grows to its content
+   * and there is nothing under it to offer.
+   *
+   * The dependency list is every input that can change either the content or the
+   * ceiling. `events` is a new array on every render, so in practice this runs
+   * on every render — which is what a measurement wants, and the list is there
+   * to say what it is measuring rather than to save renders. The updater returns
+   * the previous value when nothing changed, which is React's own bail-out and
+   * what stops a measurement that runs every render from looping.
+   */
+  useLayoutEffect(() => {
+    const overflowing =
+      layout === 'strip' && box !== null && box.scrollHeight > box.clientHeight + 1;
+    setHasMore((previous) => (previous === overflowing ? previous : overflowing));
+  }, [box, layout, index, events, datasets, isPinned, isExpanded, plotHeight]);
+
   if (index === null || !caret || !months[index]) return null;
 
   const rows = datasets
@@ -100,20 +138,26 @@ export default function ChartTooltip({
     .filter((row) => row.value !== null)
     .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
 
-  const layout = tooltipLayoutFor(containerWidth);
-
   /**
    * The strip spans the chart, so there is nothing to flip away from and nothing
    * to clamp: both edges are simply the edge padding, and `right` is what makes
-   * the box full-width without a width to compute.
+   * the box full-width without a width to compute. It does not move with the
+   * crosshair at all.
    *
-   * It is anchored to the top of the chart box rather than to `caret.y`, which
-   * is the top of the *plot* and sits below the legend. Anchored there the strip
-   * began where the series began and spent its whole height covering them; from
-   * up here it covers the legend first — static text, and the one thing on the
-   * chart a reader is not consulting while they read a month — and only reaches
-   * the plot if it is taller than the legend is. The cap is still measured
-   * against the plot, because the plot is what it would be hiding.
+   * `bottom: 100%` puts it wholly *above* the chart rather than over any part
+   * of it — the readout and the thing it describes stop competing for the same
+   * pixels, which is the entire problem the mode exists to solve. It escapes
+   * the pane's padding and its rounded border to do that, deliberately: the
+   * border is decoration and the series is not, and there is nothing else worth
+   * covering at this width.
+   *
+   * The cap stays measured against the plot even though the strip no longer
+   * touches it. Nothing below is at risk now, but an uncapped box would grow
+   * upward over the page instead, and a third of the plot is as good a ceiling
+   * for that as any. Expanded, the ceiling is the plot's whole height rather
+   * than none: the strip grows upward, and a box with no ceiling at all grows
+   * off the top of the viewport, where the reader cannot reach the end of what
+   * they just asked to see.
    *
    * The floating box prefers the right of the crosshair, flips left when that
    * would overflow, then clamps — the same rule the canvas box used, in CSS
@@ -124,8 +168,9 @@ export default function ChartTooltip({
     position = {
       left: EDGE_PADDING,
       right: EDGE_PADDING,
-      top: EDGE_PADDING,
-      maxHeight: Math.max(0, plotHeight * STRIP_HEIGHT_SHARE),
+      bottom: '100%',
+      marginBottom: EDGE_PADDING,
+      maxHeight: Math.max(0, plotHeight * (isExpanded ? 1 : STRIP_HEIGHT_SHARE)),
     };
   } else {
     const maxLeft = Math.max(EDGE_PADDING, containerWidth - TOOLTIP_WIDTH - EDGE_PADDING);
@@ -141,12 +186,39 @@ export default function ChartTooltip({
       data-testid="chart-tooltip"
       data-pinned={isPinned ? 'true' : 'false'}
       data-layout={layout}
+      data-expanded={isExpanded ? 'true' : 'false'}
+      ref={setBox}
       className={`absolute z-10 rounded bg-stone-800 p-2 text-xs text-stone-100 shadow-lg ${
         layout === 'strip' ? 'overflow-y-auto overscroll-contain' : 'w-64'
       } ${isPinned ? 'pointer-events-auto ring-1 ring-stone-400' : 'pointer-events-none'}`}
       style={position}
     >
-      <p className="font-semibold">{formatMonthLabel(months[index])}</p>
+      {/* The month, and — only where the box is capped and there is something
+          under the cap — the control that lifts it. Offered only once pinned:
+          a hovering readout does not accept the pointer, so a button on one is
+          a control the reader can see and cannot press. On touch there is no
+          hover and a tap pins, so the strip is always in the form that has it. */}
+      <div className="flex items-start justify-between gap-2">
+        <p className="font-semibold">{formatMonthLabel(months[index])}</p>
+        {isPinned && (hasMore || isExpanded) && (
+          <button
+            type="button"
+            aria-expanded={isExpanded}
+            /* The same treatment as Select All / Clear All in `LineFilters`,
+               down to the hex: a bold text action in the app's teal, no button
+               chrome. One kind of inline action, one way of looking. */
+            className="shrink-0 bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
+            onClick={(event) => {
+              // The chart pins on click and the output area unpins on a press
+              // outside itself. This is neither: it is a control on the readout.
+              event.stopPropagation();
+              setIsExpanded((wasExpanded) => !wasExpanded);
+            }}
+          >
+            {isExpanded ? 'Collapse' : 'Expand'}
+          </button>
+        )}
+      </div>
 
       {rows.length > 0 && (
         <ul className="mt-1 flex flex-col gap-0.5">

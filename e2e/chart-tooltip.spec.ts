@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { desktopOnly, gotoDashboard, mobileOnly, shootChart, shootPane } from './helpers';
+import { desktopOnly, gotoDashboard, mobileOnly, shootPane } from './helpers';
 
 /**
  * Visual coverage for the chart's month readout.
@@ -115,12 +115,15 @@ test.describe('wide chart', () => {
 
 /**
  * The strip, and the thing the strip exists to prove: that the readout no longer
- * covers the Month it is describing.
+ * covers the Month it is describing — at this width it does not cover it at all,
+ * because it sits above the chart entirely and breaks the pane to do so.
  *
  * jsdom can answer whether the component chooses the mode — `ChartTooltip.test.tsx`
  * does, by passing a width — but not whether a real 390px viewport produces a
  * chart narrow enough to trigger it, nor where the strip lands once it does.
  * Those are layout, and layout needs a browser.
+ *
+ * The one shot here that is not an element crop, for the reason at the capture.
  *
  * Mobile only. On desktop this shot would capture the floating box under a name
  * that promises a strip, and `--update-snapshots` would bake that in.
@@ -128,7 +131,9 @@ test.describe('wide chart', () => {
 test.describe('narrow chart', () => {
   mobileOnly();
 
-  test('readout is a strip that clears the plot', async ({ page }) => {
+  test('readout is a strip above the chart, clear of the plot entirely', async ({
+    page,
+  }) => {
     await gotoDashboard(page, WINDOW);
 
     await page.locator('#context-log-panel li button').first().click();
@@ -153,21 +158,78 @@ test.describe('narrow chart', () => {
     if (!strip) throw new Error('the strip has no box');
 
     const plotHeight = area.bottom - area.top;
-    const plotBottom = plotBox.y + area.bottom;
 
     // A third of the plot, and a little over for the border and the rounding.
     expect(strip.height).toBeLessThanOrEqual(plotHeight / 3 + 2);
-    // Above the legend, so the first thing it covers is the legend rather than
-    // the top of the series.
-    expect(strip.y).toBeLessThan(plotBox.y + area.top);
-    // And it still ends well clear of the axis, which is what leaves the Month
-    // labels, the Event Gutter and the crosshair readable.
-    expect(strip.y + strip.height).toBeLessThan(plotBottom);
+    // The whole of it above the whole of the chart. Not "clears the series" or
+    // "clears the axis" — nothing of the chart is behind it, which is what makes
+    // the crosshair, the highlighted point, the Month labels and the Event
+    // Gutter readable at once rather than one at a time.
+    expect(strip.y + strip.height).toBeLessThanOrEqual(plotBox.y);
     // Full width, rather than the floating box's 256.
     expect(strip.width).toBeGreaterThan(plotBox.width - 24);
 
-    // The pane, not the strip: the point of the shot is the strip *against* the
-    // plot it is no longer covering, and a crop of the strip alone shows neither.
-    await shootChart(page, 'chart-tooltip-strip.png');
+    // It escapes the pane, so an element crop of the pane would cut the top off
+    // the subject. Clip instead to the chart pane plus the band above it that
+    // the strip now occupies — which keeps the subject most of its own frame,
+    // where a full-page shot at this viewport would make it a sliver of a
+    // 390x2868 image.
+    //
+    // Measured in *document* coordinates, because that is what `clip` takes
+    // alongside `fullPage`. `boundingBox()` is viewport-relative and the page is
+    // scrolled by now — clicking the log row scrolled it — so reading the box
+    // that way clips a band off the top of the document instead.
+    const region = await page.evaluate(() => {
+      const pane = document.querySelector('#ridership-chart');
+      const strip = document.querySelector('[data-testid="chart-tooltip"]');
+      if (!pane || !strip) return null;
+      const paneRect = pane.getBoundingClientRect();
+      const stripRect = strip.getBoundingClientRect();
+      const margin = 24;
+      const top = Math.min(stripRect.top, paneRect.top) - margin;
+      return {
+        x: Math.max(0, paneRect.left + window.scrollX - margin),
+        y: Math.max(0, top + window.scrollY),
+        width: Math.min(
+          document.documentElement.clientWidth,
+          paneRect.width + margin * 2,
+        ),
+        height: paneRect.bottom + margin - top,
+      };
+    });
+    if (!region) throw new Error('the pane and the strip are not both on the page');
+
+    // The cap hides the event behind a scroll, so the readout says so and offers
+    // to open itself. Asserted before the capture, like everything else here.
+    const toggle = tooltip.getByRole('button', { name: 'Expand' });
+    await expect(toggle).toBeVisible();
+
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot('chart-tooltip-strip.png', {
+      fullPage: true,
+      clip: region,
+      threshold: 0.2,
+      maxDiffPixelRatio: 0.01,
+    });
+
+    // And that it does what it says. Geometry rather than a second baseline: the
+    // expanded strip is the same strip taller, which a screenshot would cost a
+    // whole PNG to say.
+    await toggle.click();
+    await expect(tooltip).toHaveAttribute('data-expanded', 'true');
+    await expect(tooltip.getByRole('button', { name: 'Collapse' })).toBeVisible();
+
+    // Both boxes re-read together. `boundingBox()` is viewport-relative and
+    // clicking scrolls its target into view, so a box measured before the click
+    // and one measured after are in two different frames of reference — which
+    // subtracts to a number with no meaning rather than to a failure.
+    const expanded = await tooltip.boundingBox();
+    const movedPlot = await plot(page).boundingBox();
+    if (!expanded || !movedPlot) throw new Error('the strip has no box');
+
+    expect(expanded.height).toBeGreaterThan(strip.height);
+    // Still bounded, and still above the chart it is not allowed to cover.
+    expect(expanded.height).toBeLessThanOrEqual(plotHeight + 2);
+    expect(expanded.y + expanded.height).toBeLessThanOrEqual(movedPlot.y);
   });
 });

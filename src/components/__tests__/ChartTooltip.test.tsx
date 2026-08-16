@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { ChartDataset } from 'chart.js';
 import colors from 'tailwindcss/colors';
 import ChartTooltip from '../ChartTooltip';
@@ -344,16 +344,19 @@ describe('ChartTooltip strip mode on a narrow chart', () => {
   });
 
   /**
-   * The top of the chart box, not `caret.y` — that is the top of the plot, below
-   * the legend, where the strip would start exactly where the series start.
+   * Wholly above the chart, not on it. `caret.y` would put it on the plot's top
+   * edge, where it starts exactly where the series start; the top of the chart
+   * box would still put it over the legend.
    */
-  it('sits above the legend, at the top of the chart', () => {
-    expect(boxOf({ ...narrow, caret: { x: 100, y: 42 } }).style.top).toBe('8px');
+  it('sits above the chart rather than on any part of it', () => {
+    const box = boxOf({ ...narrow, caret: { x: 100, y: 42 } });
+    expect(box.style.bottom).toBe('100%');
+    expect(box.style.top).toBe('');
   });
 
   /** Which the floating box does not do: it still follows the crosshair down. */
   it('stays there however far down the plot the crosshair is', () => {
-    expect(boxOf({ ...narrow, caret: { x: 100, y: 200 } }).style.top).toBe('8px');
+    expect(boxOf({ ...narrow, caret: { x: 100, y: 200 } }).style.bottom).toBe('100%');
   });
 
   /**
@@ -395,5 +398,109 @@ describe('ChartTooltip strip mode on a narrow chart', () => {
     const box = boxOf({ containerWidth: 600, plotHeight: 300 });
     expect(box.style.maxHeight).toBe('');
     expect(box.className).not.toContain('overflow-y-auto');
+  });
+});
+
+/**
+ * The capped box hides whatever does not fit, and nothing on screen said so — a
+ * reader who met a strip holding one ridership row had no way to know an event
+ * was under it. So the readout offers to open itself, but only when there is
+ * something to open it for.
+ *
+ * "Something to open it for" is measured, not counted: whether the box is
+ * scrolling. jsdom lays nothing out and reports every box as 0x0, so the
+ * overflow is stubbed onto the prototype for the length of this block — there is
+ * no other way to have one.
+ */
+describe('ChartTooltip expanding a capped readout', () => {
+  const overflowing = { scrollHeight: 400, clientHeight: 100 };
+  const original: Partial<Record<keyof typeof overflowing, PropertyDescriptor>> = {};
+
+  beforeEach(() => {
+    for (const [property, value] of Object.entries(overflowing)) {
+      original[property as keyof typeof overflowing] =
+        Object.getOwnPropertyDescriptor(Element.prototype, property) ?? undefined;
+      Object.defineProperty(Element.prototype, property, {
+        configurable: true,
+        get: () => value,
+      });
+    }
+  });
+
+  afterEach(() => {
+    for (const [property, descriptor] of Object.entries(original)) {
+      if (descriptor) Object.defineProperty(Element.prototype, property, descriptor);
+    }
+  });
+
+  const narrowPinned = { containerWidth: 479, plotHeight: 300, isPinned: true };
+
+  const toggleIn = (box: HTMLElement) => within(box).queryByRole('button');
+
+  it('offers the control when the box is scrolling something', () => {
+    expect(toggleIn(boxOf(narrowPinned))?.textContent).toBe('Expand');
+  });
+
+  /**
+   * A hovering readout does not accept the pointer, so a control on one is a
+   * control the reader can see and cannot press. Pinning is how they reach it —
+   * and on touch, where the cap actually bites, a tap pins anyway.
+   */
+  it('withholds it while the readout is only hovering', () => {
+    expect(toggleIn(boxOf({ ...narrowPinned, isPinned: false }))).toBeNull();
+  });
+
+  it('lifts the cap to the whole plot, and offers to put it back', () => {
+    const box = boxOf(narrowPinned);
+    expect(box.style.maxHeight).toBe('100px');
+
+    fireEvent.click(toggleIn(box) as HTMLElement);
+
+    expect(box.style.maxHeight).toBe('300px');
+    expect(box.dataset.expanded).toBe('true');
+    expect(toggleIn(box)?.textContent).toBe('Collapse');
+  });
+
+  it('collapses again when asked', () => {
+    const box = boxOf(narrowPinned);
+    fireEvent.click(toggleIn(box) as HTMLElement);
+    fireEvent.click(toggleIn(box) as HTMLElement);
+
+    expect(box.style.maxHeight).toBe('100px');
+    expect(box.dataset.expanded).toBe('false');
+  });
+
+  /** A new Month is a new readout, and it opens the way the last one opened. */
+  it('opens collapsed again on a different Month', () => {
+    const { container, rerender } = render(
+      <ChartTooltip
+        index={1}
+        months={months}
+        datasets={datasets}
+        events={[]}
+        caret={{ x: 100, y: 20 }}
+        {...narrowPinned}
+      />,
+    );
+    const box = container.querySelector<HTMLElement>('[data-testid="chart-tooltip"]')!;
+    fireEvent.click(toggleIn(box) as HTMLElement);
+    expect(box.dataset.expanded).toBe('true');
+
+    rerender(
+      <ChartTooltip
+        index={2}
+        months={months}
+        datasets={datasets}
+        events={[]}
+        caret={{ x: 100, y: 20 }}
+        {...narrowPinned}
+      />,
+    );
+    expect(box.dataset.expanded).toBe('false');
+  });
+
+  /** The floating box has no cap, so it is never scrolling and never asks. */
+  it('is not offered on the floating box', () => {
+    expect(toggleIn(boxOf({ ...narrowPinned, containerWidth: 600 }))).toBeNull();
   });
 });
