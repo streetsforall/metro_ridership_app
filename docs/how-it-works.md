@@ -131,6 +131,15 @@ These are the things that look like bugs and aren't.
   dep array is what stops the sparkline effect thrashing. `monthAxis` sits in the same array
   unstringified because `LineSelector` memoises it. Don't "fix" these.
 
+- **Chart plugins ignore replayed events, and the Range Selection plugin must.** `Chart#update`
+  finishes by replaying `_lastEvent` through the whole event pipeline, and `determineLastEvent`
+  keeps the *previous* event across a click — so after a press and release, `_lastEvent` is still
+  the `mousedown`. Every repaint therefore delivers a second `mousedown` to `afterEvent` with the
+  button already up. `rangeSelect` returns on `args.replay` for that reason: without it, pinning a
+  Month re-armed the press and the next mouse move painted a band the reader was not dragging.
+  Anything new that reads pointer state in `afterEvent` needs the same guard —
+  [`src/chart/rangeSelect.ts`](../src/chart/rangeSelect.ts).
+
 - **Line colours.** Official rail and BRT lines have hardcoded brand colours in `definedLines`
   ([`src/utils/lines.ts`](../src/utils/lines.ts)); every other bus line gets a deterministic
   golden-angle HSL hue, so the chart and the map always agree.
