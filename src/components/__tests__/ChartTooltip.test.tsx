@@ -343,8 +343,17 @@ describe('ChartTooltip strip mode on a narrow chart', () => {
     expect(box.className).not.toContain('w-64');
   });
 
-  it('sits on the top edge of the plot', () => {
-    expect(boxOf({ ...narrow, caret: { x: 100, y: 42 } }).style.top).toBe('42px');
+  /**
+   * The top of the chart box, not `caret.y` — that is the top of the plot, below
+   * the legend, where the strip would start exactly where the series start.
+   */
+  it('sits above the legend, at the top of the chart', () => {
+    expect(boxOf({ ...narrow, caret: { x: 100, y: 42 } }).style.top).toBe('8px');
+  });
+
+  /** Which the floating box does not do: it still follows the crosshair down. */
+  it('stays there however far down the plot the crosshair is', () => {
+    expect(boxOf({ ...narrow, caret: { x: 100, y: 200 } }).style.top).toBe('8px');
   });
 
   /**

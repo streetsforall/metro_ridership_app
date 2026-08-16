@@ -157,7 +157,11 @@ test.describe('narrow chart', () => {
 
     // A third of the plot, and a little over for the border and the rounding.
     expect(strip.height).toBeLessThanOrEqual(plotHeight / 3 + 2);
-    // Which is what leaves the Month, its point and its crosshair readable.
+    // Above the legend, so the first thing it covers is the legend rather than
+    // the top of the series.
+    expect(strip.y).toBeLessThan(plotBox.y + area.top);
+    // And it still ends well clear of the axis, which is what leaves the Month
+    // labels, the Event Gutter and the crosshair readable.
     expect(strip.y + strip.height).toBeLessThan(plotBottom);
     // Full width, rather than the floating box's 256.
     expect(strip.width).toBeGreaterThan(plotBox.width - 24);

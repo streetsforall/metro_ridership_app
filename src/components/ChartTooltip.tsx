@@ -103,11 +103,17 @@ export default function ChartTooltip({
   const layout = tooltipLayoutFor(containerWidth);
 
   /**
-   * The strip spans the plot, so there is nothing to flip away from and nothing
+   * The strip spans the chart, so there is nothing to flip away from and nothing
    * to clamp: both edges are simply the edge padding, and `right` is what makes
-   * the box full-width without a width to compute. It sits on the plot's top
-   * edge and caps its own height, so the Month it describes stays visible under
-   * it — which is the whole point of the mode.
+   * the box full-width without a width to compute.
+   *
+   * It is anchored to the top of the chart box rather than to `caret.y`, which
+   * is the top of the *plot* and sits below the legend. Anchored there the strip
+   * began where the series began and spent its whole height covering them; from
+   * up here it covers the legend first — static text, and the one thing on the
+   * chart a reader is not consulting while they read a month — and only reaches
+   * the plot if it is taller than the legend is. The cap is still measured
+   * against the plot, because the plot is what it would be hiding.
    *
    * The floating box prefers the right of the crosshair, flips left when that
    * would overflow, then clamps — the same rule the canvas box used, in CSS
@@ -118,7 +124,7 @@ export default function ChartTooltip({
     position = {
       left: EDGE_PADDING,
       right: EDGE_PADDING,
-      top: caret.y,
+      top: EDGE_PADDING,
       maxHeight: Math.max(0, plotHeight * STRIP_HEIGHT_SHARE),
     };
   } else {

@@ -67,8 +67,9 @@ from the viewport — a chart placed in a narrow panel on a wide screen is a nar
 threshold it is a **floating box** beside the crosshair, flipping and clamping to stay inside the
 plot. Below it the box is most of the plot's width and the clamp overrides the gap holding it off
 the crosshair, so it becomes a **top strip** instead: full width, edge padding both sides, no flip
-and no clamp, capped at a third of the plot's height and scrolling within that, so the Month it
-describes stays readable beneath it. Distinct from a Line Readout, which is figures for one Line
+and no clamp, capped at a third of the plot's height and scrolling within that. It is anchored above
+the legend rather than on the plot's top edge, so the first thing it covers is static text and not
+the start of the series it is describing. Distinct from a Line Readout, which is figures for one Line
 over the whole Month Window.
 _Caution_: "strip" is the Event Gutter's word too, and the two are different things at opposite ends
 of the plot. Say **top strip** or **Month Readout strip** where both are in play.
