@@ -9,9 +9,45 @@ and ingested with [`scripts/process_ridership.py`](scripts/process_ridership.py)
 Each record is one line's monthly ridership: estimated weekday, Saturday, and Sunday
 boardings. Source archives are committed under [`data/raw/`](data/raw/).
 
+The same archives also carry **stop and station grain**, merged into
+[`src/data/stop_ridership.{bus,rail}.json`](src/data/) by
+[`scripts/stop_ridership.py`](scripts/stop_ridership.py). Those files cover a shorter
+span than the line history and are noted separately below.
+
 Entries are newest first.
 
 ---
+
+## Stop-level ridership — Jul 2025 – Jun 2026 (backfill)
+
+- **Type:** new dataset — **no change to `ridership.json`**, whose 17 years of line
+  history are untouched by this and by every future stop-grain update.
+- **Files:** `src/data/stop_ridership.bus.json` (5.3 MB, 105,984 rows, 6,785 stops,
+  109 lines) and `src/data/stop_ridership.rail.json` (89 KB, 1,470 rows, 110 stops,
+  6 lines).
+- **Months:** July 2025 – June 2026, 12 months, both modes. **This is the whole of the
+  stop-level history there is.** Everything before 2025-07 was delivered at line grain
+  only, so the stop panel covers a window the ridership chart dwarfs.
+- **Source:** `Bus 2025.zip`, `Rail 2025.zip`, `2026-01_2026-03.zip`,
+  `2026-04_2026-05.zip`, `2026-06_2026-06.zip` — the same archives the line grain was
+  ingested from, re-read at leaf-row grain rather than summed to lines.
+- **Grain:** one row per line per stop per month, with **boardings and alightings** for
+  all three day types. Alightings have never been shown by this app at any grain. Bus
+  direction is collapsed: `STOP_NAME` is a name and not a `stop_id`, so both sides of a
+  street already share one name and one coordinate.
+- **Split by source export, not by app mode.** G Line (901) and J Line (910) BRT are
+  delivered in the Bus workbook and are therefore in the bus payload, while the app
+  files them under its train filter. The client's mode filter reads
+  `metro_line_metadata_current.json`, never which file a row came from.
+- **One leaf row is dropped:** `06-2026-Bus.xlsx` has a line 155 row with 2.9 weekday
+  boardings and a blank `STOP_NAME`. It stays in the line total and has no stop grain —
+  what is missing is where those riders boarded, not whether they did.
+- **Stop sums do not exactly equal the line totals**, and are not meant to. Measured
+  across 3,978 (line, month, day type) comparisons: median 0.06%, p95 0.83%, max 5.10%
+  (line 602, 2025-08, Sunday: 103 vs 98). The cause is per-stop rounding under Metro's
+  `+0.5` convention, which rounds half up and so drifts a few hundredths of a rider
+  upward per stop. See `scripts/README.md`.
+- Ingested via `update_ridership.py` on 2026-08-15.
 
 ## Jun 2026
 

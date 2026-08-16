@@ -53,10 +53,13 @@ const payload = (
 
 describe('virtual:stop-ridership-manifest', () => {
   it('resolves under the test runner', () => {
-    // `0` here because the payloads are pipeline output and are not on this branch —
-    // the manifest's documented zero-coverage state. The assertion that matters is that
-    // the import resolved at all.
-    expect(monthCount).toBe(0);
+    // The assertion that matters is that the import resolved at all. The count itself
+    // is deliberately not pinned: it was `0` before the payloads existed — the
+    // manifest's documented zero-coverage state — and it grows by one with every month
+    // `update_ridership.py` ingests, so pinning it would make a data update fail a
+    // client test.
+    expect(Number.isInteger(monthCount)).toBe(true);
+    expect(monthCount).toBeGreaterThanOrEqual(0);
   });
 });
 

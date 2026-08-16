@@ -26,7 +26,7 @@ PRs update it rather than restating their own scope.
 | --- | --- | --- | --- |
 | **1** | `stop_identity.py`, `stop_aliases.json`, the `extract_leaf_rows` refactor, `aggregate_to_stop_ridership`, tests. **No data change.** | `pytest scripts/` green with the six existing test files unmodified; a full re-ingest produces byte-for-byte what it produced at the base commit (see below) | ☑ [#173](https://github.com/streetsforall/metro_ridership_app/pull/173) |
 | **2** | `fetch_stop_locations.py`, `src/data/stop_locations.json`, `scripts/README.md`, tests | Match rate reported; unmatched reviewed and aliases extended | ☑ [#179](https://github.com/streetsforall/metro_ridership_app/pull/179) — bus 6,756/6,785 · rail 110/110 |
-| **3** | `stop_ridership.py`, `update_ridership.py` wiring, the two data files, `DATA_RELEASE_NOTES.md` | Reconciliation within tolerance; two runs byte-identical | ☐ |
+| **3** | `stop_ridership.py`, `update_ridership.py` wiring, the two data files, `DATA_RELEASE_NOTES.md` | Reconciliation within tolerance; two runs byte-identical | ☑ [#190](https://github.com/streetsforall/metro_ridership_app/pull/190) — 107,454 stop rows · two runs byte-identical · reconciliation median 0.06%, max 5.10% (see below) |
 | **4** | Vite plugin, manifest, `src/stops/`, `stops.types.ts`, the `isInMonthWindow` extraction, vitest specs. **No visible UI.** | `ANALYZE=1 npm run build` — entry chunk unchanged; no visual baseline moves | ☑ [#180](https://github.com/streetsforall/metro_ridership_app/pull/180) — entry +36 B (the extracted predicate, nothing else) · 0 of 80 baselines moved |
 | **5** | Map layer, `#stop-panel`, URL state, `mapPopup` addition, Playwright baselines | New baselines only; `visual.spec.ts`'s six must **not** move | ☐ |
 
@@ -153,6 +153,35 @@ without coordinates are 16 `ambiguous-name` plus 13 `no-gtfs-match`, all **kept*
 export because platform suffixes fold — `Union Station - A Line` and `Union Station -
 Metro Red & Purple Lines` are one station.
 
+## What PR 3 found
+
+**Coverage is twelve months and that is all there is.** 107,454 stop rows —
+105,984 bus across 6,785 stops and 109 lines, 1,470 rail across 110 stops and 6 lines,
+2025-07 → 2026-06. The payloads are 5.3 MB and 89 KB; the bus file gzips to 1.2 MB.
+`ridership.json` is untouched by the run, and a from-scratch regeneration followed by a
+re-run produced byte-identical files both times.
+
+**The reconciliation drift is one-sided, and it is arithmetic.** Risk 4 above has the
+numbers. The short version: Metro's `+0.5`-then-truncate rounds half up, and 8.5–9% of
+stop values land on exactly `.5` — a Saturday or Sunday figure is an average over four
+or five days, so halves and quarters are common. Every one of those rounds up, worth
+about +0.03 riders per stop. A 70-stop line therefore reports a few riders more at stop
+grain than at line grain, in the same direction, every month. It is invisible on a big
+line and 5% of line 602's Sunday total. Using a different rounding rule at stop grain
+than the line side uses would trade a documented bias for an undocumented divergence.
+
+**`src/stops/stopData.test.ts` pinned `monthCount` to `0`.** PR 4 wrote that assertion
+with a comment saying the payloads "are not on this branch" and that what mattered was
+that the virtual module resolved at all. Landing the payloads made it `12`. It is now
+asserted as a non-negative integer, so it does not fail again on the month after next.
+This is the one file PR 3 touched outside the pipeline.
+
+**`iter_raw_frames` is still in the wrong module.** PR 2 put the walk over `data/raw/`
+in `fetch_stop_locations.py` and noted it belongs beside `convert_zip`. PR 3 imports it
+from there rather than copying it — a second copy of the archive-layout rule is what
+`extract_leaf_rows` exists to prevent — so the merge step now imports from the geometry
+fetcher. Worth moving, in a PR that is allowed to touch both.
+
 ## The contract PR 1 freezes
 
 PRs 2–5 read these and do not restate them.
@@ -227,20 +256,30 @@ reconciliation caveat.
    Explicit sorts on both the rows and the stops dictionary.
 4. **Stop sums ≠ line totals** — genuine and unavoidable. Documented as a tolerance;
    not engineered away. **The plan's `< 0.02` figure was a guess and the data
-   disagrees**: measured over all 1,252 line-months, median 0.04% / p95 0.49% /
-   max 2.35%, with three at or above 2% (line 211 at 2026-01, 2025-10 and 2025-07).
-   PR 3's `--check` needs a looser bound or a named-exceptions list. Note also that
-   for this window the days-weighted average contributes **nothing** — the Excel
-   importer hardcodes `Days = 1` — so the whole spread is per-stop rounding.
+   disagrees.** PR 3 measured it over all three day types, twelve months, 3,978
+   comparisons: median 0.06% / p95 0.83% / **max 5.10%**, with 26 at or above 2%.
+   The earlier 2.35% figure in this file was **weekday only**; Sunday on a small line
+   is the harder case. `--check` keeps `0.02` as its default and prints every
+   exceedance rather than hiding them behind a looser bound — `--tolerance 0.06` is
+   what green looks like over the current window. Note also that for this window the
+   days-weighted average contributes **nothing** — the Excel importer hardcodes
+   `Days = 1` — so the whole spread is per-stop rounding, and it is **one-sided**:
+   `+0.5`-then-truncate rounds half up, 8.5–9% of stop values sit exactly on `.5`, and
+   the result is about +0.03 riders per stop, every month, upward.
 5. **Alias rot** — a rename silently splits a series. The rename guard (PR 3) fails
-   the ingest when a key appears and another disappears in the same month.
-   **A same-month rule is too narrow for the churn actually in this data.**
+   the ingest when a key appears and another disappears in the same month, and
+   **it is silent on the twelve committed months**, which is the outcome this risk
+   wanted. Bus deltas are `+40/-0` at 2025-12 and `+0/-8` at 2026-01, never both in
+   one month.
+   **A same-month rule is still too narrow for the churn actually in this data.**
    `bus:san-vicente-fairfax` runs 2025-07 → 2025-12 and
    `bus:san-vicente-orange-grove` runs 2025-12 → 2026-05: same line 28, same
    corridor, comparable boardings, and **one month of overlap**, so the add lands in
-   2025-12 and the drop in 2026-01 and a same-month guard sees neither. Bus deltas
-   are `+40/-0` at 2025-12 and `+0/-8` at 2026-01, never both in one month. Widen it
-   to a ±1-month window, or compare first-seen/last-seen across the whole series.
+   2025-12 and the drop in 2026-01. `detect_renames(..., window=1)` catches that shape
+   and the ingest **prints it without failing** — it necessarily fires on this data
+   (2025-12's 40 real additions sit next to 2026-01's 8 real discontinuations), and a
+   gate that is red on correct data only teaches people to pass `--allow-new-stops`
+   reflexively. Same-month fails; adjacent-month informs.
 6. **805-under-802 at stop grain** — any aggregation skipping `extract_leaf_rows`
    attributes D Line stations to the B Line. Covered structurally plus a dedicated
    test.
@@ -265,8 +304,9 @@ reconciliation caveat.
 - **`docs/how-it-works.md`** — a "Stop-level ridership" section; the lazy-load rule
   and the BRT-901/910-in-the-bus-file quirk under *Conventions and quirks*.
 - **`docs/guides/data.md`** — the stop step in "The usual path"; which baselines move.
-- **`DATA_RELEASE_NOTES.md`** — the backfill, its 11-month span, and that line history
-  is untouched (PR 3).
+- ~~**`DATA_RELEASE_NOTES.md`** — the backfill, its 12-month span, and that line history
+  is untouched~~ — done in PR 3, along with the `stop_ridership` section of
+  `scripts/README.md`.
 - **Diagrams** — `03-python-data-pipeline.mmd` gains the stop chain,
   `04-build-pipeline.mmd` the second plugin; also `05`, `07`, `08`, `10`, `15`, `16`.
   **Every edited `.mmd` needs its `captions.md` section in the same commit** —
