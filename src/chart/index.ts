@@ -39,14 +39,9 @@ export {
   rangeSelectPlugin,
   consumeDragSuppression,
   RANGE_SELECT_EVENTS,
-  DRAG_THRESHOLD_PX,
 } from './rangeSelect';
-export {
-  categoryColor,
-  categoryTextColor,
-  categoryChip,
-  formatCategory,
-} from './categoryColors';
+export { categoryColor, categoryChip, formatCategory } from './categoryColors';
+export type { ChipSurface } from './categoryColors';
 export {
   eventDateToLabel,
   labelToEventDate,

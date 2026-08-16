@@ -76,15 +76,17 @@ These are the things that look like bugs and aren't.
   `Weekday`/`Saturday`/`Sunday` onto `est_wkday_ridership`/`est_sat_ridership`/`est_sun_ridership`.
   Choosing a day does not filter records; it selects which field of each record is read.
 
-- **The Month Window is offset on purpose.** The record filter does `new Date(year, month)`, which
-  treats month as 0-based while the data is 1-based. Written out: a record at month ordinal `R` is
-  included when `S ≤ R ≤ E − 2`. This is long-standing intended behaviour, pinned by the committed
-  chart baselines — see [ADR-0001](adr/0001-ridership-month-window-is-deliberately-offset.md). Don't
-  silently change it.
+- **The date range is inclusive on both ends, and there is only one rule.** `contains` in
+  `src/utils/month.ts` states it; the chart, the stop panel and the context log all reach it through
+  a thin adapter in `src/ridership/`. If you find a second copy of this rule anywhere, that is the
+  bug.
 
-- **The Event Window disagrees with it, deliberately.** The transit-event filter in the same
-  function is inclusive on both ends. The two windows genuinely disagree and that is preserved, not
-  reconciled.
+  It used to be two rules. The chart excluded the end month and the month before it — `S ≤ R ≤ E − 2`
+  — while the context log was inclusive, so the log ran two months past the chart's right-hand edge
+  for the same date range. The offset was an accident of `new Date(year, month)` treating the month
+  as 0-based where the data is 1-based, and it survived for years because it was pinned by chart
+  baselines. [ADR-0009](adr/0009-the-two-window-rules-are-one-rule.md) removed it and regenerated
+  those baselines.
 
 - **Every series is drawn against one shared Month Axis.** Lines cover different spans — the D Line
   starts 2025-09, most rail goes back to 2009. Chart.js `CategoryScale` *appends* any label missing

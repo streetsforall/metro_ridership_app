@@ -55,7 +55,7 @@ Commit them compressed — `.zip` for Excel, `.csv.gz` for legacy CSVs. Uncompre
 | `convert_excel_ridership.py` | Parses the `.xlsx` files into the legacy CSV schema. Called by `process_ridership.py`; also `npm run load-ridership`. |
 | `fetch_metro_lines.py` | GTFS feeds → `public/metro_lines.geojson`. Also `npm run fetch-lines`. Run it before the script tests, which use that file as a fixture. |
 | `compute_line_distances.py` | `metro_lines.geojson` → `src/data/line_distances.json` (one-way miles; outbound leg only for rail). |
-| `check_transit_events.py` | Validates `src/data/transit-events.json` — line ids exist in the live GTFS feed, and single-line `opening` dates match the first non-zero ridership month. Extensions are flagged for manual review. Also `npm run check-transit-events`. Offline schema checks run separately in `src/data/transit-events.test.ts`. |
+| `check_transit_events.py` | Validates `src/data/transit-events.json` — line ids exist in the live GTFS feed, and single-line `opening` dates match the first non-zero ridership month. Extensions are flagged for manual review. Also `npm run check-transit-events`. Offline schema checks run separately in `src/data/__tests__/transit-events.test.ts`. |
 
 ## After a data update
 

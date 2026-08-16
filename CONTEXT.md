@@ -21,17 +21,17 @@ _Avoid_: chart data, dashboard state, the memo
 
 **Month Window**:
 The stretch of months a Ridership View covers, chosen by the user as a start month and an end
-month. The window's start month **is** included; the end month **and the month immediately before
-it** are excluded. This is long-standing intended behaviour, not an off-by-one bug — see
-[ADR-0001](docs/adr/0001-ridership-month-window-is-deliberately-offset.md).
+month. **Inclusive of both ends** — ask for Jan 2022 to Dec 2022 and you get January through
+December. Until [ADR-0009](docs/adr/0009-the-two-window-rules-are-one-rule.md) the end month and the
+month before it were excluded, so the chart hid the two most recent months of the range asked for.
 _Avoid_: date range, date window, time period
 
 **Event Window**:
-The stretch of months a Transit Event must fall in to appear in the context log. Unlike the Month
-Window it is **inclusive of both its start and end months**. The two windows are derived from the
-same user choices but do not agree, and that divergence is deliberate — it is preserved, not
-reconciled.
-_Avoid_: treating this as the same thing as the Month Window
+The stretch of months a Transit Event must fall in to appear in the context log. **The same rule and
+the same bounds as the Month Window** — the log and the chart cover the same months. The two used to
+disagree by exactly two months; ADR-0009 removed the disagreement, and the term survives only because
+the two are reached through different code paths (a record's year-and-month, an event's `"YYYY-MM"`).
+_Avoid_: treating this as a different rule from the Month Window
 
 **Month Axis**:
 The chronologically ordered union of every month covered by the selected lines. One axis is shared
@@ -46,6 +46,38 @@ distinct category. Chart.js does not hit-test outside its plot area, so the gutt
 handling belongs to the chart plugin that draws it rather than to the chart's own element
 callbacks.
 _Avoid_: marker strip, axis dots, annotation row
+
+**Category Chip**:
+A Transit Event's category, drawn as a tinted label with the category's name written in it. One
+chip wherever a category is shown, so the same event reads as the same event in every surface. It
+takes the surface it sits on — light or dark — because a fill that reads as a tint on the panel's
+white is a glare on the tooltip's stone-800. Its colours come from the same nine-entry
+category-to-hue table the Event Gutter fills from, so a chip cannot drift from the shape marking the
+event it describes. The name is written in the chip rather than left to hue: nine categories are
+more than colour alone can carry, and the panel keeps its coloured left rule alongside the chip
+rather than in place of it. Both surfaces are in use: the context-log panel's rows and the chart
+tooltip's event entries. Where the chip appears, the title beside it is neutral — colour names the
+category and nothing else.
+_Avoid_: badge, tag, pill, category label
+
+**Pinned Month**:
+The single sticky Month the chart, the tooltip and the context-log panel all read. Owned by the
+output area rather than by any one of them, because they are three views of one piece of state.
+**At most one exists, and it must be released before another can be taken** — a click while a Month
+is pinned releases it and pins nothing, identically on the chart and in the panel. Distinct from the
+hovered Month, which is transient and which a pin outranks. A pin marks what is read; it never opens
+or scrolls a view in order to be seen. See
+[ADR-0011](docs/adr/0011-a-pin-marks-it-never-moves-a-view.md).
+_Avoid_: selected month, active month, focused month, sticky tooltip
+
+**Range Selection**:
+The drag across the plot that sets the Month Window, and the band drawn while that drag is in
+progress. It begins only once the pointer has travelled far enough for the gesture to be a drag
+rather than a click, so a plain click pins a Month and paints nothing. Deliberately mouse-only: a
+horizontal drag across a chart is how a page is scrolled on a phone. **Never named with *window*** —
+that word already belongs to the Month Window and the Event Window, and a third sense of it makes
+all three ambiguous.
+_Avoid_: sliding window, brush, drag window, range window
 
 **Selection Snapshot**:
 Whether a line was selected at the moment its records were grouped, recorded once per line rather

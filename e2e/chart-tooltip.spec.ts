@@ -9,7 +9,7 @@ import { gotoDashboard, shootPane } from './helpers';
  * small, deterministic element rather than the 1184×592 canvas `chart-content.spec.ts` shoots.
  * Its sibling `chart-interaction.spec.ts` stays snapshot-free and asserts behaviour; what these
  * two baselines add is the layout that no attribute assertion can describe: the ridership rows
- * against the event block, the category-tinted title, and the clamp.
+ * against the event block, the Category Chip beside the date under a neutral title, and the clamp.
  *
  * ## Reaching each state without pixel arithmetic
  *
@@ -27,8 +27,9 @@ import { gotoDashboard, shootPane } from './helpers';
  *
  * Both bounds are pinned, and for the reason `context-logs.spec.ts` spells out: `end` otherwise
  * defaults to `dataDefaultEndDate`, which advances on every ridership refresh. Line 801 has all
- * 17 months of the resulting Month Window (2019-06 → 2020-10), so the ridership figure in the
- * readout is historical and frozen.
+ * 19 months of the resulting Month Window (2019-06 → 2020-12, both ends inclusive), so the
+ * ridership figure in the readout is historical and frozen. The window ran to 2020-10, 17 months,
+ * until ADR-0009 removed the two-month offset.
  *
  * The first log row is **2020-03 "COVID-19 Service Reductions"** (`disruption`, rose). Its
  * description runs well past three lines, which is what makes the clamp visible in the focused
@@ -63,11 +64,12 @@ test('focused readout — description clamped, no link', async ({ page }) => {
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('End');
 
-  // 2020-10 is the last month of the window and carries no event, so this is also the readout's
-  // plain shape: heading and ridership rows, nothing else.
+  // 2020-12 is the last month of the window since ADR-0009 made both ends inclusive, and it
+  // carries one event line 801 sees — "NextGen Bus Plan Phase 1", network-wide. So the shot is
+  // heading, ridership row, the clamped event block, and the pin hint.
   const tooltip = page.locator(TOOLTIP);
   await expect(tooltip).toHaveAttribute('data-pinned', 'false');
-  await expect(tooltip).toContainText('Oct 2020');
+  await expect(tooltip).toContainText('Dec 2020');
 
   await shootPane(page, TOOLTIP, 'chart-tooltip-focused.png');
 });

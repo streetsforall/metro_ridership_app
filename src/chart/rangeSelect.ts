@@ -2,15 +2,29 @@ import type { Chart as ChartJS, Plugin } from 'chart.js';
 import colors from 'tailwindcss/colors';
 import { monthIndexAtPixel } from './months';
 
-/**
- * Pixels the cursor must travel between mousedown and mouseup before the
- * gesture counts as a drag. Below it the same gesture is a click, which pins the
- * tooltip — the two share a mouse button, so something has to separate them.
- */
-export const DRAG_THRESHOLD_PX = 5;
-
 /** A one-month selection is a click with extra steps; refuse it. */
 const MIN_MONTHS = 2;
+
+/**
+ * How long the button must be held before a press promotes to a Range Selection.
+ *
+ * A press used to be a drag from the moment the button went down, so every click
+ * flashed a band that was then discarded for travelling too little. Promotion is
+ * the gate: before it, nothing paints and no selection can complete.
+ */
+export const PROMOTE_HOLD_MS = 500;
+
+/**
+ * Travel that promotes a press without waiting out the hold.
+ *
+ * A confident drag across a year takes far less than half a second, so a strict
+ * hold would make that gesture feel broken. Well past the few pixels of hand
+ * jitter inside any real click, so a sloppy click is still a click.
+ *
+ * Both this and the hold are tunables, not structure — expect to move them once
+ * the gesture has been used in anger.
+ */
+export const PROMOTE_DISTANCE_PX = 24;
 
 export interface RangeSelectOptions {
   /** Called with the inclusive, ascending month-index bounds of the drag. */
@@ -20,11 +34,27 @@ export interface RangeSelectOptions {
 interface DragState {
   startX: number;
   currentX: number;
-  dragging: boolean;
   /**
-   * Set when a drag completes. Chart.js fires `click` after `mouseup`, so
-   * without this the gesture that just re-ranged the chart would also pin a
-   * tooltip. The click handler consumes the flag instead.
+   * The button is down inside the plot and the gesture is undecided — it may
+   * still turn out to be a click. A pressed gesture paints nothing and completes
+   * nothing, so the reader is never shown a selection that is about to be thrown
+   * away.
+   */
+  pressed: boolean;
+  /**
+   * The press has been promoted: this is a Range Selection. Set in exactly one
+   * place, reached either by travelling past {@link PROMOTE_DISTANCE_PX} or by
+   * holding out {@link PROMOTE_HOLD_MS}.
+   */
+  dragging: boolean;
+  /** Live hold timer, so release, mouseout and destroy can all cancel it. */
+  holdTimer: ReturnType<typeof setTimeout> | null;
+  /**
+   * Set when a promoted drag completes. Chart.js fires `click` after `mouseup`,
+   * so without this the gesture that just re-ranged the chart would also pin a
+   * tooltip. A press that never promoted must not set it: that gesture is a
+   * click and the click path is where it goes to pin. The click handler consumes
+   * the flag instead.
    */
   suppressClick: boolean;
 }
@@ -79,30 +109,74 @@ export const rangeSelectPlugin: Plugin<'line'> = {
     const state = (c.$rangeSelect ??= {
       startX: 0,
       currentX: 0,
+      pressed: false,
       dragging: false,
+      holdTimer: null,
       suppressClick: false,
     });
     const x = args.event.x ?? 0;
 
+    const clearHold = () => {
+      if (state.holdTimer === null) return;
+      clearTimeout(state.holdTimer);
+      state.holdTimer = null;
+    };
+
+    /**
+     * Pressed → dragging. The only place a press becomes a Range Selection, and
+     * the two functions below are the only two ways in.
+     */
+    const promote = () => {
+      clearHold();
+      state.dragging = true;
+    };
+
+    /**
+     * The travel rule, stated once. A second copy on release is how a gesture
+     * ends up judged twice by two different thresholds — which is what let a
+     * click paint a band and then have it taken away again.
+     */
+    const promoteOnTravel = () => {
+      if (state.dragging) return;
+      if (Math.abs(x - state.startX) < PROMOTE_DISTANCE_PX) return;
+      promote();
+    };
+
     switch (args.event.type) {
       case 'mousedown':
         if (!args.inChartArea) return;
+        clearHold();
         state.startX = x;
         state.currentX = x;
-        state.dragging = true;
+        state.pressed = true;
+        state.dragging = false;
+        // A stationary hold has nothing to repaint on, so promoting asks for the
+        // frame itself — that repaint is what puts the rule at the press point.
+        state.holdTimer = setTimeout(() => {
+          state.holdTimer = null;
+          promote();
+          chart.render();
+        }, PROMOTE_HOLD_MS);
         break;
 
       case 'mousemove':
-        if (!state.dragging) return;
+        if (!state.pressed) return;
         state.currentX = x;
+        promoteOnTravel();
+        // Unpromoted, the move is still a click in progress: no repaint, no band.
+        if (!state.dragging) return;
         args.changed = true;
         break;
 
       case 'mouseup': {
+        clearHold();
+        if (!state.pressed) return;
+        state.pressed = false;
+        args.changed = true;
+        // Never promoted, so this gesture is a click: it falls through to the
+        // click path to pin, and must not suppress itself on the way.
         if (!state.dragging) return;
         state.dragging = false;
-        args.changed = true;
-        if (Math.abs(state.currentX - state.startX) < DRAG_THRESHOLD_PX) return;
 
         const a = monthIndexAtPixel(chart, state.startX);
         const b = monthIndexAtPixel(chart, state.currentX);
@@ -117,11 +191,21 @@ export const rangeSelectPlugin: Plugin<'line'> = {
       // Releasing outside the canvas never delivers a mouseup, so the drag would
       // otherwise still be live when the cursor came back.
       case 'mouseout':
-        if (!state.dragging) return;
+        clearHold();
+        if (!state.pressed) return;
+        state.pressed = false;
         state.dragging = false;
         args.changed = true;
         break;
     }
+  },
+
+  // A chart torn down mid-hold would otherwise fire into a dead instance.
+  beforeDestroy(chart) {
+    const state = (chart as ChartWithDrag).$rangeSelect;
+    if (!state?.holdTimer) return;
+    clearTimeout(state.holdTimer);
+    state.holdTimer = null;
   },
 
   afterDraw(chart) {
@@ -134,10 +218,26 @@ export const rangeSelectPlugin: Plugin<'line'> = {
     } = chart;
     const from = Math.min(Math.max(state.startX, left), right);
     const to = Math.min(Math.max(state.currentX, left), right);
-    if (from === to) return;
 
     ctx.save();
     ctx.setLineDash([]);
+
+    /**
+     * A hold that promoted without moving has no band to draw yet, but it does
+     * have something to say: the rule at the press point is how the reader
+     * learns the gesture took before they move.
+     */
+    if (from === to) {
+      ctx.strokeStyle = colors.stone['500'];
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(from, top);
+      ctx.lineTo(from, bottom);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+
     ctx.fillStyle = 'rgba(120, 113, 108, 0.15)'; // stone-500 at 15%
     ctx.fillRect(Math.min(from, to), top, Math.abs(to - from), bottom - top);
     ctx.strokeStyle = colors.stone['500'];

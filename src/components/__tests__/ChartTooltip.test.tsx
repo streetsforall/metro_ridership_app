@@ -1,0 +1,306 @@
+import { describe, it, expect } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
+import type { ChartDataset } from 'chart.js';
+import colors from 'tailwindcss/colors';
+import ChartTooltip from '../ChartTooltip';
+import type { CustomChartData } from '../../@types/chart.types';
+import { makeTransitEvent } from '../../test/builders';
+
+const months = ['2020 5', '2020 6', '2020 7'];
+
+const dataset = (
+  label: string,
+  stats: (number | null)[],
+  borderColor: string,
+): ChartDataset<'line', CustomChartData[]> => ({
+  label,
+  borderColor,
+  backgroundColor: borderColor,
+  data: stats.map((stat, i) => ({ time: months[i], stat })),
+});
+
+const datasets = [
+  dataset('A Line', [5000, 8000, 3000], '#0072bc'),
+  dataset('B Line', [9000, 2000, 4000], '#e01e5a'),
+];
+
+const renderTooltip = (props: Partial<Parameters<typeof ChartTooltip>[0]> = {}) =>
+  render(
+    <ChartTooltip
+      index={1}
+      months={months}
+      datasets={datasets}
+      events={[]}
+      caret={{ x: 100, y: 20 }}
+      containerWidth={600}
+      isPinned={false}
+      {...props}
+    />,
+  );
+
+describe('ChartTooltip visibility', () => {
+  it('renders nothing without an active month', () => {
+    renderTooltip({ index: null });
+    expect(screen.queryByTestId('chart-tooltip')).toBeNull();
+  });
+
+  it('renders nothing before the chart reports a caret position', () => {
+    renderTooltip({ caret: null });
+    expect(screen.queryByTestId('chart-tooltip')).toBeNull();
+  });
+
+  /** An index past the axis is what a stale hover looks like mid-rerender. */
+  it('renders nothing for an index the axis does not have', () => {
+    renderTooltip({ index: 9 });
+    expect(screen.queryByTestId('chart-tooltip')).toBeNull();
+  });
+});
+
+describe('ChartTooltip ridership rows', () => {
+  it('heads the tooltip with the readable month', () => {
+    renderTooltip();
+    expect(screen.getByText('Jun 2020')).toBeTruthy();
+  });
+
+  it('lists each line with its ridership for that month', () => {
+    renderTooltip();
+    expect(screen.getByText('A Line')).toBeTruthy();
+    expect(screen.getByText('8,000')).toBeTruthy();
+    expect(screen.getByText('2,000')).toBeTruthy();
+  });
+
+  it('orders the rows by ridership, highest first', () => {
+    renderTooltip();
+    const labels = screen
+      .getByTestId('chart-tooltip')
+      .querySelectorAll('li span:nth-child(2)');
+    expect([...labels].map((el) => el.textContent)).toEqual(['A Line', 'B Line']);
+  });
+
+  it('reorders when a different month reverses the ranking', () => {
+    renderTooltip({ index: 0 });
+    const labels = screen
+      .getByTestId('chart-tooltip')
+      .querySelectorAll('li span:nth-child(2)');
+    expect([...labels].map((el) => el.textContent)).toEqual(['B Line', 'A Line']);
+  });
+
+  /** A gap in a line's coverage is not a zero, so it gets no row at all. */
+  it('omits a line with no record for the month', () => {
+    renderTooltip({
+      index: 1,
+      datasets: [dataset('A Line', [5000, null, 3000], '#0072bc')],
+    });
+    expect(screen.queryByText('A Line')).toBeNull();
+  });
+});
+
+describe('ChartTooltip event context', () => {
+  const opening = makeTransitEvent({
+    id: 'regional-connector',
+    date: '2020-06',
+    title: 'Regional Connector Opening',
+    description: 'Linked the A, C, E and L lines through a new downtown tunnel.',
+    category: 'opening',
+    source: 'https://example.com/connector',
+  });
+
+  /**
+   * The entry has no role and no accessible name of its own, so the divider it
+   * is separated by is the only handle on it. Named once here rather than spelt
+   * out at each use, so a change to how entries are divided is one edit.
+   */
+  const eventEntry = (container: HTMLElement) =>
+    container.querySelector<HTMLElement>('.border-t');
+
+  it('shows no event section for a month with nothing in it', () => {
+    const { container } = renderTooltip();
+    expect(eventEntry(container)).toBeNull();
+  });
+
+  /**
+   * The whole point of the move off the canvas: the ridership figures and the
+   * reason they moved are now in one box, reachable from anywhere in the column.
+   */
+  it('shows the event title and description alongside the ridership rows', () => {
+    renderTooltip({ events: [opening] });
+    expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
+    expect(screen.getByText(/downtown tunnel/)).toBeTruthy();
+    expect(screen.getByText('8,000')).toBeTruthy();
+  });
+
+  it('carries the category as a chip rather than text after the date', () => {
+    renderTooltip({ events: [opening] });
+    expect(screen.getByText('Opening')).toBeTruthy();
+    expect(screen.queryByText(/·/)).toBeNull();
+  });
+
+  /** `within` the entry, because the tooltip's own heading reads "Jun 2020" too. */
+  it('still shows the event date', () => {
+    const { container } = renderTooltip({ events: [opening] });
+    const entry = eventEntry(container) as HTMLElement;
+    expect(within(entry).getByText('Jun 2020')).toBeTruthy();
+  });
+
+  /** The chip is drawn on the tooltip's stone-800, not the panel's white. */
+  it('draws the chip on its dark surface', () => {
+    renderTooltip({ events: [opening] });
+    const chip = screen.getByText('Opening');
+    const expected = document.createElement('div');
+    expected.style.backgroundColor = colors.emerald['900'];
+    expected.style.color = colors.emerald['200'];
+    expect(chip.style.backgroundColor).toBe(expected.style.backgroundColor);
+    expect(chip.style.color).toBe(expected.style.color);
+  });
+
+  /**
+   * Colour says one thing here. A tinted title made it say two — which category
+   * this is, and where the title ends — while the category itself sat as grey
+   * text after the date.
+   */
+  it('leaves the title neutral, with no category tint', () => {
+    renderTooltip({ events: [opening] });
+    expect(screen.getByText('Regional Connector Opening').style.color).toBe('');
+  });
+
+  /** Title, then chip and date, then description. */
+  it('reads title first, with the chip and date beneath it', () => {
+    const { container } = renderTooltip({ events: [opening] });
+    const entry = eventEntry(container) as HTMLElement;
+    const title = screen.getByText('Regional Connector Opening');
+    const chipRow = screen.getByText('Opening').parentElement as HTMLElement;
+    const description = screen.getByText(/downtown tunnel/);
+    expect([...entry.children]).toEqual([title, chipRow, description]);
+  });
+
+  it('lists every event in a month that holds more than one', () => {
+    renderTooltip({
+      events: [
+        opening,
+        makeTransitEvent({ id: 'fare', date: '2020-06', title: 'Fare change' }),
+      ],
+    });
+    expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
+    expect(screen.getByText('Fare change')).toBeTruthy();
+    // One chip each, and they say different things — the second event keeps the
+    // builder's `service_change`, so a shared chip would show only one label.
+    expect(screen.getByText('Opening')).toBeTruthy();
+    expect(screen.getByText('Service change')).toBeTruthy();
+  });
+});
+
+describe('ChartTooltip pinning', () => {
+  const withSource = makeTransitEvent({ source: 'https://example.com/connector' });
+
+  /** A hovering box that accepts the pointer steals the hover that spawned it. */
+  it('ignores the pointer while it is only hovering', () => {
+    renderTooltip();
+    expect(
+      screen.getByTestId('chart-tooltip').className.includes('pointer-events-none'),
+    ).toBe(true);
+  });
+
+  it('accepts the pointer once pinned, so links are clickable', () => {
+    renderTooltip({ isPinned: true });
+    expect(
+      screen.getByTestId('chart-tooltip').className.includes('pointer-events-auto'),
+    ).toBe(true);
+  });
+
+  it('offers the source link only when pinned', () => {
+    renderTooltip({ events: [withSource] });
+    expect(screen.queryByRole('link', { name: 'Source' })).toBeNull();
+
+    renderTooltip({ events: [withSource], isPinned: true });
+    expect(
+      screen.getByRole('link', { name: 'Source' }).getAttribute('href'),
+    ).toBe('https://example.com/connector');
+  });
+
+  it('says how to unpin', () => {
+    renderTooltip({ isPinned: true });
+    expect(screen.getByText(/press Esc to unpin/)).toBeTruthy();
+  });
+
+  /**
+   * Under the release-first rule a click on *any* month releases, not only the
+   * one pinned — but a click landing on no month asks for nothing and the pin
+   * survives, so the hint may not promise "anywhere" either. See ADR-0011.
+   */
+  it('names a month as what to click, rather than promising anywhere', () => {
+    renderTooltip({ isPinned: true });
+    expect(screen.getByText(/Click any month/)).toBeTruthy();
+    expect(screen.queryByText(/Click anywhere/)).toBeNull();
+    expect(screen.queryByText(/Click again/)).toBeNull();
+  });
+
+  /**
+   * The clamped description and the missing source link are both undone by
+   * pinning, and nothing on screen said so — a reader who hit a truncated
+   * description had no reason to believe there was more.
+   */
+  it('advertises the pin while hovering a month that has an event', () => {
+    renderTooltip({ events: [makeTransitEvent({ date: '2020-06' })] });
+    expect(screen.getByText(/Click to pin/)).toBeTruthy();
+  });
+
+  /** Noise on an ordinary month, where clicking reveals nothing further. */
+  it('leaves the hint off a month with no event', () => {
+    renderTooltip({ events: [] });
+    expect(screen.queryByText(/Click to pin/)).toBeNull();
+  });
+
+  it('replaces the hint with how to unpin once pinned', () => {
+    renderTooltip({
+      events: [makeTransitEvent({ date: '2020-06' })],
+      isPinned: true,
+    });
+    expect(screen.queryByText(/Click to pin/)).toBeNull();
+    expect(screen.getByText(/press Esc to unpin/)).toBeTruthy();
+  });
+
+  /**
+   * Unclamped, a long description makes the box taller than half the plot and
+   * buries the series it is annotating under the cursor. Pinning is the reader
+   * asking for the whole thing.
+   */
+  it('clamps a long description while hovering', () => {
+    renderTooltip({
+      events: [makeTransitEvent({ date: '2020-06', description: 'A long story.' })],
+    });
+    expect(screen.getByText('A long story.').className).toContain('line-clamp-3');
+  });
+
+  it('shows the description in full once pinned', () => {
+    renderTooltip({
+      events: [makeTransitEvent({ date: '2020-06', description: 'A long story.' })],
+      isPinned: true,
+    });
+    expect(screen.getByText('A long story.').className).not.toContain('line-clamp');
+  });
+});
+
+describe('ChartTooltip placement', () => {
+  const leftOf = (props: Partial<Parameters<typeof ChartTooltip>[0]>) => {
+    const { container } = renderTooltip(props);
+    const box = container.querySelector('[data-testid="chart-tooltip"]');
+    return parseFloat((box as HTMLElement).style.left);
+  };
+
+  it('sits to the right of the crosshair when there is room', () => {
+    expect(leftOf({ caret: { x: 100, y: 20 } })).toBeGreaterThan(100);
+  });
+
+  it('flips to the left of the crosshair near the right edge', () => {
+    expect(leftOf({ caret: { x: 580, y: 20 }, containerWidth: 600 })).toBeLessThan(580);
+  });
+
+  it('stays inside the plot when the crosshair is at the far left', () => {
+    expect(leftOf({ caret: { x: 0, y: 20 } })).toBeGreaterThanOrEqual(8);
+  });
+
+  /** A container narrower than the box would otherwise produce a negative left. */
+  it('does not overflow a container narrower than itself', () => {
+    expect(leftOf({ caret: { x: 10, y: 20 }, containerWidth: 100 })).toBeGreaterThanOrEqual(8);
+  });
+});

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { gotoDashboard, shootChart } from './helpers';
+import { gotoDashboard, shootChart, desktopOnly } from './helpers';
 
 /**
  * Element-scoped visual coverage for what the ridership chart actually draws.
@@ -110,4 +110,49 @@ test('event gutter across categories', async ({ page }) => {
   // moves 460 px across its three shapes, so ~153 px per shape, and 120 catches even a
   // single-category regression while leaving room for antialiasing drift.
   await shootChart(page, 'chart-event-gutter.png', { maxDiffPixels: 120 });
+});
+
+/**
+ * The Month Window selection band, mid-gesture.
+ *
+ * The band has never had a baseline, which is a problem now that "a click no
+ * longer flashes a window" is a claim someone could regress. The DOM specs in
+ * `chart-interaction.spec.ts` can say a window was or was not *set*; only pixels
+ * can say what the reader saw while the button was down. This shoots the promoted
+ * state: the tinted band and its two edge rules.
+ *
+ * `shootChart` parks the cursor at 0,0 before capturing, which would end any
+ * gesture driven with the mouse — so the press is held and the shot taken with
+ * the button still down, using `toHaveScreenshot` directly rather than through
+ * that helper.
+ *
+ * Desktop only, for the same reason the drag itself is: on touch a horizontal
+ * drag over a chart is how the page scrolls, so the gesture is never claimed.
+ */
+test.describe('the promoted Month Window drag', () => {
+  desktopOnly();
+
+  test('bands the plot between its edges', async ({ page }) => {
+    await gotoChart(page, '?lines=801,804&start=2020-01&end=2023-12&day=wkday');
+
+    const box = await page.getByRole('application').boundingBox();
+    expect(box).not.toBeNull();
+    if (!box) return;
+
+    const y = box.y + box.height / 2;
+    await page.mouse.move(box.x + box.width * 0.35, y);
+    await page.mouse.down();
+    // Past the promotion distance, so the band is painted by the time this settles.
+    await page.mouse.move(box.x + box.width * 0.65, y, { steps: 10 });
+
+    try {
+      await expect(page.locator('#ridership-chart')).toHaveScreenshot(
+        'chart-promoted-drag.png',
+        { threshold: 0.2, maxDiffPixelRatio: 0.01 },
+      );
+    } finally {
+      // Leave no button held down for whatever runs next in this worker.
+      await page.mouse.up();
+    }
+  });
 });

@@ -10,8 +10,15 @@ npm run test        # run all tests once
 npm run test:watch  # watch mode
 ```
 
-Vitest with `@testing-library/react`, jsdom. Specs live next to the code under `src/`.
-`vitest.config.ts` excludes `e2e/**` (Playwright's) and `.claude/**` (throwaway worktrees).
+Vitest with `@testing-library/react`, jsdom. Specs live in a `__tests__/` folder inside the
+directory they cover — `src/ridership/lineMetrics.ts` is tested by
+`src/ridership/__tests__/lineMetrics.test.ts` — so a source directory lists only source.
+Imports are therefore one level deeper than the module: `'../lineMetrics'` for the subject,
+`'../../test/builders'` for shared fixtures. **`vi.mock()` paths obey the same rule**, and get
+it wrong and the mock silently does nothing rather than failing.
+
+`vitest.config.ts` sets no `include`, so the default glob picks up `__tests__/` at any depth; it
+excludes `e2e/**` (Playwright's) and `.claude/**` (throwaway worktrees).
 
 **Import `describe`/`it`/`expect` from `vitest` in every spec.** `vitest.config.ts` does set
 `globals: true`, so the runtime would not need them — but `tsconfig.app.json` does not list
@@ -22,7 +29,7 @@ is on.
 One file:
 
 ```bash
-npx vitest run src/ridership/lineMetrics.test.ts
+npx vitest run src/ridership/__tests__/lineMetrics.test.ts
 ```
 
 Or filter by name with `-t`. Shared fixtures are in [`src/test/builders.ts`](../../src/test/builders.ts).
@@ -32,8 +39,10 @@ because tests that touch the date bounds need `virtual:ridership-bounds` to reso
 
 ## Visual regression
 
-Playwright screenshots the app and compares against committed baselines. **Nine specs, 39 Linux
-baselines.**
+Playwright screenshots the app and compares against committed baselines. **Ten specs, 48 Linux
+baselines.** An eleventh, [`chart-interaction.spec.ts`](../../e2e/chart-interaction.spec.ts), shoots
+nothing — the chart's interactive layer is an HTML tooltip and DOM attributes, so it is asserted
+rather than captured.
 
 ```bash
 npm run test:e2e               # run the suite (builds, serves, compares)
@@ -61,11 +70,12 @@ because an element crop would clip at the narrow viewport edge.
 | Spec | Covers | Baselines |
 | --- | --- | --- |
 | [`visual.spec.ts`](../../e2e/visual.spec.ts) | full page — default dashboard, a line selected, the expanded selector | 6 |
-| [`chart-content.spec.ts`](../../e2e/chart-content.spec.ts) | what the chart *draws* — one line, several, aggregate, Saturday, a narrow window, Event Gutter shapes at several category colours | 12 |
+| [`chart-content.spec.ts`](../../e2e/chart-content.spec.ts) | what the chart *draws* — one line, several, aggregate, Saturday, a narrow window, Event Gutter shapes at several category colours, a promoted Month Window drag mid-gesture | 13 |
 | [`line-filters.spec.ts`](../../e2e/line-filters.spec.ts) | search, rail-only mode, the empty-mode state (desktop) | 5 |
 | [`summary-tiles.spec.ts`](../../e2e/summary-tiles.spec.ts) | the summary pane — a negative change, several lines | 4 |
 | [`map.spec.ts`](../../e2e/map.spec.ts) | all lines dimmed, selected in brand colours, selected at phone width | 3 |
-| [`context-logs.spec.ts`](../../e2e/context-logs.spec.ts) | the context-log panel open, and a window spanning all nine event categories (plus two absence assertions, no shots) | 4 |
+| [`chart-tooltip.spec.ts`](../../e2e/chart-tooltip.spec.ts) | the readout — pinned with its source link, focused with the description clamped, focused on a month carrying an event | 6 |
+| [`context-logs.spec.ts`](../../e2e/context-logs.spec.ts) | the context-log panel open, a window spanning all nine event categories, and a selected row wearing its band (plus two absence assertions, no shots) | 6 |
 | [`responsive-tablet.spec.ts`](../../e2e/responsive-tablet.spec.ts) | 768×1024 via a file-level `test.use`, not a fourth project | 2 |
 | [`table-view.spec.ts`](../../e2e/table-view.spec.ts) | sort chrome and ordering, a partial-coverage row (desktop) | 2 |
 | [`loading.spec.ts`](../../e2e/loading.spec.ts) | the output pane mid-fetch, and that a failed fetch doesn't crash (desktop) | 1 |
@@ -188,6 +198,11 @@ The data-processing scripts have their own suite:
 pip install -r scripts/requirements.txt
 pytest scripts/
 ```
+
+They live in `scripts/tests/`, one `test_<script>.py` per script. The tests import the modules
+under test by bare name (`import process_ridership`) because `scripts/` is a flat directory of
+standalone entry points, not a package — so `scripts/tests/conftest.py` puts `scripts/` on
+`sys.path`. Delete that file and every import in the suite breaks at collection.
 
 Run `npm run fetch-lines` first — several script tests use `public/metro_lines.geojson` as a
 fixture. See [`scripts/README.md`](../../scripts/README.md).

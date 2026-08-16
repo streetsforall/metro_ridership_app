@@ -17,10 +17,13 @@ import { gotoDashboard, shootPane } from './helpers';
  * These tiles render literal numbers, so both `start` and `end` are pinned and the window is
  * closed and historical — an append to `ridership.json` cannot move a figure in these baselines.
  *
- * `?start=2015-01&end=2019-12` **renders 2015-01 through 2019-10**, 58 months. That is
- * `buildRidershipView`'s deliberate Month Window offset — a record at calendar-month ordinal `R`
- * is included when `S <= R <= E - 2`, so the end month and the one before it are excluded (see
- * `docs/adr/0001-ridership-month-window-is-deliberately-offset.md`).
+ * `?start=2015-01&end=2018-12` **renders 2015-01 through 2018-12**, 48 months — the window is
+ * inclusive of both ends (ADR-0009).
+ *
+ * The window moved here from `end=2019-12`. Under the offset rule that URL rendered through
+ * 2019-10; inclusive, it picks up two more months, and those two flip the three-line sum from
+ * +3,560 to -1,689 — which would have left the `changeInRidership > 0` branch below unpinned.
+ * `2018-12` is a nearby closed window where the two cases still land on opposite signs.
  *
  * ## Lines
  *
@@ -34,10 +37,10 @@ import { gotoDashboard, shootPane } from './helpers';
  */
 
 test('single rail line with a negative change', async ({ page }) => {
-  // 802 (B Line) over the rendered window: start 149,377 → end 131,696, i.e. a change of
-  // -17,681. Pins the `changeInRidership < 0` branch, which is the only thing that renders the
-  // change readout in `text-red-600` rather than `text-green-600`.
-  await gotoDashboard(page, '?lines=802&start=2015-01&end=2019-12&day=wkday');
+  // 802 (B Line) over the rendered window: a change of -9,371. Pins the
+  // `changeInRidership < 0` branch, which is the only thing that renders the change readout in
+  // `text-red-600` rather than `text-green-600`.
+  await gotoDashboard(page, '?lines=802&start=2015-01&end=2018-12&day=wkday');
 
   // Asserted, not merely assumed from the PNG: if the underlying figure ever flips positive the
   // baseline would still "pass" as a green diff-free render of the wrong branch.
@@ -53,12 +56,12 @@ test('several rail lines', async ({ page }) => {
   // conditional tiles render — all four tiles at once, plus the "Selected:" paragraph on its own
   // `basis-full` row, which is what pins the `flex-wrap` row at `lg` and the stacked grid below.
   //
-  // The set is chosen so the summed change is *positive* (-1,807 + -2,539 + +7,906 = +3,560):
+  // The set is chosen so the summed change is *positive* (+10,716 + -5,867 + -1,240 = +3,609):
   // together with the case above this pins both sides of the change colour — green with its `+`
   // prefix here, red there.
   await gotoDashboard(
     page,
-    '?lines=804,901,910&start=2015-01&end=2019-12&day=wkday',
+    '?lines=804,901,910&start=2015-01&end=2018-12&day=wkday',
   );
 
   await expect(page.locator('#summary-data [aria-label="Change"]')).toHaveText(

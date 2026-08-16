@@ -1,12 +1,8 @@
 import type { ChartDataset } from 'chart.js';
 import type { CustomChartData } from '../@types/chart.types';
 import type { TransitEvent } from '../@types/events.types';
-import {
-  categoryTextColor,
-  formatCategory,
-  formatEventDate,
-  formatMonthLabel,
-} from '../chart';
+import { formatEventDate, formatMonthLabel } from '../chart';
+import CategoryChip from './CategoryChip';
 
 const ridershipFormatter = new Intl.NumberFormat('en-US');
 
@@ -107,15 +103,18 @@ export default function ChartTooltip({
           key={event.id}
           className="mt-2 border-t border-stone-600 pt-2 first-of-type:mt-2"
         >
-          <p
-            className="font-semibold"
-            style={{ color: categoryTextColor(event.category) }}
-          >
-            {event.title}
-          </p>
-          <p className="text-stone-400">
-            {formatEventDate(event.date)} · {formatCategory(event.category)}
-          </p>
+          {/* Neutral, not category-tinted. The chip below carries the category,
+              and a tinted title made colour say two things at once — which
+              category this is, and where the title ends — while leaving the
+              category itself as unremarkable grey text after the date. */}
+          <p className="font-semibold">{event.title}</p>
+          {/* Chip and date on one row, chip first: it is the same component the
+              context-log panel draws, so an event reads the same way in both.
+              The middot went with the inline category text it separated. */}
+          <div className="mt-1 flex items-center gap-1.5">
+            <CategoryChip category={event.category} surface="dark" />
+            <span className="text-stone-400">{formatEventDate(event.date)}</span>
+          </div>
           {/* Clamped while hovering, full once pinned. Unclamped, a long
               description makes the box taller than half the plot and buries the
               series it is annotating under the cursor. Pinning is the reader
@@ -136,8 +135,22 @@ export default function ChartTooltip({
         </div>
       ))}
 
+      {/* The clamp above and the missing source link are both undone by pinning,
+          and nothing on screen said so — a reader who hit a truncated
+          description had no reason to believe there was more. "Click" rather
+          than a pointer-type branch, matching the unpin hint it gives way to. */}
+      {!isPinned && events.length > 0 && (
+        <p className="mt-2 text-stone-400">
+          Click to pin and read the full description
+        </p>
+      )}
+
+      {/* "Any month" rather than "again", because a click on a *different* month
+          now releases too instead of moving the pin (ADR-0011) — and rather than
+          "anywhere", because a click that lands on no month asks for nothing and
+          leaves the pin held. */}
       {isPinned && (
-        <p className="mt-2 text-stone-400">Click again or press Esc to unpin</p>
+        <p className="mt-2 text-stone-400">Click any month or press Esc to unpin</p>
       )}
     </div>
   );

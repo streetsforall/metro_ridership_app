@@ -28,7 +28,7 @@ Then read whichever guide matches what you're about to do. Don't read them all.
 | [`guides/data.md`](guides/data.md) | Ingesting new ridership data | You have new files from a records request |
 | [`../scripts/README.md`](../scripts/README.md) | The Python pipeline in full — records requests, every script, compression | Working on the pipeline itself |
 | [`ROADMAP.md`](ROADMAP.md) | The stop-level ridership batch — five PRs, the contract they share, the named risks | You're picking up one of those PRs, or wondering where stop data is up to |
-| [`adr/`](adr/) | Eight decisions, with the reasoning | You want to know *why*, or you're about to change something one of them covers |
+| [`adr/`](adr/) | Eleven decisions, with the reasoning | You want to know *why*, or you're about to change something one of them covers |
 | [`architecture/diagrams.md`](architecture/diagrams.md) | 21 diagrams — system, data, state, URL, seams, tests, CI | You'd rather see it than read it |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Conventions, and the one docs rule | Before your first PR |
 | [`../DATA_RELEASE_NOTES.md`](../DATA_RELEASE_NOTES.md) | What data landed when | Tracing a change in the numbers |
@@ -38,14 +38,17 @@ Then read whichever guide matches what you're about to do. Don't read them all.
 
 | ADR | Says | Status |
 | --- | --- | --- |
-| [0001](adr/0001-ridership-month-window-is-deliberately-offset.md) | The Month Window's off-by-one is intended | accepted |
+| [0001](adr/0001-ridership-month-window-is-deliberately-offset.md) | The Month Window's off-by-one is intended | **superseded by 0009** |
 | [0002](adr/0002-ridership-view-returns-chart-js-dataset-types.md) | The view returns Chart.js dataset types | accepted |
 | [0003](adr/0003-one-domain-folder-not-a-repo-wide-reorganisation.md) | One domain folder, not a repo-wide reorg | **superseded by 0007** |
 | [0004](adr/0004-line-metrics-are-one-nullable-shape.md) | Line Metrics are one nullable shape | accepted |
 | [0005](adr/0005-derived-figures-live-on-line-readouts.md) | Derived figures live on Line Readouts, never on `Line` | accepted, fully landed |
-| [0006](adr/0006-a-month-is-a-year-and-a-month-not-a-date.md) | A month is a year and a month, not a `Date` | accepted, **half landed** — `month.ts` has no production caller yet |
+| [0006](adr/0006-a-month-is-a-year-and-a-month-not-a-date.md) | A month is a year and a month, not a `Date` | accepted, **half landed** — `month.ts` states the window rule production uses; #144–#146 migrate the rest |
 | [0007](adr/0007-a-folder-with-an-index-is-a-sealed-module.md) | A folder with an `index.ts` is a sealed module; `src/` is flat by default | accepted |
 | [0008](adr/0008-panel-layout-is-a-tailwind-grid-with-url-synced-settings.md) | Panel layout is a Tailwind grid with URL-synced settings; dockview was reverted | accepted |
+| [0009](adr/0009-the-two-window-rules-are-one-rule.md) | One window rule, inclusive on both ends — the chart's two-month offset is gone | accepted, **supersedes 0001** |
+| [0010](adr/0010-the-event-gutter-hit-tests-itself.md) | The Event Gutter hit-tests itself, because Chart.js will not | accepted |
+| [0011](adr/0011-a-pin-marks-it-never-moves-a-view.md) | A pin marks what is read; it never moves what is shown — release before taking, and no auto-move | accepted, fully landed — #200 removed the auto-move, #199 made the pin release first |
 
 ## Not for humans
 

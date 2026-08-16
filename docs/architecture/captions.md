@@ -37,7 +37,7 @@ checked-in 7 MB file rather than a build artifact.
 
 `update_ridership.py` is the incremental path: when Metro publishes a single new month, it merges
 that month into the canonical file instead of rebuilding it from every workbook. Every script has
-a `test_*.py` sibling — six in all.
+a `test_*.py` of its own in `scripts/tests/`.
 
 ## 04-build-pipeline — The build pipeline
 
@@ -87,7 +87,7 @@ sparkline for every *listed* line while the chart covers only the *selected* one
 
 ## 07-component-tree — Component tree
 
-Eight components, no router, no context providers. `App` spreads the entire hook state into
+Nine components, no router, no context providers. `App` spreads the entire hook state into
 `LineSelector` with `{...userDashboardInputState}`, so that component's real interface is far wider
 than its props list suggests.
 
@@ -165,19 +165,17 @@ a sparkline for every **visible** line and needs the wider union across all of `
 
 ## 13-month-windows — Month Window, Event Window, Month Axis
 
-The single most surprising thing in the codebase. One user choice produces two windows that
-disagree by two months: records use `S ≤ R ≤ E − 2` — the start month is in, the end month **and
-the month before it** are out — while the context log uses an ordinary inclusive range.
+One rule — `S ≤ R ≤ E`, inclusive on both ends — stated once as `contains` in `utils/month.ts` and
+reached through two adapters that differ only in what they accept: a record's `{year, month}`, or an
+event's `"YYYY-MM"`. The chart, the stop panel and the context log therefore cover exactly the same
+months for a given date range.
 
-This reads like an off-by-one and is not. It is long-standing behaviour, users have shared URLs
-against it, and `e2e/chart-content.spec.ts` renders windows through it into committed PNG
-baselines, so normalising it would change what every existing link shows. ADR-0001 accepts it.
-
-Each rule is stated exactly once, in `utils/month.ts` — `containsOffset` and `contains` — and
-production reaches it through a `Date`-shaped adapter (`ridership/monthWindow.ts`,
-`ridership/eventWindow.ts`). Two copies of a rule this surprising is how the chart and the stop
-panel would start disagreeing about which months one URL shows; ADR-0001's addendum carries the
-argument and the test that licensed retiring the original `Date` arithmetic.
+This used to be the single most surprising thing in the codebase. One user choice produced two
+windows that disagreed by two months: records used `S ≤ R ≤ E − 2` — the end month **and the month
+before it** were out — while the context log used an ordinary inclusive range. The offset was an
+accident of `Date`'s 0-based months that ADR-0001 chose to keep rather than risk changing, and it
+meant the chart hid the two most recent months of whatever range you asked for. ADR-0009 removed it
+and regenerated the baselines that had pinned it.
 
 The Month Axis is derived after filtering: one shared axis for every series, because Chart.js
 appends any label missing from `labels` to the end and a per-series axis scrambles the rest.
@@ -222,8 +220,9 @@ reads it; don't delete it.
 
 ## 17-test-unit-and-python — Unit and Python suites
 
-Vitest runs 20 co-located specs in jsdom. One of them is not a code test at all:
-`src/data/transit-events.test.ts` refuses to let an event ship without a source URL — the type
+Vitest runs the specs in jsdom, each in a `__tests__/` folder beside the code it covers. One of
+them is not a code test at all: `src/data/__tests__/transit-events.test.ts` refuses to let an
+event ship without a source URL — the type
 makes `source` optional so fixtures stay cheap, and the guardrail closes the gap.
 
 The Python side mirrors the pipeline exactly, one spec per script.

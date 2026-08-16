@@ -1,0 +1,384 @@
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import colors from 'tailwindcss/colors';
+import ContextLogPanel from '../ContextLogPanel';
+import type { EventCategory, TransitEvent } from '../../@types/events.types';
+import { makeTransitEvent } from '../../test/builders';
+
+const opening = makeTransitEvent({
+  id: 'regional-connector',
+  date: '2023-02',
+  title: 'Regional Connector Opening',
+  description: 'Linked four lines through a new downtown tunnel.',
+  category: 'opening',
+});
+
+const closure = makeTransitEvent({
+  id: 'blue-line-closure',
+  date: '2019-05',
+  title: 'New Blue closure',
+  description: 'The south segment closed for rebuilding.',
+  category: 'closure',
+});
+
+const renderPanel = (
+  events: TransitEvent[] = [opening],
+  props: Partial<Parameters<typeof ContextLogPanel>[0]> = {},
+) =>
+  render(
+    <ContextLogPanel
+      events={events}
+      pinnedMonth={null}
+      onSelectMonth={vi.fn()}
+      onHoverMonthChange={vi.fn()}
+      {...props}
+    />,
+  );
+
+describe('ContextLogPanel rendering', () => {
+  it('lists each event with its title and description', () => {
+    renderPanel([opening, closure]);
+    expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
+    expect(screen.getByText(/south segment closed/)).toBeTruthy();
+  });
+
+  it('collapses and expands when the header is clicked', () => {
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
+    expect(screen.queryByText('Regional Connector Opening')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
+    expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
+  });
+
+  it('dates each row', () => {
+    renderPanel();
+    expect(screen.getByText('Feb 2023')).toBeTruthy();
+  });
+});
+
+/**
+ * The palette is shared with the chart's dots and covered exhaustively in
+ * `src/chart/eventGutter.test.ts`. What matters here is that the panel reads
+ * from that same table and still spells the category out, because these hues run
+ * 2.15–4.76:1 on the pane's white and must never be the sole signal.
+ */
+describe('ContextLogPanel category colors', () => {
+  const rowBorders = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll('#context-log-panel li')).map(
+      (row) => (row as HTMLElement).style.borderColor,
+    );
+
+  /** jsdom serializes inline colors its own way; normalize both sides the same. */
+  const asBorderColor = (value: string) => {
+    const el = document.createElement('div');
+    el.style.borderColor = value;
+    return el.style.borderColor;
+  };
+
+  it('tints each row with its category color', () => {
+    const { container } = renderPanel([opening, closure]);
+    expect(rowBorders(container)).toEqual([
+      asBorderColor(colors.emerald['500']),
+      asBorderColor(colors.red['500']),
+    ]);
+  });
+
+  it('also spells the category out', () => {
+    renderPanel([makeTransitEvent({ category: 'headway_change' })]);
+    expect(screen.getByText('Headway change')).toBeTruthy();
+  });
+
+  /**
+   * The chip is the one place the palette carries text, so it uses 100/800
+   * rather than the gutter's 500 — every pair clears AA, where the 500 behind
+   * text would not.
+   */
+  it('fills the chip with the category 100 and sets 800 text on it', () => {
+    renderPanel([makeTransitEvent({ category: 'opening' })]);
+    const chip = screen.getByText('Opening');
+    const expected = document.createElement('div');
+    expected.style.backgroundColor = colors.emerald['100'];
+    expected.style.color = colors.emerald['800'];
+    expect(chip.style.backgroundColor).toBe(expected.style.backgroundColor);
+    expect(chip.style.color).toBe(expected.style.color);
+  });
+
+  /**
+   * The chip replaced the caption; the rule did not go with it. Colour was
+   * never the sole signal here, and the rule is what makes a category findable
+   * while scanning a column of rows — so a row carries both, from one hue.
+   */
+  it('keeps the rule on the row that carries the chip', () => {
+    const { container } = renderPanel([opening]);
+    expect(rowBorders(container)).toEqual([asBorderColor(colors.emerald['500'])]);
+    const expected = document.createElement('div');
+    expected.style.backgroundColor = colors.emerald['100'];
+    expect(screen.getByText('Opening').style.backgroundColor).toBe(
+      expected.style.backgroundColor,
+    );
+  });
+
+  it('gives no two categories the same chip fill', () => {
+    const categories: EventCategory[] = [
+      'opening',
+      'extension',
+      'closure',
+      'route_change',
+      'headway_change',
+      'hours_change',
+      'fare_change',
+      'disruption',
+      'service_change',
+    ];
+    const { container } = renderPanel(
+      categories.map((category, i) =>
+        makeTransitEvent({ id: `e${i}`, category }),
+      ),
+    );
+    const fills = Array.from(
+      container.querySelectorAll('#context-log-panel li span[style]'),
+    )
+      .map((el) => (el as HTMLElement).style.backgroundColor)
+      .filter(Boolean);
+    expect(new Set(fills).size).toBe(categories.length);
+  });
+
+  /**
+   * The rail is the date alone precisely so a window's mix of categories cannot
+   * move it. A chip in there makes every row's columns depend on the longest
+   * category label present.
+   */
+  it('keeps the chip out of the date rail', () => {
+    const { container } = renderPanel([
+      makeTransitEvent({ category: 'headway_change' }),
+    ]);
+    const rail = container.querySelector('#context-log-panel li button > span');
+    expect(rail?.textContent).toBe('Jan 2022');
+  });
+
+  it('falls back to slate for an unknown category', () => {
+    const { container } = renderPanel([
+      makeTransitEvent({ category: 'not_a_real_category' as EventCategory }),
+    ]);
+    expect(rowBorders(container)).toEqual([asBorderColor(colors.slate['500'])]);
+  });
+
+  it('falls back to slate when an event carries no category at all', () => {
+    const untyped = makeTransitEvent();
+    delete (untyped as Partial<TransitEvent>).category;
+    const { container } = renderPanel([untyped]);
+    // Same hue as an explicit service_change — both mean "something changed,
+    // nobody said what", and the label agrees with the color.
+    expect(rowBorders(container)).toEqual([asBorderColor(colors.slate['500'])]);
+    expect(screen.getByText('Service change')).toBeTruthy();
+  });
+});
+
+describe('ContextLogPanel → chart', () => {
+  it('reports the hovered row month, so its dot can grow', () => {
+    const onHoverMonthChange = vi.fn();
+    renderPanel([opening], { onHoverMonthChange });
+    fireEvent.mouseEnter(screen.getByRole('button', { name: /Regional Connector/ }));
+    expect(onHoverMonthChange).toHaveBeenCalledWith('2023 2');
+  });
+
+  it('clears the hover on mouse leave', () => {
+    const onHoverMonthChange = vi.fn();
+    renderPanel([opening], { onHoverMonthChange });
+    fireEvent.mouseLeave(screen.getByRole('button', { name: /Regional Connector/ }));
+    expect(onHoverMonthChange).toHaveBeenCalledWith(null);
+  });
+
+  /** Keyboard users get the same link, which a plain `<li>` could not offer. */
+  it('reports the month on focus as well as on hover', () => {
+    const onHoverMonthChange = vi.fn();
+    renderPanel([opening], { onHoverMonthChange });
+    fireEvent.focus(screen.getByRole('button', { name: /Regional Connector/ }));
+    expect(onHoverMonthChange).toHaveBeenCalledWith('2023 2');
+  });
+
+  it('pins the row month when the row is clicked', () => {
+    const onSelectMonth = vi.fn();
+    renderPanel([opening], { onSelectMonth });
+    fireEvent.click(screen.getByRole('button', { name: /Regional Connector/ }));
+    expect(onSelectMonth).toHaveBeenCalledWith('2023 2');
+  });
+});
+
+describe('chart → ContextLogPanel', () => {
+  it('marks the pinned month row as pressed', () => {
+    renderPanel([opening, closure], { pinnedMonth: '2023 2' });
+    expect(
+      screen.getByRole('button', { name: /Regional Connector/ }).getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(
+      screen.getByRole('button', { name: /New Blue/ }).getAttribute('aria-pressed'),
+    ).toBe('false');
+  });
+
+  /**
+   * Selection is the row's, not the button's. These assert the classes rather
+   * than computed style because jsdom resolves no Tailwind, so the class list is
+   * the only place the intent is visible from here; the rendered result is what
+   * `context-logs.spec.ts` covers.
+   */
+  it('bands the pinned row and thickens its rule', () => {
+    const { container } = renderPanel([opening], { pinnedMonth: '2023 2' });
+    const row = container.querySelector('#context-log-panel li');
+    expect(row?.className).toContain('bg-stone-200');
+    expect(row?.className).toContain('border-l-4');
+  });
+
+  it('leaves an unpinned row unbanded, on the thin rule', () => {
+    const { container } = renderPanel([opening], { pinnedMonth: null });
+    const row = container.querySelector('#context-log-panel li');
+    expect(row?.className).not.toContain('bg-stone-200');
+    expect(row?.className).toContain('border-l-2');
+  });
+
+  /**
+   * The band is neutral on every category deliberately — see `ContextLogPanel`
+   * for why.
+   *
+   * Comparing class lists alone would not catch a tinted band: the category
+   * reaches this row as an inline `borderColor`, never as a class, so a band
+   * that took the category's hue would take it inline too and leave both class
+   * lists identical. So this asserts the inline style as well — same (absent)
+   * background on both rows, while the border colours differ, which is what
+   * proves the two rows really are different categories.
+   */
+  it('bands every category the same', () => {
+    const bandedRow = (event: TransitEvent, month: string) => {
+      const { container, unmount } = renderPanel([event], {
+        pinnedMonth: month,
+      });
+      const row = container.querySelector('#context-log-panel li') as HTMLElement;
+      const read = {
+        className: row.className,
+        backgroundColor: row.style.backgroundColor,
+        borderColor: row.style.borderColor,
+      };
+      unmount();
+      return read;
+    };
+    const first = bandedRow(opening, '2023 2');
+    const second = bandedRow(closure, '2019 5');
+
+    expect(first.className).toContain('bg-stone-200');
+    expect(second.className).toBe(first.className);
+    // The band is a class, so nothing paints this row's background inline. A
+    // category-tinted band is exactly what would.
+    expect(first.backgroundColor).toBe('');
+    expect(second.backgroundColor).toBe('');
+    // …and the rows are genuinely two categories, or the assertions above are
+    // comparing one row with itself.
+    expect(first.borderColor).not.toBe(second.borderColor);
+  });
+
+  /**
+   * The ring used to be drawn only while pinned, so it was doubling as the
+   * keyboard focus indicator. Selection has moved to the row, which would leave
+   * focus with no mark at all — and an invisible focus ring is exactly the
+   * regression a screenshot cannot catch, so it is asserted here instead.
+   */
+  it('keeps a focus ring on the row control, independent of selection', () => {
+    renderPanel([opening], { pinnedMonth: null });
+    const row = screen.getByRole('button', { name: /Regional Connector/ });
+    expect(row.className).toContain('focus-visible:ring-2');
+  });
+
+  /**
+   * Pinning draws no ring at all, at any weight or colour.
+   *
+   * Asserted by stripping the `focus-visible:` utilities and requiring nothing
+   * ring-shaped to survive, rather than by naming the token that used to be
+   * there: `not.toContain('ring-stone-400')` would pass a pin-time ring
+   * reintroduced in any other colour, which is the regression worth holding.
+   */
+  it('no longer rings the pinned row', () => {
+    renderPanel([opening], { pinnedMonth: '2023 2' });
+    const row = screen.getByRole('button', { name: /Regional Connector/ });
+    const alwaysOn = row.className
+      .split(/\s+/)
+      .filter((token) => !token.startsWith('focus-visible:'));
+    expect(alwaysOn.filter((token) => token.startsWith('ring'))).toEqual([]);
+  });
+
+  /**
+   * A pin marks; it does not move. The panel's open state and scroll position
+   * belong to the reader, so a pin taken on the chart changes neither — even at
+   * the cost of marking a row nobody can see, which the tooltip covers.
+   */
+  it('does not scroll any row into view when a month is pinned', () => {
+    // jsdom implements no `scrollIntoView`, so it has to be assigned onto the
+    // prototype rather than spied on — and put back afterwards. The assertion
+    // is a negative one, and a stub left on `Element.prototype` would arm every
+    // test declared after this one against a call it never made.
+    // Kept as a descriptor rather than a plain reference, which is both how you
+    // put an absent method back and what keeps `@typescript-eslint/unbound-method`
+    // quiet.
+    const original = Object.getOwnPropertyDescriptor(
+      Element.prototype,
+      'scrollIntoView',
+    );
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    try {
+      renderPanel([opening, closure], { pinnedMonth: '2019 5' });
+      // The pinned month is the second row's, and the panel opens by default —
+      // so this fixture did scroll before the change, and a render that dropped
+      // the rows cannot be what makes the assertion below pass.
+      expect(screen.getByRole('button', { name: /New Blue/ })).toBeTruthy();
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    } finally {
+      if (original) {
+        Object.defineProperty(Element.prototype, 'scrollIntoView', original);
+      } else {
+        delete (Element.prototype as Partial<Element>).scrollIntoView;
+      }
+    }
+  });
+
+  it('leaves a collapsed panel collapsed when a month is pinned', () => {
+    const { rerender } = renderPanel([opening], { pinnedMonth: null });
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
+    expect(screen.queryByText('Regional Connector Opening')).toBeNull();
+
+    rerender(
+      <ContextLogPanel
+        events={[opening]}
+        pinnedMonth="2023 2"
+        onSelectMonth={vi.fn()}
+        onHoverMonthChange={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText('Regional Connector Opening')).toBeNull();
+  });
+
+  /** The mark is on the row whether or not the reader can see it. */
+  it('still marks the pinned row after the panel is reopened by hand', () => {
+    const { rerender } = renderPanel([opening], { pinnedMonth: null });
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
+
+    rerender(
+      <ContextLogPanel
+        events={[opening]}
+        pinnedMonth="2023 2"
+        onSelectMonth={vi.fn()}
+        onHoverMonthChange={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
+    expect(
+      screen.getByRole('button', { name: /Regional Connector/ }).getAttribute('aria-pressed'),
+    ).toBe('true');
+  });
+
+  it('leaves the panel alone when the pinned month has no entry', () => {
+    renderPanel([opening], { pinnedMonth: '2021 9' });
+    expect(
+      screen.getByRole('button', { name: /Regional Connector/ }).getAttribute('aria-pressed'),
+    ).toBe('false');
+  });
+});

@@ -1,6 +1,15 @@
 # The Ridership Month Window is deliberately offset, and must not be normalised
 
-Status: accepted
+Status: **superseded** by [ADR-0009](0009-the-two-window-rules-are-one-rule.md).
+
+The offset described below is gone. There is now one window rule, `S ≤ R ≤ E`, inclusive on both
+ends, for the chart and the context log alike. ADR-0009 is the decision that removed it, taken on the
+terms this ADR set out: a deliberate product decision with a baseline regeneration attached.
+
+Kept unedited below because it is the record of why the offset survived as long as it did, and its
+addendum is still the account of how the arithmetic was replaced.
+
+---
 
 The date filter compares `new Date(record.year, record.month)` — where `month` is 1-based in the
 data but 0-based in `Date` — against window bounds parsed as `new Date(year, month - 1)`. The

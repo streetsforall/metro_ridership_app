@@ -61,7 +61,7 @@ Those bolded terms are defined in [`CONTEXT.md`](CONTEXT.md), and they mean some
 | `src/utils/` | Loose helpers: lines, month, query params, date bounds, map popup. |
 | `src/data/`, `src/@types/` | Bundled JSON — including canonical `ridership.json` — and the domain types. |
 | `data/raw/` | The Excel and CSV files LA Metro returns to a public-records request, compressed. |
-| `scripts/` | The Python data pipeline that turns those into `src/data/`, with a `test_*.py` beside each script. |
+| `scripts/` | The Python data pipeline that turns those into `src/data/`, with a `test_*.py` per script in `scripts/tests/`. |
 | `e2e/` | Playwright specs and the committed Linux baselines. |
 | `vite/` | The `ridership-data` plugin, which keeps the dataset out of the JS bundle. |
 | `docs/` | Everything written down. Start at [`docs/README.md`](docs/README.md). |
