@@ -47,6 +47,25 @@ handling belongs to the chart plugin that draws it rather than to the chart's ow
 callbacks.
 _Avoid_: marker strip, axis dots, annotation row
 
+**Pinned Month**:
+The single sticky Month the chart, the tooltip and the context-log panel all read. Owned by the
+output area rather than by any one of them, because they are three views of one piece of state.
+**At most one exists, and it must be released before another can be taken** — a click while a Month
+is pinned releases it and pins nothing, identically on the chart and in the panel. Distinct from the
+hovered Month, which is transient and which a pin outranks. A pin marks what is read; it never opens
+or scrolls a view in order to be seen. See
+[ADR-0011](docs/adr/0011-a-pin-marks-it-never-moves-a-view.md).
+_Avoid_: selected month, active month, focused month, sticky tooltip
+
+**Range Selection**:
+The drag across the plot that sets the Month Window, and the band drawn while that drag is in
+progress. It begins only once the pointer has travelled far enough for the gesture to be a drag
+rather than a click, so a plain click pins a Month and paints nothing. Deliberately mouse-only: a
+horizontal drag across a chart is how a page is scrolled on a phone. **Never named with *window*** —
+that word already belongs to the Month Window and the Event Window, and a third sense of it makes
+all three ambiguous.
+_Avoid_: sliding window, brush, drag window, range window
+
 **Selection Snapshot**:
 Whether a line was selected at the moment its records were grouped, recorded once per line rather
 than re-checked per record. It is a property of the Ridership View, not of the line — the same line
