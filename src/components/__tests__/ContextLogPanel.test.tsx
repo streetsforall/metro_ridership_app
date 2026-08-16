@@ -104,6 +104,21 @@ describe('ContextLogPanel category colors', () => {
     expect(chip.style.color).toBe(expected.style.color);
   });
 
+  /**
+   * The chip replaced the caption; the rule did not go with it. Colour was
+   * never the sole signal here, and the rule is what makes a category findable
+   * while scanning a column of rows — so a row carries both, from one hue.
+   */
+  it('keeps the rule on the row that carries the chip', () => {
+    const { container } = renderPanel([opening]);
+    expect(rowBorders(container)).toEqual([asBorderColor(colors.emerald['500'])]);
+    const expected = document.createElement('div');
+    expected.style.backgroundColor = colors.emerald['100'];
+    expect(screen.getByText('Opening').style.backgroundColor).toBe(
+      expected.style.backgroundColor,
+    );
+  });
+
   it('gives no two categories the same chip fill', () => {
     const categories: EventCategory[] = [
       'opening',

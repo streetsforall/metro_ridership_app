@@ -47,6 +47,17 @@ handling belongs to the chart plugin that draws it rather than to the chart's ow
 callbacks.
 _Avoid_: marker strip, axis dots, annotation row
 
+**Category Chip**:
+A Transit Event's category, drawn as a tinted label with the category's name written in it. One
+chip wherever a category is shown, so the same event reads as the same event in every surface. It
+takes the surface it sits on — light or dark — because a fill that reads as a tint on the panel's
+white is a glare on the tooltip's stone-800. Its colours come from the same nine-entry
+category-to-hue table the Event Gutter fills from, so a chip cannot drift from the shape marking the
+event it describes. The name is written in the chip rather than left to hue: nine categories are
+more than colour alone can carry, and the panel keeps its coloured left rule alongside the chip
+rather than in place of it.
+_Avoid_: badge, tag, pill, category label
+
 **Selection Snapshot**:
 Whether a line was selected at the moment its records were grouped, recorded once per line rather
 than re-checked per record. It is a property of the Ridership View, not of the line — the same line
