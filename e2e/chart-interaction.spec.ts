@@ -117,6 +117,118 @@ test('Escape releases the pin from anywhere on the page', async ({ page }) => {
 });
 
 /**
+ * A Month carrying more than one event shows them one at a time.
+ *
+ * **Ungated on purpose**, where most of this file's viewport-sensitive cases are
+ * not. "The same on both surfaces" is the requirement rather than a property
+ * that happens to hold — a reader who learns the readout on a phone should not
+ * have to learn it again on a desktop — so the floating box and the strip run
+ * the identical script and the gate would be the bug.
+ *
+ * **Reaching a Month with two takes a second line.** An event names the lines it
+ * touches in `line_ids`, and an empty list means network-wide. 2020-12 holds
+ * "NextGen Bus Plan Phase 1" (network-wide) and "Rapid Lines Retired into Local
+ * Service", which lists the eight Rapid lines it consolidated — 801 is not one
+ * of them and 60 is. So these cases add line 60 to the shared window and keep
+ * everything else about it, and 2020-12 is the last month on the axis, which is
+ * what `End` reaches. A data PR that adds a third event to that month, or moves
+ * one out of it, fails the count here — and should.
+ */
+test.describe('several events in one month', () => {
+
+  const BUSY_WINDOW = '?logs=1&lines=801,60&start=2019-06&end=2020-12&day=wkday';
+  /** Pinned, because the controls are only offered on a readout that takes the pointer. */
+  const pinDecember = async (page: Page) => {
+    await plot(page).focus();
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
+    await expect(tooltip(page)).toHaveAttribute('data-pinned', 'true');
+    await expect(tooltip(page)).toContainText('Dec 2020');
+  };
+
+  const next = (page: Page) =>
+    tooltip(page).getByRole('button', { name: 'Next event' });
+
+  test('shows one at a time, and steps between them', async ({ page }) => {
+    await gotoDashboard(page, BUSY_WINDOW);
+    await pinDecember(page);
+
+    await expect(tooltip(page)).toContainText('1 of 2');
+    await expect(tooltip(page)).toContainText('NextGen Bus Plan Phase 1');
+    await expect(tooltip(page)).not.toContainText('Rapid Lines Retired');
+
+    await next(page).click();
+
+    await expect(tooltip(page)).toContainText('2 of 2');
+    await expect(tooltip(page)).toContainText('Rapid Lines Retired');
+    await expect(tooltip(page)).not.toContainText('NextGen Bus Plan Phase 1');
+  });
+
+  /**
+   * The readout renders inside the plot's box, which pins a Month under a click
+   * and under Enter or Space. A step that reached either would release the pin
+   * holding the readout open — the reader's own press closing the thing they
+   * pressed. jsdom covers the propagation; this covers it against a real browser
+   * with the real chart underneath.
+   */
+  test('stepping does not release the pin', async ({ page }) => {
+    await gotoDashboard(page, BUSY_WINDOW);
+    await pinDecember(page);
+
+    await next(page).click();
+    await expect(tooltip(page)).toHaveAttribute('data-pinned', 'true');
+  });
+
+  /**
+   * Tab to reach, Enter to fire — and nothing else. The arrow keys are
+   * deliberately unbound to the carousel, so Left and Right still mean "change
+   * Month" with focus sitting on a control.
+   */
+  test('the controls are reachable by Tab and fired by Enter', async ({ page }) => {
+    await gotoDashboard(page, BUSY_WINDOW);
+    await pinDecember(page);
+
+    // Tab from the plot lands inside the readout. *Which* control it lands on is
+    // not asserted: the strip may carry an Expand ahead of the carousel and the
+    // floating box never does, so naming one would gate this test to a viewport
+    // for no gain. That focus crosses into the readout at all is the claim.
+    await page.keyboard.press('Tab');
+    await expect(tooltip(page).locator(':focus')).toHaveCount(1);
+
+    await next(page).focus();
+    await page.keyboard.press('Enter');
+
+    await expect(tooltip(page)).toContainText('2 of 2');
+    await expect(tooltip(page)).toHaveAttribute('data-pinned', 'true');
+  });
+
+  /** Escape still releases, from a control as from anywhere else. */
+  test('Escape releases the pin from a control', async ({ page }) => {
+    await gotoDashboard(page, BUSY_WINDOW);
+    await pinDecember(page);
+
+    await next(page).focus();
+    await page.keyboard.press('Escape');
+
+    await expect(tooltip(page)).toHaveCount(0);
+  });
+
+  /** Nothing to step through, so nothing offering to. 2020-03 has exactly one. */
+  test('offers no controls on a month with a single event', async ({ page }) => {
+    await gotoDashboard(page, WINDOW);
+
+    await firstLogRow(page).click();
+
+    await expect(tooltip(page)).toContainText('COVID-19 Service Reductions');
+    await expect(tooltip(page)).toHaveAttribute('data-pinned', 'true');
+    await expect(
+      tooltip(page).getByRole('button', { name: 'Next event' }),
+    ).toHaveCount(0);
+    await expect(tooltip(page)).not.toContainText('1 of 1');
+  });
+});
+
+/**
  * The canvas is opaque to assistive tech, so the arrow keys and the live region
  * are the only way a keyboard or screen-reader user reaches a month at all.
  */

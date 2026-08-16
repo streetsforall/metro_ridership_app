@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { ChartDataset } from 'chart.js';
 import colors from 'tailwindcss/colors';
@@ -174,7 +174,12 @@ describe('ChartTooltip event context', () => {
     expect([...entry.children]).toEqual([title, chipRow, description]);
   });
 
-  it('lists every event in a month that holds more than one', () => {
+  /**
+   * A Month holding several used to stack them all, which on a busy Month made
+   * the readout tall enough to bury the series it annotates. They are a
+   * carousel now — see the block at the end of this file for the stepping.
+   */
+  it('shows one event at a time in a month that holds more than one', () => {
     renderTooltip({
       events: [
         opening,
@@ -182,11 +187,11 @@ describe('ChartTooltip event context', () => {
       ],
     });
     expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
-    expect(screen.getByText('Fare change')).toBeTruthy();
-    // One chip each, and they say different things — the second event keeps the
-    // builder's `service_change`, so a shared chip would show only one label.
+    expect(screen.queryByText('Fare change')).toBeNull();
+    // And one chip, for the one event — the second keeps the builder's
+    // `service_change`, so a leaked entry would show that label too.
     expect(screen.getByText('Opening')).toBeTruthy();
-    expect(screen.getByText('Service change')).toBeTruthy();
+    expect(screen.queryByText('Service change')).toBeNull();
   });
 });
 
@@ -378,18 +383,26 @@ describe('ChartTooltip strip mode on a narrow chart', () => {
   });
 
   /**
-   * The case the cap exists for. jsdom lays nothing out, so this cannot assert a
-   * rendered height — what it can assert is that the content grew and the box
-   * did not, which is the whole of the rule: a busy Month scrolls rather than
-   * growing the readout down over the series it annotates.
+   * The case the cap is left holding once the carousel has taken the busy
+   * Month: one description long enough to fill the box on its own, which no
+   * amount of stepping helps with.
+   *
+   * jsdom lays nothing out, so this cannot assert a rendered height — what it
+   * can assert is that the whole description is in the box and the box is still
+   * capped and still scrolls, which is the whole of the rule.
    */
-  it('holds its cap for a Month carrying several events', () => {
-    const busy = ['a', 'b', 'c', 'd', 'e'].map((id) =>
-      makeTransitEvent({ id, date: '2020-06', title: `Event ${id}` }),
-    );
-    const box = boxOf({ ...narrow, plotHeight: 300, events: busy, isPinned: true });
+  it('holds its cap for a single very long description', () => {
+    // Trimmed, because `getByText` normalises whitespace before comparing and a
+    // trailing space would make the lookup miss a node that is plainly there.
+    const wall = 'Rerouted. '.repeat(200).trim();
+    const box = boxOf({
+      ...narrow,
+      plotHeight: 300,
+      events: [makeTransitEvent({ date: '2020-06', description: wall })],
+      isPinned: true,
+    });
 
-    expect(within(box).getAllByText(/^Event [a-e]$/)).toHaveLength(5);
+    expect(within(box).getByText(wall)).toBeTruthy();
     expect(box.style.maxHeight).toBe('100px');
     expect(box.className).toContain('overflow-y-auto');
   });
@@ -507,5 +520,207 @@ describe('ChartTooltip expanding a capped readout', () => {
   /** The floating box has no cap, so it is never scrolling and never asks. */
   it('is not offered on the floating box', () => {
     expect(toggleIn(boxOf({ ...narrowPinned, containerWidth: 600 }))).toBeNull();
+  });
+});
+
+/**
+ * One event at a time, with the controls to step between them.
+ *
+ * Every case runs at both widths from one list, because "the same on both
+ * surfaces" is the requirement rather than a nice property of the
+ * implementation: a reader who learns the readout on a phone should not have to
+ * learn it again on a desktop. The floating box and the strip are the only two
+ * layouts there are, so a `describe.each` over the two widths is the whole
+ * matrix.
+ */
+describe.each([
+  ['floating', 600],
+  ['strip', 479],
+])('ChartTooltip event carousel — %s', (_layout, containerWidth) => {
+  const three = ['a', 'b', 'c'].map((id) =>
+    makeTransitEvent({
+      id,
+      date: '2020-06',
+      title: `Event ${id}`,
+      description: `Description ${id}`,
+    }),
+  );
+
+  const pinned = { containerWidth, plotHeight: 300, isPinned: true };
+
+  const nextIn = (box: HTMLElement) =>
+    within(box).getByRole<HTMLButtonElement>('button', { name: 'Next event' });
+  const prevIn = (box: HTMLElement) =>
+    within(box).getByRole<HTMLButtonElement>('button', { name: 'Previous event' });
+
+  it('opens on the first event and shows where it is', () => {
+    const box = boxOf({ ...pinned, events: three });
+    expect(within(box).getByText('Event a')).toBeTruthy();
+    expect(within(box).queryByText('Event b')).toBeNull();
+    expect(within(box).getByText('1 of 3')).toBeTruthy();
+  });
+
+  it('steps forward and back through the events', () => {
+    const box = boxOf({ ...pinned, events: three });
+
+    fireEvent.click(nextIn(box));
+    expect(within(box).getByText('Event b')).toBeTruthy();
+    expect(within(box).getByText('Description b')).toBeTruthy();
+    expect(within(box).getByText('2 of 3')).toBeTruthy();
+    expect(within(box).queryByText('Event a')).toBeNull();
+
+    fireEvent.click(prevIn(box));
+    expect(within(box).getByText('Event a')).toBeTruthy();
+    expect(within(box).getByText('1 of 3')).toBeTruthy();
+  });
+
+  /** Clamped rather than wrapping, so the position indicator can be believed. */
+  it('stops at both ends rather than wrapping round', () => {
+    const box = boxOf({ ...pinned, events: three });
+    expect(prevIn(box).disabled).toBe(true);
+    expect(nextIn(box).disabled).toBe(false);
+
+    fireEvent.click(nextIn(box));
+    fireEvent.click(nextIn(box));
+
+    expect(within(box).getByText('3 of 3')).toBeTruthy();
+    expect(nextIn(box).disabled).toBe(true);
+    expect(prevIn(box).disabled).toBe(false);
+  });
+
+  /** Nothing to step through, and "1 of 1" is not information. */
+  it('shows no controls and no position for a month with one event', () => {
+    const box = boxOf({ ...pinned, events: [three[0]] });
+    expect(within(box).queryByRole('button', { name: 'Next event' })).toBeNull();
+    expect(within(box).queryByRole('button', { name: 'Previous event' })).toBeNull();
+    expect(within(box).queryByText(/of 1$/)).toBeNull();
+  });
+
+  /**
+   * A hovering readout does not accept the pointer, so a control on one is a
+   * control the reader can see and cannot press — the same rule Expand follows.
+   * The position survives, because it is the only thing telling a hovering
+   * reader that pinning would get them anywhere.
+   */
+  it('withholds the controls but keeps the position while only hovering', () => {
+    const box = boxOf({ ...pinned, isPinned: false, events: three });
+    expect(within(box).queryByRole('button', { name: 'Next event' })).toBeNull();
+    expect(within(box).getByText('1 of 3')).toBeTruthy();
+  });
+
+  it('announces the position only where the reader can move it', () => {
+    const live = (props: Partial<Parameters<typeof ChartTooltip>[0]>) =>
+      within(boxOf(props)).getByText('1 of 3').getAttribute('aria-live');
+
+    expect(live({ ...pinned, events: three })).toBe('polite');
+    expect(live({ ...pinned, isPinned: false, events: three })).toBe('off');
+  });
+
+  /**
+   * The plot's box, as `RidershipChart` builds it: the readout renders *inside*
+   * a div carrying the handlers that pin a Month — `onClick` on the chart, and
+   * an `onKeyDown` mapping Enter and Space to the same pin.
+   *
+   * React handlers rather than `addEventListener`, and that is the whole reason
+   * this helper exists. React attaches its listeners at the root container, so
+   * a native listener on the parent hears the event before React has dispatched
+   * anything and `stopPropagation` on a synthetic event cannot stop it — the
+   * test would fail against a component that is behaving perfectly. Handlers of
+   * the same kind the real parent uses is the only faithful check.
+   */
+  const renderInPlot = (events: ReturnType<typeof makeTransitEvent>[]) => {
+    const reachedChart = vi.fn();
+    const { container } = render(
+      <div onClick={reachedChart} onKeyDown={reachedChart}>
+        <ChartTooltip
+          index={1}
+          months={months}
+          datasets={datasets}
+          caret={{ x: 100, y: 20 }}
+          events={events}
+          {...pinned}
+        />
+      </div>,
+    );
+    const box = container.querySelector<HTMLElement>('[data-testid="chart-tooltip"]')!;
+    return { box, reachedChart };
+  };
+
+  /**
+   * A step that reached the chart would release the pin holding the readout
+   * open — the reader's own press closing the thing they pressed.
+   */
+  it('keeps a step off the chart underneath it', () => {
+    const { box, reachedChart } = renderInPlot(three);
+
+    fireEvent.click(nextIn(box));
+
+    expect(within(box).getByText('2 of 3')).toBeTruthy();
+    expect(reachedChart).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The same box maps Enter and Space to that pin, so the keyboard needs the
+   * same guard as the pointer — `fireEvent.click` would never have caught it.
+   */
+  it.each(['Enter', ' '])('keeps a %s press off the chart underneath it', (key) => {
+    const { box, reachedChart } = renderInPlot(three);
+
+    fireEvent.keyDown(nextIn(box), { key });
+
+    expect(reachedChart).not.toHaveBeenCalled();
+  });
+
+  /**
+   * And the other half of that rule: Left and Right are *not* bound here. They
+   * mean "change Month" wherever focus sits, so they must reach the plot even
+   * from a control. Binding them to the carousel is the obvious next commit and
+   * the wrong one — see `ReadoutButton`.
+   */
+  it.each(['ArrowLeft', 'ArrowRight'])('lets %s through to the chart', (key) => {
+    const { box, reachedChart } = renderInPlot(three);
+
+    fireEvent.keyDown(nextIn(box), { key });
+
+    expect(reachedChart).toHaveBeenCalled();
+    // And changed nothing about which event is on show.
+    expect(within(box).getByText('1 of 3')).toBeTruthy();
+  });
+
+  /** A new Month is a new readout, and it opens at the first of its events. */
+  it('resets to the first event on a different month', () => {
+    const props = { months, datasets, caret: { x: 100, y: 20 }, ...pinned };
+    const { container, rerender } = render(
+      <ChartTooltip index={1} events={three} {...props} />,
+    );
+    const box = container.querySelector<HTMLElement>('[data-testid="chart-tooltip"]')!;
+
+    fireEvent.click(nextIn(box));
+    expect(within(box).getByText('2 of 3')).toBeTruthy();
+
+    rerender(<ChartTooltip index={2} events={three} {...props} />);
+    expect(within(box).getByText('1 of 3')).toBeTruthy();
+    expect(within(box).getByText('Event a')).toBeTruthy();
+  });
+
+  /**
+   * Filtering a line away takes its events with it, which can shorten the list
+   * under a held position without the Month changing — so the reset effect does
+   * not fire and the position has to be clamped at render instead.
+   */
+  it('falls back to the last event when the list shortens beneath it', () => {
+    const props = { months, datasets, caret: { x: 100, y: 20 }, ...pinned };
+    const { container, rerender } = render(
+      <ChartTooltip index={1} events={three} {...props} />,
+    );
+    const box = container.querySelector<HTMLElement>('[data-testid="chart-tooltip"]')!;
+
+    fireEvent.click(nextIn(box));
+    fireEvent.click(nextIn(box));
+    expect(within(box).getByText('3 of 3')).toBeTruthy();
+
+    rerender(<ChartTooltip index={1} events={three.slice(0, 2)} {...props} />);
+    expect(within(box).getByText('2 of 2')).toBeTruthy();
+    expect(within(box).getByText('Event b')).toBeTruthy();
   });
 });
