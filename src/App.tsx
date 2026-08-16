@@ -62,6 +62,7 @@ function App() {
     showContextLogs,
     toggleShowContextLogs,
     showStops,
+    toggleShowStops,
     stopMeasure,
     setStopMeasure,
     selectedStopKey,
@@ -147,6 +148,8 @@ function App() {
           setDayOfWeek={setDayOfWeek}
           showContextLogs={showContextLogs}
           toggleShowContextLogs={toggleShowContextLogs}
+          showStops={showStops}
+          toggleShowStops={toggleShowStops}
         />
       </div>
 
