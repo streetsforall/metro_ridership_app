@@ -28,7 +28,7 @@ PRs update it rather than restating their own scope.
 | **2** | `fetch_stop_locations.py`, `src/data/stop_locations.json`, `scripts/README.md`, tests | Match rate reported; unmatched reviewed and aliases extended | ☑ [#179](https://github.com/streetsforall/metro_ridership_app/pull/179) — bus 6,756/6,785 · rail 110/110 |
 | **3** | `stop_ridership.py`, `update_ridership.py` wiring, the two data files, `DATA_RELEASE_NOTES.md` | Reconciliation within tolerance; two runs byte-identical | ☑ [#190](https://github.com/streetsforall/metro_ridership_app/pull/190) — 107,454 stop rows · two runs byte-identical · reconciliation median 0.06%, max 5.10% (see below) |
 | **4** | Vite plugin, manifest, `src/stops/`, `stops.types.ts`, the `isInMonthWindow` extraction, vitest specs. **No visible UI.** | `ANALYZE=1 npm run build` — entry chunk unchanged; no visual baseline moves | ☑ [#180](https://github.com/streetsforall/metro_ridership_app/pull/180) — entry +36 B (the extracted predicate, nothing else) · 0 of 80 baselines moved |
-| **5** | Map layer, `#stop-panel`, URL state, `mapPopup` addition, Playwright baselines | New baselines only; `visual.spec.ts`'s six must **not** move | ☐ |
+| **5** | Map layer, `#stop-panel`, URL state, `mapPopup` addition, Playwright baselines | New baselines only; `visual.spec.ts`'s six must **not** move | ☑ [#223](https://github.com/streetsforall/metro_ridership_app/pull/223) — 7 new baselines · 0 of 48 existing moved · entry chunk +1.0 kB |
 
 1 → 2 → 3 are pipeline-serial. 4 can start once PR 1's schema is fixed. PR 3 carries
 the multi-megabyte data diff alone, so its review is "is the data right", not "is the
@@ -181,6 +181,37 @@ in `fetch_stop_locations.py` and noted it belongs beside `convert_zip`. PR 3 imp
 from there rather than copying it — a second copy of the archive-layout rule is what
 `extract_leaf_rows` exists to prevent — so the merge step now imports from the geometry
 fetcher. Worth moving, in a PR that is allowed to touch both.
+
+## What PR 5 found
+
+**The panel has no visibility control, deliberately.** It opens with `stops=1` and the hook exposes
+`showStops` / `toggleShowStops` ready to bind — but no checkbox was added, for two reasons that
+point the same way. Any new chrome in the filter bar moves `visual.spec.ts`'s full-page baselines,
+which this PR's gate forbids; and [#181](https://github.com/streetsforall/metro_ridership_app/pull/181)
+and [#182](https://github.com/streetsforall/metro_ridership_app/pull/182) are both open, both
+rewriting `DateRangeSelector` into a Panel Settings section, and both regenerating those baselines.
+The toggle belongs there, in one line. **Follow-up: bind Panel Settings to `toggleShowStops`.**
+
+**`stop=<key>` needs no encoding, and gets some anyway.** The key really is a URL-safe slug, but
+`URLSearchParams.toString()` percent-encodes `:` regardless, so the written form is `bus%3A…`. It
+decodes back to the same key, so a shared link still selects the stop it named; only the plan's
+claim about the literal spelling was wrong.
+
+**`stop_locations.json` is 1.6 MB, and `stops.types.ts` calls it "small".** Importing it statically
+would have put it in `OutputArea`'s chunk — which every reader downloads — so the panel `import()`s
+it and it gets its own chunk, fetched with the rail payload when the panel opens. Worth correcting
+the comment; worth more not bundling it.
+
+**`src/stops/index.ts` exposes no per-stop series.** The panel needs one for the selected stop's
+chart, so it assembles one in `src/utils/stopSeries.ts` from the module's own month axis and
+`stopMetrics` — no window arithmetic, no second copy of the Day Of Week → column mapping. It would
+sit better inside the module, next to `stopMetrics`.
+
+**Two ADRs are still owed and are deliberately not in this PR.** The stop wire format and
+name-as-identity decisions never got their numbers (0008 and 0009 went to other work; main is at
+0011). Writing them here would have widened the riskiest UI PR of the batch. **Follow-up: ADR-0012
+and ADR-0013.** The diagram set is likewise untouched — `07`, `08` and `10` are all being edited by
+the two open panel PRs, so regenerating them here would guarantee conflicts for no gain.
 
 ## The contract PR 1 freezes
 

@@ -60,8 +60,9 @@ Type definitions live in [`src/@types/metrics.types.ts`](../src/@types/metrics.t
 `src/` is flat — `components/`, `hooks/`, `utils/`, `data/`, `@types/` — with one exception.
 
 **A folder with an `index.ts` is a sealed module. That index is its entire public surface.**
-`src/ridership/` is the only one today. Importing `../ridership/chartData` from outside the folder
-is visibly reaching past a seam and should fail review; go through `index.ts` instead.
+`src/ridership/` and `src/stops/` are the two today. Importing `../ridership/chartData` or
+`../stops/buildStopView` from outside the folder is visibly reaching past a seam and should fail
+review; go through `index.ts` instead.
 
 Everything else in `src/` is loose by default. A new folder is earned when a body of logic has
 invariants a caller must not reach past — not by topical tidiness. See
@@ -105,7 +106,7 @@ These are the things that look like bugs and aren't.
   ([ADR-0004](adr/0004-line-metrics-are-one-nullable-shape.md)).
 
 - **All dashboard state syncs to the URL** (`start`, `end`, `day`, `lines`, `q`, `buses`, `trains`,
-  `aggregate`, `logs`) so a view is shareable. The canonical set lives in
+  `aggregate`, `logs`, `stops`, `measure`, `stop`) so a view is shareable. The canonical set lives in
   [`useUserDashboardInput.ts`](../src/hooks/useUserDashboardInput.ts): read from the URL in lazy
   `useState` initialisers, written back with `history.replaceState` in an effect.
   [`queryParams.ts`](../src/utils/queryParams.ts) only holds the parse/format helpers. **New
@@ -144,15 +145,64 @@ These are the things that look like bugs and aren't.
   ([`src/utils/lines.ts`](../src/utils/lines.ts)); every other bus line gets a deterministic
   golden-angle HSL hue, so the chart and the map always agree.
 
+## Stop-level ridership
+
+Everything above is per **line**. `src/stops/` is the same shape one grain down — per **Stop
+Place** — and it is a second sealed module for the same reason the first one is: the map layer, the
+ranked table, the per-stop series and the popup all read one derivation, and the stop-key ↔
+coordinate join and the Month Window filter must happen in one place or the map and the table
+disagree about which stops exist and which months are on screen.
+
+**One call again.** `buildStopView({ records, places, lineIds, startDate, endDate, dayOfWeek,
+measure })` returns `{ months, readouts, markers, coverage }`. `markers` is a GeoJSON
+`FeatureCollection` ready for `setData` — **radius and colour are feature properties the module
+computed**, so `Map.tsx`'s paint expressions are a plain `['get', 'radius']` / `['get', 'color']`
+and nothing recomputes the scale. Radius is sqrt-normalised **per mode**, because rail and bus
+differ by two orders of magnitude at stop grain, and it sqrt-scales the *value* so the drawn *area*
+is proportional to it.
+
+`useStopView` ([`src/hooks/useStopView.ts`](../src/hooks/useStopView.ts)) is the fetch side, and
+`OutputArea` is its only importer, so everything it pulls lands in that lazy chunk or behind a
+further dynamic import. The panel itself is `#stop-panel`, opened with `stops=1`.
+
+- **The lazy-load rule is a gate on intent.** Rail (89 KB) loads when the panel is on. Bus (5.3 MB)
+  loads only when the panel is on, the Month Window overlaps the Stop Coverage Window, **and** a
+  selected line is not one the rail payload serves. `stop_locations.json` (1.6 MB) is `import()`ed
+  so it gets its own async chunk. **Neither payload goes anywhere near `App`'s `/ridership.json`
+  effect** — that is the first-paint path, and `OutputArea` is lazy precisely to keep large things
+  off it. `ANALYZE=1 npm run build` gates this: the stop payloads must appear as emitted assets and
+  never inside a `dist/assets/*.js`.
+
+- **G Line (901) and J Line (910) BRT live in the *bus* payload** while the app lists them under the
+  train filter, because the split is by source export. So "is this a bus line" is the wrong question
+  to gate the bus fetch on — the question asked instead is "does the **rail payload** already serve
+  this line", answered from the rail records. The app's mode *filter* likewise keys off
+  `metro_line_metadata_current.json`, never off which file a row came from.
+
+- **The Stop Coverage Window is stated, never enforced.** Stop data covers twelve months inside the
+  chart's 2009 → 2026, so the panel names both spans persistently, labels partial coverage in the
+  line table's own words, and — where the window reaches no stop data at all — offers a button that
+  sets the window through the same setters a chart drag uses. It **never** clamps or widens the
+  window; that would make one URL mean two things.
+
 ## The map
 
 [`src/components/Map.tsx`](../src/components/Map.tsx) uses MapLibre GL and loads route geometry from
-`public/metro_lines.geojson`. Two layers: `lines-all` (dimmed) and `lines-selected` (brand colours,
-filtered by selected line ids via `setFilter`). Base tiles come from MapTiler when
-`VITE_MAPTILER_KEY` is set, otherwise OpenFreeMap.
+`public/metro_lines.geojson`. Three layers: `lines-all` (dimmed), `lines-selected` (brand colours)
+and `stops-selected` (circles, above both), each filtered by the selected line ids via `setFilter`.
+Base tiles come from MapTiler when `VITE_MAPTILER_KEY` is set, otherwise OpenFreeMap.
 
 The map instance lives in a ref and is initialised once. **Selection changes only update the layer
-filter** — the map itself is never rebuilt.
+filter** — the map itself is never rebuilt. The stop source and layer are added **once, on first
+use** — the first time there are markers to draw, which is never for a reader who does not open the
+panel — and after that new markers reach the source through `getSource(...).setData(...)`, and the
+Stop Measure and the selected stop through `setPaintProperty`. **Nothing re-adds a source or a
+layer**; `map.getLayer` is the guard. The layer's pointer handlers are still registered once in
+`load`, because a layer-scoped MapLibre listener is a delegated one and resolves its layer at event
+time.
+
+Clutter on the stop layer is controlled by **selection, not zoom-gating**: the busiest bus line has
+~154 stops, so a five-line selection draws ≤ ~800 circles.
 
 `Map.tsx` publishes the live instance as `window.__metroMap`. Nothing in the app reads it; it is a
 test seam, and it is the only way to await a WebGL canvas or inspect what actually rendered. Don't

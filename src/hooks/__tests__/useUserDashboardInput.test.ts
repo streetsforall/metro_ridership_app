@@ -130,6 +130,41 @@ describe('initial state from URL params', () => {
     const { result } = renderHook(() => useUserDashboardInput());
     expect(result.current.showContextLogs).toBe(false);
   });
+
+  it('sets showStops to true when stops=1 in URL', () => {
+    window.history.replaceState({}, '', '?stops=1');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.showStops).toBe(true);
+  });
+
+  it('leaves the stop panel off when stops is absent', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.showStops).toBe(false);
+  });
+
+  it('reads the stop measure from URL', () => {
+    window.history.replaceState({}, '', '?measure=offs');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.stopMeasure).toBe('offs');
+  });
+
+  it('falls back to boardings for an unrecognised measure', () => {
+    window.history.replaceState({}, '', '?measure=sideways');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.stopMeasure).toBe('ons');
+  });
+
+  it('reads the selected stop key from URL', () => {
+    window.history.replaceState({}, '', '?stop=rail:union-station');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.selectedStopKey).toBe('rail:union-station');
+  });
+
+  it('ignores a stop param that is not a stop key', () => {
+    window.history.replaceState({}, '', '?stop=<script>');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.selectedStopKey).toBeNull();
+  });
 });
 
 describe('modes → mode filter state', () => {
@@ -301,6 +336,66 @@ describe('URL sync', () => {
   it('omits logs param when showContextLogs is false by default', () => {
     renderHook(() => useUserDashboardInput());
     expect(window.location.search).not.toContain('logs=');
+  });
+
+  it('adds stops=1 to URL when toggleShowStops is called', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.toggleShowStops();
+    });
+
+    expect(window.location.search).toContain('stops=1');
+  });
+
+  it('omits every stop param at its default', () => {
+    renderHook(() => useUserDashboardInput());
+    expect(window.location.search).not.toContain('stops=');
+    expect(window.location.search).not.toContain('measure=');
+    expect(window.location.search).not.toContain('stop=');
+  });
+
+  it('writes a non-default stop measure to URL', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.setStopMeasure('both');
+    });
+
+    expect(window.location.search).toContain('measure=both');
+  });
+
+  /**
+   * A stop key survives the round trip whole.
+   *
+   * The plan expected the key to appear literally, on the grounds that it is a
+   * URL-safe slug. It is — but `URLSearchParams.toString()` percent-encodes `:`
+   * regardless of whether a query string needs it to, so the written form is
+   * `bus%3A…`. What matters is that `params.get('stop')` gives the key back
+   * unchanged, so a shared link selects the stop it named; asserting the literal
+   * spelling would be asserting `URLSearchParams`' escaping policy.
+   */
+  it('round-trips the selected stop key through the URL', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.setSelectedStopKey('bus:vermont-wilshire');
+    });
+
+    expect(
+      new URLSearchParams(window.location.search).get('stop'),
+    ).toBe('bus:vermont-wilshire');
+  });
+
+  it('drops the stop param when the selection is cleared', () => {
+    window.history.replaceState({}, '', '?stop=bus:vermont-wilshire');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.setSelectedStopKey(null);
+    });
+
+    expect(window.location.search).not.toContain('stop=');
   });
 });
 

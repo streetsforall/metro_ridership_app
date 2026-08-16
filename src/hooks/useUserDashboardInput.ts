@@ -6,8 +6,11 @@ import {
   dayOfWeekToParam,
   paramToDayOfWeek,
   parseModesFromParams,
+  parseStopKeyParam,
+  parseStopMeasureParam,
 } from '../utils/queryParams';
 import type { Line, LineJson } from '../@types/lines.types';
+import type { StopMeasure } from '../@types/stops.types';
 import { daysOfWeek, type DayOfWeek } from '../@types/metrics.types';
 
 export { daysOfWeek, type DayOfWeek };
@@ -39,6 +42,18 @@ export interface UserDashboardInputState {
 
   showContextLogs: boolean;
   toggleShowContextLogs: () => void;
+
+  /** Whether the stop panel is on. `stops=1`. */
+  showStops: boolean;
+  toggleShowStops: () => void;
+
+  /** Which figure the stop panel ranks, sizes and draws by. `measure=offs|both`. */
+  stopMeasure: StopMeasure;
+  setStopMeasure: React.Dispatch<React.SetStateAction<StopMeasure>>;
+
+  /** The Stop Place whose series is drawn, or `null`. `stop=<key>`. */
+  selectedStopKey: string | null;
+  setSelectedStopKey: React.Dispatch<React.SetStateAction<string | null>>;
 
   onToggleSelectLine: (line: Line) => void;
   clearSelections: () => void;
@@ -114,6 +129,29 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     return params.get('logs') === '1';
   });
 
+  /**
+   * The three stop-panel slices, read here and written in the effect below — both
+   * halves, or the panel stops being shareable (`CLAUDE.md`).
+   *
+   * Off by default. The panel is the one view whose data covers a short window inside
+   * the chart's, so opening it for a reader who did not ask would put an empty state
+   * under most shared links.
+   */
+  const [showStops, setShowStops] = useState<boolean>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('stops') === '1';
+  });
+
+  const [stopMeasure, setStopMeasure] = useState<StopMeasure>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return parseStopMeasureParam(params.get('measure')) ?? 'ons';
+  });
+
+  const [selectedStopKey, setSelectedStopKey] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return parseStopKeyParam(params.get('stop'));
+  });
+
   // Sync state → URL query params
   useEffect(() => {
     const params = new URLSearchParams();
@@ -130,9 +168,28 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     if (!modes.includes('train')) params.set('trains', '0');
     if (isAggregateVisible) params.set('aggregate', '1');
     if (showContextLogs) params.set('logs', '1');
+    if (showStops) params.set('stops', '1');
+    // Written only when non-default, like every optional param above it. A stop key
+    // is a slug by construction, so nothing about it needs escaping — though
+    // `URLSearchParams.toString()` percent-encodes the `:` anyway. It decodes back to
+    // the same key, so a shared link still selects the stop it named.
+    if (stopMeasure !== 'ons') params.set('measure', stopMeasure);
+    if (selectedStopKey) params.set('stop', selectedStopKey);
 
     window.history.replaceState(null, '', `?${params.toString()}`);
-  }, [startDate, endDate, dayOfWeek, searchText, modes, lines, isAggregateVisible, showContextLogs]);
+  }, [
+    startDate,
+    endDate,
+    dayOfWeek,
+    searchText,
+    modes,
+    lines,
+    isAggregateVisible,
+    showContextLogs,
+    showStops,
+    stopMeasure,
+    selectedStopKey,
+  ]);
 
   /**
    * Select every row the table is currently showing, on top of whatever is already
@@ -183,6 +240,10 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     setShowContextLogs((prevShowContextLogs: boolean) => !prevShowContextLogs);
   };
 
+  const toggleShowStops = (): void => {
+    setShowStops((prevShowStops: boolean) => !prevShowStops);
+  };
+
   return {
     startDate,
     setStartDate,
@@ -196,6 +257,12 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     toggleIsAggregateVisible,
     showContextLogs,
     toggleShowContextLogs,
+    showStops,
+    toggleShowStops,
+    stopMeasure,
+    setStopMeasure,
+    selectedStopKey,
+    setSelectedStopKey,
     searchText,
     setSearchText,
     modes,

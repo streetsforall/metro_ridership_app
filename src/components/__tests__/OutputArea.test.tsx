@@ -4,6 +4,7 @@ import OutputArea from '../OutputArea';
 import type { LineReadout } from '../../ridership';
 import { makeLineReadout, makeTransitEvent } from '../../test/builders';
 import type { TransitEvent } from '../../@types/events.types';
+import { daysOfWeek } from '../../@types/metrics.types';
 import type { RidershipChartProps } from '../RidershipChart';
 
 /**
@@ -27,12 +28,25 @@ vi.mock('../Map', () => ({
   ),
 }));
 
+/**
+ * The Month Window and Day Of Week are required props now that OutputArea hosts the
+ * stop derivation. They are inert in these tests — the stop panel is off, so nothing
+ * is fetched and nothing is derived from them — but the component genuinely needs
+ * them, so they are stated rather than defaulted.
+ */
+const stopWindowProps = {
+  startDate: new Date(2023, 0),
+  endDate: new Date(2023, 11),
+  dayOfWeek: daysOfWeek.Weekday,
+};
+
 const emptyProps = {
   chartDatasets: [],
   months: [],
   lines: [],
   transitEvents: [] as TransitEvent[],
   showContextLogs: false,
+  ...stopWindowProps,
 };
 
 const transitEventFixture = makeTransitEvent({
@@ -60,6 +74,7 @@ const renderWithEvents = (props = {}) =>
       lines={[]}
       transitEvents={[transitEventFixture]}
       showContextLogs={true}
+      {...stopWindowProps}
       {...props}
     />,
   );

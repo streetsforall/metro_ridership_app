@@ -95,6 +95,28 @@ td {
   width: 2.25rem;
 }
 
+/*
+ * A toggle-group item carrying a word instead of an icon.
+ *
+ * The base item is 2.25rem wide because every existing one holds a 16px glyph; the
+ * stop panel's measure toggle holds "Boardings" / "Alightings" / "Both", which that
+ * width clips to nothing. Everything else about the control — the fill, the joined
+ * corners, the selected state — is deliberately inherited, so the two toggles still
+ * read as the same control.
+ */
+.toggle-group-item-text {
+  width: auto;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  /*
+   * Stated, not inherited. The global `button` rule sets white text, and the base
+   * item only overrides the *background* — which is invisible on an icon and white
+   * on white for a word. `[data-state='on']` is two classes, so it still wins.
+   */
+  color: #292524;
+}
+
 .toggle-group-item:first-child {
   margin-left: 0;
   border-top-left-radius: 0.25rem;

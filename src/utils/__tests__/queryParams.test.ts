@@ -5,6 +5,8 @@ import {
   dayOfWeekToParam,
   paramToDayOfWeek,
   parseModesFromParams,
+  parseStopKeyParam,
+  parseStopMeasureParam,
 } from '../queryParams';
 
 describe('parseMonthParam', () => {
@@ -104,5 +106,48 @@ describe('parseModesFromParams', () => {
 
   it('includes both when buses=1 is explicitly set', () => {
     expect(parseModesFromParams(makeParams('buses=1'))).toEqual(['bus', 'train']);
+  });
+});
+
+describe('parseStopMeasureParam', () => {
+  it.each(['ons', 'offs', 'both'])('accepts %s', (value) => {
+    expect(parseStopMeasureParam(value)).toBe(value);
+  });
+
+  it('rejects a value that is not a measure', () => {
+    expect(parseStopMeasureParam('riders')).toBeNull();
+  });
+
+  it('returns null for an absent param', () => {
+    expect(parseStopMeasureParam(null)).toBeNull();
+  });
+});
+
+describe('parseStopKeyParam', () => {
+  it.each(['bus:vermont-wilshire', 'rail:union-station', 'rail:7th-street'])(
+    'accepts the slug %s',
+    (value) => {
+      expect(parseStopKeyParam(value)).toBe(value);
+    },
+  );
+
+  it('rejects a key with no mode prefix', () => {
+    expect(parseStopKeyParam('vermont-wilshire')).toBeNull();
+  });
+
+  it('rejects an unknown mode prefix', () => {
+    expect(parseStopKeyParam('tram:vermont')).toBeNull();
+  });
+
+  it('rejects markup smuggled through the param', () => {
+    expect(parseStopKeyParam('bus:<script>alert(1)</script>')).toBeNull();
+  });
+
+  it('rejects an upper-case key, which the pipeline never mints', () => {
+    expect(parseStopKeyParam('bus:Vermont-Wilshire')).toBeNull();
+  });
+
+  it('returns null for an absent param', () => {
+    expect(parseStopKeyParam(null)).toBeNull();
   });
 });
