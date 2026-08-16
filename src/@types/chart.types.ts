@@ -7,6 +7,21 @@ export interface CustomChartData {
   stat: number | null;
 }
 
+/**
+ * What Chart.js actually hands the tooltip's `external` callback.
+ *
+ * It passes a third field, `replay`, marking the call as coming from
+ * `Chart#update`'s replay of `_lastEvent` rather than from the pointer —
+ * `Tooltip#update` forwards it verbatim. Its published type declares only
+ * `{ chart, tooltip }`, and the omission cannot be repaired by module
+ * augmentation because `external` is a method signature rather than a named
+ * argument type. So the argument is widened at the call site through this,
+ * which at least names what is being asserted and why.
+ */
+export interface TooltipExternalArgs {
+  replay?: boolean;
+}
+
 declare module 'chart.js' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface PluginOptionsByType<TType extends ChartType> {

@@ -428,6 +428,13 @@ describe('ChartTooltip strip mode on a narrow chart', () => {
 describe('ChartTooltip expanding a capped readout', () => {
   const overflowing = { scrollHeight: 400, clientHeight: 100 };
   const original: Partial<Record<keyof typeof overflowing, PropertyDescriptor>> = {};
+  /**
+   * `scrollTop` is stubbed as a real read/write pair rather than a constant,
+   * because one of the cases below is about the readout *writing* it. jsdom's
+   * own is inert — it accepts a value and reports 0 back.
+   */
+  let scrollTop = 0;
+  let originalScrollTop: PropertyDescriptor | undefined;
 
   beforeEach(() => {
     for (const [property, value] of Object.entries(overflowing)) {
@@ -438,12 +445,24 @@ describe('ChartTooltip expanding a capped readout', () => {
         get: () => value,
       });
     }
+    scrollTop = 0;
+    originalScrollTop =
+      Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop') ?? undefined;
+    Object.defineProperty(Element.prototype, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: (value: number) => {
+        scrollTop = value;
+      },
+    });
   });
 
   afterEach(() => {
     for (const [property, descriptor] of Object.entries(original)) {
       if (descriptor) Object.defineProperty(Element.prototype, property, descriptor);
     }
+    if (originalScrollTop)
+      Object.defineProperty(Element.prototype, 'scrollTop', originalScrollTop);
   });
 
   const narrowPinned = { containerWidth: 479, plotHeight: 300, isPinned: true };
@@ -520,6 +539,105 @@ describe('ChartTooltip expanding a capped readout', () => {
   /** The floating box has no cap, so it is never scrolling and never asks. */
   it('is not offered on the floating box', () => {
     expect(toggleIn(boxOf({ ...narrowPinned, containerWidth: 600 }))).toBeNull();
+  });
+
+  /**
+   * The gesture the case above stops short of. "A different Month" in a real
+   * chart is also different *content* and, where the reader tapped away from a
+   * pin, a different pinned state — and the collapse used to arrive a frame
+   * after both, on a passive effect, so the measurement that decides whether to
+   * offer the control ran against the Month that had already gone.
+   *
+   * Said plainly, because it would otherwise be assumed: the two cases below
+   * fail if the collapse goes away, and pass either way on the *ordering*. RTL
+   * flushes passive effects inside `act`, so the extra frame the derivation
+   * removes has already been and gone by the time anything can be asserted. What
+   * is covered here is the content and pin-state change the case above holds
+   * fixed; the frame itself is only observable in a browser.
+   */
+  /**
+   * One event, not several. What is under the cap is measured rather than
+   * counted — that is this block's whole premise — and a Month holding more than
+   * one draws the carousel's own buttons, which `toggleIn` would then find
+   * alongside the control it is looking for.
+   */
+  const oneEvent = [makeTransitEvent({ id: 'a', date: '2020-06', title: 'Detour' })];
+
+  const atMonth = (index: number, props: Partial<Parameters<typeof ChartTooltip>[0]>) => (
+    <ChartTooltip
+      index={index}
+      months={months}
+      datasets={datasets}
+      events={[]}
+      caret={{ x: 100, y: 20 }}
+      {...narrowPinned}
+      {...props}
+    />
+  );
+
+  it('opens collapsed on a Month whose events changed with it', () => {
+    const { container, rerender } = render(atMonth(1, { events: oneEvent }));
+    const box = container.querySelector<HTMLElement>('[data-testid="chart-tooltip"]')!;
+    fireEvent.click(toggleIn(box) as HTMLElement);
+    expect(box.style.maxHeight).toBe('');
+
+    rerender(atMonth(2, { events: [] }));
+
+    // Collapsed and re-measured in one commit: the cap is back, and the control
+    // that lifts it is offered for *this* Month rather than withheld because the
+    // last one was open when it was measured.
+    expect(box.dataset.expanded).toBe('false');
+    expect(box.style.maxHeight).toBe('100px');
+    expect(toggleIn(box)?.textContent).toBe('Expand');
+  });
+
+  /**
+   * The reported gesture, at this component's level. Tapping another month
+   * releases the pin (ADR-0011), so the readout can arrive unpinned on the same
+   * rerender that changes the Month.
+   */
+  it('opens collapsed when the pin is released with the Month', () => {
+    const { container, rerender } = render(atMonth(1, { events: oneEvent }));
+    const box = container.querySelector<HTMLElement>('[data-testid="chart-tooltip"]')!;
+    fireEvent.click(toggleIn(box) as HTMLElement);
+
+    rerender(atMonth(2, { events: oneEvent, isPinned: false }));
+
+    expect(box.dataset.expanded).toBe('false');
+    expect(box.style.maxHeight).toBe('100px');
+  });
+
+  /**
+   * A capped box that is holding something back always says so. Unpinned it
+   * cannot offer a button — it does not accept the pointer — so it says the one
+   * thing that leads anywhere. Reachable only with a mouse on a chart under
+   * 480px, a narrow panel on a desktop; a pointer that cannot hover has no
+   * unpinned readout at all (see `RidershipChart`).
+   */
+  it('names the way out even where it cannot offer the control', () => {
+    const box = boxOf({ ...narrowPinned, events: oneEvent, isPinned: false });
+    expect(toggleIn(box)).toBeNull();
+    expect(within(box).getByText('Click to pin')).toBeTruthy();
+  });
+
+  it('does not say it where there is nothing under the cap', () => {
+    const box = boxOf({ ...narrowPinned, containerWidth: 600, isPinned: false });
+    expect(within(box).queryByText('Click to pin')).toBeNull();
+  });
+
+  /**
+   * React reuses this element across Months and the browser keeps a scrolling
+   * box's `scrollTop` when its content is replaced, so a reader who scrolled
+   * through a busy Month met the next one already past its heading.
+   */
+  it('starts a new Month at its heading', () => {
+    const { container, rerender } = render(atMonth(1, { events: oneEvent }));
+    const box = container.querySelector<HTMLElement>('[data-testid="chart-tooltip"]')!;
+    box.scrollTop = 40;
+
+    rerender(atMonth(2, { events: oneEvent }));
+
+    expect(box.scrollTop).toBe(0);
   });
 });
 

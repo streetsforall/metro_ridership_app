@@ -131,14 +131,26 @@ These are the things that look like bugs and aren't.
   dep array is what stops the sparkline effect thrashing. `monthAxis` sits in the same array
   unstringified because `LineSelector` memoises it. Don't "fix" these.
 
-- **Chart plugins ignore replayed events, and the Range Selection plugin must.** `Chart#update`
-  finishes by replaying `_lastEvent` through the whole event pipeline, and `determineLastEvent`
-  keeps the *previous* event across a click — so after a press and release, `_lastEvent` is still
-  the `mousedown`. Every repaint therefore delivers a second `mousedown` to `afterEvent` with the
-  button already up. `rangeSelect` returns on `args.replay` for that reason: without it, pinning a
-  Month re-armed the press and the next mouse move painted a band the reader was not dragging.
-  Anything new that reads pointer state in `afterEvent` needs the same guard —
-  [`src/chart/rangeSelect.ts`](../src/chart/rangeSelect.ts).
+- **Everything that reads pointer state ignores replayed events.** `Chart#update` finishes by
+  replaying `_lastEvent` through the whole event pipeline, and `determineLastEvent` keeps the
+  *previous* event across a click — so after a press and release, `_lastEvent` is still the
+  `mousedown`. It also keeps the previous event whenever the pointer is outside `chartArea`, which
+  the Event Gutter always is. Every repaint therefore re-delivers a stale gesture, and pinning a
+  Month is a repaint.
+
+  Three paths read pointer state and all three return on the replay flag:
+
+  - [`src/chart/rangeSelect.ts`](../src/chart/rangeSelect.ts) — `args.replay` in `afterEvent`.
+    Without it a repaint re-armed the press and the next mouse move painted a band nobody dragged.
+  - [`src/chart/eventGutter.ts`](../src/chart/eventGutter.ts) — the same, added later. Without it a
+    replayed `click` re-answered the pin under the release-first rule (ADR-0011), and a replayed
+    `mousemove` put the hover back on the Month the reader had just left.
+  - the tooltip's `external` in [`src/components/RidershipChart.tsx`](../src/components/RidershipChart.tsx)
+    — not a plugin hook and so easily missed. **Chart.js passes `replay` here too, at runtime, but
+    its published types declare only `{ chart, tooltip }`**, so the flag has to be read through a
+    local widening (`TooltipExternalArgs`). That omission is why this one went unguarded longest.
+
+  Anything new that reads pointer state needs the same guard.
 
 - **Line colours.** Official rail and BRT lines have hardcoded brand colours in `definedLines`
   ([`src/utils/lines.ts`](../src/utils/lines.ts)); every other bus line gets a deterministic

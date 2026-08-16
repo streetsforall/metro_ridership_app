@@ -85,18 +85,38 @@ const renderChart = (
   return { ...view, onPinnedMonthRequest, onRangeSelect };
 };
 
-/** Drives the tooltip's `external` handler the way a real hover would. */
-const hoverMonth = (index: number | null) =>
+/**
+ * Drives the tooltip's `external` handler the way a real hover would.
+ *
+ * `replay` is the third field Chart.js passes and its own types leave out: set,
+ * it marks the call as coming from `Chart#update` replaying `_lastEvent` rather
+ * than from the pointer. See `TooltipExternalArgs`.
+ */
+const hoverMonth = (index: number | null, { replay = false } = {}) =>
   act(() => {
     const external = capturedOptions?.plugins?.tooltip?.external as unknown as (
-      args: { tooltip: { opacity: number; dataPoints?: { dataIndex: number }[] } },
+      args: {
+        tooltip: { opacity: number; dataPoints?: { dataIndex: number }[] };
+        replay?: boolean;
+      },
     ) => void;
-    external(
-      index === null
+    external({
+      ...(index === null
         ? { tooltip: { opacity: 0 } }
-        : { tooltip: { opacity: 1, dataPoints: [{ dataIndex: index }] } },
-    );
+        : { tooltip: { opacity: 1, dataPoints: [{ dataIndex: index }] } }),
+      replay,
+    });
   });
+
+/** The props `renderChart` supplies, so a rerender can vary one of them. */
+const chartProps = (props: Partial<Parameters<typeof RidershipChart>[0]>) => ({
+  chartDatasets: [dataset],
+  months,
+  transitEvents: [opening],
+  pinnedMonth: null,
+  highlightedMonth: null,
+  ...props,
+});
 
 /**
  * `type` is load-bearing, not decoration. Chart.js dispatches `onClick` for
@@ -197,6 +217,119 @@ describe('RidershipChart hover', () => {
     hoverMonth(5);
     hoverMonth(null);
     expect(screen.queryByTestId('chart-tooltip')).toBeNull();
+  });
+
+  /**
+   * A repaint is not a gesture. `Chart#update` — which pinning a month causes —
+   * replays `_lastEvent`, and `determineLastEvent` keeps the previous event
+   * across a click, so an unguarded `external` sets the hover back to the month
+   * the reader has just left. That is the intermittent half of the readout going
+   * out of step with the month tapped.
+   */
+  it('ignores a hover replayed by a repaint', () => {
+    renderChart();
+    hoverMonth(5);
+    hoverMonth(1, { replay: true });
+    expect(readoutMonth()).toBe('Jun 2020');
+  });
+});
+
+/**
+ * A finger has no resting position, so there is no month it is over. Chart.js
+ * reports one anyway — a tap synthesises a `mousemove` — and nothing ever takes
+ * it back, because touch fires no `mouseout`.
+ *
+ * Left standing under a released pin, that stale hover turned the release-first
+ * rule (ADR-0011) into a trap on a phone: tapping another month released the
+ * pin, the readout stayed up in its *unpinned* form, and on a chart that narrow
+ * the unpinned form is a strip capped at a third of the plot with no Expand
+ * control, no full description and no source link. A box naming a month it could
+ * not show, and no way out of it.
+ *
+ * So a release takes the readout with it, on every pointer.
+ */
+describe('RidershipChart releasing a pin', () => {
+  /** The reported gesture: pinned, then "exit" by tapping another month. */
+  it('dismisses the readout rather than leaving an unpinned one', () => {
+    const { rerender, onPinnedMonthRequest } = renderChart({ pinnedMonth: '2020 6' });
+
+    // The tap on another month: its phantom hover, then the click that, under
+    // release-first, asks for the pin rather than for that month.
+    hoverMonth(3);
+    fakeChart.getElementsAtEventForMode.mockReturnValue([{ index: 3 }]);
+    clickChart(120);
+    expect(onPinnedMonthRequest).toHaveBeenCalledWith('2020 4');
+
+    // What `OutputArea` sends back for that request while something is pinned.
+    rerender(
+      <RidershipChart
+        {...chartProps({ pinnedMonth: null })}
+        onPinnedMonthRequest={onPinnedMonthRequest}
+      />,
+    );
+
+    // The ghost named directly, not only counted: an unpinned readout is one a
+    // touch reader can neither dismiss nor, at this width, read.
+    expect(screen.queryByTestId('chart-tooltip')).toBeNull();
+    expect(
+      document.querySelector('[data-testid="chart-tooltip"][data-pinned="false"]'),
+    ).toBeNull();
+  });
+
+  /** The Event Gutter is the other writer of the hovered month. Same answer. */
+  it('drops a hover the Event Gutter reported', () => {
+    const { rerender, onPinnedMonthRequest } = renderChart({ pinnedMonth: '2020 6' });
+    act(() => capturedOptions?.plugins?.eventGutter?.onGutterHover?.(3));
+
+    rerender(
+      <RidershipChart
+        {...chartProps({ pinnedMonth: null })}
+        onPinnedMonthRequest={onPinnedMonthRequest}
+      />,
+    );
+
+    expect(screen.queryByTestId('chart-tooltip')).toBeNull();
+  });
+
+  /**
+   * Only a *release* clears it. Taking a pin while hovering leaves the hover
+   * where it is, so the readout the mouse is over survives the pointer moving
+   * off and back — which is the behaviour a pin was always layered on top of.
+   */
+  it('keeps the hover when a pin is taken', () => {
+    const { rerender, onPinnedMonthRequest } = renderChart();
+    hoverMonth(3);
+
+    rerender(
+      <RidershipChart
+        {...chartProps({ pinnedMonth: '2020 6' })}
+        onPinnedMonthRequest={onPinnedMonthRequest}
+      />,
+    );
+    expect(readoutMonth()).toBe('Jun 2020');
+
+    rerender(
+      <RidershipChart
+        {...chartProps({ pinnedMonth: null })}
+        onPinnedMonthRequest={onPinnedMonthRequest}
+      />,
+    );
+    // Released, so the hover underneath went too — not back to April.
+    expect(screen.queryByTestId('chart-tooltip')).toBeNull();
+  });
+
+  /** A pointer that then moves gets its readout back, as it always did. */
+  it('lets the next movement bring one back', () => {
+    const { rerender, onPinnedMonthRequest } = renderChart({ pinnedMonth: '2020 6' });
+    rerender(
+      <RidershipChart
+        {...chartProps({ pinnedMonth: null })}
+        onPinnedMonthRequest={onPinnedMonthRequest}
+      />,
+    );
+    hoverMonth(3);
+    expect(readoutMonth()).toBe('Apr 2020');
+    expect(screen.getByTestId('chart-tooltip').dataset.pinned).toBe('false');
   });
 });
 

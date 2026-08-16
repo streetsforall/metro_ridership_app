@@ -99,3 +99,45 @@ released over; only the later `click` pass, the one that got suppressed, was eve
 One deliberate behaviour change comes with it: a right-click inside the plot used to toggle the pin,
 via `contextmenu`. It no longer does anything. Nothing asked for that behaviour and no spec covered
 it.
+
+### What release-first exposed: a release that released nothing
+
+Found from a phone, after the Month Readout gained its top strip in #204. Recorded here rather than
+as its own decision, because it is this rule finishing rather than an exception to it.
+
+Release-first assumed that what sits *underneath* a released pin is transient. On a mouse it is: the
+hovered Month is disposed of by the next movement and ended for good by `mouseout`. A touch screen
+sends no `mouseout`, and a finger has no resting position — so the hover a tap synthesises is not
+"the Month under the pointer" but "the last Month tapped", permanently.
+
+Releasing a pin therefore did not release anything the reader could see. The readout stayed up in
+its *unpinned* form, which on a narrow chart is a strip still capped at a third of the plot but with
+no Expand control, no full description and no source link: a box naming a Month whose event it was
+too short to show, and offering nothing to open. Meanwhile the context-log panel banded no row,
+because nothing was pinned — the two views disagreed, which is the thing the shared pin exists to
+prevent.
+
+**So releasing a pin releases the Month Readout with it, on every pointer.** The claim above that
+*"the tooltip carries the event content in full, so the context-log panel is a second view"* is what
+this restores: unpinned on a phone, it carried none of it.
+
+Every pointer, rather than only the ones that cannot hover, and that is a decision rather than
+laziness. Asking the platform — `matchMedia('(hover: none)')`, and dropping the hover only there —
+reads better and does not work: the same emulated phone answers that query differently between one
+render and the next, so the fix would hold or not hold at random, and the test proving it would be
+flaky in both directions. A rule that has to be true cannot rest on an answer that wobbles.
+
+What it costs on a mouse: releasing a pin without moving the pointer takes the readout away rather
+than leaving a hovering one behind, until the pointer moves. Small, and arguably what "release"
+should have looked like all along — the reader clicking to dismiss gets a dismissal.
+
+The plausible-looking alternative, recorded so it is argued with rather than rediscovered: decouple
+**Expand** from the pin, and let the orphaned readout open itself. The strip sits wholly above the
+plot and so, unlike the floating box, could safely take the pointer. It is still wrong. Unpinned
+means clamped descriptions and no source links — that is what pinning *is* — so an expanded unpinned
+strip would show its full height with its content still abridged, and "Expand" would mean "all of
+the shortened version". That is precisely the confusion `STRIP_HEIGHT_SHARE` rejected a second cap
+for. It would also leave a release that visibly releases nothing.
+
+The two-click cost above is unchanged by this. It was already the price of the rule; the first of
+the two clicks now clears the screen rather than half-clearing it.
