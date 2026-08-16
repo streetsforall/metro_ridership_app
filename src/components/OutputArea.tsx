@@ -129,13 +129,6 @@ export default function OutputArea({
   });
 
   /**
-   * Jump the Month Window to the Stop Coverage Window.
-   *
-   * Routed through `onRangeSelect` — the very setters a drag across the chart uses —
-   * so one press moves the pickers, the chart and the URL together. The only work here
-   * is the spelling: coverage is `YYYY-MM`, the chart's labels are `"YYYY M"`.
-   */
-  /**
    * The chart's own month axis, respelled for the stop panel.
    *
    * The two derivations spell a month differently — the chart's labels are `"YYYY M"`,
@@ -145,6 +138,13 @@ export default function OutputArea({
    */
   const windowMonths = useMemo(() => months.map(labelToEventDate), [months]);
 
+  /**
+   * Jump the Month Window to the Stop Coverage Window.
+   *
+   * Routed through `onRangeSelect` — the very setters a drag across the chart uses —
+   * so one press moves the pickers, the chart and the URL together. The only work here
+   * is the spelling: coverage is `YYYY-MM`, the chart's labels are `"YYYY M"`.
+   */
   const useCoverageWindow = useCallback(
     (from: string, to: string) => {
       onRangeSelect?.(eventDateToLabel(from), eventDateToLabel(to));

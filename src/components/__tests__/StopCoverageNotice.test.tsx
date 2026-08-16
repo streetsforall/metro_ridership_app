@@ -72,10 +72,20 @@ describe('StopCoverageNotice', () => {
     ).toBeNull();
   });
 
-  it('says so when no stop data has been ingested', () => {
-    renderNotice({ state: 'no-data' });
+  /**
+   * The manifest is built from the committed payloads, which are present, so the
+   * "nothing ingested" branch is not reachable in this suite — and that is the point
+   * of the branch living there rather than being read off the view, where it *was*
+   * reachable, by any slow fetch.
+   */
+  it('states the covered span while a payload is still loading', () => {
+    renderNotice({ state: 'unknown', months: [] });
+    expect(
+      document.querySelector('[data-qa="stop-coverage-span"]'),
+    ).toBeTruthy();
     expect(
       document.querySelector('[data-qa="stop-coverage-no-data"]'),
-    ).toBeTruthy();
+    ).toBeNull();
+    expect(document.querySelector('[data-qa="stop-coverage-empty"]')).toBeNull();
   });
 });

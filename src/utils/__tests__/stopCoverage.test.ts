@@ -13,14 +13,20 @@ const coverage = (overrides: Partial<StopCoverage> = {}): StopCoverage => ({
 const WINDOW = ['2025-07', '2025-08', '2025-09', '2026-06'];
 
 describe('stopCoverageState', () => {
-  it('reports no data when the payload covers nothing', () => {
+  /**
+   * An empty coverage is `buildStopView`'s loading state *and* its failed-fetch state,
+   * so it cannot mean "there is no stop data" — reading it that way had the panel
+   * announcing an un-ingested dataset every time the network was slow. Whether stop
+   * data exists at all is a build-time fact and comes from the manifest instead.
+   */
+  it('says nothing about a window it has no data for yet', () => {
     expect(
       stopCoverageState({
         coverage: coverage({ from: null, to: null, overlapsWindow: false }),
         months: [],
         windowMonths: WINDOW,
       }),
-    ).toBe('no-data');
+    ).toBe('unknown');
   });
 
   /**

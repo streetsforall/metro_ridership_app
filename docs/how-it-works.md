@@ -188,9 +188,10 @@ further dynamic import. The panel itself is `#stop-panel`, opened with `stops=1`
 ## The map
 
 [`src/components/Map.tsx`](../src/components/Map.tsx) uses MapLibre GL and loads route geometry from
-`public/metro_lines.geojson`. Three layers: `lines-all` (dimmed), `lines-selected` (brand colours)
-and `stops-selected` (circles, above both), each filtered by the selected line ids via `setFilter`.
-Base tiles come from MapTiler when `VITE_MAPTILER_KEY` is set, otherwise OpenFreeMap.
+`public/metro_lines.geojson`. Three layers: `lines-all` (dimmed, and the only unfiltered one — it
+draws the whole network), then `lines-selected` (brand colours) and `stops-selected` (circles, above
+both), which are filtered by the selected line ids via `setFilter`. Base tiles come from MapTiler
+when `VITE_MAPTILER_KEY` is set, otherwise OpenFreeMap.
 
 The map instance lives in a ref and is initialised once. **Selection changes only update the layer
 filter** — the map itself is never rebuilt. The stop source and layer are added **once, on first
