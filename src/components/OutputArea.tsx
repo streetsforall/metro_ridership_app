@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChartDataset } from 'chart.js';
 import SummaryData from './SummaryData';
 import Map from './Map';
@@ -46,6 +46,24 @@ export default function OutputArea({
   const [hoveredMonth, setHoveredMonth] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
+  /**
+   * The release-before-taking half of ADR-0011, stated once for every view that
+   * asks. While anything is pinned a request pins nothing; only a further
+   * request pins the month it names.
+   *
+   * The chart, the Event Gutter and the log all route through here rather than
+   * deciding for themselves, because they are three views of one piece of state
+   * and a state that behaves three ways is three states.
+   *
+   * A request naming no month releases whichever branch it takes, which is why
+   * Escape needs no rule of its own. Note that a plot click landing on no
+   * element is *not* such a request — it makes none at all, and the pin is held
+   * (ADR-0010); the tooltip's hint says "any month" for that reason.
+   */
+  const requestPin = useCallback((month: string | null) => {
+    setPinnedMonth((pinned) => (pinned === null ? month : null));
+  }, []);
+
   /** Whether any line is selected, and so whether there is anything to chart. */
   const hasSelection = chartDatasets.length > 0;
 
@@ -76,7 +94,7 @@ export default function OutputArea({
           months={months}
           transitEvents={transitEvents}
           pinnedMonth={pinnedMonth}
-          onPinnedMonthChange={setPinnedMonth}
+          onPinnedMonthRequest={requestPin}
           highlightedMonth={hoveredMonth}
           onRangeSelect={onRangeSelect}
         />
@@ -127,9 +145,7 @@ export default function OutputArea({
         <ContextLogPanel
           events={transitEvents}
           pinnedMonth={pinnedMonth}
-          onSelectMonth={(month) =>
-            setPinnedMonth((pinned) => (pinned === month ? null : month))
-          }
+          onSelectMonth={requestPin}
           onHoverMonthChange={setHoveredMonth}
         />
       )}

@@ -1,9 +1,8 @@
 # A pin marks what is read; it never moves what is shown
 
-Status: accepted, **not yet implemented** —
-[#199](https://github.com/streetsforall/metro_ridership_app/issues/199) lands the release-first rule
-and [#200](https://github.com/streetsforall/metro_ridership_app/issues/200) the removal of the
-auto-move.
+Status: accepted, **fully landed** — the no-auto-move rule shipped in
+[#200](https://github.com/streetsforall/metro_ridership_app/issues/200) and the release-first rule
+in [#199](https://github.com/streetsforall/metro_ridership_app/issues/199).
 
 A Pinned Month is a mark. It says *this is the Month everything is reporting on*, and that is the
 whole of its job. It does not decide which Month gets marked next, and it does not open, scroll or
@@ -76,3 +75,27 @@ costs the reader nothing they cannot read on the chart.
   removed. They are deleted rather than adjusted, and replaced by ones asserting the panel holds
   still.
 - `CONTEXT.md` gains **Pinned Month**, which states the release-first rule as part of the term.
+
+### What release-first exposed: one gesture, two `onClick` dispatches
+
+Found while implementing #199, and recorded here because it looks like a bug and is not.
+`RidershipChart`'s click handler opens with `if (event.type !== 'click') return;`.
+
+Chart.js's `_isClickEvent` is `type === 'mouseup' || type === 'click' || type === 'contextmenu'`,
+and `_handleEvent` dispatches `options.onClick` for any of the three. `mouseup` is in the chart's
+`events` list because the Range Selection plugin needs it and a plugin cannot subscribe on its own
+account — so **one press and release reaches the pin handler twice**.
+
+The per-month toggle this decision replaces survived that by accident: both passes computed their
+answer from the same `pinnedMonth` prop, which had not re-rendered in between, so both asked for the
+same month and the second changed nothing. Release-first has no such luck — the second request
+releases what the first pinned, and a click pins nothing at all.
+
+The guard also repairs the Range Selection suppression, which had never actually been doing its job.
+`Chart#_eventHandler` runs `options.onClick` *before* `notifyPlugins('afterEvent')`, so on `mouseup`
+the handler ran while the plugin's suppression flag was still unset and pinned the month the drag
+released over; only the later `click` pass, the one that got suppressed, was ever guarded.
+
+One deliberate behaviour change comes with it: a right-click inside the plot used to toggle the pin,
+via `contextmenu`. It no longer does anything. Nothing asked for that behaviour and no spec covered
+it.

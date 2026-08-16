@@ -12,7 +12,11 @@ export interface ContextLogPanelProps {
   events: TransitEvent[];
   /** Pinned month label (`"YYYY M"`); its rows are highlighted where they sit. */
   pinnedMonth: string | null;
-  /** Clicking a row pins its month on the chart. */
+  /**
+   * Asks for a row's month to be pinned. A request, not a pin: while any month
+   * is pinned the answer is a release, and the same rule holds on the chart —
+   * see `OutputArea`.
+   */
   onSelectMonth: (month: string) => void;
   /** Hovering a row enlarges that month's dot. */
   onHoverMonthChange: (month: string | null) => void;
@@ -22,9 +26,10 @@ export interface ContextLogPanelProps {
  * The events in the current window, as a scrolling list below the chart and map.
  *
  * The rows and the chart's dots are two views of one set, so each row is a
- * button: hovering it enlarges its dot, clicking it pins that month's tooltip,
- * and pinning a dot on the chart marks the row here. Without that pairing the
- * panel is a second, unrelated list that happens to share data.
+ * button: hovering it enlarges its dot, clicking it asks for that month's
+ * tooltip to be pinned, and pinning a dot on the chart marks the row here.
+ * Without that pairing the panel is a second, unrelated list that happens to
+ * share data.
  */
 export default function ContextLogPanel({
   events,

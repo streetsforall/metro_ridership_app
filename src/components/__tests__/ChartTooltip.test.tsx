@@ -180,6 +180,18 @@ describe('ChartTooltip pinning', () => {
   });
 
   /**
+   * Under the release-first rule a click on *any* month releases, not only the
+   * one pinned — but a click landing on no month asks for nothing and the pin
+   * survives, so the hint may not promise "anywhere" either. See ADR-0011.
+   */
+  it('names a month as what to click, rather than promising anywhere', () => {
+    renderTooltip({ isPinned: true });
+    expect(screen.getByText(/Click any month/)).toBeTruthy();
+    expect(screen.queryByText(/Click anywhere/)).toBeNull();
+    expect(screen.queryByText(/Click again/)).toBeNull();
+  });
+
+  /**
    * The clamped description and the missing source link are both undone by
    * pinning, and nothing on screen said so — a reader who hit a truncated
    * description had no reason to believe there was more.
