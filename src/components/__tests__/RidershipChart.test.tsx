@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import type { ChartDataset, ChartOptions } from 'chart.js';
 import RidershipChart from '../RidershipChart';
@@ -461,5 +461,97 @@ describe('RidershipChart range selection', () => {
     const { onRangeSelect } = renderChart();
     selectRange(2, 99);
     expect(onRangeSelect).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The width the readout is handed decides its layout, so it has to be right on
+ * the first painted frame. It used to be read off a ref during render — zero
+ * until some unrelated re-render happened to come along, which for a clamp was
+ * a few pixels of drift and for a mode is the wrong mode, held.
+ *
+ * jsdom lays nothing out and ships no `ResizeObserver`, so both halves of the
+ * measurement are driven by hand here: `clientWidth` for the initial read, a
+ * captured observer callback for the resize.
+ */
+describe('RidershipChart plot measurement', () => {
+  const realResizeObserver = window.ResizeObserver;
+  let observed: Element[] = [];
+  let resizeTo: ((width: number) => void) | null = null;
+
+  beforeEach(() => {
+    observed = [];
+    resizeTo = null;
+    window.ResizeObserver = class {
+      callback: ResizeObserverCallback;
+      constructor(callback: ResizeObserverCallback) {
+        this.callback = callback;
+        resizeTo = (width: number) =>
+          act(() => {
+            this.callback(
+              [{ contentRect: { width } } as ResizeObserverEntry],
+              this as unknown as ResizeObserver,
+            );
+          });
+      }
+      observe(element: Element) {
+        observed.push(element);
+      }
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+  });
+
+  afterEach(() => {
+    window.ResizeObserver = realResizeObserver;
+  });
+
+  /** Every element in jsdom is 0×0; this is the only way to have a width at all. */
+  const withPlotWidth = (width: number, run: () => void) => {
+    const original = Object.getOwnPropertyDescriptor(Element.prototype, 'clientWidth');
+    Object.defineProperty(Element.prototype, 'clientWidth', {
+      configurable: true,
+      get: () => width,
+    });
+    try {
+      run();
+    } finally {
+      if (original) Object.defineProperty(Element.prototype, 'clientWidth', original);
+    }
+  };
+
+  const layout = () => screen.getByTestId('chart-tooltip').dataset.layout;
+
+  it('observes the plot box', () => {
+    renderChart();
+    expect(observed).toContain(chartSurface());
+  });
+
+  /**
+   * No resize is reported here, so a readout in the wide layout can only have
+   * come from the measurement taken as the plot mounted.
+   */
+  it('has the plot width before anything resizes', () => {
+    withPlotWidth(900, renderChart);
+    hoverMonth(5);
+    expect(layout()).toBe('floating');
+  });
+
+  it('re-measures on a resize, switching the readout to the narrow layout', () => {
+    withPlotWidth(900, renderChart);
+    hoverMonth(5);
+    expect(layout()).toBe('floating');
+
+    resizeTo?.(320);
+    expect(layout()).toBe('strip');
+  });
+
+  it('switches back when the plot grows again', () => {
+    withPlotWidth(320, renderChart);
+    hoverMonth(5);
+    expect(layout()).toBe('strip');
+
+    resizeTo?.(900);
+    expect(layout()).toBe('floating');
   });
 });

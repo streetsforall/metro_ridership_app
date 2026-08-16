@@ -49,19 +49,6 @@ Entries are newest first.
   upward per stop. See `scripts/README.md`.
 - Ingested via `update_ridership.py` on 2026-08-15.
 
-## Jun 2026
-
-- **Months:** June 2026
-- **Source:** `data/raw/2026-06_2026-06.zip`
-- **Modes:** Bus + Rail
-- **Added:** 114 records across 114 lines
-- Ingested via `update_ridership.py` on 2026-08-15.
-- **Note:** line 805 (D/Purple) weekday boardings fall 39,626 → 23,787. The drop is in the
-  source data and is confined to the eight original stations (Union Station through
-  Wilshire/Western, all −41% to −52%); the three extension stations (La Brea, Fairfax,
-  La Cienega) are flat. B/Red (802) is unaffected over the same segment, so this reads as a
-  D-Line-only service disruption rather than an aggregation error.
-
 ## D/Purple Line split from B/Red (reprocessing)
 
 - **Type:** data-model correction — no new months added
@@ -106,7 +93,7 @@ Entries are newest first.
 
 Ridership data from January 2009 through June 2025 predates this log and was sourced
 before the CPRA/Excel workflow. It is the starting baseline for the entries above.
-`ridership.json` currently spans **2009-01 → 2026-06**.
+`ridership.json` currently spans **2009-01 → 2026-05**.
 
 ---
 

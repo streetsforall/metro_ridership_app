@@ -60,6 +60,39 @@ tooltip's event entries. Where the chip appears, the title beside it is neutral 
 category and nothing else.
 _Avoid_: badge, tag, pill, category label
 
+**Month Readout**:
+What the chart says about one Month: its ridership per Line, then the Transit Events that Month
+carries — one at a time, through an Event Carousel. It has two layouts and picks between them from
+the width the chart measures for it, not from the viewport — a chart placed in a narrow panel on a
+wide screen is a narrow chart. Above the
+threshold it is a **floating box** beside the crosshair, flipping and clamping to stay inside the
+plot. Below it the box is most of the plot's width and the clamp overrides the gap holding it off
+the crosshair, so it becomes a **top strip** instead: full width, edge padding both sides, no flip
+and no clamp, capped at a third of the plot's height and scrolling within that. It sits *above* the
+chart rather than on any part of it, escaping the pane's padding and border to do so — the readout
+and the Month it describes stop competing for the same pixels, which is the whole of the mode. The
+cap is the reader's to lift: a pinned strip with anything under it offers **Expand**, which removes
+the ceiling rather than raising it, so nothing is left clipped. Distinct from a Line Readout, which is figures for one Line
+over the whole Month Window.
+_Caution_: "strip" is the Event Gutter's word too, and the two are different things at opposite ends
+of the plot. Say **top strip** or **Month Readout strip** where both are in play.
+_Avoid_: tooltip content, hover card, mobile tooltip
+
+**Event Carousel**:
+How a Month Readout presents a Month carrying more than one Transit Event: one event on show, a
+position indicator saying which of how many, and Prev/Next to step. **The same component and the
+same behaviour in both of the readout's layouts** — the readout is not relearned between a phone and
+a desktop. A Month with exactly one event has no carousel at all: there is nothing to step through
+and "1 of 1" is not information. Moving to a different Month reopens at the first event. The
+controls appear only on a Pinned Month, on the same terms as Expand — an unpinned readout does not
+take the pointer, so a control on one could be seen and not pressed — while the position indicator
+shows either way, since it is what tells a hovering reader that pinning would get them anywhere.
+_Caution_: **the arrow keys are deliberately not bound to it.** Left and Right mean "change Month"
+wherever focus sits, including on a control. The controls are reached by Tab and fired by Enter or
+Space. Binding the arrows here is the obvious next change and the wrong one — the same key would
+mean two things depending on invisible focus state.
+_Avoid_: pager, slider, event list, stepper
+
 **Pinned Month**:
 The single sticky Month the chart, the tooltip and the context-log panel all read. Owned by the
 output area rather than by any one of them, because they are three views of one piece of state.
