@@ -217,11 +217,62 @@ describe('chart → ContextLogPanel', () => {
     ).toBe('false');
   });
 
-  it('rings the pinned row', () => {
+  /**
+   * Selection is the row's, not the button's. These assert the classes rather
+   * than computed style because jsdom resolves no Tailwind, so the class list is
+   * the only place the intent is visible from here; the rendered result is what
+   * `context-logs.spec.ts` covers.
+   */
+  it('bands the pinned row and thickens its rule', () => {
+    const { container } = renderPanel([opening], { pinnedMonth: '2023 2' });
+    const row = container.querySelector('#context-log-panel li');
+    expect(row?.className).toContain('bg-stone-200');
+    expect(row?.className).toContain('border-l-4');
+  });
+
+  it('leaves an unpinned row unbanded, on the thin rule', () => {
+    const { container } = renderPanel([opening], { pinnedMonth: null });
+    const row = container.querySelector('#context-log-panel li');
+    expect(row?.className).not.toContain('bg-stone-200');
+    expect(row?.className).toContain('border-l-2');
+  });
+
+  /**
+   * The band is neutral on every category deliberately — a tinted one would
+   * shout on some hues and whisper on others. Two categories, one class list.
+   */
+  it('bands every category the same', () => {
+    const bandedRowClass = (event: TransitEvent, month: string) => {
+      const { container, unmount } = renderPanel([event], {
+        pinnedMonth: month,
+      });
+      const className = container.querySelector(
+        '#context-log-panel li',
+      )?.className;
+      unmount();
+      return className;
+    };
+    const banded = bandedRowClass(opening, '2023 2');
+    expect(banded).toBeTruthy();
+    expect(bandedRowClass(closure, '2019 5')).toBe(banded);
+  });
+
+  /**
+   * The ring used to be drawn only while pinned, so it was doubling as the
+   * keyboard focus indicator. Selection has moved to the row, which would leave
+   * focus with no mark at all — and an invisible focus ring is exactly the
+   * regression a screenshot cannot catch, so it is asserted here instead.
+   */
+  it('keeps a focus ring on the row control, independent of selection', () => {
+    renderPanel([opening], { pinnedMonth: null });
+    const row = screen.getByRole('button', { name: /Regional Connector/ });
+    expect(row.className).toContain('focus-visible:ring-2');
+  });
+
+  it('no longer rings the pinned row', () => {
     renderPanel([opening], { pinnedMonth: '2023 2' });
-    expect(
-      screen.getByRole('button', { name: /Regional Connector/ }).className,
-    ).toContain('ring-2');
+    const row = screen.getByRole('button', { name: /Regional Connector/ });
+    expect(row.className).not.toContain('ring-stone-400');
   });
 
   /**
