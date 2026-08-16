@@ -105,9 +105,17 @@ describe('ChartTooltip event context', () => {
     source: 'https://example.com/connector',
   });
 
+  /**
+   * The entry has no role and no accessible name of its own, so the divider it
+   * is separated by is the only handle on it. Named once here rather than spelt
+   * out at each use, so a change to how entries are divided is one edit.
+   */
+  const eventEntry = (container: HTMLElement) =>
+    container.querySelector<HTMLElement>('.border-t');
+
   it('shows no event section for a month with nothing in it', () => {
     const { container } = renderTooltip();
-    expect(container.querySelector('.border-t')).toBeNull();
+    expect(eventEntry(container)).toBeNull();
   });
 
   /**
@@ -130,7 +138,7 @@ describe('ChartTooltip event context', () => {
   /** `within` the entry, because the tooltip's own heading reads "Jun 2020" too. */
   it('still shows the event date', () => {
     const { container } = renderTooltip({ events: [opening] });
-    const entry = container.querySelector('.border-t') as HTMLElement;
+    const entry = eventEntry(container) as HTMLElement;
     expect(within(entry).getByText('Jun 2020')).toBeTruthy();
   });
 
@@ -158,7 +166,7 @@ describe('ChartTooltip event context', () => {
   /** Title, then chip and date, then description. */
   it('reads title first, with the chip and date beneath it', () => {
     const { container } = renderTooltip({ events: [opening] });
-    const entry = container.querySelector('.border-t') as HTMLElement;
+    const entry = eventEntry(container) as HTMLElement;
     const title = screen.getByText('Regional Connector Opening');
     const chipRow = screen.getByText('Opening').parentElement as HTMLElement;
     const description = screen.getByText(/downtown tunnel/);
