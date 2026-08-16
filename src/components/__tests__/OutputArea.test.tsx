@@ -218,6 +218,20 @@ describe('chart ↔ context log', () => {
     });
     expect(logRow().getAttribute('aria-pressed')).toBe('true');
   });
+
+  /**
+   * A pin marks; it does not move. Pinning from the chart leaves the panel where
+   * the reader left it, collapsed included — so the row it marks may not be on
+   * screen at all. The tooltip carries the event content, so that costs nothing.
+   */
+  it('leaves the panel collapsed when the chart pins a month', () => {
+    renderWithEvents();
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
+    act(() => {
+      chartProps?.onPinnedMonthChange('2023 2');
+    });
+    expect(screen.queryByText('Regional Connector Opening')).toBeNull();
+  });
 });
 
 /**
