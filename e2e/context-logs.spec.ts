@@ -68,6 +68,43 @@ test('context log panel renders its events', async ({ page }) => {
 });
 
 /**
+ * The selected row, as a band.
+ *
+ * This case exists because nothing else pins it. `chart-interaction.spec.ts` covers the
+ * chart ↔ row link but is DOM-only, `chart-tooltip.spec.ts` clicks a row to pin and then
+ * crops the chart, and the two shots either side of this one are of an unpinned panel — so
+ * before this test the selected state had no visual coverage at all, and the change that
+ * moved selection from a ring inside the button to a band across the row regenerated
+ * nothing.
+ *
+ * Same window and line as the shot above, for the reasons in this file's header. The first
+ * row is `2020-03 "COVID-19 Service Reductions"`, whose category is `disruption`; the band
+ * is neutral on every category by design, so which one is pinned does not matter to what is
+ * being asserted, only that a row is.
+ *
+ * `shootPane` parks the cursor at 0,0 before capturing, which clears the row's hover. The
+ * pin survives it — it is state, not hover — and Chromium does not match `:focus-visible`
+ * on a button focused by a mouse click, so this baseline carries the band alone and not the
+ * focus ring. Focus is asserted in `ContextLogPanel.test.tsx`; a ring is a few hundred
+ * pixels on a large pane and a screenshot is the wrong instrument for it.
+ */
+test('the pinned row takes a band across the full row', async ({ page }) => {
+  await gotoDashboard(
+    page,
+    '?logs=1&lines=801&start=2019-06&end=2020-12&day=wkday',
+  );
+
+  const row = page.locator('#context-log-panel li button').first();
+  await row.click();
+  // Prove the pin before capturing. Without it `--update-snapshots` would happily rebase
+  // this baseline onto an unpinned panel and the case would assert nothing.
+  await expect(row).toHaveAttribute('aria-pressed', 'true');
+
+  await unclampLog(page);
+  await shootPane(page, '#context-log-panel', 'context-log-panel-pinned.png');
+});
+
+/**
  * Every category, in one panel — the visual contract for the nine-hue palette.
  *
  * The window above holds `disruption`, `hours_change` and `route_change` only, so six of the
