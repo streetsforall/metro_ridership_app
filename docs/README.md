@@ -48,7 +48,7 @@ Then read whichever guide matches what you're about to do. Don't read them all.
 | [0008](adr/0008-panel-layout-is-a-tailwind-grid-with-url-synced-settings.md) | Panel layout is a Tailwind grid with URL-synced settings; dockview was reverted | accepted |
 | [0009](adr/0009-the-two-window-rules-are-one-rule.md) | One window rule, inclusive on both ends — the chart's two-month offset is gone | accepted, **supersedes 0001** |
 | [0010](adr/0010-the-event-gutter-hit-tests-itself.md) | The Event Gutter hit-tests itself, because Chart.js will not | accepted |
-| [0011](adr/0011-a-pin-marks-it-never-moves-a-view.md) | A pin marks what is read; it never moves what is shown — release before taking, and no auto-move | accepted, **half landed** — #199 shipped release-first; #200 still owes the no-auto-move half |
+| [0011](adr/0011-a-pin-marks-it-never-moves-a-view.md) | A pin marks what is read; it never moves what is shown — release before taking, and no auto-move | accepted, fully landed — #200 removed the auto-move, #199 made the pin release first |
 
 ## Not for humans
 

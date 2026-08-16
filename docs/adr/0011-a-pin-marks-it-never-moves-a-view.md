@@ -1,9 +1,8 @@
 # A pin marks what is read; it never moves what is shown
 
-Status: accepted, **half landed** — the release-first rule shipped in
-[#199](https://github.com/streetsforall/metro_ridership_app/issues/199);
-[#200](https://github.com/streetsforall/metro_ridership_app/issues/200) still has to remove the
-auto-move, so `ContextLogPanel` currently still opens itself and scrolls a pinned row into view.
+Status: accepted, **fully landed** — the no-auto-move rule shipped in
+[#200](https://github.com/streetsforall/metro_ridership_app/issues/200) and the release-first rule
+in [#199](https://github.com/streetsforall/metro_ridership_app/issues/199).
 
 A Pinned Month is a mark. It says *this is the Month everything is reporting on*, and that is the
 whole of its job. It does not decide which Month gets marked next, and it does not open, scroll or
