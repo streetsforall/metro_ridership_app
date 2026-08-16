@@ -68,7 +68,7 @@ const opening = makeTransitEvent({
 const renderChart = (
   props: Partial<Parameters<typeof RidershipChart>[0]> = {},
 ) => {
-  const onPinnedMonthChange = vi.fn();
+  const onPinnedMonthRequest = vi.fn();
   const onRangeSelect = vi.fn();
   const view = render(
     <RidershipChart
@@ -76,13 +76,13 @@ const renderChart = (
       months={months}
       transitEvents={[opening]}
       pinnedMonth={null}
-      onPinnedMonthChange={onPinnedMonthChange}
+      onPinnedMonthRequest={onPinnedMonthRequest}
       highlightedMonth={null}
       onRangeSelect={onRangeSelect}
       {...props}
     />,
   );
-  return { ...view, onPinnedMonthChange, onRangeSelect };
+  return { ...view, onPinnedMonthRequest, onRangeSelect };
 };
 
 /** Drives the tooltip's `external` handler the way a real hover would. */
@@ -98,16 +98,24 @@ const hoverMonth = (index: number | null) =>
     );
   });
 
-const clickChart = (x: number) => {
+/**
+ * `type` is load-bearing, not decoration. Chart.js dispatches `onClick` for
+ * `mouseup` as well as `click` — see `_isClickEvent` — and both are in the event
+ * list because the drag plugin needs `mouseup`, so a fixture without a type
+ * would drive a pass the component deliberately ignores.
+ */
+const dispatchChartEvent = (x: number, type: 'click' | 'mouseup') => {
   const onClick = capturedOptions?.onClick as unknown as (
-    event: { x: number; native: Event },
+    event: { x: number; type: string; native: Event },
     elements: unknown[],
     chart: unknown,
   ) => void;
   act(() => {
-    onClick({ x, native: new MouseEvent('click') }, [], fakeChart);
+    onClick({ x, type, native: new MouseEvent(type) }, [], fakeChart);
   });
 };
+
+const clickChart = (x: number) => dispatchChartEvent(x, 'click');
 
 const chartSurface = () => screen.getByRole('application');
 
@@ -183,19 +191,57 @@ describe('RidershipChart hover', () => {
   });
 });
 
+/**
+ * The chart names the month a gesture landed on and stops there. What that does
+ * to the pin — take it, release it — is the rule shared with the context log and
+ * lives in `OutputArea`, which is where the release-first behaviour is asserted.
+ */
 describe('RidershipChart pinning', () => {
-  it('pins the clicked month', () => {
-    const { onPinnedMonthChange } = renderChart();
+  it('reports the clicked month', () => {
+    const { onPinnedMonthRequest } = renderChart();
     fakeChart.getElementsAtEventForMode.mockReturnValue([{ index: 5 }]);
     clickChart(175);
-    expect(onPinnedMonthChange).toHaveBeenCalledWith('2020 6');
+    expect(onPinnedMonthRequest).toHaveBeenCalledWith('2020 6');
   });
 
-  it('unpins when the pinned month is clicked again', () => {
-    const { onPinnedMonthChange } = renderChart({ pinnedMonth: '2020 6' });
+  /** Not `null`: the chart does not decide that a re-click is a release. */
+  it('reports the month even when it is the one already pinned', () => {
+    const { onPinnedMonthRequest } = renderChart({ pinnedMonth: '2020 6' });
     fakeChart.getElementsAtEventForMode.mockReturnValue([{ index: 5 }]);
     clickChart(175);
-    expect(onPinnedMonthChange).toHaveBeenCalledWith(null);
+    expect(onPinnedMonthRequest).toHaveBeenCalledWith('2020 6');
+  });
+
+  /**
+   * One press and release reaches `onClick` twice. Acting on both would ask for
+   * the same month twice, and under the release-first rule the second request
+   * undoes the first — a click that pins nothing at all.
+   */
+  it('reports nothing for the mouseup half of a click', () => {
+    const { onPinnedMonthRequest } = renderChart();
+    fakeChart.getElementsAtEventForMode.mockReturnValue([{ index: 5 }]);
+    dispatchChartEvent(175, 'mouseup');
+    expect(onPinnedMonthRequest).not.toHaveBeenCalled();
+  });
+
+  /**
+   * And it is the `mouseup` pass that runs before the drag plugin's `afterEvent`
+   * sets the suppression flag, so ignoring it is also what stops a completed
+   * Range Selection pinning the month it released over.
+   */
+  it('reports once, not twice, for a whole press and release', () => {
+    const { onPinnedMonthRequest } = renderChart();
+    fakeChart.getElementsAtEventForMode.mockReturnValue([{ index: 5 }]);
+    dispatchChartEvent(175, 'mouseup');
+    dispatchChartEvent(175, 'click');
+    expect(onPinnedMonthRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a different month while one is pinned, without deciding', () => {
+    const { onPinnedMonthRequest } = renderChart({ pinnedMonth: '2020 6' });
+    fakeChart.getElementsAtEventForMode.mockReturnValue([{ index: 1 }]);
+    clickChart(60);
+    expect(onPinnedMonthRequest).toHaveBeenCalledWith('2020 2');
   });
 
   /**
@@ -205,22 +251,23 @@ describe('RidershipChart pinning', () => {
    * be two routes to one pin — see ADR-0010.
    */
   it('pins nothing from a plot click that hits no element', () => {
-    const { onPinnedMonthChange } = renderChart();
+    const { onPinnedMonthRequest } = renderChart();
     fakeChart.getElementsAtEventForMode.mockReturnValue([]);
     clickChart(175);
-    expect(onPinnedMonthChange).not.toHaveBeenCalled();
+    expect(onPinnedMonthRequest).not.toHaveBeenCalled();
   });
 
-  it('pins the month the gutter reports from below the axis', () => {
-    const { onPinnedMonthChange } = renderChart();
+  it('reports the month the gutter names from below the axis', () => {
+    const { onPinnedMonthRequest } = renderChart();
     capturedOptions?.plugins?.eventGutter?.onGutterClick?.(5);
-    expect(onPinnedMonthChange).toHaveBeenCalledWith('2020 6');
+    expect(onPinnedMonthRequest).toHaveBeenCalledWith('2020 6');
   });
 
-  it('unpins when the gutter reports the pinned month again', () => {
-    const { onPinnedMonthChange } = renderChart({ pinnedMonth: '2020 6' });
+  /** The gutter is a third way in to the same rule, not a rule of its own. */
+  it('reports the gutter month unchanged while it is already pinned', () => {
+    const { onPinnedMonthRequest } = renderChart({ pinnedMonth: '2020 6' });
     capturedOptions?.plugins?.eventGutter?.onGutterClick?.(5);
-    expect(onPinnedMonthChange).toHaveBeenCalledWith(null);
+    expect(onPinnedMonthRequest).toHaveBeenCalledWith('2020 6');
   });
 
   /**
@@ -250,12 +297,12 @@ describe('RidershipChart pinning', () => {
 
   /** Chart.js fires click after mouseup, so a drag would otherwise also pin. */
   it('ignores the click that ends a drag', () => {
-    const { onPinnedMonthChange } = renderChart();
+    const { onPinnedMonthRequest } = renderChart();
     (fakeChart as unknown as { $rangeSelect: unknown }).$rangeSelect = {
       suppressClick: true,
     };
     clickChart(175);
-    expect(onPinnedMonthChange).not.toHaveBeenCalled();
+    expect(onPinnedMonthRequest).not.toHaveBeenCalled();
   });
 
   it('marks the crosshair as pinned so the state is visible', () => {
@@ -279,9 +326,9 @@ describe('RidershipChart pinning', () => {
   });
 
   it('unpins on Escape pressed anywhere on the page', () => {
-    const { onPinnedMonthChange } = renderChart({ pinnedMonth: '2020 6' });
+    const { onPinnedMonthRequest } = renderChart({ pinnedMonth: '2020 6' });
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(onPinnedMonthChange).toHaveBeenCalledWith(null);
+    expect(onPinnedMonthRequest).toHaveBeenCalledWith(null);
   });
 
   /**
@@ -289,9 +336,9 @@ describe('RidershipChart pinning', () => {
    * scoped to the plot would fire on a context-log row click. Covered there.
    */
   it('leaves a press outside the plot alone', () => {
-    const { onPinnedMonthChange } = renderChart({ pinnedMonth: '2020 6' });
+    const { onPinnedMonthRequest } = renderChart({ pinnedMonth: '2020 6' });
     fireEvent.pointerDown(document.body);
-    expect(onPinnedMonthChange).not.toHaveBeenCalled();
+    expect(onPinnedMonthRequest).not.toHaveBeenCalled();
   });
 });
 
@@ -336,10 +383,10 @@ describe('RidershipChart keyboard', () => {
   });
 
   it('pins the focused month on Enter', () => {
-    const { onPinnedMonthChange } = renderChart();
+    const { onPinnedMonthRequest } = renderChart();
     fireEvent.keyDown(chartSurface(), { key: 'ArrowRight' });
     fireEvent.keyDown(chartSurface(), { key: 'Enter' });
-    expect(onPinnedMonthChange).toHaveBeenCalledWith('2020 2');
+    expect(onPinnedMonthRequest).toHaveBeenCalledWith('2020 2');
   });
 
   it('drops the keyboard month when the plot loses focus', () => {

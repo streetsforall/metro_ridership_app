@@ -146,8 +146,12 @@ export default function ChartTooltip({
         </p>
       )}
 
+      {/* "Any month" rather than "again", because a click on a *different* month
+          now releases too instead of moving the pin (ADR-0011) — and rather than
+          "anywhere", because a click that lands on no month asks for nothing and
+          leaves the pin held. */}
       {isPinned && (
-        <p className="mt-2 text-stone-400">Click again or press Esc to unpin</p>
+        <p className="mt-2 text-stone-400">Click any month or press Esc to unpin</p>
       )}
     </div>
   );
