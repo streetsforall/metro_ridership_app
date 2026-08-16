@@ -391,7 +391,7 @@ flowchart TB
 
 ## Component tree
 
-Eight components, no router, no context providers. `App` spreads the entire hook state into
+Nine components, no router, no context providers. `App` spreads the entire hook state into
 `LineSelector` with `{...userDashboardInputState}`, so that component's real interface is far wider
 than its props list suggests.
 

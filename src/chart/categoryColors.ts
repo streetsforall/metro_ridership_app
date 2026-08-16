@@ -132,7 +132,7 @@ export function categoryChip(
   };
 }
 
-/** "headway_change" → "Headway change", for the panel's category label. */
+/** "headway_change" → "Headway change", the name written in a Category Chip. */
 export function formatCategory(category: EventCategory | undefined): string {
   if (!category) return 'Service change';
   const words = category.replace(/_/g, ' ');
