@@ -278,9 +278,9 @@ test.describe('drag to select a month range', () => {
 
     /**
      * Across the middle of the plot, well inside the axis on both sides, and
-     * held past `HOLD_MS` before moving — a press no longer does anything until
-     * it arms. The `steps: 10` move covers far more than `ARM_DISTANCE_PX`, so
-     * this would arm on distance anyway; the wait is what keeps the test honest
+     * held past `PROMOTE_HOLD_MS` before moving — a press does nothing until it
+     * promotes. The `steps: 10` move covers far more than `PROMOTE_DISTANCE_PX`,
+     * so this would promote on distance anyway; the wait keeps the test honest
      * about which rule it is exercising if that geometry ever narrows.
      */
     const y = box.y + box.height / 2;
@@ -309,9 +309,9 @@ test.describe('drag to select a month range', () => {
   /**
    * A confident drag across a year takes far less than half a second, so the
    * distance escape hatch exists to stop the hold making that gesture feel
-   * broken. No wait here at all: only travel can have armed this.
+   * broken. No wait here at all: only travel can have promoted this.
    */
-  test('a fast drag past the arming distance does not wait out the hold', async ({
+  test('a fast drag past the promotion distance does not wait out the hold', async ({
     page,
   }) => {
     await gotoDashboard(page, WINDOW);
