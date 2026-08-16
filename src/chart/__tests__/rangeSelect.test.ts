@@ -3,9 +3,8 @@ import {
   rangeSelectPlugin,
   consumeDragSuppression,
   RANGE_SELECT_EVENTS,
-  DRAG_THRESHOLD_PX,
-  HOLD_MS,
-  ARM_DISTANCE_PX,
+  PROMOTE_HOLD_MS,
+  PROMOTE_DISTANCE_PX,
   type ChartWithDrag,
 } from '../rangeSelect';
 
@@ -56,7 +55,7 @@ const makeChart = (onSelect?: (start: number, end: number) => void) => ({
   scales: { x: { getValueForPixel: (px: number) => (px - 50) / 25 } },
   chartArea: { top: 10, bottom: 200, left: 0, right: 400 },
   ctx: makeCtx(),
-  // The hold timer asks for the frame that paints the arming rule; a stationary
+  // The hold timer asks for the frame that paints the promotion rule; a stationary
   // hold has nothing else to repaint on.
   render: vi.fn(),
 });
@@ -68,15 +67,17 @@ const move = (chart: unknown, x: number) =>
 const release = (chart: unknown, x: number) =>
   afterEvent(chart, { event: { type: 'mouseup', x }, inChartArea: true }, {});
 
-/** Waits out the hold, which is one of the two ways a press arms. */
-const hold = () => vi.advanceTimersByTime(HOLD_MS);
+/** Waits out the hold, which is one of the two ways a press promotes. */
+const hold = () => vi.advanceTimersByTime(PROMOTE_HOLD_MS);
 
-const armedOf = (chart: unknown) =>
-  (chart as ChartWithDrag).$rangeSelect?.armed;
+const draggingOf = (chart: unknown) =>
+  (chart as ChartWithDrag).$rangeSelect?.dragging;
+const pressedOf = (chart: unknown) =>
+  (chart as ChartWithDrag).$rangeSelect?.pressed;
 
 /**
- * Drags from `fromX` to `toX`, arming by hold first so the case under test is
- * the drag itself rather than how it armed. The distance escape hatch has its
+ * Drags from `fromX` to `toX`, promoting by hold first so the case under test is
+ * the drag itself rather than how it promoted. The distance escape hatch has its
  * own cases below.
  */
 const drag = (fromX: number, toX: number) => {
@@ -127,11 +128,6 @@ describe('drag to select a range', () => {
     expect(onSelect).toHaveBeenCalledWith(2, 6);
   });
 
-  it('ignores a drag shorter than the click threshold', () => {
-    const { onSelect } = drag(100, 100 + DRAG_THRESHOLD_PX - 1);
-    expect(onSelect).not.toHaveBeenCalled();
-  });
-
   /** One month is a click with extra steps, and clicking already pins. */
   it('ignores a drag that resolves to a single month', () => {
     // 100px and 110px both round to index 2.
@@ -172,57 +168,63 @@ describe('drag to select a range', () => {
   it('abandons the drag when the cursor leaves the canvas', () => {
     const chart = makeChart();
     press(chart, 100);
-    afterEvent(chart, { event: { type: 'mouseout', x: 100 }, inChartArea: false }, {});
-    expect((chart as unknown as ChartWithDrag).$rangeSelect?.dragging).toBe(false);
+    hold();
+    move(chart, 200);
+    afterEvent(chart, { event: { type: 'mouseout', x: 200 }, inChartArea: false }, {});
+    afterDraw(chart, {}, {});
+    expect(chart.ctx.fillRect).not.toHaveBeenCalled();
+    expect(pressedOf(chart)).toBe(false);
+    expect(draggingOf(chart)).toBe(false);
   });
 });
 
 /**
- * A press used to paint the band immediately and then discard it on release for
- * travelling under the click threshold — the reader was shown a Month Window
- * opening and closing for nothing. Arming is the gate that stops that.
+ * A press used to be a drag from the moment the button went down, and the travel
+ * threshold was only applied on release — the reader was shown a band opening
+ * and closing for nothing. Promotion is the gate that stops that, and the one
+ * place the threshold is applied.
  */
-describe('arming a drag', () => {
-  it('sets no window when the press is released before it arms', () => {
+describe('promoting a press to a drag', () => {
+  it('sets no window when the press is released before it promotes', () => {
     const onSelect = vi.fn();
     const chart = makeChart(onSelect);
     press(chart, 100);
-    vi.advanceTimersByTime(HOLD_MS - 1);
-    move(chart, 100 + ARM_DISTANCE_PX - 1);
-    release(chart, 100 + ARM_DISTANCE_PX - 1);
+    vi.advanceTimersByTime(PROMOTE_HOLD_MS - 1);
+    move(chart, 100 + PROMOTE_DISTANCE_PX - 1);
+    release(chart, 100 + PROMOTE_DISTANCE_PX - 1);
     expect(onSelect).not.toHaveBeenCalled();
   });
 
   /**
-   * A timer surviving the gesture would arm a press that is already over, and
-   * the next frame would paint a band for a button nobody is holding.
+   * A timer surviving the gesture would promote a press that is already over,
+   * and the next frame would paint a band for a button nobody is holding.
    */
-  it('leaves no timer behind when released before arming', () => {
+  it('leaves no timer behind when released before promoting', () => {
     const chart = makeChart();
     press(chart, 100);
     release(chart, 101);
     expect(vi.getTimerCount()).toBe(0);
     // The dead timer's own effect, had it survived.
-    vi.advanceTimersByTime(HOLD_MS * 2);
-    expect(armedOf(chart)).toBe(false);
+    vi.advanceTimersByTime(PROMOTE_HOLD_MS * 2);
+    expect(draggingOf(chart)).toBe(false);
   });
 
-  it('arms on the hold without the pointer moving', () => {
+  it('promotes on the hold without the pointer moving', () => {
     const chart = makeChart();
     press(chart, 100);
-    expect(armedOf(chart)).toBe(false);
+    expect(draggingOf(chart)).toBe(false);
     hold();
-    expect(armedOf(chart)).toBe(true);
+    expect(draggingOf(chart)).toBe(true);
   });
 
   /** A confident drag across a year takes far less than half a second. */
-  it('arms on distance well inside the hold', () => {
+  it('promotes on distance well inside the hold', () => {
     const onSelect = vi.fn();
     const chart = makeChart(onSelect);
     press(chart, 100);
     vi.advanceTimersByTime(50);
-    move(chart, 100 + ARM_DISTANCE_PX);
-    expect(armedOf(chart)).toBe(true);
+    move(chart, 100 + PROMOTE_DISTANCE_PX);
+    expect(draggingOf(chart)).toBe(true);
     move(chart, 200);
     release(chart, 200);
     expect(onSelect).toHaveBeenCalledWith(2, 6);
@@ -233,20 +235,37 @@ describe('arming a drag', () => {
     const chart = makeChart(onSelect);
     press(chart, 100);
     hold();
-    // Under the arming distance, so only the hold can have armed this.
+    // Under the promotion distance, so only the hold can have promoted this.
     move(chart, 140);
     release(chart, 140);
     expect(onSelect).toHaveBeenCalledWith(2, 4);
   });
 
-  it('cancels the hold once distance has armed the press', () => {
+  /**
+   * The threshold lives in promotion and nowhere else. Release used to apply a
+   * second, smaller one, which refused a gesture the reader had already been
+   * shown a band for.
+   */
+  it('does not re-judge travel on release once the press has promoted', () => {
+    const onSelect = vi.fn();
+    const chart = makeChart(onSelect);
+    // 86px and 89px straddle the boundary between index 1 and index 2, so this
+    // is three pixels of travel across two months.
+    press(chart, 86);
+    hold();
+    move(chart, 89);
+    release(chart, 89);
+    expect(onSelect).toHaveBeenCalledWith(1, 2);
+  });
+
+  it('cancels the hold once distance has promoted the press', () => {
     const chart = makeChart();
     press(chart, 100);
-    move(chart, 100 + ARM_DISTANCE_PX);
+    move(chart, 100 + PROMOTE_DISTANCE_PX);
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it('asks for a repaint when the hold arms, so the rule can appear', () => {
+  it('asks for a repaint when the hold promotes, so the rule can appear', () => {
     const chart = makeChart();
     press(chart, 100);
     expect(chart.render).not.toHaveBeenCalled();
@@ -254,13 +273,13 @@ describe('arming a drag', () => {
     expect(chart.render).toHaveBeenCalled();
   });
 
-  it('disarms and drops the timer when the cursor leaves the canvas', () => {
+  it('demotes and drops the timer when the cursor leaves the canvas', () => {
     const chart = makeChart();
     press(chart, 100);
     afterEvent(chart, { event: { type: 'mouseout', x: 100 }, inChartArea: false }, {});
     expect(vi.getTimerCount()).toBe(0);
-    vi.advanceTimersByTime(HOLD_MS * 2);
-    expect(armedOf(chart)).toBe(false);
+    vi.advanceTimersByTime(PROMOTE_HOLD_MS * 2);
+    expect(draggingOf(chart)).toBe(false);
   });
 
   /** A chart torn down mid-hold would otherwise fire into a dead instance. */
@@ -301,6 +320,20 @@ describe('the drag band', () => {
   it('paints a band between the two edges while dragging', () => {
     const chart = makeChart();
     press(chart, 100);
+    // Past the promotion distance, so the press is a drag by the time it draws.
+    move(chart, 100 + PROMOTE_DISTANCE_PX);
+    afterDraw(chart, {}, {});
+    expect(chart.ctx.fillRect).toHaveBeenCalledWith(
+      100,
+      10,
+      PROMOTE_DISTANCE_PX,
+      190,
+    );
+  });
+
+  it('tracks the pointer as a promoted drag continues', () => {
+    const chart = makeChart();
+    press(chart, 100);
     move(chart, 200);
     afterDraw(chart, {}, {});
     expect(chart.ctx.fillRect).toHaveBeenCalledWith(100, 10, 100, 190);
@@ -321,8 +354,8 @@ describe('the drag band', () => {
     expect(chart.ctx.fillRect).not.toHaveBeenCalled();
   });
 
-  /** The whole point of arming: a click flashes no window on its way past. */
-  it('paints nothing while a press is still unarmed', () => {
+  /** The whole point of promotion: a click flashes no band on its way past. */
+  it('paints nothing while a press is still unpromoted', () => {
     const chart = makeChart();
     press(chart, 100);
     move(chart, 110);
@@ -332,10 +365,10 @@ describe('the drag band', () => {
   });
 
   /**
-   * The arming feedback for a stationary hold. Without it the reader holding
+   * The promotion feedback for a stationary hold. Without it the reader holding
    * still has nothing telling them the gesture took before they move.
    */
-  it('paints the start rule when a hold arms with no movement', () => {
+  it('paints the start rule when a hold promotes with no movement', () => {
     const chart = makeChart();
     press(chart, 100);
     hold();

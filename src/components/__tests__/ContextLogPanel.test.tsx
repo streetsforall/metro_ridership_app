@@ -224,18 +224,42 @@ describe('chart → ContextLogPanel', () => {
     ).toContain('ring-2');
   });
 
-  it('scrolls the pinned row into view', () => {
+  /**
+   * A pin marks; it does not move. The panel's open state and scroll position
+   * belong to the reader, so a pin taken on the chart changes neither — even at
+   * the cost of marking a row nobody can see, which the tooltip covers.
+   */
+  it('does not scroll any row into view when a month is pinned', () => {
+    // jsdom implements no `scrollIntoView`, so it has to be assigned onto the
+    // prototype rather than spied on — and put back afterwards. The assertion
+    // is a negative one, and a stub left on `Element.prototype` would arm every
+    // test declared after this one against a call it never made.
+    // Kept as a descriptor rather than a plain reference, which is both how you
+    // put an absent method back and what keeps `@typescript-eslint/unbound-method`
+    // quiet.
+    const original = Object.getOwnPropertyDescriptor(
+      Element.prototype,
+      'scrollIntoView',
+    );
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
-    renderPanel([opening, closure], { pinnedMonth: '2019 5' });
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+    try {
+      renderPanel([opening, closure], { pinnedMonth: '2019 5' });
+      // The pinned month is the second row's, and the panel opens by default —
+      // so this fixture did scroll before the change, and a render that dropped
+      // the rows cannot be what makes the assertion below pass.
+      expect(screen.getByRole('button', { name: /New Blue/ })).toBeTruthy();
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    } finally {
+      if (original) {
+        Object.defineProperty(Element.prototype, 'scrollIntoView', original);
+      } else {
+        delete (Element.prototype as Partial<Element>).scrollIntoView;
+      }
+    }
   });
 
-  /**
-   * Highlighting a row inside a collapsed panel highlights nothing, so a pin
-   * from the chart reopens it.
-   */
-  it('reopens a collapsed panel when a month is pinned', () => {
+  it('leaves a collapsed panel collapsed when a month is pinned', () => {
     const { rerender } = renderPanel([opening], { pinnedMonth: null });
     fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
     expect(screen.queryByText('Regional Connector Opening')).toBeNull();
@@ -248,7 +272,26 @@ describe('chart → ContextLogPanel', () => {
         onHoverMonthChange={vi.fn()}
       />,
     );
-    expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
+    expect(screen.queryByText('Regional Connector Opening')).toBeNull();
+  });
+
+  /** The mark is on the row whether or not the reader can see it. */
+  it('still marks the pinned row after the panel is reopened by hand', () => {
+    const { rerender } = renderPanel([opening], { pinnedMonth: null });
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
+
+    rerender(
+      <ContextLogPanel
+        events={[opening]}
+        pinnedMonth="2023 2"
+        onSelectMonth={vi.fn()}
+        onHoverMonthChange={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
+    expect(
+      screen.getByRole('button', { name: /Regional Connector/ }).getAttribute('aria-pressed'),
+    ).toBe('true');
   });
 
   it('leaves the panel alone when the pinned month has no entry', () => {

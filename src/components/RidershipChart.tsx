@@ -25,7 +25,12 @@ export interface RidershipChartProps {
   transitEvents: TransitEvent[];
   /** Pinned month label (`"YYYY M"`), owned by the parent so the log agrees. */
   pinnedMonth: string | null;
-  onPinnedMonthChange: (month: string | null) => void;
+  /**
+   * Asks for a month to be pinned, or for the pin to be released with `null`.
+   * A request, not a change: the parent decides what it means, because the same
+   * rule has to hold for the context log — see `OutputArea`.
+   */
+  onPinnedMonthRequest: (month: string | null) => void;
   /** Month whose context-log row is under the cursor; its dot grows. */
   highlightedMonth: string | null;
   /** Inclusive month labels of a drag across the plot. */
@@ -44,7 +49,7 @@ export default function RidershipChart({
   months,
   transitEvents,
   pinnedMonth,
-  onPinnedMonthChange,
+  onPinnedMonthRequest,
   highlightedMonth,
   onRangeSelect,
 }: RidershipChartProps) {
@@ -95,15 +100,18 @@ export default function RidershipChart({
 
   const eventsByIndex = groupEventsByMonthIndex(transitEvents, months);
 
+  /**
+   * Names the month that was acted on and stops there. Whether that pins it,
+   * releases the pin already held, or does nothing is not the chart's to decide:
+   * the log asks the same question of the same state, and the rule lives once,
+   * with the state, in `OutputArea`.
+   */
   const pinIndex = useCallback(
     (index: number | null) => {
-      if (index === null || !months[index]) {
-        onPinnedMonthChange(null);
-        return;
-      }
-      onPinnedMonthChange(months[index] === pinnedMonth ? null : months[index]);
+      const month = index === null ? null : (months[index] ?? null);
+      onPinnedMonthRequest(month);
     },
-    [months, pinnedMonth, onPinnedMonthChange],
+    [months, onPinnedMonthRequest],
   );
 
   /**
@@ -119,12 +127,12 @@ export default function RidershipChart({
     if (pinnedMonth === null) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onPinnedMonthChange(null);
+      if (event.key === 'Escape') onPinnedMonthRequest(null);
     };
 
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [pinnedMonth, onPinnedMonthChange]);
+  }, [pinnedMonth, onPinnedMonthRequest]);
 
   ChartJS.defaults.font.family = 'Overpass Mono Variable';
   ChartJS.defaults.color = colors.stone['700'];
@@ -134,6 +142,17 @@ export default function RidershipChart({
     _elements: unknown[],
     chart: ChartJS,
   ) => {
+    /**
+     * Chart.js dispatches `onClick` for `mouseup` as well as `click` —
+     * `_isClickEvent` — and `mouseup` is in the event list because the Range
+     * Selection plugin needs it. One press and release therefore arrives here
+     * twice, and only the `click` counts: two pin requests per gesture cancel
+     * out under the release-first rule, and the `mouseup` pass runs before the
+     * plugin has set its suppression flag. See ADR-0011, *What release-first
+     * exposed*.
+     */
+    if (event.type !== 'click') return;
+
     // The click that ends a drag is not a click; the drag already re-ranged.
     if (consumeDragSuppression(chart)) return;
 
@@ -173,7 +192,7 @@ export default function RidershipChart({
         pinIndex(current);
         break;
       case 'Escape':
-        onPinnedMonthChange(null);
+        onPinnedMonthRequest(null);
         setKeyboardIndex(null);
         break;
     }

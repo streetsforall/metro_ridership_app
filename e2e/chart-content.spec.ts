@@ -118,7 +118,7 @@ test('event gutter across categories', async ({ page }) => {
  * The band has never had a baseline, which is a problem now that "a click no
  * longer flashes a window" is a claim someone could regress. The DOM specs in
  * `chart-interaction.spec.ts` can say a window was or was not *set*; only pixels
- * can say what the reader saw while the button was down. This shoots the armed
+ * can say what the reader saw while the button was down. This shoots the promoted
  * state: the tinted band and its two edge rules.
  *
  * `shootChart` parks the cursor at 0,0 before capturing, which would end any
@@ -129,7 +129,7 @@ test('event gutter across categories', async ({ page }) => {
  * Desktop only, for the same reason the drag itself is: on touch a horizontal
  * drag over a chart is how the page scrolls, so the gesture is never claimed.
  */
-test.describe('the armed Month Window drag', () => {
+test.describe('the promoted Month Window drag', () => {
   desktopOnly();
 
   test('bands the plot between its edges', async ({ page }) => {
@@ -142,12 +142,12 @@ test.describe('the armed Month Window drag', () => {
     const y = box.y + box.height / 2;
     await page.mouse.move(box.x + box.width * 0.35, y);
     await page.mouse.down();
-    // Past the arming distance, so the band is painted by the time this settles.
+    // Past the promotion distance, so the band is painted by the time this settles.
     await page.mouse.move(box.x + box.width * 0.65, y, { steps: 10 });
 
     try {
       await expect(page.locator('#ridership-chart')).toHaveScreenshot(
-        'chart-armed-drag.png',
+        'chart-promoted-drag.png',
         { threshold: 0.2, maxDiffPixelRatio: 0.01 },
       );
     } finally {

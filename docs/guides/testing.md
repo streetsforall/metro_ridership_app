@@ -68,7 +68,7 @@ because an element crop would clip at the narrow viewport edge.
 | Spec | Covers | Baselines |
 | --- | --- | --- |
 | [`visual.spec.ts`](../../e2e/visual.spec.ts) | full page — default dashboard, a line selected, the expanded selector | 6 |
-| [`chart-content.spec.ts`](../../e2e/chart-content.spec.ts) | what the chart *draws* — one line, several, aggregate, Saturday, a narrow window, Event Gutter shapes at several category colours, an armed Month Window drag mid-gesture | 13 |
+| [`chart-content.spec.ts`](../../e2e/chart-content.spec.ts) | what the chart *draws* — one line, several, aggregate, Saturday, a narrow window, Event Gutter shapes at several category colours, a promoted Month Window drag mid-gesture | 13 |
 | [`line-filters.spec.ts`](../../e2e/line-filters.spec.ts) | search, rail-only mode, the empty-mode state (desktop) | 5 |
 | [`summary-tiles.spec.ts`](../../e2e/summary-tiles.spec.ts) | the summary pane — a negative change, several lines | 4 |
 | [`map.spec.ts`](../../e2e/map.spec.ts) | all lines dimmed, selected in brand colours, selected at phone width | 3 |

@@ -214,9 +214,87 @@ describe('chart ↔ context log', () => {
   it('marks the log row pressed when the chart pins its month', () => {
     renderWithEvents();
     act(() => {
-      chartProps?.onPinnedMonthChange('2023 2');
+      chartProps?.onPinnedMonthRequest('2023 2');
     });
     expect(logRow().getAttribute('aria-pressed')).toBe('true');
+  });
+
+  /**
+   * A pin marks; it does not move. Pinning from the chart leaves the panel where
+   * the reader left it, collapsed included — so the row it marks may not be on
+   * screen at all. The tooltip carries the event content, so that costs nothing.
+   */
+  it('leaves the panel collapsed when the chart pins a month', () => {
+    renderWithEvents();
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
+    act(() => {
+      chartProps?.onPinnedMonthRequest('2023 2');
+    });
+    expect(screen.queryByText('Regional Connector Opening')).toBeNull();
+  });
+});
+
+/**
+ * The release-first rule, asserted here rather than in either child, because
+ * here is the only seam that can see it hold across *both* of them. A rule that
+ * held on the chart and not in the log would be two rules and a reader would
+ * have to learn which surface they were on.
+ */
+describe('a pinned month is released before another is taken', () => {
+  const logRow = () => screen.getByRole('button', { name: /Regional Connector/ });
+
+  it('releases rather than moving the pin when the chart names another month', () => {
+    renderWithEvents();
+    act(() => chartProps?.onPinnedMonthRequest('2023 2'));
+    act(() => chartProps?.onPinnedMonthRequest('2020 6'));
+    expect(chartProps?.pinnedMonth).toBeNull();
+  });
+
+  it('pins the new month on a further request', () => {
+    renderWithEvents();
+    act(() => chartProps?.onPinnedMonthRequest('2023 2'));
+    act(() => chartProps?.onPinnedMonthRequest('2020 6'));
+    act(() => chartProps?.onPinnedMonthRequest('2020 6'));
+    expect(chartProps?.pinnedMonth).toBe('2020 6');
+  });
+
+  it('releases when the chart names the month already pinned', () => {
+    renderWithEvents();
+    act(() => chartProps?.onPinnedMonthRequest('2023 2'));
+    act(() => chartProps?.onPinnedMonthRequest('2023 2'));
+    expect(chartProps?.pinnedMonth).toBeNull();
+  });
+
+  /** Pinned on the chart, clicked in the log: one rule, not one per surface. */
+  it('releases a chart pin when a log row is clicked', () => {
+    renderWithEvents();
+    act(() => chartProps?.onPinnedMonthRequest('2020 6'));
+    fireEvent.click(logRow());
+    expect(chartProps?.pinnedMonth).toBeNull();
+  });
+
+  /** And the other way round. */
+  it('releases a log pin when the chart names a different month', () => {
+    renderWithEvents();
+    fireEvent.click(logRow());
+    expect(chartProps?.pinnedMonth).toBe('2023 2');
+
+    act(() => chartProps?.onPinnedMonthRequest('2020 6'));
+    expect(chartProps?.pinnedMonth).toBeNull();
+  });
+
+  /** Escape and a click on empty plot both arrive as "no month". */
+  it('releases on a request naming no month', () => {
+    renderWithEvents();
+    fireEvent.click(logRow());
+    act(() => chartProps?.onPinnedMonthRequest(null));
+    expect(chartProps?.pinnedMonth).toBeNull();
+  });
+
+  it('leaves nothing pinned when a request names no month and none was held', () => {
+    renderWithEvents();
+    act(() => chartProps?.onPinnedMonthRequest(null));
+    expect(chartProps?.pinnedMonth).toBeNull();
   });
 });
 
