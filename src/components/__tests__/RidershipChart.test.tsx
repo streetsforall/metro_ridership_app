@@ -119,6 +119,15 @@ const clickChart = (x: number) => dispatchChartEvent(x, 'click');
 
 const chartSurface = () => screen.getByRole('application');
 
+/**
+ * The month the readout is headed with — its first child. Read positionally
+ * rather than by text, because an event entry now carries its own date and the
+ * fixture's event sits in the month these tests hover, so "Jun 2020" is on
+ * screen twice.
+ */
+const readoutMonth = () =>
+  screen.getByTestId('chart-tooltip').firstElementChild?.textContent;
+
 beforeEach(() => {
   capturedOptions = undefined;
   fakeChart = makeFakeChart();
@@ -173,7 +182,7 @@ describe('RidershipChart hover', () => {
     renderChart();
     hoverMonth(5);
     expect(screen.getByTestId('chart-tooltip')).toBeTruthy();
-    expect(screen.getByText('Jun 2020')).toBeTruthy();
+    expect(readoutMonth()).toBe('Jun 2020');
   });
 
   it('shows the event context in the same box as the ridership', () => {
@@ -279,7 +288,7 @@ describe('RidershipChart pinning', () => {
     act(() => {
       capturedOptions?.plugins?.eventGutter?.onGutterHover?.(5);
     });
-    expect(screen.getByText('Jun 2020')).toBeTruthy();
+    expect(readoutMonth()).toBe('Jun 2020');
     expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
     expect(screen.getByText('1,500')).toBeTruthy();
   });
@@ -322,7 +331,7 @@ describe('RidershipChart pinning', () => {
   it('keeps the pinned month while the pointer wanders elsewhere', () => {
     renderChart({ pinnedMonth: '2020 6' });
     hoverMonth(1);
-    expect(screen.getByText('Jun 2020')).toBeTruthy();
+    expect(readoutMonth()).toBe('Jun 2020');
   });
 
   it('unpins on Escape pressed anywhere on the page', () => {

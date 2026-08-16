@@ -1,12 +1,8 @@
 import type { ChartDataset } from 'chart.js';
 import type { CustomChartData } from '../@types/chart.types';
 import type { TransitEvent } from '../@types/events.types';
-import {
-  categoryTextColor,
-  formatCategory,
-  formatEventDate,
-  formatMonthLabel,
-} from '../chart';
+import { formatEventDate, formatMonthLabel } from '../chart';
+import CategoryChip from './CategoryChip';
 
 const ridershipFormatter = new Intl.NumberFormat('en-US');
 
@@ -107,15 +103,18 @@ export default function ChartTooltip({
           key={event.id}
           className="mt-2 border-t border-stone-600 pt-2 first-of-type:mt-2"
         >
-          <p
-            className="font-semibold"
-            style={{ color: categoryTextColor(event.category) }}
-          >
-            {event.title}
-          </p>
-          <p className="text-stone-400">
-            {formatEventDate(event.date)} · {formatCategory(event.category)}
-          </p>
+          {/* Neutral, not category-tinted. The chip below carries the category,
+              and a tinted title made colour say two things at once — which
+              category this is, and where the title ends — while leaving the
+              category itself as unremarkable grey text after the date. */}
+          <p className="font-semibold">{event.title}</p>
+          {/* Chip and date on one row, chip first: it is the same component the
+              context-log panel draws, so an event reads the same way in both.
+              The middot went with the inline category text it separated. */}
+          <div className="mt-1 flex items-center gap-1.5">
+            <CategoryChip category={event.category} surface="dark" />
+            <span className="text-stone-400">{formatEventDate(event.date)}</span>
+          </div>
           {/* Clamped while hovering, full once pinned. Unclamped, a long
               description makes the box taller than half the plot and buries the
               series it is annotating under the cursor. Pinning is the reader
