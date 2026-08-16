@@ -39,7 +39,7 @@ because tests that touch the date bounds need `virtual:ridership-bounds` to reso
 
 ## Visual regression
 
-Playwright screenshots the app and compares against committed baselines. **Ten specs, 48 Linux
+Playwright screenshots the app and compares against committed baselines. **Ten specs, 46 Linux
 baselines.** An eleventh, [`chart-interaction.spec.ts`](../../e2e/chart-interaction.spec.ts), shoots
 nothing — the chart's interactive layer is an HTML tooltip and DOM attributes, so it is asserted
 rather than captured.
@@ -63,9 +63,11 @@ project.
 ### What each spec covers
 
 Most specs run in two projects — desktop 1280×800 and mobile 390×844 — so one `toHaveScreenshot`
-call yields two baselines. A few are gated to one viewport with `desktopOnly()`
-([`e2e/helpers.ts`](../../e2e/helpers.ts)), either because the view has no meaningful mobile form or
-because an element crop would clip at the narrow viewport edge.
+call yields two baselines. A few are gated to one viewport with `desktopOnly()` or `mobileOnly()`
+([`e2e/helpers.ts`](../../e2e/helpers.ts)): either the view has no meaningful form at the other
+breakpoint, an element crop would clip at the narrow viewport edge, or — the tooltip's strip — the
+view *only* exists below a width the other project never reaches, so an ungated shot would file the
+wrong layout under a name promising the right one.
 
 | Spec | Covers | Baselines |
 | --- | --- | --- |
@@ -74,7 +76,7 @@ because an element crop would clip at the narrow viewport edge.
 | [`line-filters.spec.ts`](../../e2e/line-filters.spec.ts) | search, rail-only mode, the empty-mode state (desktop) | 5 |
 | [`summary-tiles.spec.ts`](../../e2e/summary-tiles.spec.ts) | the summary pane — a negative change, several lines | 4 |
 | [`map.spec.ts`](../../e2e/map.spec.ts) | all lines dimmed, selected in brand colours, selected at phone width | 3 |
-| [`chart-tooltip.spec.ts`](../../e2e/chart-tooltip.spec.ts) | the readout — pinned with its source link, focused with the description clamped, focused on a month carrying an event | 6 |
+| [`chart-tooltip.spec.ts`](../../e2e/chart-tooltip.spec.ts) | the readout — the floating box pinned with its source link, focused with the description clamped, and focused on a month carrying an event (desktop); the strip it becomes on a narrow chart (mobile) | 4 |
 | [`context-logs.spec.ts`](../../e2e/context-logs.spec.ts) | the context-log panel open, a window spanning all nine event categories, and a selected row wearing its band (plus two absence assertions, no shots) | 6 |
 | [`responsive-tablet.spec.ts`](../../e2e/responsive-tablet.spec.ts) | 768×1024 via a file-level `test.use`, not a fourth project | 2 |
 | [`table-view.spec.ts`](../../e2e/table-view.spec.ts) | sort chrome and ordering, a partial-coverage row (desktop) | 2 |
@@ -145,6 +147,16 @@ that subject in the DOM first — `context-logs.spec.ts` checks its row count an
 labels as text before capturing, and `chart-content.spec.ts` proves the chart rendered rather than
 the "Please select a Metro line." placeholder. The screenshot pins the pixels; the assertions pin
 what the pixels are *of*.
+
+**A DOM assertion is not a visibility assertion, and the gap is wider than it looks.** `toContainText`
+passes on a node scrolled out of an `overflow-y-auto` box, and `toBeVisible` passes on one merely
+clipped by an ancestor. So a subject can be asserted, present, and absent from every pixel of the
+capture. The chart readout is the live example: below 480px of measured chart width it becomes a
+strip capped at a third of the plot, and a crop of it at 390px holds the month heading and one
+ridership row while the event block sits below the fold — which is why each of that spec's tests is
+gated to the one project whose layout it is named for, and asserts `data-layout` before shooting.
+When a subject can be scrolled or clipped, assert the layout that puts it on screen, not only the
+text.
 
 To regenerate one project or one suite:
 
