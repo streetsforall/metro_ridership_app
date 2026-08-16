@@ -49,6 +49,7 @@ export {
   categoryChip,
   formatCategory,
 } from './categoryColors';
+export type { ChipSurface } from './categoryColors';
 export {
   eventDateToLabel,
   labelToEventDate,

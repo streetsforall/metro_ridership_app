@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TransitEvent } from '../@types/events.types';
 import {
-  categoryChip,
   categoryColor,
   eventDateToLabel,
-  formatCategory,
   formatEventDate,
 } from '../chart';
+import CategoryChip from './CategoryChip';
 
 export interface ContextLogPanelProps {
   events: TransitEvent[];
@@ -126,11 +125,8 @@ export default function ContextLogPanel({
                     <span className="block font-medium text-stone-700">
                       {event.title}
                     </span>
-                    <span
-                      className="my-1 inline-block rounded px-1.5 py-0.5 text-[0.65rem] uppercase tracking-wider whitespace-nowrap"
-                      style={categoryChip(event.category)}
-                    >
-                      {formatCategory(event.category)}
+                    <span className="my-1 block">
+                      <CategoryChip category={event.category} surface="light" />
                     </span>
                     <span className="block text-stone-500">{event.description}</span>
                   </span>
