@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import type { ChartDataset } from 'chart.js';
 import type { CustomChartData } from '../@types/chart.types';
 import type { TransitEvent } from '../@types/events.types';
@@ -6,11 +7,43 @@ import CategoryChip from './CategoryChip';
 
 const ridershipFormatter = new Intl.NumberFormat('en-US');
 
-/** Matches `w-64` below. Used to clamp the box inside the plot. */
+/** Matches `w-64` below. Used to clamp the floating box inside the plot. */
 const TOOLTIP_WIDTH = 256;
 const EDGE_PADDING = 8;
-/** Horizontal gap between the crosshair and the box. */
+/** Horizontal gap between the crosshair and the floating box. */
 const CARET_GAP = 12;
+
+/**
+ * Below this measured chart width the readout stops floating and becomes a strip
+ * along the top edge of the plot.
+ *
+ * It lives here, beside the width constants it is measured against, because the
+ * choice between the two layouts is this component's: it is the only place that
+ * knows `TOOLTIP_WIDTH` is 256 and therefore most of a phone's plot. The chart
+ * measures the width and hands it over; what that width *means* is decided here,
+ * which is also what makes the mode reachable in a test by passing a number.
+ *
+ * Deliberately not exported. The spec spells 480 out rather than importing it,
+ * so a change to the threshold fails a test instead of quietly moving one.
+ */
+const STRIP_MAX_WIDTH = 480;
+
+/**
+ * Share of the plot's height the strip may occupy before it scrolls.
+ *
+ * The strip covers the top of the plot rather than sitting beside it, so its
+ * height is how much of the series it hides. A Month carrying several events
+ * would otherwise grow the readout over the line it annotates.
+ */
+const STRIP_HEIGHT_SHARE = 1 / 3;
+
+/** Which layout the readout is drawn in. Derived from the width alone. */
+type TooltipLayout = 'floating' | 'strip';
+
+/** @see STRIP_MAX_WIDTH */
+function tooltipLayoutFor(containerWidth: number): TooltipLayout {
+  return containerWidth < STRIP_MAX_WIDTH ? 'strip' : 'floating';
+}
 
 export interface ChartTooltipProps {
   /** Month index being described, or null to render nothing. */
@@ -22,8 +55,13 @@ export interface ChartTooltipProps {
   events: TransitEvent[];
   /** Crosshair position in canvas pixels. */
   caret: { x: number; y: number } | null;
-  /** Width of the plot box, for clamping. */
+  /**
+   * Measured width of the chart's container. Chooses the layout, and clamps the
+   * floating box when that is the layout chosen.
+   */
   containerWidth: number;
+  /** Height of the plot box. Caps the strip; the floating box ignores it. */
+  plotHeight: number;
   /**
    * Pinned tooltips accept the pointer so their source links are clickable;
    * hovering ones must not, or the box would steal the hover that spawned it.
@@ -47,6 +85,7 @@ export default function ChartTooltip({
   events,
   caret,
   containerWidth,
+  plotHeight,
   isPinned,
 }: ChartTooltipProps) {
   if (index === null || !caret || !months[index]) return null;
@@ -61,22 +100,45 @@ export default function ChartTooltip({
     .filter((row) => row.value !== null)
     .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
 
-  // Prefer the right of the crosshair, flip left when that would overflow, then
-  // clamp — the same rule the canvas box used, in CSS pixels.
-  const maxLeft = Math.max(EDGE_PADDING, containerWidth - TOOLTIP_WIDTH - EDGE_PADDING);
-  let left = caret.x + CARET_GAP;
-  if (left > maxLeft) left = caret.x - CARET_GAP - TOOLTIP_WIDTH;
-  left = Math.min(Math.max(left, EDGE_PADDING), maxLeft);
+  const layout = tooltipLayoutFor(containerWidth);
+
+  /**
+   * The strip spans the plot, so there is nothing to flip away from and nothing
+   * to clamp: both edges are simply the edge padding, and `right` is what makes
+   * the box full-width without a width to compute. It sits on the plot's top
+   * edge and caps its own height, so the Month it describes stays visible under
+   * it — which is the whole point of the mode.
+   *
+   * The floating box prefers the right of the crosshair, flips left when that
+   * would overflow, then clamps — the same rule the canvas box used, in CSS
+   * pixels.
+   */
+  let position: CSSProperties;
+  if (layout === 'strip') {
+    position = {
+      left: EDGE_PADDING,
+      right: EDGE_PADDING,
+      top: caret.y,
+      maxHeight: Math.max(0, plotHeight * STRIP_HEIGHT_SHARE),
+    };
+  } else {
+    const maxLeft = Math.max(EDGE_PADDING, containerWidth - TOOLTIP_WIDTH - EDGE_PADDING);
+    let left = caret.x + CARET_GAP;
+    if (left > maxLeft) left = caret.x - CARET_GAP - TOOLTIP_WIDTH;
+    left = Math.min(Math.max(left, EDGE_PADDING), maxLeft);
+    position = { left, top: Math.max(EDGE_PADDING, caret.y - EDGE_PADDING) };
+  }
 
   return (
     <div
       role="tooltip"
       data-testid="chart-tooltip"
       data-pinned={isPinned ? 'true' : 'false'}
-      className={`absolute z-10 w-64 rounded bg-stone-800 p-2 text-xs text-stone-100 shadow-lg ${
-        isPinned ? 'pointer-events-auto ring-1 ring-stone-400' : 'pointer-events-none'
-      }`}
-      style={{ left, top: Math.max(EDGE_PADDING, caret.y - EDGE_PADDING) }}
+      data-layout={layout}
+      className={`absolute z-10 rounded bg-stone-800 p-2 text-xs text-stone-100 shadow-lg ${
+        layout === 'strip' ? 'overflow-y-auto overscroll-contain' : 'w-64'
+      } ${isPinned ? 'pointer-events-auto ring-1 ring-stone-400' : 'pointer-events-none'}`}
+      style={position}
     >
       <p className="font-semibold">{formatMonthLabel(months[index])}</p>
 

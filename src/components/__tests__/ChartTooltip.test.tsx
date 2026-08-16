@@ -33,6 +33,7 @@ const renderTooltip = (props: Partial<Parameters<typeof ChartTooltip>[0]> = {}) 
       events={[]}
       caret={{ x: 100, y: 20 }}
       containerWidth={600}
+      plotHeight={300}
       isPinned={false}
       {...props}
     />,
@@ -280,12 +281,14 @@ describe('ChartTooltip pinning', () => {
   });
 });
 
-describe('ChartTooltip placement', () => {
-  const leftOf = (props: Partial<Parameters<typeof ChartTooltip>[0]>) => {
+describe('ChartTooltip floating placement', () => {
+  const boxOf = (props: Partial<Parameters<typeof ChartTooltip>[0]>) => {
     const { container } = renderTooltip(props);
-    const box = container.querySelector('[data-testid="chart-tooltip"]');
-    return parseFloat((box as HTMLElement).style.left);
+    return container.querySelector<HTMLElement>('[data-testid="chart-tooltip"]')!;
   };
+
+  const leftOf = (props: Partial<Parameters<typeof ChartTooltip>[0]>) =>
+    parseFloat(boxOf(props).style.left);
 
   it('sits to the right of the crosshair when there is room', () => {
     expect(leftOf({ caret: { x: 100, y: 20 } })).toBeGreaterThan(100);
@@ -299,8 +302,73 @@ describe('ChartTooltip placement', () => {
     expect(leftOf({ caret: { x: 0, y: 20 } })).toBeGreaterThanOrEqual(8);
   });
 
-  /** A container narrower than the box would otherwise produce a negative left. */
-  it('does not overflow a container narrower than itself', () => {
-    expect(leftOf({ caret: { x: 10, y: 20 }, containerWidth: 100 })).toBeGreaterThanOrEqual(8);
+  /** The fixed `w-64` the clamp arithmetic above is measured against. */
+  it('keeps its fixed width, and does not stretch to the plot', () => {
+    const box = boxOf({});
+    expect(box.className).toContain('w-64');
+    expect(box.style.right).toBe('');
+  });
+});
+
+/**
+ * The mode is this component's decision, taken from the width it is handed —
+ * which is why every case here is reached by passing a number rather than by
+ * resizing anything.
+ *
+ * The threshold is spelt out rather than imported, so moving it fails a test
+ * rather than quietly moving the test with it.
+ */
+describe('ChartTooltip strip mode on a narrow chart', () => {
+  const STRIP_MAX_WIDTH = 480;
+  const narrow = { containerWidth: STRIP_MAX_WIDTH - 1 };
+
+  const boxOf = (props: Partial<Parameters<typeof ChartTooltip>[0]>) => {
+    const { container } = renderTooltip(props);
+    return container.querySelector<HTMLElement>('[data-testid="chart-tooltip"]')!;
+  };
+
+  it('floats at the threshold width', () => {
+    expect(boxOf({ containerWidth: STRIP_MAX_WIDTH }).dataset.layout).toBe('floating');
+  });
+
+  it('becomes a strip just below it', () => {
+    expect(boxOf(narrow).dataset.layout).toBe('strip');
+  });
+
+  /** Both edges are the edge padding, so the strip spans the plot. */
+  it('spans the plot, with edge padding on both sides', () => {
+    const box = boxOf(narrow);
+    expect(box.style.left).toBe('8px');
+    expect(box.style.right).toBe('8px');
+    expect(box.className).not.toContain('w-64');
+  });
+
+  it('sits on the top edge of the plot', () => {
+    expect(boxOf({ ...narrow, caret: { x: 100, y: 42 } }).style.top).toBe('42px');
+  });
+
+  /**
+   * No flip and no clamp: a crosshair at either extreme leaves the strip exactly
+   * where it was. The arithmetic those two need is what put the floating box
+   * over the Month it was describing at phone width in the first place.
+   */
+  it('does not move with the crosshair', () => {
+    const atLeft = boxOf({ ...narrow, caret: { x: 0, y: 20 } });
+    const atRight = boxOf({ ...narrow, caret: { x: 470, y: 20 } });
+    expect(atLeft.style.left).toBe(atRight.style.left);
+    expect(atLeft.style.right).toBe(atRight.style.right);
+  });
+
+  /** A Month with several events scrolls rather than growing into the plot. */
+  it('caps its height at a third of the plot and scrolls beyond it', () => {
+    const box = boxOf({ ...narrow, plotHeight: 300 });
+    expect(box.style.maxHeight).toBe('100px');
+    expect(box.className).toContain('overflow-y-auto');
+  });
+
+  it('leaves the floating box uncapped and unscrolled', () => {
+    const box = boxOf({ containerWidth: 600, plotHeight: 300 });
+    expect(box.style.maxHeight).toBe('');
+    expect(box.className).not.toContain('overflow-y-auto');
   });
 });

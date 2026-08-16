@@ -45,6 +45,13 @@ export async function gotoDashboardShell(
   // ResizeObserver makes Chart.js size once at load and hold, which fixes the page dimensions.
   // Layout is static after load, so nothing legitimately needs resize observation here.
   //
+  // `RidershipChart` also observes its plot box, to keep the width the tooltip picks its layout
+  // from current. That survives this stub because the first measurement is a synchronous
+  // `clientWidth` read in a layout effect, not the observer's opening callback. What does *not*
+  // survive is a re-measure — expand and collapse the line selector, which puts the chart through
+  // `display: none`, and the width the tooltip holds is whatever it was before. No spec shoots a
+  // readout after that, and one that wants to must drive the resize itself.
+  //
   // This MUST stay ahead of `page.goto` — an init script only applies to documents created
   // after it is registered.
   await page.addInitScript(() => {
@@ -118,6 +125,17 @@ export async function stallRidership(page: Page): Promise<void> {
  */
 export function desktopOnly(): void {
   test.skip(() => test.info().project.name !== 'desktop', 'desktop-only view');
+}
+
+/**
+ * Skip the calling spec outside the `mobile` project. See `desktopOnly`.
+ *
+ * For the other half of the same problem: a view that only exists at the narrow
+ * breakpoint, where a desktop baseline would capture the wide form under a name
+ * that promises the narrow one.
+ */
+export function mobileOnly(): void {
+  test.skip(() => test.info().project.name !== 'mobile', 'mobile-only view');
 }
 
 /**

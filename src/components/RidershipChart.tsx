@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import {
   Chart as ChartJS,
   type ChartDataset,
@@ -63,7 +63,38 @@ export default function RidershipChart({
   const [chart, setChart] = useState<ChartJS<'line', CustomChartData[]> | null>(
     null,
   );
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  /**
+   * The plot's box, and its measured width.
+   *
+   * The element is state rather than a ref for the same reason the chart
+   * instance is: the width has to be measured once it exists, and a ref that
+   * fills in silently schedules nothing to measure it. The width was read
+   * straight off `ref.current.clientWidth` during render until the tooltip
+   * gained a layout that depends on it — which meant zero on the first paint and
+   * correct only after some unrelated re-render. Survivable for a clamp that is
+   * a few pixels out; not for a mode, which would open the readout in the wrong
+   * one and leave it there.
+   */
+  const [plotBox, setPlotBox] = useState<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  /**
+   * Measured in a layout effect so the first painted frame already has the real
+   * width, and re-measured by the observer so a window resize — or a panel
+   * beside the chart opening — switches the tooltip's mode rather than leaving a
+   * stale one on screen.
+   */
+  useLayoutEffect(() => {
+    if (!plotBox) return;
+    setContainerWidth(plotBox.clientWidth);
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setContainerWidth(entry.contentRect.width);
+    });
+    observer.observe(plotBox);
+    return () => observer.disconnect();
+  }, [plotBox]);
 
   // Stable identity: an inline callback ref is re-invoked with null and then the
   // instance on every render, which here would be a setState loop.
@@ -315,6 +346,11 @@ export default function RidershipChart({
         }
       : null;
 
+  /** What the strip caps itself against — the series it would otherwise cover. */
+  const plotHeight = chart
+    ? chart.chartArea.bottom - chart.chartArea.top
+    : 0;
+
   const activeEvents = activeIndex === null ? [] : (eventsByIndex.get(activeIndex) ?? []);
 
   /** What a screen reader hears when the focused month changes. */
@@ -357,7 +393,7 @@ export default function RidershipChart({
        */}
       <div className="relative min-h-[20rem] pt-[50%]">
         <div
-          ref={containerRef}
+          ref={setPlotBox}
           className="absolute inset-0 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-500"
           tabIndex={0}
           role="application"
@@ -379,7 +415,8 @@ export default function RidershipChart({
             datasets={chartDatasets}
             events={activeEvents}
             caret={caret}
-            containerWidth={containerRef.current?.clientWidth ?? 0}
+            containerWidth={containerWidth}
+            plotHeight={plotHeight}
             isPinned={pinnedIndex !== null}
           />
         </div>

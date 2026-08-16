@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { gotoDashboard, shootPane } from './helpers';
+import { gotoDashboard, mobileOnly, shootChart, shootPane } from './helpers';
 
 /**
  * Visual coverage for the chart's month readout.
@@ -8,12 +8,14 @@ import { gotoDashboard, shootPane } from './helpers';
  * `ChartTooltip` renders into the plot's box rather than into the canvas — so it crops to a
  * small, deterministic element rather than the 1184×592 canvas `chart-content.spec.ts` shoots.
  * Its sibling `chart-interaction.spec.ts` stays snapshot-free and asserts behaviour; what these
- * two baselines add is the layout that no attribute assertion can describe: the ridership rows
+ * baselines add is the layout that no attribute assertion can describe: the ridership rows
  * against the event block, the Category Chip beside the date under a neutral title, and the clamp.
+ *
+ * The last test is the exception to the crop, and to the two-project rule — see its own note.
  *
  * ## Reaching each state without pixel arithmetic
  *
- * Neither test hovers. A hover would have to guess a column's x-position from the plot's box,
+ * No test hovers. A hover would have to guess a column's x-position from the plot's box,
  * which moves with the axis width, the legend's wrap and the viewport — and `shootPane` parks
  * the cursor at 0,0 before capturing anyway, which would dismiss the very thing being shot.
  *
@@ -91,4 +93,59 @@ test('focused readout on a month that has an event', async ({ page }) => {
   await expect(tooltip.getByRole('link', { name: 'Source' })).toHaveCount(0);
 
   await shootPane(page, TOOLTIP, 'chart-tooltip-focused-event.png');
+});
+
+/**
+ * The strip, and the thing the strip exists to prove: that the readout no longer
+ * covers the Month it is describing.
+ *
+ * jsdom can answer whether the component chooses the mode — `ChartTooltip.test.tsx`
+ * does, by passing a width — but not whether a real 390px viewport produces a
+ * chart narrow enough to trigger it, nor where the strip lands once it does.
+ * Those are layout, and layout needs a browser.
+ *
+ * Mobile only. On desktop this shot would capture the floating box under a name
+ * that promises a strip, and `--update-snapshots` would bake that in.
+ */
+test.describe('narrow chart', () => {
+  mobileOnly();
+
+  test('readout is a strip that clears the plot', async ({ page }) => {
+    await gotoDashboard(page, WINDOW);
+
+    await page.locator('#context-log-panel li button').first().click();
+
+    const tooltip = page.locator(TOOLTIP);
+    await expect(tooltip).toHaveAttribute('data-layout', 'strip');
+    await expect(tooltip).toHaveAttribute('data-pinned', 'true');
+    await expect(tooltip).toContainText('COVID-19 Service Reductions');
+
+    // The plot's box in page coordinates, from the live chart rather than from
+    // an assumption about where the axis ended up — the same seam and the same
+    // reasoning as `chart-interaction.spec.ts`.
+    const plotBox = await plot(page).boundingBox();
+    if (!plotBox) throw new Error('the plot has no box');
+    const area = await page.evaluate(() => {
+      const chart = window.__metroChart;
+      return chart ? { top: chart.chartArea.top, bottom: chart.chartArea.bottom } : null;
+    });
+    if (!area) throw new Error('the chart has not published itself');
+
+    const strip = await tooltip.boundingBox();
+    if (!strip) throw new Error('the strip has no box');
+
+    const plotHeight = area.bottom - area.top;
+    const plotBottom = plotBox.y + area.bottom;
+
+    // A third of the plot, and a little over for the border and the rounding.
+    expect(strip.height).toBeLessThanOrEqual(plotHeight / 3 + 2);
+    // Which is what leaves the Month, its point and its crosshair readable.
+    expect(strip.y + strip.height).toBeLessThan(plotBottom);
+    // Full width, rather than the floating box's 256.
+    expect(strip.width).toBeGreaterThan(plotBox.width - 24);
+
+    // The pane, not the strip: the point of the shot is the strip *against* the
+    // plot it is no longer covering, and a crop of the strip alone shows neither.
+    await shootChart(page, 'chart-tooltip-strip.png');
+  });
 });
