@@ -217,11 +217,92 @@ describe('chart → ContextLogPanel', () => {
     ).toBe('false');
   });
 
-  it('rings the pinned row', () => {
+  /**
+   * Selection is the row's, not the button's. These assert the classes rather
+   * than computed style because jsdom resolves no Tailwind, so the class list is
+   * the only place the intent is visible from here; the rendered result is what
+   * `context-logs.spec.ts` covers.
+   */
+  it('bands the pinned row and thickens its rule', () => {
+    const { container } = renderPanel([opening], { pinnedMonth: '2023 2' });
+    const row = container.querySelector('#context-log-panel li');
+    expect(row?.className).toContain('bg-stone-200');
+    expect(row?.className).toContain('border-l-4');
+  });
+
+  it('leaves an unpinned row unbanded, on the thin rule', () => {
+    const { container } = renderPanel([opening], { pinnedMonth: null });
+    const row = container.querySelector('#context-log-panel li');
+    expect(row?.className).not.toContain('bg-stone-200');
+    expect(row?.className).toContain('border-l-2');
+  });
+
+  /**
+   * The band is neutral on every category deliberately — see `ContextLogPanel`
+   * for why.
+   *
+   * Comparing class lists alone would not catch a tinted band: the category
+   * reaches this row as an inline `borderColor`, never as a class, so a band
+   * that took the category's hue would take it inline too and leave both class
+   * lists identical. So this asserts the inline style as well — same (absent)
+   * background on both rows, while the border colours differ, which is what
+   * proves the two rows really are different categories.
+   */
+  it('bands every category the same', () => {
+    const bandedRow = (event: TransitEvent, month: string) => {
+      const { container, unmount } = renderPanel([event], {
+        pinnedMonth: month,
+      });
+      const row = container.querySelector('#context-log-panel li') as HTMLElement;
+      const read = {
+        className: row.className,
+        backgroundColor: row.style.backgroundColor,
+        borderColor: row.style.borderColor,
+      };
+      unmount();
+      return read;
+    };
+    const first = bandedRow(opening, '2023 2');
+    const second = bandedRow(closure, '2019 5');
+
+    expect(first.className).toContain('bg-stone-200');
+    expect(second.className).toBe(first.className);
+    // The band is a class, so nothing paints this row's background inline. A
+    // category-tinted band is exactly what would.
+    expect(first.backgroundColor).toBe('');
+    expect(second.backgroundColor).toBe('');
+    // …and the rows are genuinely two categories, or the assertions above are
+    // comparing one row with itself.
+    expect(first.borderColor).not.toBe(second.borderColor);
+  });
+
+  /**
+   * The ring used to be drawn only while pinned, so it was doubling as the
+   * keyboard focus indicator. Selection has moved to the row, which would leave
+   * focus with no mark at all — and an invisible focus ring is exactly the
+   * regression a screenshot cannot catch, so it is asserted here instead.
+   */
+  it('keeps a focus ring on the row control, independent of selection', () => {
+    renderPanel([opening], { pinnedMonth: null });
+    const row = screen.getByRole('button', { name: /Regional Connector/ });
+    expect(row.className).toContain('focus-visible:ring-2');
+  });
+
+  /**
+   * Pinning draws no ring at all, at any weight or colour.
+   *
+   * Asserted by stripping the `focus-visible:` utilities and requiring nothing
+   * ring-shaped to survive, rather than by naming the token that used to be
+   * there: `not.toContain('ring-stone-400')` would pass a pin-time ring
+   * reintroduced in any other colour, which is the regression worth holding.
+   */
+  it('no longer rings the pinned row', () => {
     renderPanel([opening], { pinnedMonth: '2023 2' });
-    expect(
-      screen.getByRole('button', { name: /Regional Connector/ }).className,
-    ).toContain('ring-2');
+    const row = screen.getByRole('button', { name: /Regional Connector/ });
+    const alwaysOn = row.className
+      .split(/\s+/)
+      .filter((token) => !token.startsWith('focus-visible:'));
+    expect(alwaysOn.filter((token) => token.startsWith('ring'))).toEqual([]);
   });
 
   /**
