@@ -72,8 +72,12 @@ and no clamp, capped at a third of the plot's height and scrolling within that. 
 chart rather than on any part of it, escaping the pane's padding and border to do so — the readout
 and the Month it describes stop competing for the same pixels, which is the whole of the mode. The
 cap is the reader's to lift: a pinned strip with anything under it offers **Expand**, which removes
-the ceiling rather than raising it, so nothing is left clipped. Distinct from a Line Readout, which is figures for one Line
-over the whole Month Window.
+the ceiling rather than raising it, so nothing is left clipped. Unpinned it cannot offer a control —
+it does not accept the pointer — so it says *Click to pin* instead; a capped readout never withholds
+content silently. **Releasing a Pinned Month dismisses the readout** rather than demoting it to a
+hovering one — on a touch screen there is no hover to fall back on and the demoted readout could
+neither be dismissed nor read. Distinct from a Line Readout, which is figures for one Line over the
+whole Month Window.
 _Caution_: "strip" is the Event Gutter's word too, and the two are different things at opposite ends
 of the plot. Say **top strip** or **Month Readout strip** where both are in play.
 _Avoid_: tooltip content, hover card, mobile tooltip
@@ -98,8 +102,9 @@ The single sticky Month the chart, the tooltip and the context-log panel all rea
 output area rather than by any one of them, because they are three views of one piece of state.
 **At most one exists, and it must be released before another can be taken** — a click while a Month
 is pinned releases it and pins nothing, identically on the chart and in the panel. Distinct from the
-hovered Month, which is transient and which a pin outranks. A pin marks what is read; it never opens
-or scrolls a view in order to be seen. See
+hovered Month, which is transient and which a pin outranks — and which a release clears, so the
+Month Readout goes when the pin does rather than falling back to a hover a touch screen could never
+end. A pin marks what is read; it never opens or scrolls a view in order to be seen. See
 [ADR-0011](docs/adr/0011-a-pin-marks-it-never-moves-a-view.md).
 _Avoid_: selected month, active month, focused month, sticky tooltip
 
