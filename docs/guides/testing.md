@@ -39,8 +39,10 @@ because tests that touch the date bounds need `virtual:ridership-bounds` to reso
 
 ## Visual regression
 
-Playwright screenshots the app and compares against committed baselines. **Nine specs, 39 Linux
-baselines.**
+Playwright screenshots the app and compares against committed baselines. **Ten specs, 48 Linux
+baselines.** An eleventh, [`chart-interaction.spec.ts`](../../e2e/chart-interaction.spec.ts), shoots
+nothing — the chart's interactive layer is an HTML tooltip and DOM attributes, so it is asserted
+rather than captured.
 
 ```bash
 npm run test:e2e               # run the suite (builds, serves, compares)
@@ -72,7 +74,8 @@ because an element crop would clip at the narrow viewport edge.
 | [`line-filters.spec.ts`](../../e2e/line-filters.spec.ts) | search, rail-only mode, the empty-mode state (desktop) | 5 |
 | [`summary-tiles.spec.ts`](../../e2e/summary-tiles.spec.ts) | the summary pane — a negative change, several lines | 4 |
 | [`map.spec.ts`](../../e2e/map.spec.ts) | all lines dimmed, selected in brand colours, selected at phone width | 3 |
-| [`context-logs.spec.ts`](../../e2e/context-logs.spec.ts) | the context-log panel open, and a window spanning all nine event categories (plus two absence assertions, no shots) | 4 |
+| [`chart-tooltip.spec.ts`](../../e2e/chart-tooltip.spec.ts) | the readout — pinned with its source link, focused with the description clamped, focused on a month carrying an event | 6 |
+| [`context-logs.spec.ts`](../../e2e/context-logs.spec.ts) | the context-log panel open, a window spanning all nine event categories, and a selected row wearing its band (plus two absence assertions, no shots) | 6 |
 | [`responsive-tablet.spec.ts`](../../e2e/responsive-tablet.spec.ts) | 768×1024 via a file-level `test.use`, not a fourth project | 2 |
 | [`table-view.spec.ts`](../../e2e/table-view.spec.ts) | sort chrome and ordering, a partial-coverage row (desktop) | 2 |
 | [`loading.spec.ts`](../../e2e/loading.spec.ts) | the output pane mid-fetch, and that a failed fetch doesn't crash (desktop) | 1 |

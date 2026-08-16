@@ -238,23 +238,42 @@ describe('chart → ContextLogPanel', () => {
   });
 
   /**
-   * The band is neutral on every category deliberately — a tinted one would
-   * shout on some hues and whisper on others. Two categories, one class list.
+   * The band is neutral on every category deliberately — see `ContextLogPanel`
+   * for why.
+   *
+   * Comparing class lists alone would not catch a tinted band: the category
+   * reaches this row as an inline `borderColor`, never as a class, so a band
+   * that took the category's hue would take it inline too and leave both class
+   * lists identical. So this asserts the inline style as well — same (absent)
+   * background on both rows, while the border colours differ, which is what
+   * proves the two rows really are different categories.
    */
   it('bands every category the same', () => {
-    const bandedRowClass = (event: TransitEvent, month: string) => {
+    const bandedRow = (event: TransitEvent, month: string) => {
       const { container, unmount } = renderPanel([event], {
         pinnedMonth: month,
       });
-      const className = container.querySelector(
-        '#context-log-panel li',
-      )?.className;
+      const row = container.querySelector('#context-log-panel li') as HTMLElement;
+      const read = {
+        className: row.className,
+        backgroundColor: row.style.backgroundColor,
+        borderColor: row.style.borderColor,
+      };
       unmount();
-      return className;
+      return read;
     };
-    const banded = bandedRowClass(opening, '2023 2');
-    expect(banded).toBeTruthy();
-    expect(bandedRowClass(closure, '2019 5')).toBe(banded);
+    const first = bandedRow(opening, '2023 2');
+    const second = bandedRow(closure, '2019 5');
+
+    expect(first.className).toContain('bg-stone-200');
+    expect(second.className).toBe(first.className);
+    // The band is a class, so nothing paints this row's background inline. A
+    // category-tinted band is exactly what would.
+    expect(first.backgroundColor).toBe('');
+    expect(second.backgroundColor).toBe('');
+    // …and the rows are genuinely two categories, or the assertions above are
+    // comparing one row with itself.
+    expect(first.borderColor).not.toBe(second.borderColor);
   });
 
   /**
@@ -269,10 +288,21 @@ describe('chart → ContextLogPanel', () => {
     expect(row.className).toContain('focus-visible:ring-2');
   });
 
+  /**
+   * Pinning draws no ring at all, at any weight or colour.
+   *
+   * Asserted by stripping the `focus-visible:` utilities and requiring nothing
+   * ring-shaped to survive, rather than by naming the token that used to be
+   * there: `not.toContain('ring-stone-400')` would pass a pin-time ring
+   * reintroduced in any other colour, which is the regression worth holding.
+   */
   it('no longer rings the pinned row', () => {
     renderPanel([opening], { pinnedMonth: '2023 2' });
     const row = screen.getByRole('button', { name: /Regional Connector/ });
-    expect(row.className).not.toContain('ring-stone-400');
+    const alwaysOn = row.className
+      .split(/\s+/)
+      .filter((token) => !token.startsWith('focus-visible:'));
+    expect(alwaysOn.filter((token) => token.startsWith('ring'))).toEqual([]);
   });
 
   /**

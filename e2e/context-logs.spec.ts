@@ -78,9 +78,9 @@ test('context log panel renders its events', async ({ page }) => {
  * nothing.
  *
  * Same window and line as the shot above, for the reasons in this file's header. The first
- * row is `2020-03 "COVID-19 Service Reductions"`, whose category is `disruption`; the band
- * is neutral on every category by design, so which one is pinned does not matter to what is
- * being asserted, only that a row is.
+ * row is `2020-03 "COVID-19 Service Reductions"`, whose category is `disruption`; the band is
+ * neutral on every category — `ContextLogPanel` says why — so which row is pinned does not
+ * matter to what is being asserted, only that one is.
  *
  * `shootPane` parks the cursor at 0,0 before capturing, which clears the row's hover. The
  * pin survives it — it is state, not hover — and Chromium does not match `:focus-visible`
