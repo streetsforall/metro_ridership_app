@@ -39,10 +39,11 @@ because tests that touch the date bounds need `virtual:ridership-bounds` to reso
 
 ## Visual regression
 
-Playwright screenshots the app and compares against committed baselines. **Ten specs, 48 Linux
-baselines.** An eleventh, [`chart-interaction.spec.ts`](../../e2e/chart-interaction.spec.ts), shoots
+Playwright screenshots the app and compares against committed baselines. **Twelve specs, 55 Linux
+baselines.** A thirteenth, [`chart-interaction.spec.ts`](../../e2e/chart-interaction.spec.ts), shoots
 nothing — the chart's interactive layer is an HTML tooltip and DOM attributes, so it is asserted
-rather than captured.
+rather than captured. [`stop-fixtures.ts`](../../e2e/stop-fixtures.ts) is not a spec either: it is
+the route stub the two stop suites share.
 
 ```bash
 npm run test:e2e               # run the suite (builds, serves, compares)
@@ -79,9 +80,25 @@ because an element crop would clip at the narrow viewport edge.
 | [`responsive-tablet.spec.ts`](../../e2e/responsive-tablet.spec.ts) | 768×1024 via a file-level `test.use`, not a fourth project | 2 |
 | [`table-view.spec.ts`](../../e2e/table-view.spec.ts) | sort chrome and ordering, a partial-coverage row (desktop) | 2 |
 | [`loading.spec.ts`](../../e2e/loading.spec.ts) | the output pane mid-fetch, and that a failed fetch doesn't crash (desktop) | 1 |
+| [`stop-panel.spec.ts`](../../e2e/stop-panel.spec.ts) | the stop panel — the ranked table, a selected stop's series, the no-overlap empty state, plus the lazy-load gate and the covered-period button (no shots) | 6 |
+| [`stop-map.spec.ts`](../../e2e/stop-map.spec.ts) | the `stops-selected` circle layer — rendered stop keys, the module's radius scale, layer order, and a click selecting a stop | 1 |
 
 The map is masked out of every full-page shot, because a live MapLibre map over third-party tiles
 never renders identically twice.
+
+**Spec names route to projects, so `stop-map.spec.ts` is named the way it is on purpose.** The
+`map` project's `testMatch` and the two viewport projects' `testIgnore` are both the unanchored
+`/map\.spec\.ts/`, so any name *ending* in `map.spec.ts` lands in the `map` project and nowhere
+else — which is where a WebGL baseline has to be, because that project pins SwiftShader and
+`deviceScaleFactor: 1`. Renaming such a file to something else moves it silently into both viewport
+projects, where it would shoot two baselines off the host GPU.
+
+The two stop suites route-stub both payloads with `stop-fixtures.ts` rather than reading
+`src/data/stop_ridership.bus.json`. That file is 5.3 MB and is rewritten every time an export
+lands; a baseline shot against it would move for reasons that have nothing to do with the code. The
+fixtures use **real stop keys**, because `attachStopLocations` joins against the bundled
+`stop_locations.json` and an invented key would decode fine and then be silently absent from the
+map.
 
 ### Why some shots are element-scoped
 

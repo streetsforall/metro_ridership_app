@@ -3,6 +3,7 @@ import { render, act } from '@testing-library/react';
 import maplibregl from 'maplibre-gl';
 import Map from '../Map';
 import { makeLine } from '../../test/builders';
+import type { StopView } from '../../stops';
 
 // Hoisted so the vi.mock factory below can close over them
 const captured = vi.hoisted(() => ({
@@ -12,6 +13,18 @@ const captured = vi.hoisted(() => ({
   addLayer: vi.fn(),
   addControl: vi.fn(),
   mapRemove: vi.fn(),
+  setPaintProperty: vi.fn(),
+  /** The stop source's `setData`, so a test can read what was pushed at it. */
+  setStopData: vi.fn(),
+  /**
+   * Layer ids in the order they were added, kept outside the mocks.
+   *
+   * `getLayer` has to answer for the whole life of one map instance, and a test that
+   * clears `addLayer` to prove nothing was re-added would otherwise also erase the
+   * record `getLayer` reads — making the component add the layer a second time and the
+   * test pass for the wrong reason.
+   */
+  layerIds: [] as string[],
 }));
 
 vi.mock('maplibre-gl', () => ({
@@ -20,10 +33,29 @@ vi.mock('maplibre-gl', () => ({
     Map: vi.fn().mockImplementation(function () {
       return {
         addSource: captured.addSource,
-        addLayer: captured.addLayer,
+        addLayer: captured.addLayer.mockImplementation((layer: { id: string }) => {
+          captured.layerIds.push(layer.id);
+        }),
         setFilter: captured.setFilter,
         addControl: captured.addControl,
         remove: captured.mapRemove,
+        setPaintProperty: captured.setPaintProperty,
+        // Only the stop source is asked for by id; anything else would be a bug in
+        // the component, so it gets `undefined` rather than a silent stub.
+        getSource: vi
+          .fn()
+          .mockImplementation((id: string) =>
+            id === 'stop-ridership'
+              ? { setData: captured.setStopData }
+              : undefined,
+          ),
+        // Mirrors `addLayer`, so `ensureStopLayer`'s "already there?" guard is answered
+        // by what the component actually added rather than by a fixed value.
+        getLayer: vi
+          .fn()
+          .mockImplementation((id: string) =>
+            captured.layerIds.includes(id) ? { id } : undefined,
+          ),
         setFeatureState: vi.fn(),
         getCanvas: vi
           .fn()
@@ -49,6 +81,7 @@ vi.mock('maplibre-gl', () => ({
 
 beforeEach(() => {
   captured.loadCallback = undefined;
+  captured.layerIds.length = 0;
   vi.clearAllMocks();
 });
 
@@ -169,6 +202,166 @@ describe('Map', () => {
       rerender(<Map lines={[makeLine({ id: 801, selected: true })]} />);
 
       expect(captured.setFilter).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * The stop layer. What is asserted here is the seam between `src/stops/` and
+   * MapLibre: the paint expressions read feature properties the module wrote, the
+   * source is added exactly once and only once there is something to draw, and
+   * everything after that is `setData` / `setFilter` / `setPaintProperty` on the live
+   * map.
+   */
+  describe('stop markers', () => {
+    const markers: StopView['markers'] = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [-118.29, 34.06] },
+          properties: {
+            stop_key: 'bus:vermont-wilshire',
+            line_id: 204,
+            name: 'Vermont / Wilshire',
+            radius: 11.5,
+            color: '#abcdef',
+            value: 1000,
+          },
+        },
+      ],
+    };
+
+    const loaded = (props: Partial<React.ComponentProps<typeof Map>> = {}) => {
+      const rendered = render(<Map lines={[]} {...props} />);
+      act(() => {
+        captured.loadCallback?.();
+      });
+      return rendered;
+    };
+
+    it('adds one stop-ridership source and one stops-selected layer', () => {
+      loaded({ stopMarkers: markers });
+      expect(captured.addSource).toHaveBeenCalledWith(
+        'stop-ridership',
+        expect.objectContaining({ type: 'geojson' }),
+      );
+      expect(captured.addLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'stops-selected', type: 'circle' }),
+      );
+    });
+
+    /**
+     * The stop panel is off by default and most readers never open it, so a map that
+     * was never asked for stops carries exactly the two route layers it always did.
+     * `e2e/map.spec.ts` asserts that stack exactly, and this is what keeps it true.
+     */
+    it('adds no stop layer at all when there is nothing to draw', () => {
+      loaded();
+      expect(captured.addSource).not.toHaveBeenCalledWith(
+        'stop-ridership',
+        expect.anything(),
+      );
+      expect(captured.layerIds).toEqual(['lines-all', 'lines-selected']);
+    });
+
+    it('reads radius and colour off the feature rather than recomputing them', () => {
+      loaded({ stopMarkers: markers });
+      expect(captured.addLayer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'stops-selected',
+          paint: expect.objectContaining({
+            'circle-radius': ['get', 'radius'],
+            'circle-color': ['get', 'color'],
+          }) as unknown,
+        }),
+      );
+    });
+
+    it('adds the stop layer above the selected-routes layer', () => {
+      loaded({ stopMarkers: markers });
+      expect(captured.layerIds).toEqual([
+        'lines-all',
+        'lines-selected',
+        'stops-selected',
+      ]);
+    });
+
+    it('filters the stop layer to the same selection as the route layer', () => {
+      loaded({ stopMarkers: markers, lines: [makeLine({ id: 204, selected: true })] });
+      expect(captured.setFilter).toHaveBeenCalledWith('stops-selected', [
+        'in',
+        ['get', 'line_id'],
+        ['literal', [204]],
+      ]);
+    });
+
+    it('pushes new markers at the existing source instead of re-adding it', () => {
+      const { rerender } = loaded({ stopMarkers: markers });
+      expect(captured.setStopData).toHaveBeenCalledWith(markers);
+
+      const nextMarkers: StopView['markers'] = {
+        type: 'FeatureCollection',
+        features: [],
+      };
+      captured.addSource.mockClear();
+      rerender(<Map lines={[]} stopMarkers={nextMarkers} />);
+
+      expect(captured.setStopData).toHaveBeenCalledWith(nextMarkers);
+      expect(captured.addSource).not.toHaveBeenCalled();
+    });
+
+    it('adds the layer when markers arrive after the style has loaded', () => {
+      const { rerender } = loaded();
+      expect(captured.addSource).not.toHaveBeenCalledWith(
+        'stop-ridership',
+        expect.anything(),
+      );
+
+      rerender(<Map lines={[]} stopMarkers={markers} />);
+
+      expect(captured.addSource).toHaveBeenCalledWith(
+        'stop-ridership',
+        expect.objectContaining({ type: 'geojson' }),
+      );
+    });
+
+    it('does not touch the source before the style has loaded', () => {
+      render(<Map lines={[]} stopMarkers={markers} />);
+      expect(captured.setStopData).not.toHaveBeenCalled();
+    });
+
+    it('marks the selected stop through paint properties, not a new layer', () => {
+      const { rerender } = loaded({ stopMarkers: markers });
+      captured.addLayer.mockClear();
+
+      rerender(
+        <Map
+          lines={[]}
+          stopMarkers={markers}
+          selectedStopKey="bus:vermont-wilshire"
+        />,
+      );
+
+      expect(captured.setPaintProperty).toHaveBeenCalledWith(
+        'stops-selected',
+        'circle-stroke-width',
+        expect.arrayContaining(['case']) as unknown,
+      );
+      expect(captured.addLayer).not.toHaveBeenCalled();
+    });
+
+    it('encodes the measure in fill and stroke rather than a second colour', () => {
+      const { rerender } = loaded({ stopMarkers: markers });
+      captured.setPaintProperty.mockClear();
+
+      rerender(<Map lines={[]} stopMarkers={markers} stopMeasure="offs" />);
+
+      const properties = captured.setPaintProperty.mock.calls.map(
+        (call) => call[1] as string,
+      );
+      expect(properties).toContain('circle-opacity');
+      expect(properties).toContain('circle-stroke-width');
+      expect(properties).not.toContain('circle-color');
     });
   });
 });

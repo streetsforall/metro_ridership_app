@@ -61,6 +61,11 @@ function App() {
     isAggregateVisible,
     showContextLogs,
     toggleShowContextLogs,
+    showStops,
+    stopMeasure,
+    setStopMeasure,
+    selectedStopKey,
+    setSelectedStopKey,
   } = userDashboardInputState;
 
   const isLoading = ridershipRecords === null;
@@ -200,6 +205,18 @@ function App() {
               showContextLogs={showContextLogs}
               isLoading={isLoading}
               onRangeSelect={handleRangeSelect}
+              /* The stop panel's state is threaded through rather than read in
+                 OutputArea, because it is URL-synced and useUserDashboardInput owns
+                 the URL. The panel's *data* is not: `useStopView` lives inside the
+                 lazy chunk so its payloads never reach the first-paint path. */
+              showStops={showStops}
+              stopMeasure={stopMeasure}
+              onStopMeasureChange={setStopMeasure}
+              selectedStopKey={selectedStopKey}
+              onSelectStop={setSelectedStopKey}
+              startDate={startDate}
+              endDate={endDate}
+              dayOfWeek={dayOfWeek}
             />
           </Suspense>
         </div>

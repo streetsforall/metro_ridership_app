@@ -28,3 +28,15 @@
   text-align: right;
   font-weight: 600;
 }
+
+/**
+ * The line a stop popup's figures are measured on. A stop served by three lines has
+ * three readouts and the marker under the cursor is one of them, so the popup has to
+ * say which — the stop name alone would read as a whole-stop total, which is a figure
+ * this app deliberately does not derive.
+ */
+.map-popup-sub {
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: #78716c;
+}
