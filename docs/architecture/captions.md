@@ -87,7 +87,7 @@ sparkline for every *listed* line while the chart covers only the *selected* one
 
 ## 07-component-tree — Component tree
 
-Eight components, no router, no context providers. `App` spreads the entire hook state into
+Nine components, no router, no context providers. `App` spreads the entire hook state into
 `LineSelector` with `{...userDashboardInputState}`, so that component's real interface is far wider
 than its props list suggests.
 

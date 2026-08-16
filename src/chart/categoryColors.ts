@@ -75,27 +75,64 @@ export function categoryTextColor(category: EventCategory | undefined): string {
 }
 
 /**
- * Chip fill and text for a category.
- *
- * Tailwind class names can't be built at runtime — the JIT scanner only sees
- * literals — so these resolve to hex and go on as inline styles, the same way
- * the row's rule colour does.
- *
- * `100`/`800` rather than the gutter's `500`: the chip is the one place the
- * palette carries *text*, so it is the one place contrast is load-bearing
- * rather than decorative. Every pair clears AA comfortably — amber is tightest
- * at 6.37:1 — where the `500` the chart fills with would be unreadable behind
- * text at 2.15–4.76:1 on this pane.
+ * The surface a chip is drawn on. The panel is light and the tooltip is dark,
+ * and one pair of values cannot serve both: a `100` fill that reads as a soft
+ * tint on white is a glare on stone-800.
  */
-export function categoryChip(category: EventCategory | undefined): {
+export type ChipSurface = 'light' | 'dark';
+
+/**
+ * The two weights each surface takes, mirrored across the ramp so there is one
+ * rule rather than two tables: fill from the end nearest the surface, write in
+ * the weight opposite it.
+ */
+const CHIP_WEIGHTS: Record<
+  ChipSurface,
+  { backgroundColor: '100' | '900'; color: '200' | '800' }
+> = {
+  light: { backgroundColor: '100', color: '800' },
+  dark: { backgroundColor: '900', color: '200' },
+};
+
+/**
+ * Chip fill and text for a category on a given surface.
+ *
+ * One lookup rather than four exports, because the four values are one
+ * decision. Tailwind class names can't be built at runtime — the JIT scanner
+ * only sees literals — so these resolve to hex and go on as inline styles, the
+ * same way the row's rule colour does.
+ *
+ * Not the gutter's `500`: the chip is the one place the palette carries *text*,
+ * so it is the one place contrast is load-bearing rather than decorative, and
+ * the `500` the chart fills with would be unreadable behind text at 2.15–4.76:1
+ * on the panel's white. Both chip pairs clear AA on every hue:
+ *
+ *   light — `800` on `100`   6.37:1 (amber, tightest) … 13.35:1 (slate)
+ *   dark  — `200` on `900`   6.78:1 (rose, tightest)  … 14.48:1 (slate)
+ *
+ * The dark fill is a chip, not a highlight: `900` sits only 1.38–1.67:1 against
+ * the tooltip's stone-800, and slate — the fallback hue — is flattest at 1.18:1,
+ * so an uncategorised chip reads as its label with barely a fill behind it. That
+ * is the intended reading. Nothing here is the sole signal for a category: the
+ * name is written in the chip, which is what carries the taxonomy for a reader
+ * who cannot separate red from rose or amber from orange.
+ */
+export function categoryChip(
+  category: EventCategory | undefined,
+  surface: ChipSurface,
+): {
   backgroundColor: string;
   color: string;
 } {
   const hue = categoryHue(category);
-  return { backgroundColor: colors[hue]['100'], color: colors[hue]['800'] };
+  const weights = CHIP_WEIGHTS[surface];
+  return {
+    backgroundColor: colors[hue][weights.backgroundColor],
+    color: colors[hue][weights.color],
+  };
 }
 
-/** "headway_change" → "Headway change", for the panel's category label. */
+/** "headway_change" → "Headway change", the name written in a Category Chip. */
 export function formatCategory(category: EventCategory | undefined): string {
   if (!category) return 'Service change';
   const words = category.replace(/_/g, ' ');

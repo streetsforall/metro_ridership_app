@@ -25,11 +25,13 @@ flowchart TB
     summary["SummaryData"]
     ctxlog["ContextLogPanel — #context-log-panel"]
     mapCmp["Map — #lineMap"]
+    chip["CategoryChip — tinted,<br/>takes its surface"]
     oa --> chart
     oa --> summary
     oa --> ctxlog
     oa --> mapCmp
     chart --> tooltip
+    ctxlog --> chip
     chart -. "pinned month" .-> ctxlog
     ctxlog -. "hovered month" .-> chart
   end

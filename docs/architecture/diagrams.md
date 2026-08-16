@@ -391,7 +391,7 @@ flowchart TB
 
 ## Component tree
 
-Eight components, no router, no context providers. `App` spreads the entire hook state into
+Nine components, no router, no context providers. `App` spreads the entire hook state into
 `LineSelector` with `{...userDashboardInputState}`, so that component's real interface is far wider
 than its props list suggests.
 
@@ -432,11 +432,13 @@ flowchart TB
     summary["SummaryData"]
     ctxlog["ContextLogPanel — #context-log-panel"]
     mapCmp["Map — #lineMap"]
+    chip["CategoryChip — tinted,<br/>takes its surface"]
     oa --> chart
     oa --> summary
     oa --> ctxlog
     oa --> mapCmp
     chart --> tooltip
+    ctxlog --> chip
     chart -. "pinned month" .-> ctxlog
     ctxlog -. "hovered month" .-> chart
   end
