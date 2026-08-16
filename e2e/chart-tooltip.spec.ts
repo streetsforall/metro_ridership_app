@@ -9,7 +9,7 @@ import { gotoDashboard, shootPane } from './helpers';
  * small, deterministic element rather than the 1184×592 canvas `chart-content.spec.ts` shoots.
  * Its sibling `chart-interaction.spec.ts` stays snapshot-free and asserts behaviour; what these
  * two baselines add is the layout that no attribute assertion can describe: the ridership rows
- * against the event block, the category-tinted title, and the clamp.
+ * against the event block, the Category Chip beside the date under a neutral title, and the clamp.
  *
  * ## Reaching each state without pixel arithmetic
  *

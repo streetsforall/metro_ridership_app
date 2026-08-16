@@ -412,7 +412,7 @@ describe('event gutter hit-testing', () => {
  * adding a tenth category to the union breaks this file at compile time, which
  * is how a new category gets a color instead of silently inheriting the default.
  */
-const EXPECTED_HUE: Record<EventCategory, { '400': string; '500': string }> = {
+const EXPECTED_HUE: Record<EventCategory, { '500': string }> = {
   opening: colors.emerald,
   extension: colors.teal,
   closure: colors.red,

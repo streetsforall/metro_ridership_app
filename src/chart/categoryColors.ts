@@ -17,12 +17,11 @@ import type { EventCategory } from '../@types/events.types';
  *   sky               costs something different (fare)
  *   slate             generic, uncategorised (service_change)
  *
- * Only the hue is stored; callers pick the weight, which keeps the gutter (500)
- * and the tooltip's title text (400, for contrast on stone-800) in the same
- * family without a second nine-entry table to keep in sync. All nine 400s clear
- * AA on stone-800 — red is the tightest at 5.48:1 — so no slot needs an
- * exception. The 500s run 2.15–4.76:1 on the panel's white, which is why the
- * panel tints a rule rather than text.
+ * Only the hue is stored; callers pick the weight, which keeps the gutter's
+ * shapes (500) and the Category Chip's fill and text in the same family without
+ * a second nine-entry table to keep in sync. The 500s run 2.15–4.76:1 on the
+ * panel's white, which is why the panel tints a rule rather than text, and why
+ * the chip picks its own weights per surface — see `categoryChip`.
  */
 type CategoryHue =
   | 'emerald'
@@ -67,11 +66,6 @@ function categoryHue(category: EventCategory | undefined): CategoryHue {
 /** Gutter/border color for an event's category. */
 export function categoryColor(category: EventCategory | undefined): string {
   return colors[categoryHue(category)]['500'];
-}
-
-/** Lighter variant, for category-tinted text on the dark tooltip. */
-export function categoryTextColor(category: EventCategory | undefined): string {
-  return colors[categoryHue(category)]['400'];
 }
 
 /**

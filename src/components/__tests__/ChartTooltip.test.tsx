@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import type { ChartDataset } from 'chart.js';
 import colors from 'tailwindcss/colors';
 import ChartTooltip from '../ChartTooltip';
@@ -105,9 +105,17 @@ describe('ChartTooltip event context', () => {
     source: 'https://example.com/connector',
   });
 
+  /**
+   * The entry has no role and no accessible name of its own, so the divider it
+   * is separated by is the only handle on it. Named once here rather than spelt
+   * out at each use, so a change to how entries are divided is one edit.
+   */
+  const eventEntry = (container: HTMLElement) =>
+    container.querySelector<HTMLElement>('.border-t');
+
   it('shows no event section for a month with nothing in it', () => {
     const { container } = renderTooltip();
-    expect(container.querySelector('.border-t')).toBeNull();
+    expect(eventEntry(container)).toBeNull();
   });
 
   /**
@@ -121,17 +129,48 @@ describe('ChartTooltip event context', () => {
     expect(screen.getByText('8,000')).toBeTruthy();
   });
 
-  it('labels the event with its month and category', () => {
+  it('carries the category as a chip rather than text after the date', () => {
     renderTooltip({ events: [opening] });
-    expect(screen.getByText('Jun 2020 · Opening')).toBeTruthy();
+    expect(screen.getByText('Opening')).toBeTruthy();
+    expect(screen.queryByText(/·/)).toBeNull();
   });
 
-  it('tints the title with the category hue', () => {
+  /** `within` the entry, because the tooltip's own heading reads "Jun 2020" too. */
+  it('still shows the event date', () => {
+    const { container } = renderTooltip({ events: [opening] });
+    const entry = eventEntry(container) as HTMLElement;
+    expect(within(entry).getByText('Jun 2020')).toBeTruthy();
+  });
+
+  /** The chip is drawn on the tooltip's stone-800, not the panel's white. */
+  it('draws the chip on its dark surface', () => {
     renderTooltip({ events: [opening] });
-    const title = screen.getByText('Regional Connector Opening');
+    const chip = screen.getByText('Opening');
     const expected = document.createElement('div');
-    expected.style.color = colors.emerald['400'];
-    expect(title.style.color).toBe(expected.style.color);
+    expected.style.backgroundColor = colors.emerald['900'];
+    expected.style.color = colors.emerald['200'];
+    expect(chip.style.backgroundColor).toBe(expected.style.backgroundColor);
+    expect(chip.style.color).toBe(expected.style.color);
+  });
+
+  /**
+   * Colour says one thing here. A tinted title made it say two — which category
+   * this is, and where the title ends — while the category itself sat as grey
+   * text after the date.
+   */
+  it('leaves the title neutral, with no category tint', () => {
+    renderTooltip({ events: [opening] });
+    expect(screen.getByText('Regional Connector Opening').style.color).toBe('');
+  });
+
+  /** Title, then chip and date, then description. */
+  it('reads title first, with the chip and date beneath it', () => {
+    const { container } = renderTooltip({ events: [opening] });
+    const entry = eventEntry(container) as HTMLElement;
+    const title = screen.getByText('Regional Connector Opening');
+    const chipRow = screen.getByText('Opening').parentElement as HTMLElement;
+    const description = screen.getByText(/downtown tunnel/);
+    expect([...entry.children]).toEqual([title, chipRow, description]);
   });
 
   it('lists every event in a month that holds more than one', () => {
@@ -143,6 +182,10 @@ describe('ChartTooltip event context', () => {
     });
     expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
     expect(screen.getByText('Fare change')).toBeTruthy();
+    // One chip each, and they say different things — the second event keeps the
+    // builder's `service_change`, so a shared chip would show only one label.
+    expect(screen.getByText('Opening')).toBeTruthy();
+    expect(screen.getByText('Service change')).toBeTruthy();
   });
 });
 

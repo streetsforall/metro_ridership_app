@@ -55,7 +55,9 @@ white is a glare on the tooltip's stone-800. Its colours come from the same nine
 category-to-hue table the Event Gutter fills from, so a chip cannot drift from the shape marking the
 event it describes. The name is written in the chip rather than left to hue: nine categories are
 more than colour alone can carry, and the panel keeps its coloured left rule alongside the chip
-rather than in place of it.
+rather than in place of it. Both surfaces are in use: the context-log panel's rows and the chart
+tooltip's event entries. Where the chip appears, the title beside it is neutral — colour names the
+category and nothing else.
 _Avoid_: badge, tag, pill, category label
 
 **Pinned Month**:

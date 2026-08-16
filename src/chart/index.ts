@@ -40,12 +40,7 @@ export {
   consumeDragSuppression,
   RANGE_SELECT_EVENTS,
 } from './rangeSelect';
-export {
-  categoryColor,
-  categoryTextColor,
-  categoryChip,
-  formatCategory,
-} from './categoryColors';
+export { categoryColor, categoryChip, formatCategory } from './categoryColors';
 export type { ChipSurface } from './categoryColors';
 export {
   eventDateToLabel,

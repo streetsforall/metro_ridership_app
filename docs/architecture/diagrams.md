@@ -439,6 +439,7 @@ flowchart TB
     oa --> mapCmp
     chart --> tooltip
     ctxlog --> chip
+    tooltip --> chip
     chart -. "pinned month" .-> ctxlog
     ctxlog -. "hovered month" .-> chart
   end
