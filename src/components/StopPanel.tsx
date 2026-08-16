@@ -111,8 +111,20 @@ export default function StopPanel({
 
   const hasSelection = lines.length > 0;
 
+  /**
+   * Is there anything on screen yet?
+   *
+   * The two payloads have independent fates: rail lands first, and bus is a separate
+   * multi-megabyte request made later, when a bus line joins the selection. So neither
+   * "loading" nor "failed" may take over the whole panel once there are readouts —
+   * doing that blanks a table the reader is looking at for the length of a 5.3 MB
+   * download, and turns one 404 into "nothing could be loaded" when half of it did.
+   * Below, both become a note beside the data instead.
+   */
+  const hasReadouts = view.readouts.length > 0;
+
   const body = () => {
-    if (hasFailed)
+    if (hasFailed && !hasReadouts)
       return (
         <p className="py-8 text-center text-sm text-stone-400">
           Stop-level ridership could not be loaded.
@@ -121,7 +133,7 @@ export default function StopPanel({
     // Order matters: `overlapsWindow` is `false` while nothing has loaded, so the
     // loading state has to be answered before the empty one or a slow network reads
     // as "this period has no stop data".
-    if (isLoading)
+    if (isLoading && !hasReadouts)
       return (
         <p className="py-8 text-center text-sm text-stone-400">
           Loading stop ridership…
@@ -134,7 +146,7 @@ export default function StopPanel({
           Select a Metro line to see its stops.
         </p>
       );
-    if (view.readouts.length === 0)
+    if (!hasReadouts)
       return (
         <p className="py-8 text-center text-sm text-stone-400">
           No stop-level data for the selected lines in this period.
@@ -143,6 +155,23 @@ export default function StopPanel({
 
     return (
       <>
+        {/* A second payload arriving, or failing, beside data that is already here.
+            A note, not a takeover — see `hasReadouts`. */}
+        {isLoading && (
+          <p
+            className="mt-2 text-xs text-stone-400"
+            data-qa="stop-loading-more"
+            aria-live="polite"
+          >
+            Loading more stops…
+          </p>
+        )}
+        {hasFailed && !isLoading && (
+          <p className="mt-2 text-xs text-stone-400" data-qa="stop-partial-failure">
+            Some stop-level ridership could not be loaded.
+          </p>
+        )}
+
         {selectedReadout && (
           <figure className="mt-3" data-qa="stop-series-figure">
             <figcaption className="mb-1 text-xs text-stone-500">
@@ -206,7 +235,6 @@ export default function StopPanel({
       <div className="mt-2">
         <StopCoverageNotice
           state={coverageState}
-          coverage={view.coverage}
           months={view.months}
           onUseCoverageWindow={onUseCoverageWindow}
         />

@@ -6,7 +6,6 @@ import {
 import { formatEventDate } from '../chart';
 import { dataMaxYear, dataMinYear } from '../utils/dataDateRange';
 import type { StopCoverageState } from '../utils/stopCoverage';
-import type { StopCoverage } from '../stops';
 
 /**
  * The Stop Coverage Window against the Month Window, said out loud.
@@ -43,7 +42,6 @@ const coveredSpan = `${monthLabel(minMonth)} – ${monthLabel(maxMonth)}`;
 
 export interface StopCoverageNoticeProps {
   state: StopCoverageState;
-  coverage: StopCoverage;
   /** The Stop View's month axis, for the partial-coverage label. */
   months: readonly string[];
   /** Set the Month Window to the Stop Coverage Window. `YYYY-MM` both ends. */
@@ -52,7 +50,6 @@ export interface StopCoverageNoticeProps {
 
 export default function StopCoverageNotice({
   state,
-  coverage,
   months,
   onUseCoverageWindow,
 }: StopCoverageNoticeProps) {
@@ -88,12 +85,15 @@ export default function StopCoverageNotice({
             The selected period has no stop-level data. It is available for{' '}
             {coveredSpan}.
           </p>
+          {/* The span the button *sets* is the span it *names* — both from the
+              manifest. Sending the view's own `coverage` instead would send the span
+              of whatever happens to be loaded, which in this state is the rail payload
+              alone, because the bus fetch is gated on the window overlapping. Today
+              the two agree; one source is what keeps them agreeing. */}
           <button
             type="button"
             id="use-stop-coverage-window"
-            onClick={() =>
-              onUseCoverageWindow(coverage.from!, coverage.to!)
-            }
+            onClick={() => onUseCoverageWindow(minMonth!, maxMonth!)}
             className="button"
           >
             Show {coveredSpan}

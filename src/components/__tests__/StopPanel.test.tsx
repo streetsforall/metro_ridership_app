@@ -181,10 +181,34 @@ describe('StopPanel', () => {
   });
 
   it('distinguishes a failed fetch from an empty period', () => {
-    renderPanel({ hasFailed: true });
+    renderPanel({ hasFailed: true, view: makeView({ readouts: [] }) });
     expect(
       screen.getByText('Stop-level ridership could not be loaded.'),
     ).toBeTruthy();
+  });
+
+  /**
+   * Rail and bus are separate requests with independent fates, and bus is 5.3 MB and
+   * arrives later. Neither its wait nor its failure may take the panel over once there
+   * is a table on screen — that would blank what the reader is looking at, or report
+   * one 404 as "nothing could be loaded" when half of it loaded.
+   */
+  it('keeps the table on screen while a second payload loads', () => {
+    renderPanel({ isLoading: true });
+    expect(document.querySelector('[data-qa="stop-table"]')).toBeTruthy();
+    expect(document.querySelector('[data-qa="stop-loading-more"]')).toBeTruthy();
+    expect(screen.queryByText('Loading stop ridership…')).toBeNull();
+  });
+
+  it('keeps the table on screen when one of two payloads fails', () => {
+    renderPanel({ hasFailed: true });
+    expect(document.querySelector('[data-qa="stop-table"]')).toBeTruthy();
+    expect(
+      document.querySelector('[data-qa="stop-partial-failure"]'),
+    ).toBeTruthy();
+    expect(
+      screen.queryByText('Stop-level ridership could not be loaded.'),
+    ).toBeNull();
   });
 
   it('says so when the selected lines have no stop data in the period', () => {
