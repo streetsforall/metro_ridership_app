@@ -21,6 +21,9 @@ export interface DateRangeSelectorProps {
 
   showContextLogs: boolean;
   toggleShowContextLogs: () => void;
+
+  showStops: boolean;
+  toggleShowStops: () => void;
 }
 
 type IntervalEndpoint = 'start' | 'end';
@@ -34,6 +37,8 @@ export default function DateRangeSelector({
   setDayOfWeek,
   showContextLogs,
   toggleShowContextLogs,
+  showStops,
+  toggleShowStops,
 }: DateRangeSelectorProps) {
   const getDateSetter = (
     intervalEndpoint: IntervalEndpoint,
@@ -174,27 +179,52 @@ export default function DateRangeSelector({
       <fieldset>
         <legend>Panel Visibility</legend>
 
-        <div className="flex items-center">
-          <Checkbox.Root
-            id="context-logs"
-            onClick={toggleShowContextLogs}
-            checked={showContextLogs}
-            className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
-          >
-            <Checkbox.Indicator>
-              <img
-                src={checkIcon}
-                height={20}
-                width={20}
-                alt="Check"
-                className="recolor-white"
-              />
-            </Checkbox.Indicator>
-          </Checkbox.Root>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex items-center">
+            <Checkbox.Root
+              id="context-logs"
+              onClick={toggleShowContextLogs}
+              checked={showContextLogs}
+              className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
+            >
+              <Checkbox.Indicator>
+                <img
+                  src={checkIcon}
+                  height={20}
+                  width={20}
+                  alt="Check"
+                  className="recolor-white"
+                />
+              </Checkbox.Indicator>
+            </Checkbox.Root>
 
-          <label className="pl-2" htmlFor="context-logs">
-            Context Logs
-          </label>
+            <label className="pl-2" htmlFor="context-logs">
+              Context Logs
+            </label>
+          </div>
+
+          <div className="flex items-center">
+            <Checkbox.Root
+              id="stop-ridership"
+              onClick={toggleShowStops}
+              checked={showStops}
+              className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
+            >
+              <Checkbox.Indicator>
+                <img
+                  src={checkIcon}
+                  height={20}
+                  width={20}
+                  alt="Check"
+                  className="recolor-white"
+                />
+              </Checkbox.Indicator>
+            </Checkbox.Root>
+
+            <label className="pl-2" htmlFor="stop-ridership">
+              Stop Ridership
+            </label>
+          </div>
         </div>
       </fieldset>
     </div>

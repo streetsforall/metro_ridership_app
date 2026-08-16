@@ -28,7 +28,7 @@ PRs update it rather than restating their own scope.
 | **2** | `fetch_stop_locations.py`, `src/data/stop_locations.json`, `scripts/README.md`, tests | Match rate reported; unmatched reviewed and aliases extended | ☑ [#179](https://github.com/streetsforall/metro_ridership_app/pull/179) — bus 6,756/6,785 · rail 110/110 |
 | **3** | `stop_ridership.py`, `update_ridership.py` wiring, the two data files, `DATA_RELEASE_NOTES.md` | Reconciliation within tolerance; two runs byte-identical | ☑ [#190](https://github.com/streetsforall/metro_ridership_app/pull/190) — 107,454 stop rows · two runs byte-identical · reconciliation median 0.06%, max 5.10% (see below) |
 | **4** | Vite plugin, manifest, `src/stops/`, `stops.types.ts`, the `isInMonthWindow` extraction, vitest specs. **No visible UI.** | `ANALYZE=1 npm run build` — entry chunk unchanged; no visual baseline moves | ☑ [#180](https://github.com/streetsforall/metro_ridership_app/pull/180) — entry +36 B (the extracted predicate, nothing else) · 0 of 80 baselines moved |
-| **5** | Map layer, `#stop-panel`, URL state, `mapPopup` addition, Playwright baselines | New baselines only; `visual.spec.ts`'s six must **not** move | ☑ [#223](https://github.com/streetsforall/metro_ridership_app/pull/223) — 7 new baselines · 0 of 48 existing moved · entry chunk +1.0 kB |
+| **5** | Map layer, `#stop-panel`, URL state, `mapPopup` addition, Playwright baselines | New baselines only; `visual.spec.ts`'s six must **not** move — **gate later traded away for the filter-bar toggle, see below** | ☑ [#223](https://github.com/streetsforall/metro_ridership_app/pull/223) — 7 new baselines · entry chunk +1.0 kB · 9 full-page baselines pending regeneration |
 
 1 → 2 → 3 are pipeline-serial. 4 can start once PR 1's schema is fixed. PR 3 carries
 the multi-megabyte data diff alone, so its review is "is the data right", not "is the
@@ -184,13 +184,26 @@ fetcher. Worth moving, in a PR that is allowed to touch both.
 
 ## What PR 5 found
 
-**The panel has no visibility control, deliberately.** It opens with `stops=1` and the hook exposes
-`showStops` / `toggleShowStops` ready to bind — but no checkbox was added, for two reasons that
-point the same way. Any new chrome in the filter bar moves `visual.spec.ts`'s full-page baselines,
-which this PR's gate forbids; and [#181](https://github.com/streetsforall/metro_ridership_app/pull/181)
-and [#182](https://github.com/streetsforall/metro_ridership_app/pull/182) are both open, both
-rewriting `DateRangeSelector` into a Panel Settings section, and both regenerating those baselines.
-The toggle belongs there, in one line. **Follow-up: bind Panel Settings to `toggleShowStops`.**
+**The panel's visibility control was deferred, then added.** The panel opens with `stops=1`, and the
+hook has always exposed `showStops` / `toggleShowStops`. No checkbox was added at first, for two
+reasons that pointed the same way: any new chrome in the filter bar moves the full-page baselines,
+which this PR's original gate forbade; and
+[#181](https://github.com/streetsforall/metro_ridership_app/pull/181) and
+[#182](https://github.com/streetsforall/metro_ridership_app/pull/182) are both open, both rewriting
+`DateRangeSelector` into a Panel Settings section, and both regenerating those baselines.
+
+It was added anyway, on request — a second checkbox in `DateRangeSelector`'s existing **Panel
+Visibility** fieldset, beside Context Logs, labelled *Stop Ridership*. `App` threads `showStops` and
+`toggleShowStops` down explicitly, because `DateRangeSelector` takes named props rather than the
+`{...userDashboardInputState}` spread `LineSelector` gets.
+
+**This trades the gate away, and the cost is nine baselines, not six.** Three specs screenshot
+`fullPage` with the filter bar in frame: `visual.spec.ts` (6), `responsive-tablet.spec.ts` (2 — its
+own comment at `:45` names the `sm:flex-row` date range selector as a branch under test), and
+`chart-tooltip.spec.ts`'s `chart-tooltip-strip-mobile` (1). All nine now need regenerating, and the
+movement is real layout displacement rather than sub-threshold jitter, so it will not hide inside
+`maxDiffPixelRatio`. Whoever regenerates them must reconcile with #181/#182, which are editing the
+same component.
 
 **`stop=<key>` needs no encoding, and gets some anyway.** The key really is a URL-safe slug, but
 `URLSearchParams.toString()` percent-encodes `:` regardless, so the written form is `bus%3A…`. It
