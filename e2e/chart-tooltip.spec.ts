@@ -50,6 +50,22 @@ import { desktopOnly, gotoDashboard, mobileOnly, shootPane } from './helpers';
  */
 const WINDOW = '?logs=1&lines=801&start=2019-06&end=2020-12&day=wkday';
 
+/**
+ * The same window with line 60 added, which is the cheapest way to reach a Month
+ * carrying more than one event.
+ *
+ * An event names the lines it touches in `line_ids`, and an empty list means
+ * network-wide. 2020-12 holds two — "NextGen Bus Plan Phase 1" (network-wide,
+ * which is why `WINDOW` sees it) and "Rapid Lines Retired into Local Service",
+ * which lists the eight Rapid lines it consolidated. 801 is not one of them; 60
+ * is. Selecting both lines is therefore what makes that Month show two.
+ *
+ * The only other Month in the data with two is 2023-06, which would mean a
+ * second window as well as a second line. This keeps the axis, the bounds and
+ * the frozen ridership of `WINDOW` and adds one dataset.
+ */
+const BUSY_WINDOW = '?logs=1&lines=801,60&start=2019-06&end=2020-12&day=wkday';
+
 const TOOLTIP = '[data-testid="chart-tooltip"]';
 
 const plot = (page: Page) => page.getByRole('application');
@@ -83,7 +99,9 @@ test.describe('wide chart', () => {
 
     // 2020-12 is the last month of the window since ADR-0009 made both ends inclusive, and it
     // carries one event line 801 sees — "NextGen Bus Plan Phase 1", network-wide. So the shot is
-    // heading, ridership row, the clamped event block, and the pin hint.
+    // heading, ridership row, the clamped event block, and the pin hint. No carousel: the month's
+    // other event, "Rapid Lines Retired into Local Service", names the eight Rapid lines it
+    // consolidated and 801 is not among them.
     const tooltip = page.locator(TOOLTIP);
     await expect(tooltip).toHaveAttribute('data-layout', 'floating');
     await expect(tooltip).toHaveAttribute('data-pinned', 'false');
@@ -110,6 +128,43 @@ test.describe('wide chart', () => {
     await expect(tooltip.getByRole('link', { name: 'Source' })).toHaveCount(0);
 
     await shootPane(page, TOOLTIP, 'chart-tooltip-focused-event.png');
+  });
+
+  /**
+   * The state this ticket exists to produce, and the one no DOM assertion
+   * describes: Prev, the position, and Next on one row above a single event
+   * entry — where a busy Month used to stack every event it had and grow the
+   * readout over the series underneath.
+   *
+   * Pinned by keyboard rather than by a log row, because the log's first row is
+   * 2020-03 and that Month has exactly one event. 2020-12 is the Month with two
+   * once line 60 is selected — see `BUSY_WINDOW` — and `End` is what reaches it.
+   *
+   * The mobile half of "identical on both surfaces" is not a second baseline
+   * here. `chart-interaction.spec.ts` runs the whole carousel script ungated, so
+   * the strip proves the behaviour at 390px; what a pixel would add over that is
+   * the strip's own layout, which `chart-tooltip-strip.png` already holds.
+   */
+  test('pinned readout on a month with several events', async ({ page }) => {
+    await gotoDashboard(page, BUSY_WINDOW);
+
+    await plot(page).focus();
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
+
+    const tooltip = page.locator(TOOLTIP);
+    await expect(tooltip).toHaveAttribute('data-layout', 'floating');
+    await expect(tooltip).toHaveAttribute('data-pinned', 'true');
+    await expect(tooltip).toContainText('Dec 2020');
+    // Assert the subject before capturing: the controls, the position, the one
+    // event on show and the absence of the other.
+    await expect(tooltip).toContainText('1 of 2');
+    await expect(tooltip.getByRole('button', { name: 'Previous event' })).toBeVisible();
+    await expect(tooltip.getByRole('button', { name: 'Next event' })).toBeVisible();
+    await expect(tooltip).toContainText('NextGen Bus Plan Phase 1');
+    await expect(tooltip).not.toContainText('Rapid Lines Retired');
+
+    await shootPane(page, TOOLTIP, 'chart-tooltip-carousel.png');
   });
 });
 

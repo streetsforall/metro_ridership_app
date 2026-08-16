@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useState, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import type { ChartDataset } from 'chart.js';
 import type { CustomChartData } from '../@types/chart.types';
 import type { TransitEvent } from '../@types/events.types';
@@ -32,13 +38,95 @@ const STRIP_MAX_WIDTH = 480;
  * Share of the plot's height the strip may occupy before it scrolls.
  *
  * The strip covers the top of the plot rather than sitting beside it, so its
- * height is how much of the series it hides. A Month carrying several events
- * would otherwise grow the readout over the line it annotates.
+ * height is how much of the series it hides.
+ *
+ * A Month carrying several events is no longer what this is holding back — the
+ * carousel shows one at a time, so the readout's height is one event's worth
+ * however busy the Month. What is left is the case the carousel cannot help
+ * with: a single description long enough to fill the box on its own. The cap
+ * stays for that.
  */
 const STRIP_HEIGHT_SHARE = 1 / 3;
 
 /** Which layout the readout is drawn in. Derived from the width alone. */
 type TooltipLayout = 'floating' | 'strip';
+
+interface ReadoutButtonProps {
+  onPress: () => void;
+  children: ReactNode;
+  /** Given where the visible text is a glyph or too terse to stand alone. */
+  label?: string;
+  disabled?: boolean;
+  expanded?: boolean;
+}
+
+/**
+ * A control drawn on the readout.
+ *
+ * The readout renders *inside* the plot's focusable box, so every control on it
+ * sits over two handlers that mean something else entirely: the chart pins the
+ * month under a click, and the box's `onKeyDown` maps Enter and Space to that
+ * same pin. Left alone, a press on Next would step the carousel and release the
+ * pin holding the readout open — the reader's own click closing the thing they
+ * clicked. Both are stopped here, once, rather than at each control.
+ *
+ * `stopPropagation` without `preventDefault` is the whole trick on the keyboard
+ * side: the press still reaches this button and still becomes a click, it just
+ * stops travelling. Space in particular fires its click on *keyup*, which the
+ * plot does not listen for, so stopping the keydown costs the button nothing.
+ *
+ * ## Arrow keys are deliberately not handled here
+ *
+ * Left and Right are left to bubble to the plot, where they mean "change
+ * Month" — and they mean that wherever focus happens to be, including on these
+ * controls. Binding them to the carousel as well is the obvious next commit and
+ * it is the wrong one: the same key would do two different things depending on
+ * which control invisibly held focus, which is worse than one extra Tab press.
+ * The controls are real buttons and Tab, Enter and Space are how they are
+ * reached and fired. Please do not "improve" this.
+ */
+function ReadoutButton({
+  onPress,
+  children,
+  label,
+  disabled,
+  expanded,
+}: ReadoutButtonProps) {
+  return (
+    <button
+      type="button"
+      /**
+       * `aria-disabled` rather than `disabled`, which is not a style choice.
+       * These controls disable themselves at the ends of the list, and a real
+       * `disabled` on the button the reader is *standing on* — Next, at the
+       * last event — makes it unfocusable mid-press, so the browser drops focus
+       * to the body and Escape and the arrows stop reaching the plot. This
+       * announces the same thing while keeping the button in the tab order; the
+       * press is refused below instead of by the platform.
+       */
+      aria-disabled={disabled || undefined}
+      aria-label={label}
+      aria-expanded={expanded}
+      /* The same treatment as Select All / Clear All in `LineFilters`, down to
+         the hex: a bold text action in the app's teal, no button chrome. One
+         kind of inline action, one way of looking. */
+      className={`shrink-0 border-none bg-transparent p-0 text-xs font-bold ${
+        disabled ? 'text-stone-500' : 'text-[#0fada8]'
+      }`}
+      onClick={(event) => {
+        // Stopped even when refused: a press that does nothing must still not
+        // fall through to the chart and release the pin.
+        event.stopPropagation();
+        if (!disabled) onPress();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') event.stopPropagation();
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
 /** @see STRIP_MAX_WIDTH */
 function tooltipLayoutFor(containerWidth: number): TooltipLayout {
@@ -100,9 +188,19 @@ export default function ChartTooltip({
   const [isExpanded, setIsExpanded] = useState(false);
   const [box, setBox] = useState<HTMLDivElement | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  /** Which of the Month's events is on show. @see step */
+  const [eventIndex, setEventIndex] = useState(0);
 
-  /** A new Month is a new readout; it opens collapsed, as this one did. */
-  useEffect(() => setIsExpanded(false), [index]);
+  /**
+   * A new Month is a new readout: it opens collapsed, as this one did, and at
+   * the first of its events rather than at whatever position the last Month
+   * happened to be left on — which would otherwise open a two-event Month at
+   * "2 of 2" because the Month before it had three.
+   */
+  useEffect(() => {
+    setIsExpanded(false);
+    setEventIndex(0);
+  }, [index]);
 
   /**
    * "More to read" is not a property of the content — a single long description
@@ -124,7 +222,7 @@ export default function ChartTooltip({
     const overflowing =
       layout === 'strip' && box !== null && box.scrollHeight > box.clientHeight + 1;
     setHasMore((previous) => (previous === overflowing ? previous : overflowing));
-  }, [box, layout, index, events, datasets, isPinned, isExpanded, plotHeight]);
+  }, [box, layout, index, events, datasets, isPinned, isExpanded, plotHeight, eventIndex]);
 
   if (index === null || !caret || !months[index]) return null;
 
@@ -137,6 +235,30 @@ export default function ChartTooltip({
     }))
     .filter((row) => row.value !== null)
     .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
+
+  /**
+   * The event on show, and where it sits.
+   *
+   * Clamped at render rather than trusted, because `events` can shrink under a
+   * held position without the Month changing — filtering a line away takes its
+   * events with it — and the reset effect above only fires on a new Month. A
+   * clamp here cannot be raced by a re-render the way a second effect could.
+   */
+  const shownIndex = Math.min(eventIndex, Math.max(0, events.length - 1));
+  const shownEvent = events[shownIndex];
+  const hasCarousel = events.length > 1;
+
+  /**
+   * Scroll position belongs to the entry that was being read, not to the box,
+   * so a step that lands the reader halfway down the next description is a bug
+   * rather than a convenience. Only the strip can be scrolled at all.
+   */
+  const step = (delta: number) => {
+    setEventIndex((position) =>
+      Math.min(Math.max(position + delta, 0), events.length - 1),
+    );
+    if (box) box.scrollTop = 0;
+  };
 
   /**
    * The strip spans the chart, so there is nothing to flip away from and nothing
@@ -152,9 +274,9 @@ export default function ChartTooltip({
    * covering at this width.
    *
    * The cap stays measured against the plot even though the strip no longer
-   * touches it. Nothing below is at risk now, but it is what keeps a Month with
-   * several events from opening as a wall, and a third of the plot is as good a
-   * ceiling for that as any.
+   * touches it. Nothing below is at risk now, but it is what keeps one very
+   * long description from opening as a wall, and a third of the plot is as good
+   * a ceiling for that as any.
    *
    * Expanded, there is no ceiling at all. A second, larger cap was tried and is
    * worse than none: it still clips, so "Expand" still means "some of it", which
@@ -207,22 +329,12 @@ export default function ChartTooltip({
       <div className="flex items-start justify-between gap-2">
         <p className="font-semibold">{formatMonthLabel(months[index])}</p>
         {isPinned && (hasMore || isExpanded) && (
-          <button
-            type="button"
-            aria-expanded={isExpanded}
-            /* The same treatment as Select All / Clear All in `LineFilters`,
-               down to the hex: a bold text action in the app's teal, no button
-               chrome. One kind of inline action, one way of looking. */
-            className="shrink-0 bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
-            onClick={(event) => {
-              // The chart pins on click and the output area unpins on a press
-              // outside itself. This is neither: it is a control on the readout.
-              event.stopPropagation();
-              setIsExpanded((wasExpanded) => !wasExpanded);
-            }}
+          <ReadoutButton
+            expanded={isExpanded}
+            onPress={() => setIsExpanded((wasExpanded) => !wasExpanded)}
           >
             {isExpanded ? 'Collapse' : 'Expand'}
-          </button>
+          </ReadoutButton>
         )}
       </div>
 
@@ -244,33 +356,89 @@ export default function ChartTooltip({
         </ul>
       )}
 
-      {events.map((event) => (
-        <div
-          key={event.id}
-          className="mt-2 border-t border-stone-600 pt-2 first-of-type:mt-2"
-        >
+      {shownEvent && (
+        /* No `key` here. It carried the event's id back when this was a
+           `.map()` over every event and needed one; on a single node it only
+           tells React the subtree is a *different* element on every step, which
+           unmounts the focused Prev or Next along with it and drops focus to
+           the body — stranding a keyboard reader mid-carousel, where Escape and
+           the arrows no longer reach the plot at all. */
+        <div className="mt-2 border-t border-stone-600 pt-2 first-of-type:mt-2">
+          {/* One event at a time, with the position first so the reader knows
+              whether there is more before they read what is in front of them.
+              A Month with a single event gets none of this — there is nothing
+              to step through and "1 of 1" is not information.
+
+              The controls are withheld until pinned, on the same terms as
+              Expand above: a hovering readout does not accept the pointer, so
+              a button on one is a control the reader can see and cannot press.
+              The position indicator is not withheld, because it is the only
+              thing telling a hovering reader that pinning would get them
+              anywhere — the hint below says how, this says why. On touch there
+              is no hover and a tap pins, so the strip is always in the form
+              that has the controls.
+
+              Arrow keys are deliberately unbound. See `ReadoutButton`. */}
+          {hasCarousel && (
+            <div
+              role="group"
+              aria-label="Events this month"
+              className="mb-2 flex items-center gap-3"
+            >
+              {isPinned && (
+                <ReadoutButton
+                  label="Previous event"
+                  disabled={shownIndex === 0}
+                  onPress={() => step(-1)}
+                >
+                  Prev
+                </ReadoutButton>
+              )}
+              {/* Announced only where the reader can move it. Unpinned, the
+                  position changes because the *Month* changed, which the
+                  chart's own live region is already reading out — a second
+                  voice saying "1 of 3" over it is noise. */}
+              <span
+                aria-live={isPinned ? 'polite' : 'off'}
+                className="text-stone-400 tabular-nums"
+              >
+                {shownIndex + 1} of {events.length}
+              </span>
+              {isPinned && (
+                <ReadoutButton
+                  label="Next event"
+                  disabled={shownIndex === events.length - 1}
+                  onPress={() => step(1)}
+                >
+                  Next
+                </ReadoutButton>
+              )}
+            </div>
+          )}
           {/* Neutral, not category-tinted. The chip below carries the category,
               and a tinted title made colour say two things at once — which
               category this is, and where the title ends — while leaving the
               category itself as unremarkable grey text after the date. */}
-          <p className="font-semibold">{event.title}</p>
+          <p className="font-semibold">{shownEvent.title}</p>
           {/* Chip and date on one row, chip first: it is the same component the
               context-log panel draws, so an event reads the same way in both.
               The middot went with the inline category text it separated. */}
           <div className="mt-1 flex items-center gap-1.5">
-            <CategoryChip category={event.category} surface="dark" />
-            <span className="text-stone-400">{formatEventDate(event.date)}</span>
+            <CategoryChip category={shownEvent.category} surface="dark" />
+            <span className="text-stone-400">
+              {formatEventDate(shownEvent.date)}
+            </span>
           </div>
           {/* Clamped while hovering, full once pinned. Unclamped, a long
               description makes the box taller than half the plot and buries the
               series it is annotating under the cursor. Pinning is the reader
               asking for the whole thing. */}
           <p className={`mt-1 text-stone-300 ${isPinned ? '' : 'line-clamp-3'}`}>
-            {event.description}
+            {shownEvent.description}
           </p>
-          {isPinned && event.source && (
+          {isPinned && shownEvent.source && (
             <a
-              href={event.source}
+              href={shownEvent.source}
               target="_blank"
               rel="noreferrer"
               className="mt-1 inline-block underline"
@@ -279,7 +447,7 @@ export default function ChartTooltip({
             </a>
           )}
         </div>
-      ))}
+      )}
 
       {/* The clamp above and the missing source link are both undone by pinning,
           and nothing on screen said so — a reader who hit a truncated
