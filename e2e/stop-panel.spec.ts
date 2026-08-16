@@ -144,12 +144,16 @@ test('stop panel — the covered-period button moves the pickers and the chart',
     `?stops=1&lines=${String(RAIL_LINE_ID)}&start=2015-01&end=2015-12`,
   );
 
+  // The button sets the span it names, and both come from the manifest — which is
+  // built from the real payloads, not from the fixtures this spec serves. So the
+  // window it lands on is Jul 2025 – Jun 2026 even though the stubbed data stops in
+  // December, and the fixture months sit inside it.
   await page.locator('#use-stop-coverage-window').click();
 
   await expect(page.locator('#start-year')).toHaveValue('2025');
   await expect(page.locator('#start-month')).toHaveValue('6');
-  await expect(page.locator('#end-year')).toHaveValue('2025');
-  await expect(page.locator('#end-month')).toHaveValue('11');
+  await expect(page.locator('#end-year')).toHaveValue('2026');
+  await expect(page.locator('#end-month')).toHaveValue('5');
 
   // And the panel now has data, which is what the button was for.
   await waitForStopTable(page);

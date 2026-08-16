@@ -1,16 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { formatEventDate } from '../../chart';
 import StopCoverageNotice from '../StopCoverageNotice';
-import type { StopCoverage } from '../../stops';
 
 /** Which state the notice is in is `stopCoverageState`, tested in `src/utils/`. */
 
-const coverage = (overrides: Partial<StopCoverage> = {}): StopCoverage => ({
-  from: '2025-07',
-  to: '2026-06',
-  overlapsWindow: true,
-  ...overrides,
-});
+/** `"2025-07"` → `"Jul 2025"`, the spelling the notice uses. */
+const monthLabel = (month: string) => formatEventDate(month);
 
 const renderNotice = (
   props: Partial<React.ComponentProps<typeof StopCoverageNotice>> = {},
@@ -18,7 +14,6 @@ const renderNotice = (
   render(
     <StopCoverageNotice
       state="full"
-      coverage={coverage()}
       months={['2025-07', '2026-06']}
       onUseCoverageWindow={vi.fn()}
       {...props}
@@ -44,12 +39,22 @@ describe('StopCoverageNotice', () => {
    * The button sets the window; it never clamps one. Handing the endpoints back
    * verbatim is what lets the caller route them through the same setters a drag
    * across the chart uses, so the URL, the pickers and the chart all follow.
+   *
+   * **The span it sends is the span it names**, both from the manifest. Sending the
+   * view's own coverage would send whatever happens to be loaded — the rail payload
+   * alone in this state, since the bus fetch is gated on the window overlapping — so
+   * the button could name one period and set another.
    */
-  it('hands the coverage endpoints back untouched', () => {
+  it('sets the same span it offers', () => {
     const onUseCoverageWindow = vi.fn();
     renderNotice({ state: 'no-overlap', onUseCoverageWindow });
+
+    const label = screen.getByRole('button').textContent ?? '';
     fireEvent.click(screen.getByRole('button'));
-    expect(onUseCoverageWindow).toHaveBeenCalledWith('2025-07', '2026-06');
+
+    const [from, to] = onUseCoverageWindow.mock.calls[0] as [string, string];
+    expect(label).toContain(monthLabel(from));
+    expect(label).toContain(monthLabel(to));
   });
 
   it('labels partial coverage with the span actually on screen', () => {
