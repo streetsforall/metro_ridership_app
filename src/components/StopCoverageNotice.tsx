@@ -56,7 +56,15 @@ export default function StopCoverageNotice({
   months,
   onUseCoverageWindow,
 }: StopCoverageNoticeProps) {
-  if (state === 'no-data')
+  /**
+   * Whether stop data exists **at all** is the manifest's answer, not the view's.
+   *
+   * The view reports empty coverage while a payload is in flight and again if one
+   * fails, so deciding this from `coverage` would tell a reader on a slow connection
+   * that the dataset had never been ingested. The manifest is filled from the files at
+   * build time, so it is right before the first fetch and right if every fetch fails.
+   */
+  if (minMonth === null)
     return (
       <p className="text-sm text-stone-400" data-qa="stop-coverage-no-data">
         No stop-level data has been ingested yet.

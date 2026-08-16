@@ -123,6 +123,28 @@ describe('StopPanel', () => {
     });
     expect(screen.getByText('Loading stop ridership…')).toBeTruthy();
     expect(document.querySelector('[data-qa="stop-coverage-empty"]')).toBeNull();
+    // And it must not claim the dataset was never ingested either. An empty coverage
+    // is the loading state; the manifest is what knows whether stop data exists.
+    expect(
+      document.querySelector('[data-qa="stop-coverage-no-data"]'),
+    ).toBeNull();
+    expect(
+      document.querySelector('[data-qa="stop-coverage-span"]'),
+    ).toBeTruthy();
+  });
+
+  it('does not claim the dataset is missing when a fetch failed', () => {
+    renderPanel({
+      hasFailed: true,
+      view: makeView({
+        months: [],
+        readouts: [],
+        coverage: { from: null, to: null, overlapsWindow: false },
+      }),
+    });
+    expect(
+      document.querySelector('[data-qa="stop-coverage-no-data"]'),
+    ).toBeNull();
   });
 
   it('offers the covered span when the window does not overlap it', () => {

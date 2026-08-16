@@ -186,11 +186,26 @@ export default function StopTable({
           {sorted.map((readout) => {
             const isSelected = readout.key === selectedStopKey;
             return (
+              /* Selecting a stop is a click *or* a key press. A map circle is the
+                 only other route in and that one is mouse-only by nature, so without
+                 this the per-stop series would be unreachable from the keyboard.
+
+                 `aria-current` rather than `aria-selected`: `aria-selected` is only
+                 honoured on a row inside a `grid`/`treegrid`, and this is a plain
+                 table — it would have been an attribute nothing reads. */
               <tr
                 key={`${readout.line_name}-${readout.key}`}
                 data-qa={`stop-row-${readout.key}`}
-                aria-selected={isSelected}
+                tabIndex={0}
+                aria-current={isSelected ? 'true' : undefined}
                 onClick={() => onSelectStop(readout.key)}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' && event.key !== ' ') return;
+                  // Space scrolls the page otherwise, and the row is the thing being
+                  // acted on rather than a page-level gesture.
+                  event.preventDefault();
+                  onSelectStop(readout.key);
+                }}
                 className={`cursor-pointer ${
                   isSelected ? 'bg-stone-200' : 'even:bg-[rgba(0,0,0,0.05)]'
                 }`}

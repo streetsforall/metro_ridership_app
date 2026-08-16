@@ -127,8 +127,7 @@ export default function StopPanel({
           Loading stop ridership…
         </p>
       );
-    if (coverageState === 'no-data' || coverageState === 'no-overlap')
-      return null;
+    if (coverageState === 'no-overlap') return null;
     if (!hasSelection)
       return (
         <p className="py-8 text-center text-sm text-stone-400">

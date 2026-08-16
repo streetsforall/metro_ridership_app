@@ -154,12 +154,45 @@ describe('StopTable', () => {
     expect(onSelectStop).toHaveBeenCalledWith('bus:vermont-wilshire');
   });
 
+  it('selects a stop from the keyboard', () => {
+    const onSelectStop = vi.fn();
+    renderTable({ onSelectStop });
+    fireEvent.keyDown(
+      document.querySelector('[data-qa="stop-row-bus:vermont-wilshire"]')!,
+      { key: 'Enter' },
+    );
+    expect(onSelectStop).toHaveBeenCalledWith('bus:vermont-wilshire');
+  });
+
+  it('leaves other keys alone', () => {
+    const onSelectStop = vi.fn();
+    renderTable({ onSelectStop });
+    fireEvent.keyDown(
+      document.querySelector('[data-qa="stop-row-bus:vermont-wilshire"]')!,
+      { key: 'a' },
+    );
+    expect(onSelectStop).not.toHaveBeenCalled();
+  });
+
+  /**
+   * `aria-current`, not `aria-selected` — the latter is only honoured on a row inside
+   * a `grid`/`treegrid`, so on a plain table it would be an attribute nothing reads.
+   */
   it('marks the selected row', () => {
     renderTable({ selectedStopKey: 'bus:vermont-wilshire' });
     const row = document.querySelector(
       '[data-qa="stop-row-bus:vermont-wilshire"]',
     );
-    expect(row?.getAttribute('aria-selected')).toBe('true');
+    expect(row?.getAttribute('aria-current')).toBe('true');
+    expect(row?.getAttribute('tabindex')).toBe('0');
+  });
+
+  it('leaves an unselected row unmarked rather than marking it false', () => {
+    renderTable({ selectedStopKey: 'bus:vermont-wilshire' });
+    const row = document.querySelector(
+      '[data-qa="stop-row-bus:vermont-santa-monica"]',
+    );
+    expect(row?.hasAttribute('aria-current')).toBe(false);
   });
 
   it('lists every readout — nothing is silently truncated', () => {

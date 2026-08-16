@@ -10,7 +10,7 @@ import type { StopCoverage } from '../stops';
  * the one thing a second copy of would break — see
  * `docs/adr/0009-the-two-window-rules-are-one-rule.md`.
  */
-export type StopCoverageState = 'no-data' | 'no-overlap' | 'partial' | 'full';
+export type StopCoverageState = 'unknown' | 'no-overlap' | 'partial' | 'full';
 
 export interface StopCoverageStateInput {
   coverage: StopCoverage;
@@ -32,7 +32,17 @@ export function stopCoverageState({
   months,
   windowMonths,
 }: StopCoverageStateInput): StopCoverageState {
-  if (coverage.from === null || coverage.to === null) return 'no-data';
+  /**
+   * Nothing loaded yet, so nothing can be said about the window.
+   *
+   * **Not "there is no stop data".** `buildStopView` reports an empty coverage for
+   * `records === null`, which is its loading state and also its failed-fetch state, so
+   * reading absence of data out of it here would have the panel announce that the
+   * dataset was never ingested every time the network was slow. Whether stop data
+   * exists at all is a build-time fact, answered from the manifest by the one caller
+   * that needs it.
+   */
+  if (coverage.from === null || coverage.to === null) return 'unknown';
   if (!coverage.overlapsWindow) return 'no-overlap';
   // An empty axis on either side is not partial coverage. An empty stop axis is a
   // selection with no stop data, which the panel answers in words; an empty window
