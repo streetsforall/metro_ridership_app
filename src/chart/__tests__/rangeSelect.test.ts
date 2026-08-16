@@ -12,6 +12,7 @@ type EventArgs = {
   event: { type: string; x: number };
   inChartArea: boolean;
   changed?: boolean;
+  replay?: boolean;
 };
 type AfterEvent = (chart: unknown, args: EventArgs, opts: unknown) => void;
 type AfterDraw = (chart: unknown, args: unknown, opts: unknown) => void;
@@ -66,6 +67,17 @@ const move = (chart: unknown, x: number) =>
   afterEvent(chart, { event: { type: 'mousemove', x }, inChartArea: true }, {});
 const release = (chart: unknown, x: number) =>
   afterEvent(chart, { event: { type: 'mouseup', x }, inChartArea: true }, {});
+/**
+ * The same event Chart.js hands back after a repaint. `Chart#update` replays
+ * `_lastEvent` through the event pipeline, and across a click that is still the
+ * original `mousedown` — so this is a press arriving with the button already up.
+ */
+const replay = (chart: unknown, type: string, x: number) =>
+  afterEvent(
+    chart,
+    { event: { type, x }, inChartArea: true, replay: true },
+    {},
+  );
 
 /** Waits out the hold, which is one of the two ways a press promotes. */
 const hold = () => vi.advanceTimersByTime(PROMOTE_HOLD_MS);
@@ -143,6 +155,39 @@ describe('drag to select a range', () => {
   it('clamps a drag past the right edge to the last month', () => {
     const { onSelect } = drag(100, 5000);
     expect(onSelect).toHaveBeenCalledWith(2, 11);
+  });
+
+  /**
+   * A repaint is not a gesture. Every branch is skipped, not just the press —
+   * a replayed `mouseup` would otherwise complete a Range Selection nobody
+   * released, and a replayed `mousemove` would extend a live band on a frame.
+   */
+  it('starts no press from a replayed mousedown', () => {
+    const chart = makeChart();
+    replay(chart, 'mousedown', 100);
+    expect(pressedOf(chart)).toBeFalsy();
+  });
+
+  it('leaves no hold timer behind after a replayed mousedown', () => {
+    const chart = makeChart();
+    replay(chart, 'mousedown', 100);
+    hold();
+    expect(draggingOf(chart)).toBeFalsy();
+    expect(chart.render).not.toHaveBeenCalled();
+  });
+
+  it('does not complete a selection from a replayed mouseup', () => {
+    const onSelect = vi.fn();
+    const chart = makeChart(onSelect);
+    press(chart, 100);
+    hold();
+    move(chart, 300);
+    afterEvent(
+      chart,
+      { event: { type: 'mouseup', x: 300 }, inChartArea: true, replay: true },
+      {},
+    );
+    expect(onSelect).not.toHaveBeenCalled();
   });
 
   it('does nothing on a mouseup that no mousedown started', () => {
@@ -359,6 +404,23 @@ describe('the drag band', () => {
     const chart = makeChart();
     press(chart, 100);
     move(chart, 110);
+    afterDraw(chart, {}, {});
+    expect(chart.ctx.fillRect).not.toHaveBeenCalled();
+    expect(chart.ctx.stroke).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The bug this guards. Pinning a month re-renders the chart, `Chart#update`
+   * replays the gesture's own `mousedown`, and the press came back to life with
+   * the button up — so a band followed the cursor after an ordinary click.
+   */
+  it('paints nothing after a click whose repaint replays the mousedown', () => {
+    const chart = makeChart();
+    press(chart, 100);
+    release(chart, 100);
+    replay(chart, 'mousedown', 100); // the pin's re-render
+    hold();
+    move(chart, 300);
     afterDraw(chart, {}, {});
     expect(chart.ctx.fillRect).not.toHaveBeenCalled();
     expect(chart.ctx.stroke).not.toHaveBeenCalled();

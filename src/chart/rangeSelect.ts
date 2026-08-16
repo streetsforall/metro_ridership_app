@@ -105,6 +105,20 @@ export const rangeSelectPlugin: Plugin<'line'> = {
   id: 'rangeSelect',
 
   afterEvent(chart, args) {
+    /**
+     * A gesture is driven by the pointer, never by a repaint.
+     *
+     * `Chart#update` ends by replaying `_lastEvent` through the whole event
+     * pipeline — and `determineLastEvent` deliberately keeps the *previous*
+     * event across a click, so after a press-and-release `_lastEvent` is still
+     * the `mousedown`. Anything that re-renders the chart therefore delivers a
+     * second `mousedown` here with the button already up: the press is re-armed,
+     * the hold timer restarts, and the next mousemove promotes a drag the reader
+     * is not making. Pinning a month is exactly such a re-render, so clicking a
+     * month left a band trailing the cursor.
+     */
+    if (args.replay) return;
+
     const c = chart as ChartWithDrag;
     const state = (c.$rangeSelect ??= {
       startX: 0,
