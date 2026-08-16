@@ -209,18 +209,19 @@ describe('chart → ContextLogPanel', () => {
     ).toContain('ring-2');
   });
 
-  it('scrolls the pinned row into view', () => {
+  /**
+   * A pin marks; it does not move. The panel's open state and scroll position
+   * belong to the reader, so a pin taken on the chart changes neither — even at
+   * the cost of marking a row nobody can see, which the tooltip covers.
+   */
+  it('does not scroll any row into view when a month is pinned', () => {
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
     renderPanel([opening, closure], { pinnedMonth: '2019 5' });
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
-  /**
-   * Highlighting a row inside a collapsed panel highlights nothing, so a pin
-   * from the chart reopens it.
-   */
-  it('reopens a collapsed panel when a month is pinned', () => {
+  it('leaves a collapsed panel collapsed when a month is pinned', () => {
     const { rerender } = renderPanel([opening], { pinnedMonth: null });
     fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
     expect(screen.queryByText('Regional Connector Opening')).toBeNull();
@@ -233,7 +234,26 @@ describe('chart → ContextLogPanel', () => {
         onHoverMonthChange={vi.fn()}
       />,
     );
-    expect(screen.getByText('Regional Connector Opening')).toBeTruthy();
+    expect(screen.queryByText('Regional Connector Opening')).toBeNull();
+  });
+
+  /** The mark is on the row whether or not the reader can see it. */
+  it('still marks the pinned row after the panel is reopened by hand', () => {
+    const { rerender } = renderPanel([opening], { pinnedMonth: null });
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
+
+    rerender(
+      <ContextLogPanel
+        events={[opening]}
+        pinnedMonth="2023 2"
+        onSelectMonth={vi.fn()}
+        onHoverMonthChange={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /context logs/i }));
+    expect(
+      screen.getByRole('button', { name: /Regional Connector/ }).getAttribute('aria-pressed'),
+    ).toBe('true');
   });
 
   it('leaves the panel alone when the pinned month has no entry', () => {
