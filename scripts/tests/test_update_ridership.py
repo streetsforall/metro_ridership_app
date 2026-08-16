@@ -331,6 +331,122 @@ class TestStopGrain:
 
 
 # ---------------------------------------------------------------------------
+# main — the anomaly guard
+# ---------------------------------------------------------------------------
+
+_GUARD_LINES = 30  # clears min_lines_uniform so both failing tests are reachable
+
+
+def _many_bus_rows(factor: float = 1.0, base: float = 1000.0) -> list[dict]:
+    return [_bus_row(100 + i, "IB", base * factor) for i in range(_GUARD_LINES)]
+
+
+def _many_recs(month: int = 1, base: float = 1000.0) -> list[dict]:
+    return [
+        _rec(month=month, line=100 + i, wk=base, sa=base, su=base)
+        for i in range(_GUARD_LINES)
+    ]
+
+
+def _guard_meta() -> list[dict]:
+    return [dict(line=100 + i, mode="Bus", provider="DO") for i in range(_GUARD_LINES)]
+
+
+class TestAnomalyGuard:
+    def _setup(self, tmp_path, monkeypatch, factor):
+        rpath, _ = _setup_data(
+            tmp_path, monkeypatch,
+            ridership_rows=_many_recs(), meta_rows=_guard_meta(),
+        )
+        f = _write_bus_xlsx(tmp_path, 2, 2026, _many_bus_rows(factor))
+        return rpath, f
+
+    def test_anomalous_month_refuses_to_write(self, tmp_path, monkeypatch, capsys):
+        """Every line up 2.4x — the June 2026 bus defect."""
+        rpath, f = self._setup(tmp_path, monkeypatch, factor=2.4)
+
+        before = rpath.read_text(encoding="utf-8")
+        rc = ur.main([str(f), "--no-release-notes", "--no-stops"])
+
+        assert rc == 2
+        assert rpath.read_text(encoding="utf-8") == before  # nothing written
+        out = capsys.readouterr().out
+        assert "FAIL" in out and "2.400" in out
+        assert "--allow-anomalies" in out
+
+    def test_normal_month_passes(self, tmp_path, monkeypatch):
+        rpath, f = self._setup(tmp_path, monkeypatch, factor=1.03)
+
+        assert ur.main([str(f), "--no-release-notes", "--no-stops"]) == 0
+        out = pd.read_json(rpath)
+        assert len(out[out["month"] == 2]) == _GUARD_LINES
+
+    def test_allow_anomalies_writes_and_records_override(self, tmp_path, monkeypatch):
+        rpath, _ = _setup_data(
+            tmp_path, monkeypatch,
+            ridership_rows=_many_recs(), meta_rows=_guard_meta(),
+        )
+        notes = tmp_path / "DATA_RELEASE_NOTES.md"
+        notes.write_text(_SAMPLE_NOTES, encoding="utf-8")
+        monkeypatch.setattr(ur, "RELEASE_NOTES_PATH", notes)
+        f = _write_bus_xlsx(tmp_path, 2, 2026, _many_bus_rows(2.4))
+
+        assert ur.main([str(f), "--allow-anomalies", "--no-stops"]) == 0
+        assert len(pd.read_json(rpath).query("month == 2")) == _GUARD_LINES
+        assert "OVERRIDDEN" in notes.read_text(encoding="utf-8")
+
+    def test_single_line_drop_reported_not_blocking(self, tmp_path, monkeypatch, capsys):
+        """The D Line case end to end: one line collapses, the month still merges."""
+        rpath, _ = _setup_data(
+            tmp_path, monkeypatch,
+            ridership_rows=_many_recs(base=2000.0), meta_rows=_guard_meta(),
+        )
+        rows = _many_bus_rows(1.0, base=2000.0)
+        rows[0] = _bus_row(100, "IB", 800)
+        f = _write_bus_xlsx(tmp_path, 2, 2026, rows)
+
+        assert ur.main([str(f), "--no-release-notes", "--no-stops"]) == 0
+        out = capsys.readouterr().out
+        assert "outliers" in out and "100" in out
+        assert pd.read_json(rpath).query("month == 2 and line_name == 100").iloc[0][
+            "est_wkday_ridership"
+        ] == 800.0
+
+    def test_dry_run_still_refuses_and_writes_nothing(self, tmp_path, monkeypatch):
+        rpath, f = self._setup(tmp_path, monkeypatch, factor=2.4)
+        notes = tmp_path / "DATA_RELEASE_NOTES.md"
+        notes.write_text(_SAMPLE_NOTES, encoding="utf-8")
+        monkeypatch.setattr(ur, "RELEASE_NOTES_PATH", notes)
+
+        before = rpath.read_text(encoding="utf-8")
+        assert ur.main([str(f), "--dry-run", "--no-stops"]) == 2
+        assert rpath.read_text(encoding="utf-8") == before
+        assert notes.read_text(encoding="utf-8") == _SAMPLE_NOTES
+
+    def test_no_baseline_month_skips_guard(self, tmp_path, monkeypatch):
+        """Nothing to compare against is not an anomaly."""
+        rpath, _ = _setup_data(
+            tmp_path, monkeypatch, ridership_rows=[], meta_rows=_guard_meta(),
+        )
+        f = _write_bus_xlsx(tmp_path, 2, 2026, _many_bus_rows(1.0))
+
+        assert ur.main([str(f), "--no-release-notes", "--no-stops"]) == 0
+        assert len(pd.read_json(rpath)) == _GUARD_LINES
+
+    def test_non_adjacent_month_skips_guard(self, tmp_path, monkeypatch, capsys):
+        """Jan committed, March delivered: February is missing, so there is no
+        baseline and the month merges rather than failing."""
+        _setup_data(
+            tmp_path, monkeypatch,
+            ridership_rows=_many_recs(month=1), meta_rows=_guard_meta(),
+        )
+        f = _write_bus_xlsx(tmp_path, 3, 2026, _many_bus_rows(2.4))
+
+        assert ur.main([str(f), "--no-release-notes", "--no-stops"]) == 0
+        assert "skipped" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
 # month label formatting
 # ---------------------------------------------------------------------------
 
