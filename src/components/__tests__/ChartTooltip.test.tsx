@@ -281,12 +281,17 @@ describe('ChartTooltip pinning', () => {
   });
 });
 
-describe('ChartTooltip floating placement', () => {
-  const boxOf = (props: Partial<Parameters<typeof ChartTooltip>[0]>) => {
-    const { container } = renderTooltip(props);
-    return container.querySelector<HTMLElement>('[data-testid="chart-tooltip"]')!;
-  };
+/**
+ * The rendered box. `screen` would do for a single render, but the placement
+ * cases render twice to compare two positions, so this reads from the container
+ * the render returned rather than from the shared document.
+ */
+const boxOf = (props: Partial<Parameters<typeof ChartTooltip>[0]>) => {
+  const { container } = renderTooltip(props);
+  return container.querySelector<HTMLElement>('[data-testid="chart-tooltip"]')!;
+};
 
+describe('ChartTooltip floating placement', () => {
   const leftOf = (props: Partial<Parameters<typeof ChartTooltip>[0]>) =>
     parseFloat(boxOf(props).style.left);
 
@@ -322,11 +327,6 @@ describe('ChartTooltip strip mode on a narrow chart', () => {
   const STRIP_MAX_WIDTH = 480;
   const narrow = { containerWidth: STRIP_MAX_WIDTH - 1 };
 
-  const boxOf = (props: Partial<Parameters<typeof ChartTooltip>[0]>) => {
-    const { container } = renderTooltip(props);
-    return container.querySelector<HTMLElement>('[data-testid="chart-tooltip"]')!;
-  };
-
   it('floats at the threshold width', () => {
     expect(boxOf({ containerWidth: STRIP_MAX_WIDTH }).dataset.layout).toBe('floating');
   });
@@ -359,9 +359,25 @@ describe('ChartTooltip strip mode on a narrow chart', () => {
     expect(atLeft.style.right).toBe(atRight.style.right);
   });
 
-  /** A Month with several events scrolls rather than growing into the plot. */
   it('caps its height at a third of the plot and scrolls beyond it', () => {
     const box = boxOf({ ...narrow, plotHeight: 300 });
+    expect(box.style.maxHeight).toBe('100px');
+    expect(box.className).toContain('overflow-y-auto');
+  });
+
+  /**
+   * The case the cap exists for. jsdom lays nothing out, so this cannot assert a
+   * rendered height — what it can assert is that the content grew and the box
+   * did not, which is the whole of the rule: a busy Month scrolls rather than
+   * growing the readout down over the series it annotates.
+   */
+  it('holds its cap for a Month carrying several events', () => {
+    const busy = ['a', 'b', 'c', 'd', 'e'].map((id) =>
+      makeTransitEvent({ id, date: '2020-06', title: `Event ${id}` }),
+    );
+    const box = boxOf({ ...narrow, plotHeight: 300, events: busy, isPinned: true });
+
+    expect(within(box).getAllByText(/^Event [a-e]$/)).toHaveLength(5);
     expect(box.style.maxHeight).toBe('100px');
     expect(box.className).toContain('overflow-y-auto');
   });

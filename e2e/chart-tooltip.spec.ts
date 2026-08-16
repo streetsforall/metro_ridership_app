@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { gotoDashboard, mobileOnly, shootChart, shootPane } from './helpers';
+import { desktopOnly, gotoDashboard, mobileOnly, shootChart, shootPane } from './helpers';
 
 /**
  * Visual coverage for the chart's month readout.
@@ -11,7 +11,17 @@ import { gotoDashboard, mobileOnly, shootChart, shootPane } from './helpers';
  * baselines add is the layout that no attribute assertion can describe: the ridership rows
  * against the event block, the Category Chip beside the date under a neutral title, and the clamp.
  *
- * The last test is the exception to the crop, and to the two-project rule — see its own note.
+ * ## Every test here is gated to one project, and that is the point
+ *
+ * The readout has two layouts and each exists at exactly one of the two viewports: the floating
+ * box above a measured chart width of 480, the strip below it. An ungated shot would therefore
+ * file the wrong layout under a name promising the right one — and worse than merely wrong. The
+ * strip caps itself at a third of the plot and scrolls, so at 390px a crop of the readout holds
+ * the month heading and one ridership row while the event block, the chip, the clamp and the
+ * Source link sit below the fold. The DOM assertions still pass on that — `toContainText` does
+ * not care whether a node is scrolled out of a box — so `--update-snapshots` would rebase three
+ * baselines named for content none of them shows and report nothing wrong. Which is the same
+ * trap the guide's assert-before-capture rule exists to close, one level further in.
  *
  * ## Reaching each state without pixel arithmetic
  *
@@ -44,55 +54,63 @@ const TOOLTIP = '[data-testid="chart-tooltip"]';
 
 const plot = (page: Page) => page.getByRole('application');
 
-test('pinned readout — ridership, event, source link', async ({ page }) => {
-  await gotoDashboard(page, WINDOW);
+/** The floating box. Desktop only, for the reason in the file note above. */
+test.describe('wide chart', () => {
+  desktopOnly();
 
-  await page.locator('#context-log-panel li button').first().click();
+  test('pinned readout — ridership, event, source link', async ({ page }) => {
+    await gotoDashboard(page, WINDOW);
 
-  // Prove the state before capturing: `--update-snapshots` would otherwise happily rebase a
-  // hover-shaped readout, or an empty one, into a green baseline.
-  const tooltip = page.locator(TOOLTIP);
-  await expect(tooltip).toHaveAttribute('data-pinned', 'true');
-  await expect(tooltip).toContainText('COVID-19 Service Reductions');
-  await expect(tooltip.getByRole('link', { name: 'Source' })).toBeVisible();
+    await page.locator('#context-log-panel li button').first().click();
 
-  await shootPane(page, TOOLTIP, 'chart-tooltip-pinned.png');
-});
+    // Prove the state before capturing: `--update-snapshots` would otherwise happily rebase a
+    // hover-shaped readout, or an empty one, into a green baseline.
+    const tooltip = page.locator(TOOLTIP);
+    await expect(tooltip).toHaveAttribute('data-layout', 'floating');
+    await expect(tooltip).toHaveAttribute('data-pinned', 'true');
+    await expect(tooltip).toContainText('COVID-19 Service Reductions');
+    await expect(tooltip.getByRole('link', { name: 'Source' })).toBeVisible();
 
-test('focused readout — description clamped, no link', async ({ page }) => {
-  await gotoDashboard(page, WINDOW);
+    await shootPane(page, TOOLTIP, 'chart-tooltip-pinned.png');
+  });
 
-  await plot(page).focus();
-  await page.keyboard.press('ArrowRight');
-  await page.keyboard.press('End');
+  test('focused readout — description clamped, no link', async ({ page }) => {
+    await gotoDashboard(page, WINDOW);
 
-  // 2020-12 is the last month of the window since ADR-0009 made both ends inclusive, and it
-  // carries one event line 801 sees — "NextGen Bus Plan Phase 1", network-wide. So the shot is
-  // heading, ridership row, the clamped event block, and the pin hint.
-  const tooltip = page.locator(TOOLTIP);
-  await expect(tooltip).toHaveAttribute('data-pinned', 'false');
-  await expect(tooltip).toContainText('Dec 2020');
+    await plot(page).focus();
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('End');
 
-  await shootPane(page, TOOLTIP, 'chart-tooltip-focused.png');
-});
+    // 2020-12 is the last month of the window since ADR-0009 made both ends inclusive, and it
+    // carries one event line 801 sees — "NextGen Bus Plan Phase 1", network-wide. So the shot is
+    // heading, ridership row, the clamped event block, and the pin hint.
+    const tooltip = page.locator(TOOLTIP);
+    await expect(tooltip).toHaveAttribute('data-layout', 'floating');
+    await expect(tooltip).toHaveAttribute('data-pinned', 'false');
+    await expect(tooltip).toContainText('Dec 2020');
 
-test('focused readout on a month that has an event', async ({ page }) => {
-  await gotoDashboard(page, WINDOW);
+    await shootPane(page, TOOLTIP, 'chart-tooltip-focused.png');
+  });
 
-  await plot(page).focus();
-  // 2019-06 is index 0; 2020-03 is nine months later.
-  await page.keyboard.press('Home');
-  for (let i = 0; i < 9; i++) await page.keyboard.press('ArrowRight');
+  test('focused readout on a month that has an event', async ({ page }) => {
+    await gotoDashboard(page, WINDOW);
 
-  const tooltip = page.locator(TOOLTIP);
-  await expect(tooltip).toContainText('Mar 2020');
-  await expect(tooltip).toContainText('COVID-19 Service Reductions');
-  // The clamp is the point of this shot, so assert the link's absence rather than the clamp
-  // itself — `line-clamp` leaves no accessible signal, only pixels, which is what the baseline
-  // is for.
-  await expect(tooltip.getByRole('link', { name: 'Source' })).toHaveCount(0);
+    await plot(page).focus();
+    // 2019-06 is index 0; 2020-03 is nine months later.
+    await page.keyboard.press('Home');
+    for (let i = 0; i < 9; i++) await page.keyboard.press('ArrowRight');
 
-  await shootPane(page, TOOLTIP, 'chart-tooltip-focused-event.png');
+    const tooltip = page.locator(TOOLTIP);
+    await expect(tooltip).toHaveAttribute('data-layout', 'floating');
+    await expect(tooltip).toContainText('Mar 2020');
+    await expect(tooltip).toContainText('COVID-19 Service Reductions');
+    // The clamp is the point of this shot, so assert the link's absence rather than the clamp
+    // itself — `line-clamp` leaves no accessible signal, only pixels, which is what the baseline
+    // is for.
+    await expect(tooltip.getByRole('link', { name: 'Source' })).toHaveCount(0);
+
+    await shootPane(page, TOOLTIP, 'chart-tooltip-focused-event.png');
+  });
 });
 
 /**
