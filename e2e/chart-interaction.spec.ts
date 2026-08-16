@@ -345,7 +345,7 @@ test.describe('drag to select a month range', () => {
   });
 
   /**
-   * Jitter under both arming rules, released well inside the hold. The reader
+   * Jitter under both promotion rules, released well inside the hold. The reader
    * whose hand shakes during a click keeps their Month Window.
    */
   test('a press with jitter, released early, sets no window', async ({ page }) => {

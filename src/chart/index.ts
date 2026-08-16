@@ -39,8 +39,6 @@ export {
   rangeSelectPlugin,
   consumeDragSuppression,
   RANGE_SELECT_EVENTS,
-  PROMOTE_HOLD_MS,
-  PROMOTE_DISTANCE_PX,
 } from './rangeSelect';
 export {
   categoryColor,

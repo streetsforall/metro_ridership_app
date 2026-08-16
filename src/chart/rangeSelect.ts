@@ -42,8 +42,9 @@ interface DragState {
    */
   pressed: boolean;
   /**
-   * The press has been promoted: this is a Range Selection. Only ever set by
-   * {@link promote}, which is the one place the travel threshold is applied.
+   * The press has been promoted: this is a Range Selection. Set in exactly one
+   * place, reached either by travelling past {@link PROMOTE_DISTANCE_PX} or by
+   * holding out {@link PROMOTE_HOLD_MS}.
    */
   dragging: boolean;
   /** Live hold timer, so release, mouseout and destroy can all cancel it. */
@@ -122,13 +123,23 @@ export const rangeSelectPlugin: Plugin<'line'> = {
     };
 
     /**
-     * Pressed → dragging. The only place a press becomes a Range Selection, so
-     * the only place the travel threshold is applied — a second copy on release
-     * is how a gesture ends up being judged twice by two different rules.
+     * Pressed → dragging. The only place a press becomes a Range Selection, and
+     * the two functions below are the only two ways in.
      */
     const promote = () => {
       clearHold();
       state.dragging = true;
+    };
+
+    /**
+     * The travel rule, stated once. A second copy on release is how a gesture
+     * ends up judged twice by two different thresholds — which is what let a
+     * click paint a band and then have it taken away again.
+     */
+    const promoteOnTravel = () => {
+      if (state.dragging) return;
+      if (Math.abs(x - state.startX) < PROMOTE_DISTANCE_PX) return;
+      promote();
     };
 
     switch (args.event.type) {
@@ -151,8 +162,7 @@ export const rangeSelectPlugin: Plugin<'line'> = {
       case 'mousemove':
         if (!state.pressed) return;
         state.currentX = x;
-        if (!state.dragging && Math.abs(x - state.startX) >= PROMOTE_DISTANCE_PX)
-          promote();
+        promoteOnTravel();
         // Unpromoted, the move is still a click in progress: no repaint, no band.
         if (!state.dragging) return;
         args.changed = true;
