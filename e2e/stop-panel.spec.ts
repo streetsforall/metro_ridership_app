@@ -113,8 +113,16 @@ test('stop panel — the ranked table is the primary readout', async ({ page }) 
   await expect(page.locator('[data-qa="stop-row-rail:union-station"]')).toBeVisible();
   await expect(page.locator('[data-qa="stop-table"] tbody tr')).toHaveCount(3);
 
-  // The sparkline column draws, rather than merely reserving its cell.
-  await waitForSparkline(page, 'rail:union-station');
+  /*
+   * Only that the column reserved its cell. Whether the chart inside it has mounted is
+   * viewport-dependent — at mobile width the table is wider than its scroller and the
+   * last column sits outside it, so nothing draws until the reader scrolls sideways.
+   * That is asserted properly below, where a scroll is free; here it would make a
+   * screenshot's precondition depend on the viewport it is shot at.
+   */
+  await expect(
+    page.locator('[data-qa="stop-sparkline-rail:union-station"]'),
+  ).toBeAttached();
 
   // Ranked, not listed: the busiest stop is first with no interaction at all.
   await expect(
@@ -174,6 +182,22 @@ test('stop panel — selecting the selected row clears it', async ({ page }) => 
 
   await row.click();
   await expect(page.locator('[data-qa="stop-series"]')).toHaveCount(0);
+});
+
+/**
+ * The column paints, rather than only reserving space. Scrolled into view first, which
+ * is what makes this hold at either viewport: at mobile width the cell is outside the
+ * table's own horizontal scroll until something brings it in.
+ */
+test('stop panel — a scrolled-to sparkline actually draws', async ({ page }) => {
+  await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
+  await waitForStopTable(page);
+
+  await page
+    .locator('[data-qa="stop-sparkline-rail:union-station"]')
+    .scrollIntoViewIfNeeded();
+
+  await waitForSparkline(page, 'rail:union-station');
 });
 
 /** Presentational. A shape has no ordering, and the header must not claim otherwise. */
