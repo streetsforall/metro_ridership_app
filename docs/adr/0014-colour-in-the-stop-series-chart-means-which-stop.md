@@ -51,6 +51,16 @@ legend is what tells them apart.
 **No hue in the palette is a Metro line colour.** Checked in `stopSelectionColors.test.ts`, so a series
 never reads as a claim about which line it belongs to.
 
+**Strictly, a hue means which drawn `(stop, line)` pair, not which stop.** The title says "stop"
+because that is the reader-facing reading and the common case, where a stop appears on one selected
+line. But `colorForSelectionIndex` is indexed over the drawn series, and the data's grain is stop ×
+line — so a stop served by two selected lines takes two hues and consumes two palette slots. That is
+correct rather than a leak: the two series carry genuinely different figures, and the legend names
+the line beside each. The append-only ordering property is unaffected, because a stop added later
+still appends and never recolours what is already drawn. The panel's caption counts stops and names
+the series count separately whenever the two differ, precisely so this grain never has to be
+inferred from the chart.
+
 ## Alternatives
 
 **Hue by line, lightness by stop.** Keeps the documented rule intact and needs no ADR. Rejected

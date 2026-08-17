@@ -40,8 +40,13 @@ const SELECTION_HUES = [
  *
  * A negative index would reach past the front of the array, so it is folded back in
  * rather than yielding `undefined` at runtime for a caller the types already forbid.
+ * `NaN` and the infinities survive neither `%` nor `Math.trunc`, so they are answered
+ * before the arithmetic — this function promises a colour, and a promise that holds only
+ * for the inputs the types allow is a promise the next caller gets to break.
  */
 export function colorForSelectionIndex(index: number): string {
+  if (!Number.isFinite(index)) return SELECTION_HUES[0]['600'];
+
   const wrapped =
     ((Math.trunc(index) % SELECTION_HUES.length) + SELECTION_HUES.length) %
     SELECTION_HUES.length;

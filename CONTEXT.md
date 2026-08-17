@@ -186,7 +186,10 @@ _Avoid_: stop data, the stop memo
 
 **Stop Readout**:
 One Stop Place together with everything the current Stop View derives about it **for one Line** —
-its average Boardings and Alightings, the net between them, and its share of that Line's total.
+its average Boardings and Alightings, the **Change** between them, and its share of that Line's
+total. Change is Boardings less Alightings within a Month, never a movement between Months — the
+ranked table's heading sits two columns from *Ridership over time*, so the distinction is worth
+holding onto.
 Derived per Month Window and thrown away, exactly as a Line Readout is
 ([ADR-0005](docs/adr/0005-derived-figures-live-on-line-readouts.md)). The ranked table, the map
 markers and the map's hover popup all read the same Stop Readouts.

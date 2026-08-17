@@ -53,6 +53,22 @@ describe('colorForSelectionIndex', () => {
     expect(colorForSelectionIndex(-8)).toBe(colorForSelectionIndex(0));
   });
 
+  /**
+   * `NaN` survives neither `%` nor `Math.trunc`, so it would index the array with `NaN`,
+   * get `undefined`, and throw on `['600']` — a function that promises a colour must not
+   * throw for a number it was handed.
+   */
+  it.each([NaN, Infinity, -Infinity])(
+    'still yields a colour for %s',
+    (index) => {
+      expect(colorForSelectionIndex(index)).toMatch(/^#[0-9a-f]{6}$/);
+    },
+  );
+
+  it('truncates a fractional index rather than mangling it', () => {
+    expect(colorForSelectionIndex(2.9)).toBe(colorForSelectionIndex(2));
+  });
+
   it('is not a Metro line colour, so a series never claims a line', () => {
     // The teal and navy the dashboard's chrome and rail lines use.
     expect(PALETTE).not.toContain('#0fada8');

@@ -115,11 +115,14 @@ const columns: Column[] = [
   {
     kind: 'sortable',
     key: 'netAverage',
-    label: 'Net',
+    label: 'Change',
     align: 'right',
     initialDirection: 'desc',
+    /* The tooltip carries more weight than the other columns' because the heading sits two
+       away from "Ridership over time", where "change" would naturally read as a trend. It
+       is not one: this is a net flow within each month, not a movement between months. */
     title:
-      'Boardings less alightings. Negative where more riders get off than on, which is information rather than an error.',
+      'Boardings less alightings — the net change in riders on board at this stop, within each month rather than between them. Negative where more riders get off than on, which is information rather than an error.',
   },
   {
     kind: 'sortable',
@@ -337,11 +340,13 @@ export default function StopTable({
                     the mouse — Radix renders a real `<button>`, so Space fires its click
                     *and* bubbles a keydown to the row.
 
-                    `id` is prefixed and built from `rowKey` rather than the bare stop
-                    key, which contains a `:` and would need escaping in any selector. */}
+                    No `id`. The line table's checkbox needs one because its accessible
+                    name comes from a `<label htmlFor>` on the name cell; this one carries
+                    `aria-label` directly, so an id here would be an attribute nothing
+                    reads — and a stop key contains a `:`, which any `#`-selector would
+                    then have to escape for no gain. */}
                 <td data-qa={`stop-select-${readout.key}`} className="w-10">
                   <Checkbox.Root
-                    id={`stop-${rowKey}`}
                     aria-label={`${readout.name} · ${lineName}`}
                     checked={isSelected}
                     onClick={(event) => {

@@ -325,16 +325,36 @@ describe('StopTable selection column', () => {
     expect(onToggleStop).toHaveBeenCalledTimes(1);
   });
 
-  /* Radix renders a real button, so Space fires its click *and* bubbles a keydown. */
-  it('fires one toggle per keyboard press on the checkbox, not two', () => {
+  /**
+   * **Space, not Enter.** Radix cancels Enter on a checkbox, so no click follows it and a
+   * test driving Enter would pass with `onKeyDown` deleted. Space is the key the browser
+   * turns into a click, so Space is the one that reaches the row's handler on the way up.
+   *
+   * `fireEvent` does not synthesise the click a real Space produces, so both halves are
+   * dispatched here — that is what the browser does, and it is what the guard is for.
+   */
+  it('fires one toggle per Space press on the checkbox, not two', () => {
     const onToggleStop = vi.fn();
     renderTable({ onToggleStop });
 
     const checkbox = rowCheckbox('bus:vermont-wilshire');
-    fireEvent.keyDown(checkbox, { key: 'Enter' });
+    fireEvent.keyDown(checkbox, { key: ' ', code: 'Space' });
     fireEvent.click(checkbox);
 
     expect(onToggleStop).toHaveBeenCalledTimes(1);
+  });
+
+  /** The row's own keydown must not see it, which is what stops the second toggle. */
+  it('does not let a Space press on the checkbox reach the row', () => {
+    const onToggleStop = vi.fn();
+    renderTable({ onToggleStop });
+
+    fireEvent.keyDown(rowCheckbox('bus:vermont-wilshire'), {
+      key: ' ',
+      code: 'Space',
+    });
+
+    expect(onToggleStop).not.toHaveBeenCalled();
   });
 
   it('does not advertise the select header as sortable', () => {

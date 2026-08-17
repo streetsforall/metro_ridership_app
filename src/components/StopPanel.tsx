@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
 import StopCoverageNotice from './StopCoverageNotice';
+import StopFilters from './StopFilters';
 import StopSeriesChart, { type DrawnStopSeries } from './StopSeriesChart';
 import StopTable from './StopTable';
-import magnifyingGlassIcon from '../assets/magnifying-glass.svg';
 import { stopCoverageState } from '../utils/stopCoverage';
 import { buildStopSeriesIndex } from '../utils/stopSeries';
 import type { LineReadout } from '../ridership';
-import type { StopView } from '../stops';
+import type { StopReadout, StopView } from '../stops';
 import type { DayOfWeek } from '../@types/metrics.types';
 import type { StopMeasure, StopRecord } from '../@types/stops.types';
 
@@ -162,25 +162,53 @@ export default function StopPanel({
    * The figure and every row's sparkline read the same cache, so a selected stop's row and
    * the chart above it draw the identical array.
    */
+  /*
+   * Indexed, not scanned. Selection is uncapped and a five-line table is ~800 readouts, so
+   * a `find` per selected key would be quadratic in exactly the case `Select All` invites —
+   * and `StopTable` builds a `Set` forty lines from here for the same reason.
+   */
+  const readoutsByKey = useMemo(() => {
+    const byKey = new Map<string, StopReadout[]>();
+    for (const readout of view.readouts) {
+      const existing = byKey.get(readout.key);
+      if (existing) existing.push(readout);
+      else byKey.set(readout.key, [readout]);
+    }
+    return byKey;
+  }, [view.readouts]);
+
+  const lineNamesById = useMemo(
+    () => new Map(lines.map((line) => [line.id, line.name])),
+    [lines],
+  );
+
   const drawn = useMemo<DrawnStopSeries[]>(
     () =>
       selectedStopKeys.flatMap((key) =>
-        view.readouts
-          .filter((readout) => readout.key === key)
-          .map((readout) => ({
-            key: readout.key,
-            lineId: readout.line_name,
-            stopName: readout.name,
-            lineName:
-              lines.find((line) => line.id === readout.line_name)?.name ??
-              String(readout.line_name),
-            series: seriesIndex.seriesFor(readout.key, readout.line_name),
-          })),
+        (readoutsByKey.get(key) ?? []).map((readout) => ({
+          key: readout.key,
+          lineId: readout.line_name,
+          stopName: readout.name,
+          lineName:
+            lineNamesById.get(readout.line_name) ?? String(readout.line_name),
+          series: seriesIndex.seriesFor(readout.key, readout.line_name),
+        })),
       ),
-    [selectedStopKeys, view.readouts, lines, seriesIndex],
+    [selectedStopKeys, readoutsByKey, lineNamesById, seriesIndex],
   );
 
-  const hasSelection = lines.length > 0;
+  /**
+   * How many **stops** are drawn, which is not how many series are.
+   *
+   * A stop served by two selected lines contributes two series and one stop, so counting
+   * `drawn` would tell a reader they had picked two stops when they had picked one.
+   */
+  const drawnStopCount = useMemo(
+    () => new Set(drawn.map((stop) => stop.key)).size,
+    [drawn],
+  );
+
+  const hasSelectedLines = lines.length > 0;
 
   /**
    * Is there anything on screen yet?
@@ -211,7 +239,7 @@ export default function StopPanel({
         </p>
       );
     if (coverageState === 'no-overlap') return null;
-    if (!hasSelection)
+    if (!hasSelectedLines)
       return (
         <p className="py-8 text-center text-sm text-stone-400">
           Select a Metro line to see its stops.
@@ -248,65 +276,28 @@ export default function StopPanel({
             {/* The caption counts rather than names. With several stops drawn there is no
                 one name to write here, and the chart's legend already names each series
                 beside the colour it belongs to — which is where a reader looks to tell
-                two series apart. */}
+                two series apart.
+
+                Series are counted separately only when the two numbers differ, which
+                happens when a stop is served by more than one selected line. Saying "1
+                stop" beside two drawn lines would leave the reader counting; saying
+                "1 stop · 2 series" every time would be noise for the common case. */}
             <figcaption className="mb-1 text-xs text-stone-500">
-              Ridership over time · {drawn.length}{' '}
-              {drawn.length === 1 ? 'stop' : 'stops'}
+              Ridership over time · {drawnStopCount}{' '}
+              {drawnStopCount === 1 ? 'stop' : 'stops'}
+              {drawn.length !== drawnStopCount && ` · ${String(drawn.length)} series`}
             </figcaption>
             <StopSeriesChart drawn={drawn} measure={measure} />
           </figure>
         )}
 
-        {/* The table's own chrome, laid out as the line filter's is: the search in a row
-            of its own closed by a rule, then the two selection actions under it. Two
-            ranked tables in one dashboard should not put the same three controls in two
-            different arrangements.
-
-            Below the figure and above the table, because it acts on the table. */}
-        <div className="mt-3 flex gap-2 border-b border-stone-300 pb-4">
-          {/* The magnifier is a background image on the input, the same trio
-              `#search-lines` uses — position, no-repeat, and left padding to clear it.
-              `aria-label` is the one deliberate difference: `#search-lines` has only its
-              placeholder to name it, and a placeholder disappears the moment someone
-              types. */}
-          <input
-            id="search-stops"
-            aria-label="Search stops"
-            placeholder="Search stops"
-            className="bg-[0.5rem_center] bg-no-repeat pl-8 w-full"
-            style={{ backgroundImage: `url("${magnifyingGlassIcon}")` }}
-            value={searchText}
-            onChange={(event): void => {
-              onSearchTextChange(event.target.value);
-            }}
-          />
-        </div>
-
-        {/* `bg-transparent border-none p-0` is load-bearing on both: without it the global
-            button rule paints each a filled navy pill. `type="button"` because a bare
-            <button> defaults to submit. Same teal, weight and size as the line filter's
-            pair, which are the dashboard's existing selection actions. */}
-        <div className="mt-2 flex gap-4">
-          <button
-            type="button"
-            id="select-all-stops"
-            data-qa="stop-select-all"
-            className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
-            onClick={(): void => onSelectAllStops(listedStopKeys)}
-          >
-            Select All
-          </button>
-
-          <button
-            type="button"
-            id="clear-all-stops"
-            data-qa="stop-clear-all"
-            className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
-            onClick={onClearStops}
-          >
-            Clear All
-          </button>
-        </div>
+        <StopFilters
+          searchText={searchText}
+          onSearchTextChange={onSearchTextChange}
+          listedStopKeys={listedStopKeys}
+          onSelectAllStops={onSelectAllStops}
+          onClearStops={onClearStops}
+        />
 
         <div className="mt-3">
           <StopTable
