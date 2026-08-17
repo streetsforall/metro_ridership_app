@@ -21,6 +21,14 @@ vi.mock('../StopSeriesChart', async () => {
   };
 });
 
+/**
+ * The table's per-row sparkline, for the same reason: a Chart.js canvas that
+ * `StopTable`'s own spec covers. Here it only has to not need a 2D context.
+ */
+vi.mock('../StopSparkline', () => ({
+  default: () => <canvas data-qa="stop-sparkline" />,
+}));
+
 const makeStopReadout = (overrides: Partial<StopReadout> = {}): StopReadout => ({
   ...makeStopPlace(),
   line_name: 204,
@@ -57,6 +65,7 @@ const renderPanel = (
       onMeasureChange={vi.fn()}
       selectedStopKey={null}
       onSelectStop={vi.fn()}
+      onClearStop={vi.fn()}
       onUseCoverageWindow={vi.fn()}
       {...props}
     />,
@@ -236,5 +245,41 @@ describe('StopPanel', () => {
     expect(
       document.querySelector('[data-qa="stop-coverage-partial"]')?.textContent,
     ).toBe('Jul 2025 → Jun 2026');
+  });
+});
+
+/**
+ * Without this the series is a one-way door: a reader who opens one can reach a
+ * different stop, or close the whole panel, but not get back to the state the panel
+ * opens in.
+ */
+describe('StopPanel clearing the selected stop', () => {
+  const selected = { selectedStopKey: 'bus:vermont-wilshire' };
+
+  it('offers no clear control when no stop is selected', () => {
+    renderPanel();
+    expect(document.querySelector('[data-qa="stop-series-clear"]')).toBeNull();
+  });
+
+  it('offers one beside the series once a stop is selected', () => {
+    renderPanel(selected);
+    expect(document.querySelector('[data-qa="stop-series-clear"]')).toBeTruthy();
+  });
+
+  it('calls onClearStop when it is pressed', () => {
+    const onClearStop = vi.fn();
+    renderPanel({ ...selected, onClearStop });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+
+    expect(onClearStop).toHaveBeenCalledTimes(1);
+  });
+
+  /** A bare <button> submits; inside any future form that would reload the page. */
+  it('is a button that does not submit', () => {
+    renderPanel(selected);
+    expect(
+      screen.getByRole('button', { name: 'Clear' }).getAttribute('type'),
+    ).toBe('button');
   });
 });

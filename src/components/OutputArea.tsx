@@ -38,6 +38,7 @@ interface OutputAreaProps {
   onStopMeasureChange?: (measure: StopMeasure) => void;
   selectedStopKey?: string | null;
   onSelectStop?: (stopKey: string) => void;
+  onClearStop?: () => void;
   /** The Month Window and Day Of Week the stop derivation reads. */
   startDate: Date;
   endDate: Date;
@@ -64,6 +65,7 @@ export default function OutputArea({
   onStopMeasureChange,
   selectedStopKey = null,
   onSelectStop,
+  onClearStop,
   startDate,
   endDate,
   dayOfWeek,
@@ -254,6 +256,7 @@ export default function OutputArea({
           onMeasureChange={(measure) => onStopMeasureChange?.(measure)}
           selectedStopKey={selectedStopKey}
           onSelectStop={(stopKey) => onSelectStop?.(stopKey)}
+          onClearStop={() => onClearStop?.()}
           onUseCoverageWindow={useCoverageWindow}
         />
       )}

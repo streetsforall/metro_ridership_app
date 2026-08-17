@@ -4,7 +4,7 @@ import StopCoverageNotice from './StopCoverageNotice';
 import StopSeriesChart from './StopSeriesChart';
 import StopTable from './StopTable';
 import { stopCoverageState } from '../utils/stopCoverage';
-import { buildStopSeries } from '../utils/stopSeries';
+import { buildStopSeriesIndex } from '../utils/stopSeries';
 import type { LineReadout } from '../ridership';
 import type { StopView } from '../stops';
 import type { DayOfWeek } from '../@types/metrics.types';
@@ -58,6 +58,8 @@ export interface StopPanelProps {
   onMeasureChange: (measure: StopMeasure) => void;
   selectedStopKey: string | null;
   onSelectStop: (stopKey: string) => void;
+  /** Back to no stop selected — the state the panel opens in. */
+  onClearStop: () => void;
   /** Set the Month Window to the Stop Coverage Window. `YYYY-MM` at both ends. */
   onUseCoverageWindow: (from: string, to: string) => void;
 }
@@ -74,6 +76,7 @@ export default function StopPanel({
   onMeasureChange,
   selectedStopKey,
   onSelectStop,
+  onClearStop,
   onUseCoverageWindow,
 }: StopPanelProps) {
   const coverageState = stopCoverageState({
@@ -95,18 +98,32 @@ export default function StopPanel({
     [view.readouts, selectedStopKey],
   );
 
+  /**
+   * One index for the whole panel, not one build per row.
+   *
+   * `records` is memoised by `useStopView`, so this rebuilds only when a payload lands,
+   * the window moves or the Day Of Week changes — never on a re-sort, a selection or a
+   * measure change. Deliberately not keyed on `measure`: the measure picks which of two
+   * figures a chart draws, and both are already in every point.
+   */
+  const seriesIndex = useMemo(
+    () =>
+      buildStopSeriesIndex({
+        records: records ?? [],
+        months: view.months,
+        dayOfWeek,
+      }),
+    [records, view.months, dayOfWeek],
+  );
+
+  /* The figure below and every row's sparkline read the same cache, so the selected
+     stop's row and the chart above it are drawing the identical array. */
   const series = useMemo(
     () =>
       selectedReadout
-        ? buildStopSeries({
-            records: records ?? [],
-            months: view.months,
-            stopKey: selectedReadout.key,
-            lineId: selectedReadout.line_name,
-            dayOfWeek,
-          })
+        ? seriesIndex.seriesFor(selectedReadout.key, selectedReadout.line_name)
         : [],
-    [selectedReadout, records, view.months, dayOfWeek],
+    [seriesIndex, selectedReadout],
   );
 
   const hasSelection = lines.length > 0;
@@ -174,11 +191,26 @@ export default function StopPanel({
 
         {selectedReadout && (
           <figure className="mt-3" data-qa="stop-series-figure">
-            <figcaption className="mb-1 text-xs text-stone-500">
-              {selectedReadout.name} ·{' '}
-              {lines.find((line) => line.id === selectedReadout.line_name)
-                ?.name ?? selectedReadout.line_name}
-            </figcaption>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <figcaption className="text-xs text-stone-500">
+                {selectedReadout.name} ·{' '}
+                {lines.find((line) => line.id === selectedReadout.line_name)
+                  ?.name ?? selectedReadout.line_name}
+              </figcaption>
+
+              {/* The way back to no stop selected. Worded rather than an × glyph: the
+                  panel has no other icon-only control, and a bare × would need an
+                  `aria-label` to say what a word says directly. `type="button"` because
+                  a bare <button> defaults to submit. */}
+              <button
+                type="button"
+                data-qa="stop-series-clear"
+                className="text-xs text-stone-500 underline"
+                onClick={onClearStop}
+              >
+                Clear
+              </button>
+            </div>
             <StopSeriesChart
               series={series}
               measure={measure}
@@ -193,6 +225,9 @@ export default function StopPanel({
             lines={lines}
             selectedStopKey={selectedStopKey}
             onSelectStop={onSelectStop}
+            onClearStop={onClearStop}
+            seriesIndex={seriesIndex}
+            measure={measure}
           />
         </div>
       </>
