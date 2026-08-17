@@ -10,6 +10,7 @@ type AfterDraw = (chart: unknown, args: unknown, opts: unknown) => void;
 type GutterEventArgs = {
   event: { type: string; x?: number | null; y?: number | null };
   inChartArea: boolean;
+  replay?: boolean;
 };
 type AfterEvent = (chart: unknown, args: GutterEventArgs, opts: unknown) => void;
 const plugin = eventGutterPlugin as unknown as {
@@ -402,6 +403,33 @@ describe('event gutter hit-testing', () => {
     const chart = makeChart([eventAt(3)], { onGutterClick });
     afterEvent(chart, below('click', 175), {});
     expect(onGutterClick).toHaveBeenCalledWith(5);
+  });
+
+  /**
+   * A repaint is not a gesture — `rangeSelect` keeps the same rule, and the
+   * gutter needs it more. `Chart#update` replays `_lastEvent`, and
+   * `determineLastEvent` keeps the previous event both across a click and
+   * whenever the pointer is outside `chartArea` — which the gutter always is.
+   * So pinning a month re-delivers the click that pinned it, and under
+   * release-first (ADR-0011) the replay releases what the gesture just took.
+   */
+  const replayed = (type: string, x: number) => ({
+    ...below(type, x),
+    replay: true,
+  });
+
+  it('ignores a click replayed by a repaint', () => {
+    const onGutterClick = vi.fn();
+    const chart = makeChart([eventAt(3)], { onGutterClick });
+    afterEvent(chart, replayed('click', 100), {});
+    expect(onGutterClick).not.toHaveBeenCalled();
+  });
+
+  it('ignores a hover replayed by a repaint', () => {
+    const onGutterHover = vi.fn();
+    const chart = makeChart([eventAt(3)], { onGutterHover });
+    afterEvent(chart, replayed('mousemove', 100), {});
+    expect(onGutterHover).not.toHaveBeenCalled();
   });
 });
 

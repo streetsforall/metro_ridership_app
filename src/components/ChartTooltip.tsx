@@ -1,5 +1,4 @@
 import {
-  useEffect,
   useLayoutEffect,
   useState,
   type CSSProperties,
@@ -184,23 +183,40 @@ export default function ChartTooltip({
    *
    * Both live above the early return, because hooks cannot be called
    * conditionally and the readout renders nothing for a month it has not got.
+   *
+   * A new Month is a new readout: it opens collapsed, and at the first of its
+   * events rather than wherever the last Month was left — which would otherwise
+   * open a two-event Month at "2 of 2" because the Month before it had three.
+   *
+   * Both state the Month they belong to rather than being reset by an effect.
+   * The reset was a *passive* effect, so the first committed frame of a new
+   * Month still carried the previous Month's expansion — uncapped — and the
+   * measurement below, which decides whether to offer the control that lifts the
+   * cap, ran against that box and answered for the Month that had gone. Held
+   * against the Month, the collapse and the Month arrive in the same render and
+   * there is no such frame, and nothing needs resetting.
    */
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [expandedFor, setExpandedFor] = useState<number | null>(null);
+  const isExpanded = expandedFor === index;
   const [box, setBox] = useState<HTMLDivElement | null>(null);
   const [hasMore, setHasMore] = useState(false);
-  /** Which of the Month's events is on show. @see step */
-  const [eventIndex, setEventIndex] = useState(0);
+  /** Which of the Month's events is on show, and whose. @see step */
+  const [shownFor, setShownFor] = useState<{
+    month: number | null;
+    position: number;
+  }>({ month: null, position: 0 });
+  const eventIndex = shownFor.month === index ? shownFor.position : 0;
 
   /**
-   * A new Month is a new readout: it opens collapsed, as this one did, and at
-   * the first of its events rather than at whatever position the last Month
-   * happened to be left on — which would otherwise open a two-event Month at
-   * "2 of 2" because the Month before it had three.
+   * A new Month also opens at its heading. React reuses this element across
+   * Months, and the browser keeps a scrolling box's `scrollTop` when its content
+   * is replaced — so a reader who scrolled through one Month's events met the
+   * next one already part-way down, under a heading that had not moved. The same
+   * thing `step` does between two events of one Month, done between Months.
    */
-  useEffect(() => {
-    setIsExpanded(false);
-    setEventIndex(0);
-  }, [index]);
+  useLayoutEffect(() => {
+    if (box) box.scrollTop = 0;
+  }, [box, index]);
 
   /**
    * "More to read" is not a property of the content — a single long description
@@ -241,8 +257,8 @@ export default function ChartTooltip({
    *
    * Clamped at render rather than trusted, because `events` can shrink under a
    * held position without the Month changing — filtering a line away takes its
-   * events with it — and the reset effect above only fires on a new Month. A
-   * clamp here cannot be raced by a re-render the way a second effect could.
+   * events with it — and the position above only starts over on a new Month. A
+   * clamp here cannot be raced by a re-render the way an effect could.
    */
   const shownIndex = Math.min(eventIndex, Math.max(0, events.length - 1));
   const shownEvent = events[shownIndex];
@@ -254,9 +270,10 @@ export default function ChartTooltip({
    * rather than a convenience. Only the strip can be scrolled at all.
    */
   const step = (delta: number) => {
-    setEventIndex((position) =>
-      Math.min(Math.max(position + delta, 0), events.length - 1),
-    );
+    setShownFor({
+      month: index,
+      position: Math.min(Math.max(shownIndex + delta, 0), events.length - 1),
+    });
     if (box) box.scrollTop = 0;
   };
 
@@ -322,16 +339,29 @@ export default function ChartTooltip({
       style={position}
     >
       {/* The month, and — only where the box is capped and there is something
-          under the cap — the control that lifts it. Offered only once pinned:
-          a hovering readout does not accept the pointer, so a button on one is
-          a control the reader can see and cannot press. On touch there is no
-          hover and a tap pins, so the strip is always in the form that has it. */}
+          under the cap — the way to the rest of it. Pinned, that is the control
+          that lifts the cap. Hovering, it is only a sentence: an unpinned
+          readout does not accept the pointer, so a button on one is a control
+          the reader can see and cannot press.
+
+          Hovering *and* capped needs a mouse on a chart under 480px — a narrow
+          panel on a desktop — since a release now takes the readout with it and
+          a tap pins. Rare, and still the state this whole fix is about: a box
+          holding content back with nothing saying so. The same words as the hint
+          at the foot of the box, said where a capped box can still show them. */}
       <div className="flex items-start justify-between gap-2">
         <p className="font-semibold">{formatMonthLabel(months[index])}</p>
+        {!isPinned && hasMore && (
+          <span className="shrink-0 text-stone-400">Click to pin</span>
+        )}
         {isPinned && (hasMore || isExpanded) && (
           <ReadoutButton
             expanded={isExpanded}
-            onPress={() => setIsExpanded((wasExpanded) => !wasExpanded)}
+            onPress={() =>
+              setExpandedFor((wasExpandedFor) =>
+                wasExpandedFor === index ? null : index,
+              )
+            }
           >
             {isExpanded ? 'Collapse' : 'Expand'}
           </ReadoutButton>

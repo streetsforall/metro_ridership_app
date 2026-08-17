@@ -8,7 +8,7 @@ import {
 import { Line as LineChart } from 'react-chartjs-2';
 import colors from 'tailwindcss/colors';
 import ChartTooltip from './ChartTooltip';
-import type { CustomChartData } from '../@types/chart.types';
+import type { CustomChartData, TooltipExternalArgs } from '../@types/chart.types';
 import type { TransitEvent } from '../@types/events.types';
 import {
   consumeDragSuppression,
@@ -120,6 +120,43 @@ export default function RidershipChart({
 
   const pinnedIndex = indexOfMonth(months, pinnedMonth);
   const highlightedIndex = indexOfMonth(months, highlightedMonth);
+
+  /**
+   * Releasing a pin releases the readout with it.
+   *
+   * A hover is meant to be transient, and on a mouse it is: the next movement
+   * retargets it and `mouseout` ends it. A touch screen sends neither. A tap
+   * synthesises one `mousemove` and nothing ever takes it back, so `hoverIndex`
+   * on a phone is not "the month under the pointer" but "the last month
+   * touched", permanently — and it outlived the pin it arrived with. Tapping
+   * another month to get out of a readout releases the pin (ADR-0011) and left
+   * the readout standing in its *unpinned* form, which drops the Expand control,
+   * re-clamps the description and hides the source link while the strip stays
+   * capped at a third of the plot: a box naming a month whose event it was now
+   * too short to show, offering nothing that would open it.
+   *
+   * So the fallback is cleared rather than filtered. Asking the platform
+   * instead — `matchMedia('(hover: none)')`, and only dropping the hover there —
+   * looks tidier and is not dependable: the same emulated phone answers that
+   * query differently between one render and the next, which would make this
+   * fix hold or not hold at random. Clearing needs no such answer, and states
+   * one rule for every pointer.
+   *
+   * Adjusted during render rather than in an effect, which is React's own
+   * pattern for a state that has to follow a prop: the release and the cleared
+   * hover reach the reader in the same paint, with no frame of the readout
+   * still standing between them.
+   *
+   * The cost, on a mouse: releasing a pin without moving takes the readout away
+   * rather than leaving a hovering one, until the pointer moves a pixel. That is
+   * the price of one rule instead of two, and it is what "release" looked like
+   * on a phone all along.
+   */
+  const [lastPinnedMonth, setLastPinnedMonth] = useState(pinnedMonth);
+  if (pinnedMonth !== lastPinnedMonth) {
+    setLastPinnedMonth(pinnedMonth);
+    if (pinnedMonth === null) setHoverIndex(null);
+  }
 
   /**
    * One month drives the tooltip, the crosshair and the enlarged dot, whichever
@@ -246,7 +283,18 @@ export default function RidershipChart({
         // The readout is HTML (see ChartTooltip). Chart.js still tracks the
         // active element — the crosshair reads it — it just paints nothing.
         enabled: false,
-        external: ({ tooltip }) => {
+        external: (args) => {
+          /**
+           * A repaint is not a gesture — `rangeSelect` and the Event Gutter keep
+           * the same rule. `Chart#update` replays `_lastEvent`, and
+           * `determineLastEvent` holds the *previous* event across a click, so
+           * the re-render a pin causes hands this callback the month the reader
+           * just left and sets the hover back to it. Chart.js passes the flag
+           * that says so; only its types leave it out (see `TooltipExternalArgs`).
+           */
+          if ((args as TooltipExternalArgs).replay) return;
+
+          const { tooltip } = args;
           setHoverIndex(
             tooltip.opacity === 0 ? null : (tooltip.dataPoints?.[0]?.dataIndex ?? null),
           );
