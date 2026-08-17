@@ -215,10 +215,30 @@ would have put it in `OutputArea`'s chunk — which every reader downloads — s
 it and it gets its own chunk, fetched with the rail payload when the panel opens. Worth correcting
 the comment; worth more not bundling it.
 
-**`src/stops/index.ts` exposes no per-stop series.** The panel needs one for the selected stop's
-chart, so it assembles one in `src/utils/stopSeries.ts` from the module's own month axis and
-`stopMetrics` — no window arithmetic, no second copy of the Day Of Week → column mapping. It would
-sit better inside the module, next to `stopMetrics`.
+**`src/stops/index.ts` exposes no per-stop series.** The panel needs one per stop, so it assembles
+them in `src/utils/stopSeries.ts` from the module's own month axis and `stopMetrics` — no window
+arithmetic, no second copy of the Day Of Week → column mapping. It would sit better inside the
+module, next to `stopMetrics`.
+
+`buildStopSeriesIndex` is the whole panel's supply: one pass groups every record by (stop, line),
+and a pair's months are aligned on first ask and cached. Both readers — the ranked table's
+sparkline column and the figure above it — read that one cache, so the selected stop's row and its
+chart are drawing the identical array. The per-call scan it replaced was O(rows × records), which
+is ~800 × ~106,000 once the table draws a sparkline per row.
+
+**The stop table's sparkline column mounts lazily, and on mobile that means not at all.** The
+ranked table can hold ~800 rows against the line table's ~180, so a Chart.js instance per row is
+not affordable up front; `useVisibleRows` mounts a row's chart when it is scrolled to and keeps it
+mounted thereafter. One observer for the table, rooted on the `max-h-[28rem]` scroller rather than
+the viewport — `rootMargin` grows the *root* rect, so a viewport root would grow the wrong box and
+pre-mount nothing.
+
+The consequence, measured: at mobile width the table is 696px of content in a 294px scroller, so
+the last column sits outside the box entirely and **no sparkline mounts until the reader scrolls
+sideways.** The observer is right not to draw it, and the horizontal scroll is pre-existing — the
+six-column table was already 472px in that 294px — but the new column widens it by 224px. If that
+is not wanted, hiding the column below `sm` is one class; it was left visible because the column
+was asked for and it is reachable.
 
 **Two ADRs are still owed and are deliberately not in this PR.** The stop wire format and
 name-as-identity decisions never got their numbers (0008 and 0009 went to other work; main is at

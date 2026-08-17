@@ -1,5 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { BUS_LINE_ID, RAIL_LINE_ID, stubStopPayloads } from './stop-fixtures';
+import {
+  MANY_ROWS_COUNT,
+  MANY_ROWS_LINE_ID,
+  stubManyStopRows,
+} from './stop-sparkline-fixtures';
 
 /**
  * The stop panel's DOM — the ranked table, the measure toggle, the per-stop series and
@@ -56,6 +61,37 @@ async function waitForStopTable(page: Page): Promise<void> {
   });
 }
 
+/**
+ * Wait for a row's sparkline to have actually painted.
+ *
+ * The cell is an empty fixed-size box until two things have happened: the row has been
+ * reported visible, and Chart.js has drawn. A visible `<canvas>` proves only the first,
+ * so this reads the alpha channel — the same technique `table-view.spec.ts` uses for
+ * the line table's column, and for the same reason.
+ */
+async function waitForSparkline(page: Page, stopKey: string): Promise<void> {
+  const canvas = page.locator(`[data-qa="stop-sparkline-${stopKey}"] canvas`);
+  await expect(canvas).toBeVisible();
+
+  await expect
+    .poll(
+      () =>
+        canvas.evaluate((element) => {
+          const context = (element as HTMLCanvasElement).getContext('2d');
+          if (!context) return 0;
+          const { width, height } = element as HTMLCanvasElement;
+          if (width === 0 || height === 0) return 0;
+          const { data } = context.getImageData(0, 0, width, height);
+          let painted = 0;
+          for (let index = 3; index < data.length; index += 4)
+            if (data[index] !== 0) painted += 1;
+          return painted;
+        }),
+      { message: `sparkline for ${stopKey} never painted` },
+    )
+    .toBeGreaterThan(0);
+}
+
 /** Shoot the panel pane on its own, at the tolerance element crops use. */
 async function shootPanel(page: Page, name: string): Promise<void> {
   await page.mouse.move(0, 0);
@@ -73,8 +109,12 @@ test('stop panel — the ranked table is the primary readout', async ({ page }) 
   // be baked into a green baseline: the vocabulary, and the stops themselves.
   await expect(page.getByText('Avg. Boardings')).toBeVisible();
   await expect(page.getByText('Avg. Alightings')).toBeVisible();
+  await expect(page.getByText('Ridership over time')).toBeVisible();
   await expect(page.locator('[data-qa="stop-row-rail:union-station"]')).toBeVisible();
   await expect(page.locator('[data-qa="stop-table"] tbody tr')).toHaveCount(3);
+
+  // The sparkline column draws, rather than merely reserving its cell.
+  await waitForSparkline(page, 'rail:union-station');
 
   // Ranked, not listed: the busiest stop is first with no interaction at all.
   await expect(
@@ -97,6 +137,116 @@ test('stop panel — a table row draws that stop’s series', async ({ page }) =
   );
 
   await shootPanel(page, 'stop-panel-selected-stop.png');
+});
+
+/**
+ * The way back out. Without it the series is a one-way door: a reader can reach another
+ * stop or close the panel, but not return to the state the panel opens in.
+ */
+test('stop panel — the series can be cleared, and the URL follows', async ({
+  page,
+}) => {
+  await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
+  await waitForStopTable(page);
+
+  await page.locator('[data-qa="stop-row-rail:union-station"]').click();
+  await expect(page.locator('[data-qa="stop-series"]')).toBeVisible();
+  expect(page.url()).toContain('stop=');
+
+  await page.locator('[data-qa="stop-series-clear"]').click();
+
+  await expect(page.locator('[data-qa="stop-series"]')).toHaveCount(0);
+  // `page.url()` is the right witness precisely here: the app re-serialises its own
+  // state over the query string, so a param that must *disappear* is the one thing the
+  // URL can prove.
+  expect(page.url()).not.toContain('stop=');
+});
+
+/** The row is a toggle, which is the only route out the keyboard can reach. */
+test('stop panel — selecting the selected row clears it', async ({ page }) => {
+  await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
+  await waitForStopTable(page);
+
+  const row = page.locator('[data-qa="stop-row-rail:union-station"]');
+
+  await row.click();
+  await expect(page.locator('[data-qa="stop-series"]')).toBeVisible();
+
+  await row.click();
+  await expect(page.locator('[data-qa="stop-series"]')).toHaveCount(0);
+});
+
+/** Presentational. A shape has no ordering, and the header must not claim otherwise. */
+test('stop panel — the ridership-over-time header does not sort', async ({
+  page,
+}) => {
+  await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
+  await waitForStopTable(page);
+
+  const header = page.getByRole('columnheader', {
+    name: 'Ridership over time',
+  });
+  await expect(header).not.toHaveAttribute('aria-sort');
+
+  await header.click();
+
+  await expect(
+    page.locator('[data-qa="stop-table"] tbody tr').first(),
+  ).toContainText('Union Station');
+});
+
+/**
+ * The laziness itself. Three stops all fit on screen, so this needs its own fixture —
+ * with a short list the assertion would pass on a table that deferred nothing.
+ */
+test('stop panel — a row below the fold draws nothing until scrolled to', async ({
+  page,
+}) => {
+  await stubManyStopRows(page);
+  await page.addInitScript(() => {
+    window.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
+  });
+
+  await page.goto(`/?stops=1&lines=${String(MANY_ROWS_LINE_ID)}`);
+  await expect(page.locator('#stop-panel')).toBeVisible();
+  await waitForStopTable(page);
+
+  await expect(page.locator('[data-qa="stop-table"] tbody tr')).toHaveCount(
+    MANY_ROWS_COUNT,
+  );
+
+  // Every row reserves its cell, whether or not a chart is in it yet — the box is the
+  // same size either way, so a sparkline arriving never moves the rows below it.
+  await expect(page.locator('[data-qa^="stop-sparkline-"]')).toHaveCount(
+    MANY_ROWS_COUNT,
+  );
+
+  /*
+   * Only that the list is not fully mounted, not that some particular number is.
+   * How many rows start mounted is viewport-dependent, and at mobile width it is
+   * legitimately zero: the table is wider than its scroller there (696px of content in
+   * 294px), so the last column sits outside the box entirely until the reader scrolls
+   * sideways, and the observer is right not to draw it.
+   */
+  const mounted = await page
+    .locator('[data-qa^="stop-sparkline-"] canvas')
+    .count();
+  expect(mounted).toBeLessThan(MANY_ROWS_COUNT);
+
+  // Scrolling to a row is what mounts it — on either axis.
+  const last = page.locator(
+    `[data-qa="stop-sparkline-rail:sparkline-stop-${String(MANY_ROWS_COUNT - 1)}"]`,
+  );
+  await last.scrollIntoViewIfNeeded();
+
+  await expect(last.locator('canvas')).toBeVisible();
+  expect(
+    await page.locator('[data-qa^="stop-sparkline-"] canvas').count(),
+  ).toBeGreaterThan(mounted);
 });
 
 test('stop panel — the measure toggle switches to Alightings', async ({ page }) => {
