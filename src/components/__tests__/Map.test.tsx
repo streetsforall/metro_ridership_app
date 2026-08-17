@@ -338,7 +338,7 @@ describe('Map', () => {
         <Map
           lines={[]}
           stopMarkers={markers}
-          selectedStopKey="bus:vermont-wilshire"
+          selectedStopKeys={['bus:vermont-wilshire']}
         />,
       );
 
@@ -348,6 +348,70 @@ describe('Map', () => {
         expect.arrayContaining(['case']) as unknown,
       );
       expect(captured.addLayer).not.toHaveBeenCalled();
+    });
+
+    /**
+     * One membership test, not one comparison per stop. The empty case needs no sentinel
+     * either: an empty literal array matches nothing on its own, which is what the old
+     * `?? ''` comparison had to fake.
+     */
+    it('rings every selected stop from one membership test', () => {
+      const { rerender } = loaded({ stopMarkers: markers });
+      captured.setPaintProperty.mockClear();
+
+      rerender(
+        <Map
+          lines={[]}
+          stopMarkers={markers}
+          selectedStopKeys={['bus:vermont-wilshire', 'rail:union-station']}
+        />,
+      );
+
+      const widthCall = captured.setPaintProperty.mock.calls.find(
+        (call) => call[1] === 'circle-stroke-width',
+      );
+      expect(widthCall?.[2]).toEqual([
+        'case',
+        [
+          'in',
+          ['get', 'stop_key'],
+          ['literal', ['bus:vermont-wilshire', 'rail:union-station']],
+        ],
+        3,
+        expect.anything(),
+      ]);
+    });
+
+    /**
+     * **The map imports no palette.** The chart gives each selected stop its own hue;
+     * the ring deliberately does not follow it there, so colour on the map keeps
+     * answering one question — which line, in the fill (ADR-0014).
+     *
+     * This assertion is the guard: extending the palette onto the ring should fail a
+     * test rather than slide in unread.
+     */
+    it('rings every selected stop in the one neutral colour, not a colour per stop', () => {
+      const { rerender } = loaded({ stopMarkers: markers });
+      captured.setPaintProperty.mockClear();
+
+      rerender(
+        <Map
+          lines={[]}
+          stopMarkers={markers}
+          selectedStopKeys={['bus:vermont-wilshire', 'rail:union-station']}
+        />,
+      );
+
+      const colorCall = captured.setPaintProperty.mock.calls.find(
+        (call) => call[1] === 'circle-stroke-color',
+      );
+      // `case` with one neutral value, never `match` with a value per key.
+      expect(colorCall?.[2]).toEqual([
+        'case',
+        expect.anything(),
+        '#033056',
+        ['get', 'color'],
+      ]);
     });
 
     it('encodes the measure in fill and stroke rather than a second colour', () => {

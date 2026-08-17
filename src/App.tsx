@@ -65,8 +65,12 @@ function App() {
     toggleShowStops,
     stopMeasure,
     setStopMeasure,
-    selectedStopKey,
-    setSelectedStopKey,
+    selectedStopKeys,
+    onToggleSelectStop,
+    clearStopSelections,
+    selectAllListedStops,
+    stopSearchText,
+    setStopSearchText,
   } = userDashboardInputState;
 
   const isLoading = ridershipRecords === null;
@@ -121,14 +125,6 @@ function App() {
    * the barrel registers Chart.js, and pulling that into App would undo the
    * lazy-loading of OutputArea above.
    */
-  /**
-   * Back to no stop selected. The URL sync writes `stop` only when it is set, so
-   * clearing it drops the param and a cleared panel is as shareable as a selected one.
-   */
-  const handleClearStop = useCallback(() => {
-    setSelectedStopKey(null);
-  }, [setSelectedStopKey]);
-
   const handleRangeSelect = useCallback(
     (startMonth: string, endMonth: string) => {
       const start = labelToDate(startMonth);
@@ -223,9 +219,12 @@ function App() {
               showStops={showStops}
               stopMeasure={stopMeasure}
               onStopMeasureChange={setStopMeasure}
-              selectedStopKey={selectedStopKey}
-              onSelectStop={setSelectedStopKey}
-              onClearStop={handleClearStop}
+              selectedStopKeys={selectedStopKeys}
+              onToggleStop={onToggleSelectStop}
+              onClearStops={clearStopSelections}
+              onSelectAllStops={selectAllListedStops}
+              stopSearchText={stopSearchText}
+              onStopSearchTextChange={setStopSearchText}
               startDate={startDate}
               endDate={endDate}
               dayOfWeek={dayOfWeek}

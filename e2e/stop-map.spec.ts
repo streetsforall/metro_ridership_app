@@ -228,15 +228,23 @@ test('stop map — clicking a circle selects that stop in the panel', async ({
   const point = await circlePoint(page, 'bus:vermont-wilshire');
   await page.mouse.click(point.x, point.y);
 
+  /*
+   * The figure's caption counts rather than naming, and the legend that names each series
+   * is drawn into a canvas — so the witness for *which* stop the click selected is the
+   * row's checkbox, which is the panel's own statement about it.
+   */
   await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
-    'Vermont / Wilshire',
+    '1 stop',
   );
+  await expect(
+    page.locator('[data-qa="stop-select-bus:vermont-wilshire"] [role="checkbox"]'),
+  ).toHaveAttribute('data-state', 'checked');
 });
 
 /**
  * A circle is the same toggle its table row is. The handler is registered once, in
- * `load`, so it reads the selection through a ref — a closed-over prop would be the
- * first render's `null` and the second click would select the stop again forever.
+ * `load`, so it calls out through a ref — a closed-over prop would be the first render's
+ * and would leave the map wired to a selection nobody has any more.
  */
 test('stop map — clicking the selected circle deselects it', async ({ page }) => {
   await gotoStopMap(page, `?stops=1&lines=${String(BUS_LINE_ID)}`);
@@ -247,7 +255,7 @@ test('stop map — clicking the selected circle deselects it', async ({ page }) 
   const first = await circlePoint(page, 'bus:vermont-wilshire');
   await page.mouse.click(first.x, first.y);
   await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
-    'Vermont / Wilshire',
+    '1 stop',
   );
 
   // Selecting redraws the circle with a heavier ring, so the point is taken again
@@ -258,4 +266,35 @@ test('stop map — clicking the selected circle deselects it', async ({ page }) 
 
   await expect(page.locator('[data-qa="stop-series-figure"]')).toHaveCount(0);
   expect(page.url()).not.toContain('stop=');
+});
+
+/**
+ * Several circles ring at once, and each ring is the same neutral colour.
+ *
+ * The map's paint is asserted through the panel and the URL rather than through pixels,
+ * because the ring's colour is pinned by `Map.test.tsx` — where a hue can be read exactly
+ * instead of sampled off a WebGL canvas over third-party tiles.
+ */
+test('stop map — two circles can be selected at once', async ({ page }) => {
+  await gotoStopMap(page, `?stops=1&lines=${String(BUS_LINE_ID)}`);
+
+  await page.locator('#lineMap').scrollIntoViewIfNeeded();
+  await waitForMapIdle(page);
+
+  const first = await circlePoint(page, 'bus:vermont-wilshire');
+  await page.mouse.click(first.x, first.y);
+  await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
+    '1 stop',
+  );
+
+  await waitForMapIdle(page);
+  const second = await circlePoint(page, 'bus:vermont-santa-monica');
+  await page.mouse.click(second.x, second.y);
+
+  await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
+    '2 stops',
+  );
+  expect(decodeURIComponent(page.url())).toContain(
+    'bus:vermont-wilshire,bus:vermont-santa-monica',
+  );
 });

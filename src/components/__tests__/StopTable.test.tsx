@@ -74,9 +74,8 @@ const renderTable = (props: Partial<React.ComponentProps<typeof StopTable>> = {}
     <StopTable
       readouts={readouts}
       lines={lines}
-      selectedStopKey={null}
-      onSelectStop={vi.fn()}
-      onClearStop={vi.fn()}
+      selectedStopKeys={[]}
+      onToggleStop={vi.fn()}
       seriesIndex={stubIndex()}
       measure="ons"
       {...props}
@@ -90,12 +89,20 @@ afterEach(() => {
   chartSpy.mockClear();
 });
 
-/** The stop names in the order the table currently lists them. */
+/**
+ * The stop names in the order the table currently lists them.
+ *
+ * Cell `1`, not `0`: the selection checkbox is the first column now.
+ */
 const rowNames = (): string[] =>
   screen
     .getAllByRole('row')
     .slice(1)
-    .map((row) => within(row).getAllByRole('cell')[0].textContent ?? '');
+    .map((row) => within(row).getAllByRole('cell')[1].textContent ?? '');
+
+/** A row's selection checkbox, by stop key. */
+const rowCheckbox = (key: string): HTMLElement =>
+  document.querySelector(`[data-qa="stop-select-${key}"] [role="checkbox"]`) as HTMLElement;
 
 describe('StopTable', () => {
   it('is a ranking, not a list: boardings descending by default', () => {
@@ -186,98 +193,162 @@ describe('StopTable', () => {
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
   });
 
-  it('selects a stop from a row click, with no map involved', () => {
-    const onSelectStop = vi.fn();
-    renderTable({ onSelectStop });
+  it('toggles a stop from a row click, with no map involved', () => {
+    const onToggleStop = vi.fn();
+    renderTable({ onToggleStop });
     fireEvent.click(screen.getByText('Vermont / Wilshire'));
-    expect(onSelectStop).toHaveBeenCalledWith('bus:vermont-wilshire');
+    expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-wilshire');
   });
 
-  it('selects a stop from the keyboard', () => {
-    const onSelectStop = vi.fn();
-    renderTable({ onSelectStop });
+  it('toggles a stop from the keyboard', () => {
+    const onToggleStop = vi.fn();
+    renderTable({ onToggleStop });
     fireEvent.keyDown(
       document.querySelector('[data-qa="stop-row-bus:vermont-wilshire"]')!,
       { key: 'Enter' },
     );
-    expect(onSelectStop).toHaveBeenCalledWith('bus:vermont-wilshire');
+    expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-wilshire');
   });
 
   it('leaves other keys alone', () => {
-    const onSelectStop = vi.fn();
-    renderTable({ onSelectStop });
+    const onToggleStop = vi.fn();
+    renderTable({ onToggleStop });
     fireEvent.keyDown(
       document.querySelector('[data-qa="stop-row-bus:vermont-wilshire"]')!,
       { key: 'a' },
     );
-    expect(onSelectStop).not.toHaveBeenCalled();
+    expect(onToggleStop).not.toHaveBeenCalled();
   });
 
   /**
-   * `aria-current`, not `aria-selected` — the latter is only honoured on a row inside
-   * a `grid`/`treegrid`, so on a plain table it would be an attribute nothing reads.
+   * The row asks to be toggled and says nothing about whether that adds or removes. The
+   * selection is the hook's to know, so there is one membership rule rather than a copy
+   * here that could disagree with it.
    */
-  it('marks the selected row', () => {
-    renderTable({ selectedStopKey: 'bus:vermont-wilshire' });
-    const row = document.querySelector(
-      '[data-qa="stop-row-bus:vermont-wilshire"]',
-    );
-    expect(row?.getAttribute('aria-current')).toBe('true');
-    expect(row?.getAttribute('tabindex')).toBe('0');
-  });
-
-  it('leaves an unselected row unmarked rather than marking it false', () => {
-    renderTable({ selectedStopKey: 'bus:vermont-wilshire' });
-    const row = document.querySelector(
-      '[data-qa="stop-row-bus:vermont-santa-monica"]',
-    );
-    expect(row?.hasAttribute('aria-current')).toBe(false);
-  });
-
-  /**
-   * The row is a toggle. Without this, clicking the selected row is a dead click —
-   * and it is the only route out of the series a keyboard can reach.
-   */
-  it('clears the stop when the selected row is clicked again', () => {
-    const onSelectStop = vi.fn();
-    const onClearStop = vi.fn();
+  it('asks for the same toggle whether or not the stop is already selected', () => {
+    const onToggleStop = vi.fn();
     renderTable({
-      selectedStopKey: 'bus:vermont-wilshire',
-      onSelectStop,
-      onClearStop,
+      selectedStopKeys: ['bus:vermont-wilshire'],
+      onToggleStop,
     });
 
     fireEvent.click(screen.getByText('Vermont / Wilshire'));
 
-    expect(onClearStop).toHaveBeenCalledTimes(1);
-    expect(onSelectStop).not.toHaveBeenCalled();
+    expect(onToggleStop).toHaveBeenCalledTimes(1);
+    expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-wilshire');
   });
 
-  it('still selects when a different row is clicked', () => {
-    const onSelectStop = vi.fn();
-    const onClearStop = vi.fn();
+  it('toggles a different row without disturbing the selected one', () => {
+    const onToggleStop = vi.fn();
     renderTable({
-      selectedStopKey: 'bus:vermont-wilshire',
-      onSelectStop,
-      onClearStop,
+      selectedStopKeys: ['bus:vermont-wilshire'],
+      onToggleStop,
     });
 
     fireEvent.click(screen.getByText('Vermont / Santa Monica'));
 
-    expect(onSelectStop).toHaveBeenCalledWith('bus:vermont-santa-monica');
-    expect(onClearStop).not.toHaveBeenCalled();
+    expect(onToggleStop).toHaveBeenCalledTimes(1);
+    expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-santa-monica');
+  });
+});
+
+/**
+ * The selection column.
+ *
+ * `aria-current` is gone: it means "the current item in a set", which is not what several
+ * selected rows are. The checkbox's own checked state is what says a row is selected now,
+ * and it says it where a reader looks for that answer.
+ */
+describe('StopTable selection column', () => {
+  it('gives every row a checkbox', () => {
+    renderTable();
+    expect(screen.getAllByRole('checkbox')).toHaveLength(readouts.length);
   });
 
-  it('clears from the keyboard too', () => {
-    const onClearStop = vi.fn();
-    renderTable({ selectedStopKey: 'bus:vermont-wilshire', onClearStop });
+  it('names each checkbox for its stop and line, not just its stop', () => {
+    renderTable();
+    expect(
+      screen.getByRole('checkbox', { name: 'Vermont / Wilshire · Line 204' }),
+    ).toBeTruthy();
+  });
 
-    fireEvent.keyDown(
-      document.querySelector('[data-qa="stop-row-bus:vermont-wilshire"]')!,
-      { key: 'Enter' },
+  it('checks the rows whose stops are selected', () => {
+    renderTable({ selectedStopKeys: ['bus:vermont-wilshire'] });
+    expect(rowCheckbox('bus:vermont-wilshire').dataset.state).toBe('checked');
+  });
+
+  it('leaves the other rows unchecked', () => {
+    renderTable({ selectedStopKeys: ['bus:vermont-wilshire'] });
+    expect(rowCheckbox('bus:vermont-santa-monica').dataset.state).toBe(
+      'unchecked',
     );
+  });
 
-    expect(onClearStop).toHaveBeenCalledTimes(1);
+  it('checks every row when several stops are selected', () => {
+    renderTable({
+      selectedStopKeys: ['bus:vermont-wilshire', 'bus:vermont-santa-monica'],
+    });
+    expect(rowCheckbox('bus:vermont-wilshire').dataset.state).toBe('checked');
+    expect(rowCheckbox('bus:vermont-santa-monica').dataset.state).toBe(
+      'checked',
+    );
+  });
+
+  it('no longer marks a row with aria-current', () => {
+    renderTable({ selectedStopKeys: ['bus:vermont-wilshire'] });
+    const row = document.querySelector(
+      '[data-qa="stop-row-bus:vermont-wilshire"]',
+    );
+    expect(row?.hasAttribute('aria-current')).toBe(false);
+    expect(row?.getAttribute('tabindex')).toBe('0');
+  });
+
+  it('toggles the stop from its checkbox', () => {
+    const onToggleStop = vi.fn();
+    renderTable({ onToggleStop });
+
+    fireEvent.click(rowCheckbox('bus:vermont-wilshire'));
+
+    expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-wilshire');
+  });
+
+  /**
+   * The checkbox sits inside a row that is itself a toggle, so without `stopPropagation`
+   * one click would toggle twice and land back where it started.
+   */
+  it('fires one toggle per checkbox click, not two', () => {
+    const onToggleStop = vi.fn();
+    renderTable({ onToggleStop });
+
+    fireEvent.click(rowCheckbox('bus:vermont-wilshire'));
+
+    expect(onToggleStop).toHaveBeenCalledTimes(1);
+  });
+
+  /* Radix renders a real button, so Space fires its click *and* bubbles a keydown. */
+  it('fires one toggle per keyboard press on the checkbox, not two', () => {
+    const onToggleStop = vi.fn();
+    renderTable({ onToggleStop });
+
+    const checkbox = rowCheckbox('bus:vermont-wilshire');
+    fireEvent.keyDown(checkbox, { key: 'Enter' });
+    fireEvent.click(checkbox);
+
+    expect(onToggleStop).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not advertise the select header as sortable', () => {
+    renderTable();
+    const header = screen.getByRole('columnheader', { name: 'Select' });
+    expect(header.hasAttribute('aria-sort')).toBe(false);
+    expect(header.className).not.toContain('cursor-pointer');
+  });
+
+  it('does not reorder the table when the select header is clicked', () => {
+    renderTable();
+    const before = rowNames();
+    fireEvent.click(screen.getByRole('columnheader', { name: 'Select' }));
+    expect(rowNames()).toEqual(before);
   });
 });
 

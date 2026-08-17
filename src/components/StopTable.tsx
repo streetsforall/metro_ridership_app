@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
+import * as Checkbox from '@radix-ui/react-checkbox';
 import StopSparkline from './StopSparkline';
+import checkIcon from '../assets/check.svg';
 import { useVisibleRows } from '../hooks/useVisibleRows';
 import type { LineReadout } from '../ridership';
 import type { StopReadout } from '../stops';
@@ -30,13 +32,13 @@ type SortKey =
 type SortDirection = 'asc' | 'desc';
 
 /**
- * A column is either sortable or presentational, and the type says which.
+ * A column is sortable, presentational, or the selection checkbox, and the type says which.
  *
- * `ridershipOverTime` is not a field on a Stop Readout — it is the sparkline column's
- * identity and nothing more. Keeping it out of `SortKey` rather than adding a boolean
- * flag means "sort by the sparkline" is unrepresentable instead of merely a no-op: the
- * comparator below indexes a readout by `sort.key`, and the compiler is what stops that
- * ever being a key no readout has.
+ * Neither `select` nor `ridershipOverTime` is a field on a Stop Readout — each is a
+ * column's identity and nothing more. Keeping them out of `SortKey` rather than adding a
+ * boolean flag means "sort by the sparkline" is unrepresentable instead of merely a
+ * no-op: the comparator below indexes a readout by `sort.key`, and the compiler is what
+ * stops that ever being a key no readout has.
  */
 type Column =
   | {
@@ -54,6 +56,13 @@ type Column =
       label: string;
       align: 'left' | 'right';
       title?: string;
+    }
+  | {
+      kind: 'select';
+      key: 'select';
+      label: string;
+      align: 'left' | 'right';
+      title?: string;
     };
 
 type SortableColumn = Extract<Column, { kind: 'sortable' }>;
@@ -63,6 +72,14 @@ type SortableColumn = Extract<Column, { kind: 'sortable' }>;
  * these strings are the reader's only exposure to it.
  */
 const columns: Column[] = [
+  {
+    kind: 'select',
+    key: 'select',
+    label: 'Select',
+    align: 'left',
+    title:
+      'Draw this stop’s ridership over time. Several stops can be drawn at once.',
+  },
   {
     kind: 'sortable',
     key: 'name',
@@ -133,11 +150,10 @@ export interface StopTableProps {
   readouts: readonly StopReadout[];
   /** Line display names, by id. The readout carries the numeric id only. */
   lines: readonly LineReadout[];
-  selectedStopKey: string | null;
-  /** A row click selects that stop, exactly as a map circle does. */
-  onSelectStop: (stopKey: string) => void;
-  /** Clicking the already-selected row clears it, so the row is a real toggle. */
-  onClearStop: () => void;
+  /** The Stop Selection. Every row whose key is in it is checked and highlighted. */
+  selectedStopKeys: readonly string[];
+  /** A row click, a key press or its checkbox toggles that stop, as a map circle does. */
+  onToggleStop: (stopKey: string) => void;
   /** Every row's series, from one pass over the records. See `buildStopSeriesIndex`. */
   seriesIndex: StopSeriesIndex;
   /** Which figure the sparklines draw — the panel's Stop Measure. */
@@ -147,9 +163,8 @@ export interface StopTableProps {
 export default function StopTable({
   readouts,
   lines,
-  selectedStopKey,
-  onSelectStop,
-  onClearStop,
+  selectedStopKeys,
+  onToggleStop,
   seriesIndex,
   measure,
 }: StopTableProps) {
@@ -173,6 +188,13 @@ export default function StopTable({
     () => new Map(lines.map((line) => [line.id, line.name])),
     [lines],
   );
+
+  /*
+   * A set, not `selectedStopKeys.includes` per row. Selection is uncapped and a five-line
+   * table is ~800 rows, so the array scan would be quadratic in exactly the case the
+   * feature invites — `Select All`, then read the table.
+   */
+  const selected = useMemo(() => new Set(selectedStopKeys), [selectedStopKeys]);
 
   const sorted = useMemo(() => {
     const factor = sort.direction === 'asc' ? 1 : -1;
@@ -239,7 +261,9 @@ export default function StopTable({
                      that is never generated. */
                   className={`bg-stone-300 p-2 uppercase ${
                     isSortable ? 'cursor-pointer' : ''
-                  } ${column.align === 'right' ? 'text-right' : 'text-left'} ${
+                  } ${column.kind === 'select' ? 'w-10' : ''} ${
+                    column.align === 'right' ? 'text-right' : 'text-left'
+                  } ${
                     isSorted
                       ? sort.direction === 'asc'
                         ? 'headerSortUp'
@@ -259,31 +283,30 @@ export default function StopTable({
 
         <tbody>
           {sorted.map((readout) => {
-            const isSelected = readout.key === selectedStopKey;
+            const isSelected = selected.has(readout.key);
             /* The same identity React keys the row by, so a re-sort re-parents an
                already-mounted sparkline rather than remounting it. */
             const rowKey = `${readout.line_name}-${readout.key}`;
-            /* Selecting the selected stop again clears it. Without this the row is a
-               dead click once it is selected, which reads as a broken toggle — and it
-               is the only way out of the series that the keyboard can reach. */
-            const toggle = (): void => {
-              if (isSelected) onClearStop();
-              else onSelectStop(readout.key);
-            };
+            const lineName =
+              lineNames.get(readout.line_name) ?? String(readout.line_name);
+            /* One toggle for all three routes in — the row, the keyboard, the checkbox.
+               Whether this adds or removes is the selection's question, so it is asked
+               of the hook rather than answered again here. */
+            const toggle = (): void => onToggleStop(readout.key);
 
             return (
               /* Selecting a stop is a click *or* a key press. A map circle is the
                  only other route in and that one is mouse-only by nature, so without
                  this the per-stop series would be unreachable from the keyboard.
 
-                 `aria-current` rather than `aria-selected`: `aria-selected` is only
-                 honoured on a row inside a `grid`/`treegrid`, and this is a plain
-                 table — it would have been an attribute nothing reads. */
+                 No `aria-current`: it means "the current item in a set", which is not
+                 what several selected rows are. The checkbox's own checked state is
+                 what now says a row is selected, and it says it in the one place a
+                 reader looks for that answer. */
               <tr
                 key={rowKey}
                 data-qa={`stop-row-${readout.key}`}
                 tabIndex={0}
-                aria-current={isSelected ? 'true' : undefined}
                 onClick={toggle}
                 onKeyDown={(event) => {
                   if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -296,10 +319,43 @@ export default function StopTable({
                   isSelected ? 'bg-stone-200' : 'even:bg-[rgba(0,0,0,0.05)]'
                 }`}
               >
-                <td className="py-2">{readout.name}</td>
-                <td className="whitespace-nowrap">
-                  {lineNames.get(readout.line_name) ?? readout.line_name}
+                {/* A second hit target for the row's own action, and the row's only
+                    visible statement of whether it is selected.
+
+                    Both handlers stop propagating, because this cell sits inside a row
+                    that is itself a toggle: without them one click would toggle twice
+                    and land back where it started. The keyboard needs the same guard as
+                    the mouse — Radix renders a real `<button>`, so Space fires its click
+                    *and* bubbles a keydown to the row.
+
+                    `id` is prefixed and built from `rowKey` rather than the bare stop
+                    key, which contains a `:` and would need escaping in any selector. */}
+                <td data-qa={`stop-select-${readout.key}`} className="w-10">
+                  <Checkbox.Root
+                    id={`stop-${rowKey}`}
+                    aria-label={`${readout.name} · ${lineName}`}
+                    checked={isSelected}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggle();
+                    }}
+                    onKeyDown={(event) => event.stopPropagation()}
+                    className="flex items-center justify-center bg-white data-[state=checked]:bg-[#033056] mx-auto rounded p-0 h-5 w-5"
+                  >
+                    <Checkbox.Indicator>
+                      <img
+                        src={checkIcon}
+                        height={20}
+                        width={20}
+                        alt="Check"
+                        className="recolor-white"
+                      />
+                    </Checkbox.Indicator>
+                  </Checkbox.Root>
                 </td>
+
+                <td className="py-2">{readout.name}</td>
+                <td className="whitespace-nowrap">{lineName}</td>
                 <td className="text-right">
                   {figure(readout.averageBoardings)}
                 </td>

@@ -157,13 +157,55 @@ describe('initial state from URL params', () => {
   it('reads the selected stop key from URL', () => {
     window.history.replaceState({}, '', '?stop=rail:union-station');
     const { result } = renderHook(() => useUserDashboardInput());
-    expect(result.current.selectedStopKey).toBe('rail:union-station');
+    expect(result.current.selectedStopKeys).toEqual(['rail:union-station']);
+  });
+
+  /**
+   * The param carried one key before it carried several, so a link shared then still
+   * has to work now. That is why the plural list lives under `stop=` rather than a new
+   * param name.
+   */
+  it('reads several selected stop keys from one stop param', () => {
+    window.history.replaceState(
+      {},
+      '',
+      '?stop=rail:union-station,bus:vermont-wilshire',
+    );
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.selectedStopKeys).toEqual([
+      'rail:union-station',
+      'bus:vermont-wilshire',
+    ]);
   });
 
   it('ignores a stop param that is not a stop key', () => {
     window.history.replaceState({}, '', '?stop=<script>');
     const { result } = renderHook(() => useUserDashboardInput());
-    expect(result.current.selectedStopKey).toBeNull();
+    expect(result.current.selectedStopKeys).toEqual([]);
+  });
+
+  it('keeps the valid keys when one part of the stop param is malformed', () => {
+    window.history.replaceState(
+      {},
+      '',
+      '?stop=rail:union-station,<script>,bus:vermont-wilshire',
+    );
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.selectedStopKeys).toEqual([
+      'rail:union-station',
+      'bus:vermont-wilshire',
+    ]);
+  });
+
+  it('reads the stop search text from URL', () => {
+    window.history.replaceState({}, '', '?stopq=vermont');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.stopSearchText).toBe('vermont');
+  });
+
+  it('defaults the stop search text to empty', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.stopSearchText).toBe('');
   });
 });
 
@@ -353,6 +395,7 @@ describe('URL sync', () => {
     expect(window.location.search).not.toContain('stops=');
     expect(window.location.search).not.toContain('measure=');
     expect(window.location.search).not.toContain('stop=');
+    expect(window.location.search).not.toContain('stopq=');
   });
 
   it('writes a non-default stop measure to URL', () => {
@@ -379,7 +422,7 @@ describe('URL sync', () => {
     const { result } = renderHook(() => useUserDashboardInput());
 
     act(() => {
-      result.current.setSelectedStopKey('bus:vermont-wilshire');
+      result.current.onToggleSelectStop('bus:vermont-wilshire');
     });
 
     expect(
@@ -387,15 +430,173 @@ describe('URL sync', () => {
     ).toBe('bus:vermont-wilshire');
   });
 
+  /**
+   * The comma survives `toString()` unescaped, unlike the `:` inside each key, so the
+   * param stays readable however many stops are selected.
+   */
+  it('round-trips several selected stop keys through the one param', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.onToggleSelectStop('bus:vermont-wilshire');
+    });
+    act(() => {
+      result.current.onToggleSelectStop('rail:union-station');
+    });
+
+    expect(new URLSearchParams(window.location.search).get('stop')).toBe(
+      'bus:vermont-wilshire,rail:union-station',
+    );
+  });
+
   it('drops the stop param when the selection is cleared', () => {
     window.history.replaceState({}, '', '?stop=bus:vermont-wilshire');
     const { result } = renderHook(() => useUserDashboardInput());
 
     act(() => {
-      result.current.setSelectedStopKey(null);
+      result.current.clearStopSelections();
     });
 
     expect(window.location.search).not.toContain('stop=');
+  });
+
+  it('writes the stop search text to URL', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.setStopSearchText('vermont');
+    });
+
+    expect(new URLSearchParams(window.location.search).get('stopq')).toBe(
+      'vermont',
+    );
+  });
+});
+
+/**
+ * The Stop Selection's three mutators, and the asymmetry they share with the line trio:
+ * `selectAllListedStops` is scoped to what it is handed and adds, `clearStopSelections`
+ * is global.
+ */
+describe('the Stop Selection', () => {
+  it('selects a stop that was not selected', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.onToggleSelectStop('rail:union-station');
+    });
+
+    expect(result.current.selectedStopKeys).toEqual(['rail:union-station']);
+  });
+
+  it('deselects a stop that was selected', () => {
+    window.history.replaceState({}, '', '?stop=rail:union-station');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.onToggleSelectStop('rail:union-station');
+    });
+
+    expect(result.current.selectedStopKeys).toEqual([]);
+  });
+
+  it('leaves the other selected stops alone when one is deselected', () => {
+    window.history.replaceState(
+      {},
+      '',
+      '?stop=rail:union-station,bus:vermont-wilshire',
+    );
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.onToggleSelectStop('rail:union-station');
+    });
+
+    expect(result.current.selectedStopKeys).toEqual(['bus:vermont-wilshire']);
+  });
+
+  /**
+   * Order is the colour assignment, so a stop added later must land at the end. If it
+   * were inserted anywhere else every series already on the chart would change hue.
+   */
+  it('appends a newly selected stop rather than reordering', () => {
+    window.history.replaceState({}, '', '?stop=rail:union-station');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.onToggleSelectStop('bus:vermont-wilshire');
+    });
+
+    expect(result.current.selectedStopKeys).toEqual([
+      'rail:union-station',
+      'bus:vermont-wilshire',
+    ]);
+  });
+
+  it('adds every listed stop on top of what is already selected', () => {
+    window.history.replaceState({}, '', '?stop=rail:union-station');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.selectAllListedStops([
+        'bus:vermont-wilshire',
+        'bus:vermont-santa-monica',
+      ]);
+    });
+
+    expect(result.current.selectedStopKeys).toEqual([
+      'rail:union-station',
+      'bus:vermont-wilshire',
+      'bus:vermont-santa-monica',
+    ]);
+  });
+
+  it('does not duplicate a listed stop that was already selected', () => {
+    window.history.replaceState({}, '', '?stop=rail:union-station');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.selectAllListedStops([
+        'rail:union-station',
+        'bus:vermont-wilshire',
+      ]);
+    });
+
+    expect(result.current.selectedStopKeys).toEqual([
+      'rail:union-station',
+      'bus:vermont-wilshire',
+    ]);
+  });
+
+  /**
+   * Global, not scoped. `Select All` reaches only the rows the search lists, but
+   * `Clear All` clears everything — the line pair behaves the same way, and two ranked
+   * tables under one dashboard should not answer the same two words differently.
+   */
+  it('clears every selected stop, including ones no search would list', () => {
+    window.history.replaceState(
+      {},
+      '',
+      '?stop=rail:union-station,bus:vermont-wilshire',
+    );
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.clearStopSelections();
+    });
+
+    expect(result.current.selectedStopKeys).toEqual([]);
+  });
+
+  it('leaves the search text alone when the selection is cleared', () => {
+    window.history.replaceState({}, '', '?stop=rail:union-station&stopq=union');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.clearStopSelections();
+    });
+
+    expect(result.current.stopSearchText).toBe('union');
   });
 });
 

@@ -63,3 +63,26 @@ const STOP_KEY_PATTERN = /^(bus|rail):[a-z0-9-]+$/;
 export function parseStopKeyParam(value: string | null): string | null {
   return value !== null && STOP_KEY_PATTERN.test(value) ? value : null;
 }
+
+/**
+ * `stop=rail:union-station,bus:vermont-wilshire` → both keys, in the order written.
+ *
+ * The same param holds one key or many, so a link shared before the panel could select
+ * more than one stop still selects the stop it named. Splitting on a comma is
+ * unambiguous because a comma cannot occur inside a key — `STOP_KEY_PATTERN`'s charset
+ * has no room for one — which is the same property that lets `lines=801,802` work.
+ *
+ * A malformed part is dropped rather than failing the whole param: a hand-edited URL
+ * that names three stops and one fragment of markup should still show the three stops.
+ * Duplicates collapse, so a key repeated in the URL draws one series, not two.
+ */
+export function parseStopKeysParam(value: string | null): string[] {
+  if (value === null) return [];
+
+  const keys = value
+    .split(',')
+    .map((part) => parseStopKeyParam(part))
+    .filter((key): key is string => key !== null);
+
+  return [...new Set(keys)];
+}

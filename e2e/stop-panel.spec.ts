@@ -132,7 +132,14 @@ test('stop panel — the ranked table is the primary readout', async ({ page }) 
   await shootPanel(page, 'stop-panel-table.png');
 });
 
-test('stop panel — a table row draws that stop’s series', async ({ page }) => {
+/**
+ * Two rows, not one, because the panel draws several stops at once now.
+ *
+ * The figure's caption counts rather than naming, and the legend that names each series is
+ * drawn into a canvas — so the witness for *which* stops are drawn is the URL, which
+ * carries both keys under the one `stop` param.
+ */
+test('stop panel — table rows draw those stops’ series', async ({ page }) => {
   await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
   await waitForStopTable(page);
 
@@ -141,17 +148,29 @@ test('stop panel — a table row draws that stop’s series', async ({ page }) =
 
   await expect(page.locator('[data-qa="stop-series"]')).toBeVisible();
   await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
-    'Union Station',
+    '1 stop',
+  );
+
+  await page
+    .locator('[data-qa="stop-row-rail:7th-street-metro-center-station"]')
+    .click();
+
+  await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
+    '2 stops',
+  );
+  expect(page.url()).toContain('stop=');
+  expect(decodeURIComponent(page.url())).toContain(
+    'rail:union-station,rail:7th-street-metro-center-station',
   );
 
   await shootPanel(page, 'stop-panel-selected-stop.png');
 });
 
 /**
- * The way back out. Without it the series is a one-way door: a reader can reach another
+ * The way back out. Without it the selection is a one-way door: a reader can reach another
  * stop or close the panel, but not return to the state the panel opens in.
  */
-test('stop panel — the series can be cleared, and the URL follows', async ({
+test('stop panel — Clear All empties the selection, and the URL follows', async ({
   page,
 }) => {
   await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
@@ -161,7 +180,7 @@ test('stop panel — the series can be cleared, and the URL follows', async ({
   await expect(page.locator('[data-qa="stop-series"]')).toBeVisible();
   expect(page.url()).toContain('stop=');
 
-  await page.locator('[data-qa="stop-series-clear"]').click();
+  await page.locator('[data-qa="stop-clear-all"]').click();
 
   await expect(page.locator('[data-qa="stop-series"]')).toHaveCount(0);
   // `page.url()` is the right witness precisely here: the app re-serialises its own
@@ -171,7 +190,7 @@ test('stop panel — the series can be cleared, and the URL follows', async ({
 });
 
 /** The row is a toggle, which is the only route out the keyboard can reach. */
-test('stop panel — selecting the selected row clears it', async ({ page }) => {
+test('stop panel — clicking the selected row deselects it', async ({ page }) => {
   await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
   await waitForStopTable(page);
 
@@ -182,6 +201,78 @@ test('stop panel — selecting the selected row clears it', async ({ page }) => 
 
   await row.click();
   await expect(page.locator('[data-qa="stop-series"]')).toHaveCount(0);
+});
+
+/**
+ * The checkbox is a second hit target for the row's own action, and it sits *inside* a row
+ * that is itself a toggle — so a click that toggled twice would land back where it started
+ * and look like a dead control.
+ */
+test('stop panel — a row checkbox toggles once, not twice', async ({ page }) => {
+  await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
+  await waitForStopTable(page);
+
+  const checkbox = page.locator(
+    '[data-qa="stop-select-rail:union-station"] [role="checkbox"]',
+  );
+  await expect(checkbox).toHaveAttribute('data-state', 'unchecked');
+
+  await checkbox.click();
+
+  await expect(checkbox).toHaveAttribute('data-state', 'checked');
+  await expect(page.locator('[data-qa="stop-series"]')).toBeVisible();
+
+  await checkbox.click();
+
+  await expect(checkbox).toHaveAttribute('data-state', 'unchecked');
+  await expect(page.locator('[data-qa="stop-series"]')).toHaveCount(0);
+});
+
+/** Select All reaches every listed row; Clear All reaches everything. */
+test('stop panel — Select All checks every listed row', async ({ page }) => {
+  await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
+  await waitForStopTable(page);
+
+  await page.locator('[data-qa="stop-select-all"]').click();
+
+  await expect(
+    page.locator('[data-qa^="stop-select-"] [role="checkbox"][data-state="checked"]'),
+  ).toHaveCount(3);
+  await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
+    '3 stops',
+  );
+
+  await page.locator('[data-qa="stop-clear-all"]').click();
+
+  await expect(
+    page.locator('[data-qa^="stop-select-"] [role="checkbox"][data-state="checked"]'),
+  ).toHaveCount(0);
+});
+
+/**
+ * The search narrows the table, and with it what `Select All` reaches. Driven through
+ * `stopq=` rather than by typing, for the reason `line-filters.spec.ts:17` gives about
+ * `#search-lines`: typing races the re-render, and the param is the state.
+ */
+test('stop panel — the search narrows the table and scopes Select All', async ({
+  page,
+}) => {
+  await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}&stopq=union`);
+  await waitForStopTable(page);
+
+  await expect(page.locator('[data-qa="stop-table"] tbody tr')).toHaveCount(1);
+  await expect(
+    page.locator('[data-qa="stop-row-rail:union-station"]'),
+  ).toBeVisible();
+  // The search text is shared state, so a link opens on it — assert the box agrees with
+  // the param rather than only that the param parsed.
+  await expect(page.locator('#search-stops')).toHaveValue('union');
+
+  await page.locator('[data-qa="stop-select-all"]').click();
+
+  await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
+    '1 stop',
+  );
 });
 
 /**

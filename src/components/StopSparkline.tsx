@@ -2,12 +2,18 @@ import { useMemo } from 'react';
 import type { ChartOptions } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
 import { stopSeriesDatasets } from '../utils/stopSeriesDatasets';
+import { getLineColor } from '../utils/lines';
 import type { StopSeriesPoint } from '../utils/stopSeries';
 import type { StopMeasure } from '../@types/stops.types';
 
 /**
  * One row's series at 40px — a shape, not a readout. The figures beside it are the
  * readout; this says whether they are going up.
+ *
+ * Drawn in its **line's** colour, not its stop's selection colour. A row exists whether
+ * or not its stop is selected, so there is no selection colour to give most of them, and
+ * the sparkline's job is to sit beside the Line column and agree with it. The figure
+ * above the table is where colour means which stop — ADR-0014 records the split.
  *
  * Its own component rather than a variant of `StopSeriesChart`: at this size every
  * option that chart sets is wrong — axes, legend, hover, point radii. A `variant` prop
@@ -53,7 +59,12 @@ export default function StopSparkline({
     () => ({
       // The axis is the month list; the labels themselves are never drawn.
       labels: series.map((point) => point.month),
-      datasets: stopSeriesDatasets({ series, measure, lineId, pointRadius: 0 }),
+      datasets: stopSeriesDatasets({
+        series,
+        measure,
+        color: getLineColor(lineId),
+        pointRadius: 0,
+      }),
     }),
     [series, measure, lineId],
   );

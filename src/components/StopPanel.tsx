@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
 import StopCoverageNotice from './StopCoverageNotice';
-import StopSeriesChart from './StopSeriesChart';
+import StopSeriesChart, { type DrawnStopSeries } from './StopSeriesChart';
 import StopTable from './StopTable';
+import magnifyingGlassIcon from '../assets/magnifying-glass.svg';
 import { stopCoverageState } from '../utils/stopCoverage';
 import { buildStopSeriesIndex } from '../utils/stopSeries';
 import type { LineReadout } from '../ridership';
@@ -47,7 +48,7 @@ export interface StopPanelProps {
    * own meaning of the word.
    */
   windowMonths: readonly string[];
-  /** Every loaded Stop Ridership Record, for the selected stop's series. */
+  /** Every loaded Stop Ridership Record, for the selected stops' series. */
   records: StopRecord[] | null;
   isLoading: boolean;
   hasFailed: boolean;
@@ -56,10 +57,19 @@ export interface StopPanelProps {
   dayOfWeek: DayOfWeek;
   measure: StopMeasure;
   onMeasureChange: (measure: StopMeasure) => void;
-  selectedStopKey: string | null;
-  onSelectStop: (stopKey: string) => void;
-  /** Back to no stop selected — the state the panel opens in. */
-  onClearStop: () => void;
+  /** The Stop Selection, in the order the stops were selected. Empty is the opening state. */
+  selectedStopKeys: readonly string[];
+  onToggleStop: (stopKey: string) => void;
+  /** Back to no stops selected — the state the panel opens in. */
+  onClearStops: () => void;
+  /**
+   * Add every stop the table is currently listing. Scoped by the search, exactly as the
+   * line filter's `Select All` is scoped by its own.
+   */
+  onSelectAllStops: (stopKeys: string[]) => void;
+  /** Narrows the table by stop name. Lives in the URL as `stopq=`. */
+  searchText: string;
+  onSearchTextChange: (text: string) => void;
   /** Set the Month Window to the Stop Coverage Window. `YYYY-MM` at both ends. */
   onUseCoverageWindow: (from: string, to: string) => void;
 }
@@ -74,9 +84,12 @@ export default function StopPanel({
   dayOfWeek,
   measure,
   onMeasureChange,
-  selectedStopKey,
-  onSelectStop,
-  onClearStop,
+  selectedStopKeys,
+  onToggleStop,
+  onClearStops,
+  onSelectAllStops,
+  searchText,
+  onSearchTextChange,
   onUseCoverageWindow,
 }: StopPanelProps) {
   const coverageState = stopCoverageState({
@@ -86,16 +99,34 @@ export default function StopPanel({
   });
 
   /**
-   * The readout the series is drawn from.
+   * The rows the table shows, narrowed by the search.
    *
-   * The URL carries a stop key and the data's grain is stop × line, so a stop served by
-   * several selected lines has several readouts. The first in readout order wins and
-   * the caption names its line — summing them would be the stop-total-across-lines
-   * rollup this project deliberately does not derive.
+   * Substring, case-insensitive, against the stop name only — the same rule
+   * `listedReadouts` applies to line names, so one search box in this dashboard does not
+   * mean something different from the other. The line column is not matched because line
+   * selection has already filtered on it upstream.
+   *
+   * **The search narrows the table, not the chart.** A stop stays drawn after a search
+   * hides its row, because searching is how a reader finds the next stop to add, and
+   * losing the comparison they were building would defeat that.
    */
-  const selectedReadout = useMemo(
-    () => view.readouts.find((readout) => readout.key === selectedStopKey),
-    [view.readouts, selectedStopKey],
+  const listedReadouts = useMemo(() => {
+    const query = searchText.toLocaleLowerCase();
+    if (!query) return view.readouts;
+    return view.readouts.filter((readout) =>
+      readout.name.toLocaleLowerCase().includes(query),
+    );
+  }, [view.readouts, searchText]);
+
+  /**
+   * Every stop the table is listing, deduplicated — what `Select All` adds.
+   *
+   * Deduplicated because the table's grain is stop × line: a stop served by two selected
+   * lines occupies two rows, and selection is by stop, so the two rows are one key.
+   */
+  const listedStopKeys = useMemo(
+    () => [...new Set(listedReadouts.map((readout) => readout.key))],
+    [listedReadouts],
   );
 
   /**
@@ -116,14 +147,37 @@ export default function StopPanel({
     [records, view.months, dayOfWeek],
   );
 
-  /* The figure below and every row's sparkline read the same cache, so the selected
-     stop's row and the chart above it are drawing the identical array. */
-  const series = useMemo(
+  /**
+   * What the figure draws, one entry per selected `(stop, line)` pair.
+   *
+   * Walked in **selection order**, outer loop over the keys, because that order fixes the
+   * colours: the chart takes a hue by position, so iterating the readouts instead would
+   * recolour every series whenever the table was re-sorted.
+   *
+   * A stop served by several selected lines yields several entries rather than one. Its
+   * figures genuinely differ per line and `seriesFor` is keyed on the pair, so collapsing
+   * them would mean summing across lines — the stop-total rollup this project deliberately
+   * does not derive.
+   *
+   * The figure and every row's sparkline read the same cache, so a selected stop's row and
+   * the chart above it draw the identical array.
+   */
+  const drawn = useMemo<DrawnStopSeries[]>(
     () =>
-      selectedReadout
-        ? seriesIndex.seriesFor(selectedReadout.key, selectedReadout.line_name)
-        : [],
-    [seriesIndex, selectedReadout],
+      selectedStopKeys.flatMap((key) =>
+        view.readouts
+          .filter((readout) => readout.key === key)
+          .map((readout) => ({
+            key: readout.key,
+            lineId: readout.line_name,
+            stopName: readout.name,
+            lineName:
+              lines.find((line) => line.id === readout.line_name)?.name ??
+              String(readout.line_name),
+            series: seriesIndex.seriesFor(readout.key, readout.line_name),
+          })),
+      ),
+    [selectedStopKeys, view.readouts, lines, seriesIndex],
   );
 
   const hasSelection = lines.length > 0;
@@ -189,49 +243,77 @@ export default function StopPanel({
           </p>
         )}
 
-        {selectedReadout && (
+        {drawn.length > 0 && (
           <figure className="mt-3" data-qa="stop-series-figure">
-            <div className="mb-1 flex items-center justify-between gap-2">
-              <figcaption className="text-xs text-stone-500">
-                {selectedReadout.name} ·{' '}
-                {lines.find((line) => line.id === selectedReadout.line_name)
-                  ?.name ?? selectedReadout.line_name}
-              </figcaption>
-
-              {/* The way back to no stop selected. Worded rather than an × glyph: the
-                  panel has no other icon-only control, and a bare × would need an
-                  `aria-label` to say what a word says directly.
-
-                  Styled as the line filter's Select All / Clear All, which are the
-                  dashboard's existing "undo a selection" affordance — same teal, same
-                  weight, same size. `bg-transparent border-none p-0` is load-bearing:
-                  without it the global button rule paints this a filled navy pill.
-                  `type="button"` because a bare <button> defaults to submit. */}
-              <button
-                type="button"
-                id="deselect-stop"
-                data-qa="stop-series-clear"
-                className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
-                onClick={onClearStop}
-              >
-                Deselect Stop
-              </button>
-            </div>
-            <StopSeriesChart
-              series={series}
-              measure={measure}
-              lineId={selectedReadout.line_name}
-            />
+            {/* The caption counts rather than names. With several stops drawn there is no
+                one name to write here, and the chart's legend already names each series
+                beside the colour it belongs to — which is where a reader looks to tell
+                two series apart. */}
+            <figcaption className="mb-1 text-xs text-stone-500">
+              Ridership over time · {drawn.length}{' '}
+              {drawn.length === 1 ? 'stop' : 'stops'}
+            </figcaption>
+            <StopSeriesChart drawn={drawn} measure={measure} />
           </figure>
         )}
 
+        {/* The table's own chrome, laid out as the line filter's is: the search in a row
+            of its own closed by a rule, then the two selection actions under it. Two
+            ranked tables in one dashboard should not put the same three controls in two
+            different arrangements.
+
+            Below the figure and above the table, because it acts on the table. */}
+        <div className="mt-3 flex gap-2 border-b border-stone-300 pb-4">
+          {/* The magnifier is a background image on the input, the same trio
+              `#search-lines` uses — position, no-repeat, and left padding to clear it.
+              `aria-label` is the one deliberate difference: `#search-lines` has only its
+              placeholder to name it, and a placeholder disappears the moment someone
+              types. */}
+          <input
+            id="search-stops"
+            aria-label="Search stops"
+            placeholder="Search stops"
+            className="bg-[0.5rem_center] bg-no-repeat pl-8 w-full"
+            style={{ backgroundImage: `url("${magnifyingGlassIcon}")` }}
+            value={searchText}
+            onChange={(event): void => {
+              onSearchTextChange(event.target.value);
+            }}
+          />
+        </div>
+
+        {/* `bg-transparent border-none p-0` is load-bearing on both: without it the global
+            button rule paints each a filled navy pill. `type="button"` because a bare
+            <button> defaults to submit. Same teal, weight and size as the line filter's
+            pair, which are the dashboard's existing selection actions. */}
+        <div className="mt-2 flex gap-4">
+          <button
+            type="button"
+            id="select-all-stops"
+            data-qa="stop-select-all"
+            className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
+            onClick={(): void => onSelectAllStops(listedStopKeys)}
+          >
+            Select All
+          </button>
+
+          <button
+            type="button"
+            id="clear-all-stops"
+            data-qa="stop-clear-all"
+            className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
+            onClick={onClearStops}
+          >
+            Clear All
+          </button>
+        </div>
+
         <div className="mt-3">
           <StopTable
-            readouts={view.readouts}
+            readouts={listedReadouts}
             lines={lines}
-            selectedStopKey={selectedStopKey}
-            onSelectStop={onSelectStop}
-            onClearStop={onClearStop}
+            selectedStopKeys={selectedStopKeys}
+            onToggleStop={onToggleStop}
             seriesIndex={seriesIndex}
             measure={measure}
           />
