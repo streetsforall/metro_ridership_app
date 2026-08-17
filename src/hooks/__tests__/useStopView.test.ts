@@ -180,6 +180,33 @@ describe('useStopView', () => {
     expect(
       requested.filter((url) => url === '/stop-ridership.rail.json'),
     ).toHaveLength(1);
+    // And it is drawable again, not merely cached.
+    expect(result.current.view.readouts).toHaveLength(1);
+  });
+
+  /**
+   * The cache is not the view.
+   *
+   * `records` deliberately survives the panel closing, so reopening it costs nothing. But
+   * the map draws its circles from `view.markers` whether or not the panel is open, so a
+   * view built from a live cache while the panel is off left circles on the map with no
+   * panel beneath them and no control still claiming to govern them.
+   */
+  it('yields the empty view while the panel is off, however much is cached', async () => {
+    const { result, rerender } = renderHook(
+      (enabled: boolean) =>
+        useStopView({ ...baseInput, enabled, lineIds: [801] }),
+      { initialProps: true },
+    );
+    await waitFor(() => expect(result.current.view.readouts).toHaveLength(1));
+    expect(result.current.view.markers.features.length).toBeGreaterThan(0);
+
+    rerender(false);
+
+    expect(result.current.view.readouts).toHaveLength(0);
+    expect(result.current.view.markers.features).toHaveLength(0);
+    // The payload itself is kept — that is what makes reopening free.
+    expect(result.current.records).not.toBeNull();
   });
 
   it('derives readouts for a selected line once its payload lands', async () => {

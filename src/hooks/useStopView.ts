@@ -183,10 +183,23 @@ export default function useStopView({
     return [...(rail?.records ?? []), ...(bus?.records ?? [])];
   }, [rail, bus]);
 
+  /**
+   * The empty view whenever the panel is off, however much is cached.
+   *
+   * `records` survives the panel being switched off — that is the point of the cache, and
+   * switching back on must not re-download 5.3 MB. But a *view* is what gets drawn, and
+   * the map draws its circles from `view.markers` whether or not the panel is open. Left
+   * ungated, ticking the checkbox on and off again left the circles on the map with no
+   * panel beneath them and no control still claiming to govern them.
+   *
+   * Gated by handing `buildStopView` a `null` records list rather than by constructing a
+   * second empty view here, because the module already defines what an absent payload
+   * yields and a hand-rolled empty view is a second answer to that question.
+   */
   const view = useMemo(
     () =>
       buildStopView({
-        records,
+        records: enabled ? records : null,
         places,
         lineIds,
         startDate,
@@ -194,7 +207,7 @@ export default function useStopView({
         dayOfWeek,
         measure,
       }),
-    [records, places, lineIds, startDate, endDate, dayOfWeek, measure],
+    [enabled, records, places, lineIds, startDate, endDate, dayOfWeek, measure],
   );
 
   /**
