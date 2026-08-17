@@ -100,9 +100,17 @@ const rowNames = (): string[] =>
     .slice(1)
     .map((row) => within(row).getAllByRole('cell')[1].textContent ?? '');
 
-/** A row's selection checkbox, by stop key. */
-const rowCheckbox = (key: string): HTMLElement =>
-  document.querySelector(`[data-qa="stop-select-${key}"] [role="checkbox"]`) as HTMLElement;
+/**
+ * A row's selection checkbox, by stop key and the line the row is measured on.
+ *
+ * The line belongs in the selector because a stop key alone does not identify a row: one
+ * interchange stop on two selected lines is two rows. Every readout here is on 204, so
+ * that is the default.
+ */
+const rowCheckbox = (key: string, lineId = 204): HTMLElement =>
+  document.querySelector(
+    `[data-qa="stop-select-${String(lineId)}-${key}"] [role="checkbox"]`,
+  ) as HTMLElement;
 
 describe('StopTable', () => {
   it('is a ranking, not a list: boardings descending by default', () => {
@@ -204,7 +212,7 @@ describe('StopTable', () => {
     const onToggleStop = vi.fn();
     renderTable({ onToggleStop });
     fireEvent.keyDown(
-      document.querySelector('[data-qa="stop-row-bus:vermont-wilshire"]')!,
+      document.querySelector('[data-qa="stop-row-204-bus:vermont-wilshire"]')!,
       { key: 'Enter' },
     );
     expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-wilshire');
@@ -214,7 +222,7 @@ describe('StopTable', () => {
     const onToggleStop = vi.fn();
     renderTable({ onToggleStop });
     fireEvent.keyDown(
-      document.querySelector('[data-qa="stop-row-bus:vermont-wilshire"]')!,
+      document.querySelector('[data-qa="stop-row-204-bus:vermont-wilshire"]')!,
       { key: 'a' },
     );
     expect(onToggleStop).not.toHaveBeenCalled();
@@ -249,6 +257,40 @@ describe('StopTable', () => {
 
     expect(onToggleStop).toHaveBeenCalledTimes(1);
     expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-santa-monica');
+  });
+
+  /**
+   * One interchange stop on two selected lines is two rows, and each row's `data-qa` has
+   * to name only itself. Suffixing the three attributes with the stop key alone gave both
+   * rows the same names, which no fixture happened to produce: a Playwright locator would
+   * then match two elements and fail strict mode, and a `querySelector` here would
+   * silently take the first and assert about a row nobody meant.
+   */
+  it('gives a stop on two lines two rows, each identified on its own', () => {
+    renderTable({
+      readouts: [
+        makeStopReadout({
+          key: 'bus:vermont-wilshire',
+          name: 'Vermont / Wilshire',
+          line_name: 204,
+        }),
+        makeStopReadout({
+          key: 'bus:vermont-wilshire',
+          name: 'Vermont / Wilshire',
+          line_name: 801,
+        }),
+      ],
+    });
+
+    expect(
+      document.querySelectorAll('[data-qa="stop-row-204-bus:vermont-wilshire"]'),
+    ).toHaveLength(1);
+    expect(
+      document.querySelectorAll('[data-qa="stop-row-801-bus:vermont-wilshire"]'),
+    ).toHaveLength(1);
+    expect(rowCheckbox('bus:vermont-wilshire', 204)).not.toBe(
+      rowCheckbox('bus:vermont-wilshire', 801),
+    );
   });
 });
 
@@ -297,7 +339,7 @@ describe('StopTable selection column', () => {
   it('no longer marks a row with aria-current', () => {
     renderTable({ selectedStopKeys: ['bus:vermont-wilshire'] });
     const row = document.querySelector(
-      '[data-qa="stop-row-bus:vermont-wilshire"]',
+      '[data-qa="stop-row-204-bus:vermont-wilshire"]',
     );
     expect(row?.hasAttribute('aria-current')).toBe(false);
     expect(row?.getAttribute('tabindex')).toBe('0');
@@ -487,7 +529,7 @@ describe('StopTable lazy sparklines', () => {
     renderTable();
 
     scrollTo(
-      document.querySelector('[data-qa="stop-sparkline-bus:vermont-wilshire"]')!,
+      document.querySelector('[data-qa="stop-sparkline-204-bus:vermont-wilshire"]')!,
     );
 
     expect(screen.getAllByTestId('sparkline')).toHaveLength(1);
@@ -502,7 +544,7 @@ describe('StopTable lazy sparklines', () => {
     renderTable();
 
     scrollTo(
-      document.querySelector('[data-qa="stop-sparkline-bus:vermont-wilshire"]')!,
+      document.querySelector('[data-qa="stop-sparkline-204-bus:vermont-wilshire"]')!,
     );
     fireEvent.click(screen.getByText('Avg. Alightings'));
 

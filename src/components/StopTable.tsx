@@ -296,8 +296,11 @@ export default function StopTable({
         <tbody>
           {sorted.map((readout) => {
             const isSelected = selected.has(readout.key);
-            /* The same identity React keys the row by, so a re-sort re-parents an
-               already-mounted sparkline rather than remounting it. */
+            /* The row's identity, and it needs the line in it: a stop serving two
+               selected lines is two rows, and a stop key alone would name them both.
+               React keys by this, so a re-sort re-parents an already-mounted sparkline
+               rather than remounting it, and every `data-qa` below is suffixed with it
+               so a locator matches one row rather than two. */
             const rowKey = `${readout.line_name}-${readout.key}`;
             const lineName =
               lineNames.get(readout.line_name) ?? String(readout.line_name);
@@ -317,7 +320,7 @@ export default function StopTable({
                  reader looks for that answer. */
               <tr
                 key={rowKey}
-                data-qa={`stop-row-${readout.key}`}
+                data-qa={`stop-row-${rowKey}`}
                 tabIndex={0}
                 onClick={toggle}
                 onKeyDown={(event) => {
@@ -345,7 +348,7 @@ export default function StopTable({
                     `aria-label` directly, so an id here would be an attribute nothing
                     reads — and a stop key contains a `:`, which any `#`-selector would
                     then have to escape for no gain. */}
-                <td data-qa={`stop-select-${readout.key}`} className="w-10">
+                <td data-qa={`stop-select-${rowKey}`} className="w-10">
                   <Checkbox.Root
                     aria-label={`${readout.name} · ${lineName}`}
                     checked={isSelected}
@@ -384,7 +387,7 @@ export default function StopTable({
                     tech regardless, and the figures beside it already carry the
                     information. */}
                 <td
-                  data-qa={`stop-sparkline-${readout.key}`}
+                  data-qa={`stop-sparkline-${rowKey}`}
                   ref={visibleRows.observe(rowKey)}
                 >
                   {/* The same box whether or not the chart has mounted, so a sparkline

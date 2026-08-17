@@ -1,5 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
-import { BUS_LINE_ID, RAIL_LINE_ID, stubStopPayloads } from './stop-fixtures';
+import {
+  BUS_LINE_ID,
+  RAIL_LINE_ID,
+  stopQa,
+  stubStopPayloads,
+} from './stop-fixtures';
 import {
   MANY_ROWS_COUNT,
   MANY_ROWS_LINE_ID,
@@ -69,8 +74,12 @@ async function waitForStopTable(page: Page): Promise<void> {
  * so this reads the alpha channel — the same technique `table-view.spec.ts` uses for
  * the line table's column, and for the same reason.
  */
-async function waitForSparkline(page: Page, stopKey: string): Promise<void> {
-  const canvas = page.locator(`[data-qa="stop-sparkline-${stopKey}"] canvas`);
+async function waitForSparkline(
+  page: Page,
+  lineId: number,
+  stopKey: string,
+): Promise<void> {
+  const canvas = page.locator(`${stopQa('sparkline', lineId, stopKey)} canvas`);
   await expect(canvas).toBeVisible();
 
   await expect
@@ -110,7 +119,9 @@ test('stop panel — the ranked table is the primary readout', async ({ page }) 
   await expect(page.getByText('Avg. Boardings')).toBeVisible();
   await expect(page.getByText('Avg. Alightings')).toBeVisible();
   await expect(page.getByText('Ridership over time')).toBeVisible();
-  await expect(page.locator('[data-qa="stop-row-rail:union-station"]')).toBeVisible();
+  await expect(
+    page.locator(stopQa('row', RAIL_LINE_ID, 'rail:union-station')),
+  ).toBeVisible();
   await expect(page.locator('[data-qa="stop-table"] tbody tr')).toHaveCount(3);
 
   /*
@@ -121,7 +132,7 @@ test('stop panel — the ranked table is the primary readout', async ({ page }) 
    * screenshot's precondition depend on the viewport it is shot at.
    */
   await expect(
-    page.locator('[data-qa="stop-sparkline-rail:union-station"]'),
+    page.locator(stopQa('sparkline', RAIL_LINE_ID, 'rail:union-station')),
   ).toBeAttached();
 
   // Ranked, not listed: the busiest stop is first with no interaction at all.
@@ -144,7 +155,7 @@ test('stop panel — table rows draw those stops’ series', async ({ page }) =>
   await waitForStopTable(page);
 
   await expect(page.locator('[data-qa="stop-series"]')).toHaveCount(0);
-  await page.locator('[data-qa="stop-row-rail:union-station"]').click();
+  await page.locator(stopQa('row', RAIL_LINE_ID, 'rail:union-station')).click();
 
   await expect(page.locator('[data-qa="stop-series"]')).toBeVisible();
   await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
@@ -152,7 +163,9 @@ test('stop panel — table rows draw those stops’ series', async ({ page }) =>
   );
 
   await page
-    .locator('[data-qa="stop-row-rail:7th-street-metro-center-station"]')
+    .locator(
+      stopQa('row', RAIL_LINE_ID, 'rail:7th-street-metro-center-station'),
+    )
     .click();
 
   await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
@@ -176,7 +189,7 @@ test('stop panel — Clear All empties the selection, and the URL follows', asyn
   await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
   await waitForStopTable(page);
 
-  await page.locator('[data-qa="stop-row-rail:union-station"]').click();
+  await page.locator(stopQa('row', RAIL_LINE_ID, 'rail:union-station')).click();
   await expect(page.locator('[data-qa="stop-series"]')).toBeVisible();
   expect(page.url()).toContain('stop=');
 
@@ -194,7 +207,7 @@ test('stop panel — clicking the selected row deselects it', async ({ page }) =
   await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
   await waitForStopTable(page);
 
-  const row = page.locator('[data-qa="stop-row-rail:union-station"]');
+  const row = page.locator(stopQa('row', RAIL_LINE_ID, 'rail:union-station'));
 
   await row.click();
   await expect(page.locator('[data-qa="stop-series"]')).toBeVisible();
@@ -213,7 +226,7 @@ test('stop panel — a row checkbox toggles once, not twice', async ({ page }) =
   await waitForStopTable(page);
 
   const checkbox = page.locator(
-    '[data-qa="stop-select-rail:union-station"] [role="checkbox"]',
+    `${stopQa('select', RAIL_LINE_ID, 'rail:union-station')} [role="checkbox"]`,
   );
   await expect(checkbox).toHaveAttribute('data-state', 'unchecked');
 
@@ -262,7 +275,7 @@ test('stop panel — the search narrows the table and scopes Select All', async 
 
   await expect(page.locator('[data-qa="stop-table"] tbody tr')).toHaveCount(1);
   await expect(
-    page.locator('[data-qa="stop-row-rail:union-station"]'),
+    page.locator(stopQa('row', RAIL_LINE_ID, 'rail:union-station')),
   ).toBeVisible();
   // The search text is shared state, so a link opens on it — assert the box agrees with
   // the param rather than only that the param parsed.
@@ -285,10 +298,10 @@ test('stop panel — a scrolled-to sparkline actually draws', async ({ page }) =
   await waitForStopTable(page);
 
   await page
-    .locator('[data-qa="stop-sparkline-rail:union-station"]')
+    .locator(stopQa('sparkline', RAIL_LINE_ID, 'rail:union-station'))
     .scrollIntoViewIfNeeded();
 
-  await waitForSparkline(page, 'rail:union-station');
+  await waitForSparkline(page, RAIL_LINE_ID, 'rail:union-station');
 });
 
 /** Presentational. A shape has no ordering, and the header must not claim otherwise. */
@@ -354,7 +367,11 @@ test('stop panel — a row below the fold draws nothing until scrolled to', asyn
 
   // Scrolling to a row is what mounts it — on either axis.
   const last = page.locator(
-    `[data-qa="stop-sparkline-rail:sparkline-stop-${String(MANY_ROWS_COUNT - 1)}"]`,
+    stopQa(
+      'sparkline',
+      MANY_ROWS_LINE_ID,
+      `rail:sparkline-stop-${String(MANY_ROWS_COUNT - 1)}`,
+    ),
   );
   await last.scrollIntoViewIfNeeded();
 
@@ -456,7 +473,7 @@ test('stop panel — selecting a bus line fetches the bus payload once', async (
   await waitForStopTable(page);
 
   await expect(
-    page.locator('[data-qa="stop-row-bus:vermont-wilshire"]'),
+    page.locator(stopQa('row', BUS_LINE_ID, 'bus:vermont-wilshire')),
   ).toBeVisible();
   expect(
     requested.filter((url) => url.includes('stop-ridership.bus')),
