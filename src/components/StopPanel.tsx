@@ -200,15 +200,21 @@ export default function StopPanel({
 
               {/* The way back to no stop selected. Worded rather than an × glyph: the
                   panel has no other icon-only control, and a bare × would need an
-                  `aria-label` to say what a word says directly. `type="button"` because
-                  a bare <button> defaults to submit. */}
+                  `aria-label` to say what a word says directly.
+
+                  Styled as the line filter's Select All / Clear All, which are the
+                  dashboard's existing "undo a selection" affordance — same teal, same
+                  weight, same size. `bg-transparent border-none p-0` is load-bearing:
+                  without it the global button rule paints this a filled navy pill.
+                  `type="button"` because a bare <button> defaults to submit. */}
               <button
                 type="button"
+                id="deselect-stop"
                 data-qa="stop-series-clear"
-                className="text-xs text-stone-500 underline"
+                className="bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]"
                 onClick={onClearStop}
               >
-                Clear
+                Deselect Stop
               </button>
             </div>
             <StopSeriesChart

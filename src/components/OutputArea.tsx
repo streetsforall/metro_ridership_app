@@ -230,6 +230,7 @@ export default function OutputArea({
             stopMeasure={stopMeasure}
             selectedStopKey={selectedStopKey}
             onSelectStop={onSelectStop}
+            onClearStop={onClearStop}
           />
         </div>
       </div>

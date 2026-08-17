@@ -270,7 +270,7 @@ describe('StopPanel clearing the selected stop', () => {
     const onClearStop = vi.fn();
     renderPanel({ ...selected, onClearStop });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Deselect Stop' }));
 
     expect(onClearStop).toHaveBeenCalledTimes(1);
   });
@@ -279,7 +279,24 @@ describe('StopPanel clearing the selected stop', () => {
   it('is a button that does not submit', () => {
     renderPanel(selected);
     expect(
-      screen.getByRole('button', { name: 'Clear' }).getAttribute('type'),
+      screen.getByRole('button', { name: 'Deselect Stop' }).getAttribute('type'),
     ).toBe('button');
+  });
+
+  /**
+   * It reads as a text link, like the line filter's Select All / Clear All — the
+   * dashboard's existing "undo a selection" affordance. `bg-transparent border-none`
+   * is what does that: the global button rule otherwise paints it a filled navy pill,
+   * which is how it first shipped.
+   */
+  it('is styled as a text link, not a filled button', () => {
+    renderPanel(selected);
+    const className = screen.getByRole('button', {
+      name: 'Deselect Stop',
+    }).className;
+
+    expect(className).toContain('bg-transparent');
+    expect(className).toContain('border-none');
+    expect(className).toContain('text-[#0fada8]');
   });
 });

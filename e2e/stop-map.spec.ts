@@ -187,34 +187,75 @@ test('stop map — the stop layer sits above both route layers', async ({ page }
   ]);
 });
 
-test('stop map — clicking a circle selects that stop in the panel', async ({
-  page,
-}) => {
-  await gotoStopMap(page, `?stops=1&lines=${String(BUS_LINE_ID)}`);
-
-  // `page.mouse` takes viewport coordinates and does not scroll to reach them. With a
-  // line selected the chart sits above the map, so the canvas starts below the fold
-  // and every computed point would land off-screen.
-  await page.locator('#lineMap').scrollIntoViewIfNeeded();
-  await waitForMapIdle(page);
-
-  const point = await page.evaluate(() => {
+/**
+ * Where a stop's circle currently sits, in viewport coordinates.
+ *
+ * `page.mouse` takes viewport coordinates and does not scroll to reach them, so the
+ * caller must bring the canvas into view first. Recomputed per call rather than cached:
+ * a click changes the selection, and the map may repaint between clicks.
+ */
+async function circlePoint(
+  page: Page,
+  stopKey: string,
+): Promise<{ x: number; y: number }> {
+  const point = await page.evaluate((key) => {
     const map = window.__metroMap!;
     const feature = map
       .queryRenderedFeatures({ layers: ['stops-selected'] })
-      .find((f) => f.properties.stop_key === 'bus:vermont-wilshire');
+      .find((f) => f.properties.stop_key === key);
     if (!feature) return null;
     const [lon, lat] = (feature.geometry as { coordinates: [number, number] })
       .coordinates;
     const { x, y } = map.project([lon, lat]);
     const rect = map.getCanvas().getBoundingClientRect();
     return { x: rect.left + x, y: rect.top + y };
-  });
-  expect(point).not.toBeNull();
+  }, stopKey);
 
-  await page.mouse.click(point!.x, point!.y);
+  expect(point).not.toBeNull();
+  return point!;
+}
+
+test('stop map — clicking a circle selects that stop in the panel', async ({
+  page,
+}) => {
+  await gotoStopMap(page, `?stops=1&lines=${String(BUS_LINE_ID)}`);
+
+  // With a line selected the chart sits above the map, so the canvas starts below the
+  // fold and every computed point would land off-screen.
+  await page.locator('#lineMap').scrollIntoViewIfNeeded();
+  await waitForMapIdle(page);
+
+  const point = await circlePoint(page, 'bus:vermont-wilshire');
+  await page.mouse.click(point.x, point.y);
 
   await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
     'Vermont / Wilshire',
   );
+});
+
+/**
+ * A circle is the same toggle its table row is. The handler is registered once, in
+ * `load`, so it reads the selection through a ref — a closed-over prop would be the
+ * first render's `null` and the second click would select the stop again forever.
+ */
+test('stop map — clicking the selected circle deselects it', async ({ page }) => {
+  await gotoStopMap(page, `?stops=1&lines=${String(BUS_LINE_ID)}`);
+
+  await page.locator('#lineMap').scrollIntoViewIfNeeded();
+  await waitForMapIdle(page);
+
+  const first = await circlePoint(page, 'bus:vermont-wilshire');
+  await page.mouse.click(first.x, first.y);
+  await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
+    'Vermont / Wilshire',
+  );
+
+  // Selecting redraws the circle with a heavier ring, so the point is taken again
+  // rather than reused.
+  await waitForMapIdle(page);
+  const second = await circlePoint(page, 'bus:vermont-wilshire');
+  await page.mouse.click(second.x, second.y);
+
+  await expect(page.locator('[data-qa="stop-series-figure"]')).toHaveCount(0);
+  expect(page.url()).not.toContain('stop=');
 });

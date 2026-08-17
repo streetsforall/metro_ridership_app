@@ -226,6 +226,18 @@ sparkline column and the figure above it — read that one cache, so the selecte
 chart are drawing the identical array. The per-call scan it replaced was O(rows × records), which
 is ~800 × ~106,000 once the table draws a sparkline per row.
 
+**The selected stop can be deselected, three ways.** It was a one-way door: a reader who opened a
+series could reach another stop or close the panel, but not get back to the state the panel opens
+in. Now a **Deselect Stop** link sits beside the figure — styled as the line filter's Select All /
+Clear All, the dashboard's existing "undo a selection" affordance — and both routes in became
+toggles: clicking the selected table row, or the selected map circle, clears it. The map's handler
+is registered once in `load`, so it reads the selection through a ref; a closed-over prop would be
+the first render's `null` and every second click would re-select.
+
+No state was added. `selectedStopKey` was already nullable and the URL sync already writes `stop`
+conditionally, so clearing drops the param on its own and a cleared panel is as shareable as a
+selected one.
+
 **The stop table's sparkline column mounts lazily, and on mobile that means not at all.** The
 ranked table can hold ~800 rows against the line table's ~180, so a Chart.js instance per row is
 not affordable up front; `useVisibleRows` mounts a row's chart when it is scrolled to and keeps it
