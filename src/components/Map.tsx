@@ -178,6 +178,8 @@ interface MapProps {
   selectedStopKey?: string | null;
   /** A click on a circle asks for that stop. */
   onSelectStop?: (stopKey: string) => void;
+  /** Clicking the already-selected circle deselects it, exactly as its row does. */
+  onClearStop?: () => void;
 }
 
 
@@ -188,6 +190,7 @@ export default function Map({
   stopMeasure = 'ons',
   selectedStopKey = null,
   onSelectStop,
+  onClearStop,
 }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -202,6 +205,8 @@ export default function Map({
   const stopReadoutsRef = useRef<readonly StopReadout[]>(stopReadouts);
   const onSelectStopRef = useRef(onSelectStop);
   onSelectStopRef.current = onSelectStop;
+  const onClearStopRef = useRef(onClearStop);
+  onClearStopRef.current = onClearStop;
   /**
    * The stop props as of this render, for `load` to apply.
    *
@@ -374,11 +379,20 @@ export default function Map({
 
       map.current!.on('mousemove', 'stops-selected', onStopMouseMove);
       map.current!.on('mouseleave', 'stops-selected', onMouseLeave);
+      /**
+       * A circle is the same toggle its table row is: clicking the selected stop
+       * deselects it. Read through `selectedStopKeyRef` rather than a closed-over
+       * prop — this handler is registered once, in `load`, so the prop it captured is
+       * the first render's and would make the second click a no-op forever.
+       */
       map.current!.on('click', 'stops-selected', (e) => {
         const stopKey = e.features?.[0]?.properties.stop_key as
           | string
           | undefined;
-        if (stopKey) onSelectStopRef.current?.(stopKey);
+        if (!stopKey) return;
+
+        if (stopKey === selectedStopKeyRef.current) onClearStopRef.current?.();
+        else onSelectStopRef.current?.(stopKey);
       });
 
       // Apply initial selection state
