@@ -47,6 +47,23 @@ export const RAIL_LINE_ID = 801;
 /** Line 204, whose stops carry bus-scale magnitudes two orders of magnitude below. */
 export const BUS_LINE_ID = 204;
 
+/**
+ * The selector for one cell of one stop row.
+ *
+ * A stop key alone does not identify a row: the same stop serves several lines, and a
+ * reader selecting two of them gets two rows for it. `StopTable` therefore suffixes
+ * `stop-row-`, `stop-select-` and `stop-sparkline-` with the line and the key together,
+ * which is also what React keys the row by. Built here rather than written out at each
+ * call site so the shape is stated once.
+ */
+export function stopQa(
+  part: 'row' | 'select' | 'sparkline',
+  lineId: number,
+  key: string,
+): string {
+  return `[data-qa="stop-${part}-${String(lineId)}-${key}"]`;
+}
+
 interface StopFixture {
   key: string;
   name: string;

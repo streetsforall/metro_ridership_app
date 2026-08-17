@@ -1,5 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
-import { BUS_LINE_ID, RAIL_LINE_ID, stubStopPayloads } from './stop-fixtures';
+import {
+  BUS_LINE_ID,
+  RAIL_LINE_ID,
+  stopQa,
+  stubStopPayloads,
+} from './stop-fixtures';
 
 /**
  * The `stops-selected` circle layer in `src/components/Map.tsx`.
@@ -271,7 +276,9 @@ test('stop map — clicking a circle selects that stop in the panel', async ({
     '1 stop',
   );
   await expect(
-    page.locator('[data-qa="stop-select-bus:vermont-wilshire"] [role="checkbox"]'),
+    page.locator(
+      `${stopQa('select', BUS_LINE_ID, 'bus:vermont-wilshire')} [role="checkbox"]`,
+    ),
   ).toHaveAttribute('data-state', 'checked');
 });
 

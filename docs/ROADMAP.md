@@ -276,14 +276,16 @@ the palette deliberately stops at the figure. `Map.test.tsx` asserts the ring is
 than a colour per stop, so extending the palette onto the map fails a test instead of sliding in
 unread. The palette cycles past eight, which is the honest consequence of capping nothing.
 
-**A stop on two selected lines occupies two rows that share one `data-qa`.** The row identity React
-keys by is `${line_name}-${key}`, which is unique, but `stop-row-`, `stop-select-` and
-`stop-sparkline-` are all suffixed with the stop key alone. No fixture puts one stop on two lines, so
-nothing hits it today — and the unit specs now cover the case with `querySelectorAll`. But an e2e
-locator on `[data-qa="stop-row-<key>"]` would match two elements and fail Playwright's strict mode
-the moment a fixture does, and `document.querySelector` in a unit spec would silently take the first
-of the two rather than complain. Suffixing all three with the row key would fix it and would churn
-every stop selector in two specs; the trade was recorded rather than taken.
+**A stop row is now identified by its line and its stop together, because a stop key alone does not
+identify one.** A stop serving two selected lines occupies two rows, and `stop-row-`, `stop-select-`
+and `stop-sparkline-` were each suffixed with the stop key alone — so both rows answered to one name
+while React keyed them apart by `${line_name}-${key}`. No fixture puts one stop on two lines, so
+nothing failed; the trap was that an e2e locator would have matched two elements and failed
+Playwright's strict mode the moment one did, and `document.querySelector` in a unit spec would have
+silently taken the first of the two rather than complain. All three attributes now carry the row key,
+which is the identity React already used, and a unit case renders one stop on lines 204 and 801 to
+hold it there. The cost was churning every stop selector in two e2e specs and one unit spec; the e2e
+half goes through `stopQa` in `stop-fixtures.ts`, so the shape is written once.
 
 **A long stop name still clips out of the legend at mobile width, and two things were changed before
 giving up on it.** The measure now joins a legend label only under `both`, where two datasets per
