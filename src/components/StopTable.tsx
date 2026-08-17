@@ -274,7 +274,16 @@ export default function StopTable({
                     isSortable ? () => onHeaderClick(column) : undefined
                   }
                 >
-                  {column.label}
+                  {/* The checkbox column's heading is named but not drawn. Its label is
+                      six characters against a 20px control, and a `w-10` cell cannot hold
+                      it — the text would widen the column and push an already-overflowing
+                      mobile table further sideways. `sr-only` keeps the accessible name,
+                      which is what `aria-sort`'s absence and the row labels rely on. */}
+                  {column.kind === 'select' ? (
+                    <span className="sr-only">{column.label}</span>
+                  ) : (
+                    column.label
+                  )}
                 </th>
               );
             })}

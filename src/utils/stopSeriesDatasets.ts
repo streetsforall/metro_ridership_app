@@ -41,8 +41,16 @@ export function stopSeriesDatasets({
   pointRadius,
   labelPrefix,
 }: StopSeriesDatasetsInput): ChartDataset<'line', (number | null)[]>[] {
-  const label = (measureName: string): string =>
-    labelPrefix ? `${labelPrefix} · ${measureName}` : measureName;
+  /*
+   * The measure joins the label only under `both`, where two datasets per stop genuinely
+   * need telling apart. Under a single measure every series is that measure, the toggle
+   * above the panel already says which, and appending it to a stop name long enough to
+   * begin with is what pushed legend entries off the edge at mobile width.
+   */
+  const label = (measureName: string): string => {
+    if (!labelPrefix) return measureName;
+    return measure === 'both' ? `${labelPrefix} · ${measureName}` : labelPrefix;
+  };
 
   const datasets: ChartDataset<'line', (number | null)[]>[] = [];
 
