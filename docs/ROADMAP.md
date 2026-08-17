@@ -268,6 +268,17 @@ the palette deliberately stops at the figure. `Map.test.tsx` asserts the ring is
 than a colour per stop, so extending the palette onto the map fails a test instead of sliding in
 unread. The palette cycles past eight, which is the honest consequence of capping nothing.
 
+**A long stop name still clips out of the legend at mobile width, and two things were changed before
+giving up on it.** The measure now joins a legend label only under `both`, where two datasets per
+stop genuinely need separating — under a single measure every series *is* that measure and the
+toggle above the panel already says which, so appending it bought nothing. And the checkbox column's
+`SELECT` heading became `sr-only`, because six characters cannot fit a `w-10` cell and the text was
+widening the column, pushing an already-overflowing mobile table further sideways; narrowing it
+brought `AVG. BOARDINGS` back into view. What remains is arithmetic: `7th Street / Metro Center
+Station · A Line` is 41 characters in a 294px box, so Chart.js truncates it. The row beneath names
+the stop in full, and the desktop legend is clean, so nothing is unreadable — but a reader on a phone
+comparing two long station names is reading the table, not the legend.
+
 **The stop table's sparkline column mounts lazily, and on mobile that means not at all.** The
 ranked table can hold ~800 rows against the line table's ~180, so a Chart.js instance per row is
 not affordable up front; `useVisibleRows` mounts a row's chart when it is scrolled to and keeps it

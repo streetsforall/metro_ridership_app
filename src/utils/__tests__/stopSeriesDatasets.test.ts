@@ -168,6 +168,28 @@ describe('stopSeriesDatasets', () => {
     expect(datasets[0].label).toBe('Boardings');
   });
 
+  /**
+   * Under a single measure every series *is* that measure and the panel's toggle already
+   * says which, so appending it to a stop name long enough to begin with only pushed
+   * legend entries off the edge at mobile width.
+   */
+  it.each(['ons', 'offs'] as const)(
+    'names the stop alone under the %s measure',
+    (measure) => {
+      const datasets = stopSeriesDatasets({
+        series,
+        measure,
+        color: '#2563eb',
+        pointRadius: 2,
+        labelPrefix: '7th Street / Metro Center Station · A Line',
+      });
+
+      expect(datasets[0].label).toBe(
+        '7th Street / Metro Center Station · A Line',
+      );
+    },
+  );
+
   it('returns an empty axis rather than a dataset for an empty series', () => {
     const datasets = stopSeriesDatasets({
       series: [],
