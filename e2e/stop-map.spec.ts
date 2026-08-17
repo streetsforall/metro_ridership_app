@@ -133,6 +133,40 @@ test('stop map — selected line’s stops render as circles', async ({ page }) 
 });
 
 /**
+ * Unticking Stop Ridership takes the circles with it.
+ *
+ * The layer is created on first use and never destroyed, and the payload stays cached so
+ * reopening the panel costs nothing — so neither of those can be what clears the map. The
+ * view is: `useStopView` yields the empty view while the panel is off, and empty markers
+ * reach the live layer through `setData`.
+ *
+ * Worth an end-to-end case rather than only a hook test, because the bug it guards was
+ * invisible at the hook's own seam — `records` was correct throughout and `view.markers`
+ * was the leak.
+ */
+test('stop map — unticking Stop Ridership removes the circles', async ({
+  page,
+}) => {
+  await gotoStopMap(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
+
+  expect((await renderedStopKeys(page)).length).toBeGreaterThan(0);
+
+  await page.locator('#stop-ridership').click();
+
+  // The panel goes, which is the control's other half.
+  await expect(page.locator('#stop-panel')).toHaveCount(0);
+
+  await waitForMapIdle(page);
+  expect(await renderedStopKeys(page)).toEqual([]);
+
+  // And back again, without a second fetch — the layer is reused, not rebuilt.
+  await page.locator('#stop-ridership').click();
+  await expect(page.locator('#stop-panel')).toBeVisible();
+  await waitForMapIdle(page);
+  expect((await renderedStopKeys(page)).length).toBeGreaterThan(0);
+});
+
+/**
  * Radius comes from the feature property `buildStopView` wrote, sqrt-normalised per
  * mode. Asserting the ordering rather than the numbers keeps this a test of the seam —
  * that the layer paints what the module computed — instead of a second copy of the
