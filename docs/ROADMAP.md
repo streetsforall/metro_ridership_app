@@ -226,17 +226,47 @@ sparkline column and the figure above it — read that one cache, so the selecte
 chart are drawing the identical array. The per-call scan it replaced was O(rows × records), which
 is ~800 × ~106,000 once the table draws a sparkline per row.
 
-**The selected stop can be deselected, three ways.** It was a one-way door: a reader who opened a
+**The selected stop can be deselected, four ways.** It was a one-way door: a reader who opened a
 series could reach another stop or close the panel, but not get back to the state the panel opens
-in. Now a **Deselect Stop** link sits beside the figure — styled as the line filter's Select All /
-Clear All, the dashboard's existing "undo a selection" affordance — and both routes in became
-toggles: clicking the selected table row, or the selected map circle, clears it. The map's handler
-is registered once in `load`, so it reads the selection through a ref; a closed-over prop would be
-the first render's `null` and every second click would re-select.
+in. Now every route in is a toggle — the table row, its checkbox, the map circle — and `Clear All`
+above the table empties the selection outright. The map's handler is registered once in `load`, so
+it calls out through a ref; a closed-over prop would be the first render's and would leave the map
+wired to a selection nobody has any more.
 
-No state was added. `selectedStopKey` was already nullable and the URL sync already writes `stop`
-conditionally, so clearing drops the param on its own and a cleared panel is as shareable as a
-selected one.
+No state was added by the toggling itself. The URL sync already wrote `stop` conditionally, so
+clearing drops the param and a cleared panel is as shareable as a selected one.
+
+**The stop table became a multi-select, and the two ranked tables now match.** The line selector had
+a checkbox per row, a search bar and a `Select All` / `Clear All` pair; the stop table had none of
+them. It has all three now, laid out as `LineFilters` lays them out — search in a row of its own
+closed by a rule, then the two actions under it, both above the table they act on. `Deselect Stop`
+went away, because `Clear All` replaces it and belongs above the table rather than inside one
+series' caption.
+
+`selectedStopKey: string | null` became `selectedStopKeys: string[]`, comma-joined into the same
+`stop=` param. A comma cannot occur inside a key, whose charset is `^(bus|rail):[a-z0-9-]+$`, so
+splitting is unambiguous — and every link shared before this carries one key and still works. The
+search is its own param, `stopq=`, wired through both the lazy initialiser and the URL-sync effect.
+
+Selection order is load-bearing rather than incidental: the chart takes a hue by position, so a stop
+added later must land at the end. Inserting anywhere else would recolour every series already drawn.
+
+**Nothing caps the selection, and `Select All` is scoped by the search instead.** This is strict
+analogy with the line selector, which caps nothing either and relies on its own search to narrow
+what `Select All` reaches. The exposure is real and is recorded rather than fixed: press `Select All`
+on an unsearched five-line table and you select ~800 stops, and the chart will try to draw all of
+them. `Select All` adds only the listed rows; `Clear All` clears globally. That asymmetry is the
+line pair's, copied deliberately, because two ranked tables under one dashboard should not answer
+the same two words differently.
+
+**Colour in the stop series chart now means which stop — and only there.** Hue was spoken for by the
+line and dash by the Stop Measure, so two stops on line 204 drew as two identical teal lines. The
+figure's series are coloured from an eight-hue palette in selection order; the row sparkline beside
+them stays line-coloured, and the map's selection ring stays the one neutral navy. So colour answers
+two different questions on one screen, which is the cost — recorded in **ADR-0014**, along with why
+the palette deliberately stops at the figure. `Map.test.tsx` asserts the ring is one colour rather
+than a colour per stop, so extending the palette onto the map fails a test instead of sliding in
+unread. The palette cycles past eight, which is the honest consequence of capping nothing.
 
 **The stop table's sparkline column mounts lazily, and on mobile that means not at all.** The
 ranked table can hold ~800 rows against the line table's ~180, so a Chart.js instance per row is
@@ -255,8 +285,17 @@ was asked for and it is reachable.
 **Two ADRs are still owed and are deliberately not in this PR.** The stop wire format and
 name-as-identity decisions never got their numbers (0008 and 0009 went to other work; main is at
 0011). Writing them here would have widened the riskiest UI PR of the batch. **Follow-up: ADR-0012
-and ADR-0013.** The diagram set is likewise untouched — `07`, `08` and `10` are all being edited by
+and ADR-0013** — those two numbers stay reserved for them, which is why the colour decision took
+**0014**. The diagram set is likewise untouched — `07`, `08` and `10` are all being edited by
 the two open panel PRs, so regenerating them here would guarantee conflicts for no gain.
+
+**Diagram 10 is now five parameters behind, and that is worse than it was.** `10-url-contract.mmd`
+is titled "The nine parameters" and enumerates them; this batch has added `stops`, `measure`,
+`stop`, and now `stopq`, so the count and the boxes are both wrong. It is the same file #181 and
+#182 are rewriting, which is why it was left alone in the first place. Whoever lands those two
+should redraw it from `useUserDashboardInput`'s URL-sync effect rather than from the old diagram,
+and remember that `scripts/build_architecture_docs.mjs` fails the build when an edited `.mmd` has no
+matching `captions.md` section.
 
 ## The contract PR 1 freezes
 

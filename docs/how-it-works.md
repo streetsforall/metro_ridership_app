@@ -165,6 +165,24 @@ is proportional to it.
 `OutputArea` is its only importer, so everything it pulls lands in that lazy chunk or behind a
 further dynamic import. The panel itself is `#stop-panel`, opened with `stops=1`.
 
+- **The stop table is a multi-select, and it copies the line selector's chrome rather than inventing
+  its own.** A checkbox per row, a search bar above the table, and `Select All` / `Clear All` under
+  it — the same three controls `LineFilters` has, in the same arrangement. Both tables share the
+  asymmetry too: `Select All` reaches only the rows the search lists and adds to what is already
+  selected, while `Clear All` clears globally and leaves the search text alone. Neither table caps
+  its selection; the search is what narrows `Select All`.
+
+- **The Stop Selection is an ordered set of stop keys**, comma-joined into `stop=`, with the search
+  in `stopq=`. Order fixes each stop's colour on the chart, so a stop picked later is appended
+  rather than inserted — inserting would recolour every series already drawn. The table's grain is
+  stop × line, so a stop served by two selected lines is picked once and drawn twice.
+
+- **Colour in the figure above the table means which stop, and only there** — hue was already spoken
+  for by the line and dash by the Stop Measure, so several stops on one line had no channel left.
+  The row sparkline stays line-coloured and the map's ring stays neutral;
+  [ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) records the split and why
+  the palette stops where it does.
+
 - **The lazy-load rule is a gate on intent.** Rail (89 KB) loads when the panel is on. Bus (5.3 MB)
   loads only when the panel is on, the Month Window overlaps the Stop Coverage Window, **and** a
   selected line is not one the rail payload serves. `stop_locations.json` (1.6 MB) is `import()`ed
@@ -197,8 +215,10 @@ The map instance lives in a ref and is initialised once. **Selection changes onl
 filter** — the map itself is never rebuilt. The stop source and layer are added **once, on first
 use** — the first time there are markers to draw, which is never for a reader who does not open the
 panel — and after that new markers reach the source through `getSource(...).setData(...)`, and the
-Stop Measure and the selected stop through `setPaintProperty`. **Nothing re-adds a source or a
-layer**; `map.getLayer` is the guard. The layer's pointer handlers are still registered once in
+Stop Measure and the Stop Selection through `setPaintProperty`. **Nothing re-adds a source or a
+layer**; `map.getLayer` is the guard. Every selected stop rings, from one `['in', ['get', 'stop_key'],
+['literal', keys]]` test, and every ring is the same neutral colour — **no chart palette reaches the
+map**, so colour here keeps meaning which line in the fill and selected-or-not in the ring. The layer's pointer handlers are still registered once in
 `load`, because a layer-scoped MapLibre listener is a delegated one and resolves its layer at event
 time.
 
