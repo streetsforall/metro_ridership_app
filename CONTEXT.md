@@ -198,6 +198,15 @@ selects a figure rather than filtering anything, the same way Day Of Week does. 
 carried by fill and stroke, never by a second colour ramp: colour already means *which line*.
 _Avoid_: metric, mode, stat
 
+**Stop Selection**:
+The Stop Places a reader has picked out of the ranked table to compare — an **ordered** set, because
+the order they were picked in is what fixes each one's colour on the chart. It is a set of Stop
+Places rather than of Stop Readouts: a stop served by two selected Lines is picked once and drawn
+twice, since its figures genuinely differ per Line and there is no stop-total-across-lines rollup.
+Nothing bounds it. Picking a stop, unpicking it and clearing every pick are the only three things
+that change it, and a table row, its checkbox and its map circle all ask for the first two.
+_Avoid_: the selected stop, highlighted stops, active stops
+
 **Stop Coverage Window**:
 The span of Months stop-level data exists for at all — twelve, inside the chart's 2009 → 2026. It
 is a property of the **data**, not of the user's choice, and the panel states it persistently

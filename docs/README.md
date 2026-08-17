@@ -49,6 +49,7 @@ Then read whichever guide matches what you're about to do. Don't read them all.
 | [0009](adr/0009-the-two-window-rules-are-one-rule.md) | One window rule, inclusive on both ends — the chart's two-month offset is gone | accepted, **supersedes 0001** |
 | [0010](adr/0010-the-event-gutter-hit-tests-itself.md) | The Event Gutter hit-tests itself, because Chart.js will not | accepted |
 | [0011](adr/0011-a-pin-marks-it-never-moves-a-view.md) | A pin marks what is read; it never moves what is shown — release before taking, and no auto-move | accepted, fully landed — #200 removed the auto-move, #199 made the pin release first |
+| [0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) | Colour in the stop series chart means which stop, and nowhere else does — the palette stops at the figure | accepted. 0012 and 0013 stay reserved for the stop wire format and name-as-identity |
 
 ## Not for humans
 
