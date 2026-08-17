@@ -169,7 +169,8 @@ _Avoid_: ons, offs, entries, exits, taps
 **Stop Place**:
 A stop or station as a place — its identity, its display name and, where GTFS knew one, its
 coordinate. Identity is the **normalised-name slug** the pipeline mints (`bus:vermont-wilshire`,
-`rail:union-station`), never Metro's row order, which renumbers when a line is extended. A Stop
+`rail:union-station`), never Metro's row order, which renumbers when a line is extended
+([ADR-0013](docs/adr/0013-a-stops-identity-is-its-normalised-name.md)). A Stop
 Place GTFS had no geometry for is **kept, not dropped**: it still has ridership, so it belongs in
 the ranked table and the series, and is simply absent from the map layer. Its `mode` says which
 export it arrived in, not which filter lists it — G Line and J Line BRT stops are `Bus`.
