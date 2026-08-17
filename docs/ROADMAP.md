@@ -201,7 +201,7 @@ Visibility** fieldset, beside Context Logs, labelled *Stop Ridership*. `App` thr
 screenshot `fullPage` with the filter bar in frame: `visual.spec.ts` (6),
 `responsive-tablet.spec.ts` (2 — its own comment at `:45` names the `sm:flex-row` date range
 selector as a branch under test), and `chart-tooltip.spec.ts`'s `chart-tooltip-strip-mobile` (1).
-**Eight moved and are regenerated** in `35db756`; the ninth did not move at all.
+**Eight moved and are regenerated** in `a068d96`; the ninth did not move at all.
 
 `chart-tooltip-strip-mobile` is the exception, and the reason is worth keeping. It shoots
 `fullPage: true` with a `clip` computed from `#ridership-chart`'s own document rect
@@ -311,6 +311,17 @@ sideways.** The observer is right not to draw it, and the horizontal scroll is p
 six-column table was already 472px in that 294px — but the new column widens it by 224px. If that
 is not wanted, hiding the column below `sm` is one class; it was left visible because the column
 was asked for and it is reachable.
+
+**The PR body carries four mermaid diagrams, and the committed diagram set does not.** A data flow of
+the stop grain with the new modules accented, a sequence for the payload intent gate, a sequence for
+picking a stop, and a small picture of the stop × line grain. They live in the pull request rather
+than in `docs/architecture/mermaid/` for the same reason nothing else here touches that directory:
+`diagrams.md` is one generated file, and regenerating it would put this PR back in the path of #181
+and #182. That reasoning expires when those land, so **#228** holds the decision about which of the
+four earn a stem of their own — the data flow being the strongest candidate, since `05` covers line
+grain and the set has no stop-grain counterpart. Each fence was rendered against the pinned mermaid
+before it was published; GitHub renders with its own build, so a fence that parses locally is
+necessary rather than sufficient.
 
 **The two ADRs the batch owed are now written.** The stop wire format is **ADR-0012** and
 name-as-identity is **ADR-0013** — the two numbers held in reserve while 0014 took the colour
