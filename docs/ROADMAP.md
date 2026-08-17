@@ -312,12 +312,12 @@ six-column table was already 472px in that 294px — but the new column widens i
 is not wanted, hiding the column below `sm` is one class; it was left visible because the column
 was asked for and it is reachable.
 
-**Two ADRs are still owed and are deliberately not in this PR.** The stop wire format and
-name-as-identity decisions never got their numbers (0008 and 0009 went to other work; main is at
-0011). Writing them here would have widened the riskiest UI PR of the batch. **Follow-up: ADR-0012
-and ADR-0013** — those two numbers stay reserved for them, which is why the colour decision took
-**0014**. The diagram set is likewise untouched — `07`, `08` and `10` are all being edited by
-the two open panel PRs, so regenerating them here would guarantee conflicts for no gain.
+**The two ADRs the batch owed are now written.** The stop wire format is **ADR-0012** and
+name-as-identity is **ADR-0013** — the two numbers held in reserve while 0014 took the colour
+decision, which is why the numbering runs out of order. Neither records a new decision: both were
+made in PRs 1 and 2 of this batch and had lived only in `scripts/README.md` and the module comments
+until now. The diagram set is still untouched — `07`, `08` and `10` are all being edited by the two
+open panel PRs, so regenerating them here would guarantee conflicts for no gain.
 
 **Diagram 10 is now five parameters behind, and that is worse than it was.** `10-url-contract.mmd`
 is titled "The nine parameters" and enumerates them; this batch has added `stops`, `measure`,
