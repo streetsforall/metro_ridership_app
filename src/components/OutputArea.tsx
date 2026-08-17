@@ -13,6 +13,9 @@ import type { TransitEvent } from '../@types/events.types';
 import type { DayOfWeek } from '../@types/metrics.types';
 import type { StopMeasure } from '../@types/stops.types';
 
+/** Shared default, so an unselected panel's prop identity is stable between renders. */
+const NO_SELECTED_STOPS: readonly string[] = [];
+
 interface OutputAreaProps {
   chartDatasets: ChartDataset<'line', CustomChartData[]>[];
   months: string[];
@@ -36,9 +39,12 @@ interface OutputAreaProps {
   showStops?: boolean;
   stopMeasure?: StopMeasure;
   onStopMeasureChange?: (measure: StopMeasure) => void;
-  selectedStopKey?: string | null;
-  onSelectStop?: (stopKey: string) => void;
-  onClearStop?: () => void;
+  selectedStopKeys?: readonly string[];
+  onToggleStop?: (stopKey: string) => void;
+  onClearStops?: () => void;
+  onSelectAllStops?: (stopKeys: string[]) => void;
+  stopSearchText?: string;
+  onStopSearchTextChange?: (text: string) => void;
   /** The Month Window and Day Of Week the stop derivation reads. */
   startDate: Date;
   endDate: Date;
@@ -63,9 +69,12 @@ export default function OutputArea({
   showStops = false,
   stopMeasure = 'ons',
   onStopMeasureChange,
-  selectedStopKey = null,
-  onSelectStop,
-  onClearStop,
+  selectedStopKeys = NO_SELECTED_STOPS,
+  onToggleStop,
+  onClearStops,
+  onSelectAllStops,
+  stopSearchText = '',
+  onStopSearchTextChange,
   startDate,
   endDate,
   dayOfWeek,
@@ -228,9 +237,8 @@ export default function OutputArea({
             stopMarkers={stopView.markers}
             stopReadouts={stopView.readouts}
             stopMeasure={stopMeasure}
-            selectedStopKey={selectedStopKey}
-            onSelectStop={onSelectStop}
-            onClearStop={onClearStop}
+            selectedStopKeys={selectedStopKeys}
+            onToggleStop={onToggleStop}
           />
         </div>
       </div>
@@ -255,9 +263,12 @@ export default function OutputArea({
           dayOfWeek={dayOfWeek}
           measure={stopMeasure}
           onMeasureChange={(measure) => onStopMeasureChange?.(measure)}
-          selectedStopKey={selectedStopKey}
-          onSelectStop={(stopKey) => onSelectStop?.(stopKey)}
-          onClearStop={() => onClearStop?.()}
+          selectedStopKeys={selectedStopKeys}
+          onToggleStop={(stopKey) => onToggleStop?.(stopKey)}
+          onClearStops={() => onClearStops?.()}
+          onSelectAllStops={(stopKeys) => onSelectAllStops?.(stopKeys)}
+          searchText={stopSearchText}
+          onSearchTextChange={(text) => onStopSearchTextChange?.(text)}
           onUseCoverageWindow={useCoverageWindow}
         />
       )}

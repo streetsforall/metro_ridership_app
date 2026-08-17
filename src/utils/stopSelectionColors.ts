@@ -1,0 +1,49 @@
+import colors from 'tailwindcss/colors';
+
+/**
+ * The hue each selected stop's series is drawn in, in the order stops were selected.
+ *
+ * Colour in the stop series chart means **which stop** — not which line, which is what
+ * it means everywhere else in the app. The chart had no channel left: hue was spoken
+ * for by the line and dash by the Stop Measure, so two stops on line 204 drew as two
+ * identical teal lines. See ADR-0014 for the trade-off and for what this deliberately
+ * does *not* reach: the map's selection ring stays neutral, so a reader matches a series
+ * to its circle by name rather than by colour.
+ *
+ * Ordered widest-apart-first, because most selections are small and the first three
+ * entries are the ones a reader compares most often. The eight are separable at a
+ * glance and none of them is a Metro line colour, so a series never reads as a claim
+ * about which line it belongs to.
+ *
+ * Weight `600`, not the gutter's `500`: these are 2px strokes on the panel's near-white
+ * rather than filled shapes, and a thin `500` line goes faint against it.
+ */
+const SELECTION_HUES = [
+  colors.blue,
+  colors.orange,
+  colors.emerald,
+  colors.rose,
+  colors.violet,
+  colors.amber,
+  colors.cyan,
+  colors.fuchsia,
+] as const;
+
+/**
+ * Colour for the `index`-th selected stop.
+ *
+ * **The palette cycles.** Selection is deliberately unbounded — `Select All` is scoped
+ * by the search rather than capped, exactly as the line selector's is — so a ninth
+ * selected stop repeats the first hue. Two stops sharing a colour is the honest cost of
+ * that choice, and the legend is what tells them apart; nothing here is the sole signal
+ * for which series is which.
+ *
+ * A negative index would reach past the front of the array, so it is folded back in
+ * rather than yielding `undefined` at runtime for a caller the types already forbid.
+ */
+export function colorForSelectionIndex(index: number): string {
+  const wrapped =
+    ((Math.trunc(index) % SELECTION_HUES.length) + SELECTION_HUES.length) %
+    SELECTION_HUES.length;
+  return SELECTION_HUES[wrapped]['600'];
+}

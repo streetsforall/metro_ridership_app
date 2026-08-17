@@ -3,26 +3,46 @@ import type { ChartOptions } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
 import { formatEventDate } from '../chart';
 import { stopSeriesDatasets } from '../utils/stopSeriesDatasets';
+import { colorForSelectionIndex } from '../utils/stopSelectionColors';
 import type { StopSeriesPoint } from '../utils/stopSeries';
 import type { StopMeasure } from '../@types/stops.types';
 
 /**
- * One stop's Boardings and Alightings across the Stop View's month axis.
+ * The selected stops' Boardings and Alightings across the Stop View's month axis.
  *
  * The import of `../chart` is what registers Chart.js, and it is the only registration
  * site in the app — `RidershipChart` imports the same barrel, and a module is
  * evaluated once, so there is no second `ChartJS.register` anywhere.
  *
- * The series itself is `buildStopSeries` in `src/utils/stopSeries.ts`; this component
- * only draws it.
+ * The series themselves come from `buildStopSeriesIndex` in `src/utils/stopSeries.ts`;
+ * this component only draws them.
  */
 
-export interface StopSeriesChartProps {
+/**
+ * One stop's line on the chart.
+ *
+ * A `(stop, line)` pair rather than a stop, because that pair is what has a series: the
+ * same stop served by two selected lines reports different figures on each, and
+ * `seriesFor` is keyed on both. `stopName` and `lineName` are here because the legend has
+ * to say whose series a colour belongs to, and neither name can be derived from the other.
+ */
+export interface DrawnStopSeries {
+  key: string;
+  lineId: number;
+  stopName: string;
+  lineName: string;
   series: StopSeriesPoint[];
+}
+
+export interface StopSeriesChartProps {
+  /**
+   * In selection order, which is what fixes the colours. Re-sorting the table beneath
+   * must not recolour the chart above it, and adding a stop must not recolour the ones
+   * already drawn — both follow from the order being selection order rather than rank.
+   */
+  drawn: readonly DrawnStopSeries[];
   /** Which of the two series to draw. `both` draws them together. */
   measure: StopMeasure;
-  /** Colours follow the line, as everywhere else. */
-  lineId: number;
 }
 
 const options: ChartOptions<'line'> = {
@@ -45,18 +65,34 @@ const options: ChartOptions<'line'> = {
 };
 
 export default function StopSeriesChart({
-  series,
+  drawn,
   measure,
-  lineId,
 }: StopSeriesChartProps) {
   const data = useMemo(
     () => ({
-      labels: series.map((point) => formatEventDate(point.month)),
-      // Boardings solid, Alightings dashed, in the line's colour. Shared with the
-      // table's sparklines so one measure cannot be encoded two ways on one screen.
-      datasets: stopSeriesDatasets({ series, measure, lineId, pointRadius: 2 }),
+      /*
+       * The axis off the first series. Every stop's series is aligned to the Stop View's
+       * own month list — `seriesFor` returns a full-length, all-null series for a pair
+       * with no records — so they all share this axis and none of them can shorten it.
+       */
+      labels: drawn[0]?.series.map((point) => formatEventDate(point.month)) ?? [],
+      /*
+       * Boardings solid, Alightings dashed — the split shared with the table's
+       * sparklines, so one measure is not encoded two ways on one screen. Colour is
+       * the part that differs: here it says which stop, and the legend prefix names
+       * the stop and its line so the hue is never the only thing carrying that.
+       */
+      datasets: drawn.flatMap((stop, index) =>
+        stopSeriesDatasets({
+          series: stop.series,
+          measure,
+          color: colorForSelectionIndex(index),
+          pointRadius: 2,
+          labelPrefix: `${stop.stopName} · ${stop.lineName}`,
+        }),
+      ),
     }),
-    [series, measure, lineId],
+    [drawn, measure],
   );
 
   return (

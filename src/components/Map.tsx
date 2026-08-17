@@ -43,12 +43,18 @@ const MEASURE_PAINT: Record<
   both: { opacity: 0.55, strokeWidth: 1 },
 };
 
-/** The selected stop's ring. Neutral, so it reads as selection rather than as a line. */
+/**
+ * A selected stop's ring. Neutral, so it reads as selection rather than as a line — and
+ * one colour for every selected stop, however many are selected. The chart above the
+ * table gives each stop its own hue; the map deliberately does not follow it there, so
+ * colour on the map keeps answering one question (ADR-0014).
+ */
 const SELECTED_STROKE_COLOR = '#033056';
 const SELECTED_STROKE_WIDTH = 3;
 
-/** Shared default, so the prop's identity is stable between renders. */
+/** Shared defaults, so each prop's identity is stable between renders. */
 const NO_READOUTS: readonly StopReadout[] = [];
+const NO_SELECTED_STOPS: readonly string[] = [];
 
 /** The selected-lines filter, shared by the route layer and the stop layer. */
 const selectedFilter = (
@@ -114,16 +120,27 @@ function applyStopMarkers(
   map.getSource<maplibregl.GeoJSONSource>('stop-ridership')?.setData(markers);
 }
 
-/** Fill, ring and the selected stop's mark — everything the measure and selection drive. */
+/** Fill, ring and the selected stops' marks — everything the measure and selection drive. */
 function applyStopPaint(
   map: maplibregl.Map,
   measure: StopMeasure,
-  selectedStopKey: string | null,
+  selectedStopKeys: readonly string[],
 ): void {
   const { opacity, strokeWidth } = MEASURE_PAINT[measure];
-  // `''` is not a valid stop key (they are `bus:`/`rail:`-prefixed), so with nothing
-  // selected this comparison is false for every feature.
-  const isSelected = ['==', ['get', 'stop_key'], selectedStopKey ?? ''];
+  /*
+   * Every selected stop rings, in the one neutral colour. **No palette reaches the map.**
+   * The chart colours a series per stop, but colour here already answers a different
+   * question — which line, in the fill — and a second meaning in the ring beside it would
+   * compete with the line hues rather than clarify them (ADR-0014).
+   *
+   * An empty selection needs no sentinel: `['in', …, ['literal', []]]` matches nothing on
+   * its own, which is what the old `?? ''` comparison had to fake.
+   */
+  const isSelected = [
+    'in',
+    ['get', 'stop_key'],
+    ['literal', [...selectedStopKeys]],
+  ];
 
   map.setPaintProperty('stops-selected', 'circle-opacity', opacity);
   map.setPaintProperty('stops-selected', 'circle-stroke-width', [
@@ -144,7 +161,7 @@ interface StopLayerState {
   markers: StopView['markers'];
   selectedLineIds: number[];
   measure: StopMeasure;
-  selectedStopKey: string | null;
+  selectedStopKeys: readonly string[];
 }
 
 /**
@@ -156,12 +173,12 @@ interface StopLayerState {
  */
 function syncStopLayer(
   map: maplibregl.Map,
-  { markers, selectedLineIds, measure, selectedStopKey }: StopLayerState,
+  { markers, selectedLineIds, measure, selectedStopKeys }: StopLayerState,
 ): void {
   if (!ensureStopLayer(map, markers)) return;
   applyStopMarkers(map, markers);
   map.setFilter('stops-selected', selectedFilter(selectedLineIds));
-  applyStopPaint(map, measure, selectedStopKey);
+  applyStopPaint(map, measure, selectedStopKeys);
 }
 
 interface MapProps {
@@ -174,12 +191,14 @@ interface MapProps {
   /** The Stop Readouts those markers were built from, for the hover popup. */
   stopReadouts?: readonly StopReadout[];
   stopMeasure?: StopMeasure;
-  /** The Stop Place whose series the panel is drawing, marked with a ring. */
-  selectedStopKey?: string | null;
-  /** A click on a circle asks for that stop. */
-  onSelectStop?: (stopKey: string) => void;
-  /** Clicking the already-selected circle deselects it, exactly as its row does. */
-  onClearStop?: () => void;
+  /** The Stop Selection — every stop the panel is drawing, each marked with a ring. */
+  selectedStopKeys?: readonly string[];
+  /**
+   * A click on a circle toggles that stop, exactly as its table row does. One callback
+   * rather than a select/clear pair, because whether the click adds or removes is a
+   * question about the selection, and the selection is the hook's to answer.
+   */
+  onToggleStop?: (stopKey: string) => void;
 }
 
 
@@ -188,9 +207,8 @@ export default function Map({
   stopMarkers = NO_MARKERS,
   stopReadouts = NO_READOUTS,
   stopMeasure = 'ons',
-  selectedStopKey = null,
-  onSelectStop,
-  onClearStop,
+  selectedStopKeys = NO_SELECTED_STOPS,
+  onToggleStop,
 }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -203,10 +221,8 @@ export default function Map({
    * second pattern.
    */
   const stopReadoutsRef = useRef<readonly StopReadout[]>(stopReadouts);
-  const onSelectStopRef = useRef(onSelectStop);
-  onSelectStopRef.current = onSelectStop;
-  const onClearStopRef = useRef(onClearStop);
-  onClearStopRef.current = onClearStop;
+  const onToggleStopRef = useRef(onToggleStop);
+  onToggleStopRef.current = onToggleStop;
   /**
    * The stop props as of this render, for `load` to apply.
    *
@@ -218,8 +234,8 @@ export default function Map({
   stopMarkersRef.current = stopMarkers;
   const stopMeasureRef = useRef(stopMeasure);
   stopMeasureRef.current = stopMeasure;
-  const selectedStopKeyRef = useRef(selectedStopKey);
-  selectedStopKeyRef.current = selectedStopKey;
+  const selectedStopKeysRef = useRef(selectedStopKeys);
+  selectedStopKeysRef.current = selectedStopKeys;
 
   // Initialize map once
   useEffect(() => {
@@ -380,10 +396,15 @@ export default function Map({
       map.current!.on('mousemove', 'stops-selected', onStopMouseMove);
       map.current!.on('mouseleave', 'stops-selected', onMouseLeave);
       /**
-       * A circle is the same toggle its table row is: clicking the selected stop
-       * deselects it. Read through `selectedStopKeyRef` rather than a closed-over
-       * prop — this handler is registered once, in `load`, so the prop it captured is
-       * the first render's and would make the second click a no-op forever.
+       * A circle is the same toggle its table row is: clicking a selected stop deselects
+       * it. Called through `onToggleStopRef` rather than a closed-over prop — this
+       * handler is registered once, in `load`, so the prop it captured is the first
+       * render's, and calling that stale callback would leave the map wired to a
+       * selection nobody has any more.
+       *
+       * The handler no longer asks *whether* the stop is selected. It says "toggle this
+       * one" and the hook answers from the current selection, so there is one membership
+       * rule instead of a copy here that could disagree with it.
        */
       map.current!.on('click', 'stops-selected', (e) => {
         const stopKey = e.features?.[0]?.properties.stop_key as
@@ -391,8 +412,7 @@ export default function Map({
           | undefined;
         if (!stopKey) return;
 
-        if (stopKey === selectedStopKeyRef.current) onClearStopRef.current?.();
-        else onSelectStopRef.current?.(stopKey);
+        onToggleStopRef.current?.(stopKey);
       });
 
       // Apply initial selection state
@@ -404,7 +424,7 @@ export default function Map({
         markers: stopMarkersRef.current,
         selectedLineIds: selectedIds,
         measure: stopMeasureRef.current,
-        selectedStopKey: selectedStopKeyRef.current,
+        selectedStopKeys: selectedStopKeysRef.current,
       });
     });
 
@@ -430,7 +450,7 @@ export default function Map({
   /**
    * The stop layer, in one effect.
    *
-   * Markers, the selected lines, the Stop Measure and the selected stop are four views
+   * Markers, the selected lines, the Stop Measure and the Stop Selection are four views
    * of one layer's state, so they are applied together rather than racing each other
    * through three effects — and the layer they apply to may not exist yet, which is a
    * condition only one of them should have to know about.
@@ -445,9 +465,9 @@ export default function Map({
       markers: stopMarkers,
       selectedLineIds: lines.filter((l) => l.selected).map((l) => l.id),
       measure: stopMeasure,
-      selectedStopKey,
+      selectedStopKeys,
     });
-  }, [stopMarkers, stopReadouts, stopMeasure, selectedStopKey, lines]);
+  }, [stopMarkers, stopReadouts, stopMeasure, selectedStopKeys, lines]);
 
   return <div id="lineMap" ref={mapContainer} />;
 }

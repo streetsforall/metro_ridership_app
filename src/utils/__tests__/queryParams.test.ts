@@ -6,6 +6,7 @@ import {
   paramToDayOfWeek,
   parseModesFromParams,
   parseStopKeyParam,
+  parseStopKeysParam,
   parseStopMeasureParam,
 } from '../queryParams';
 
@@ -149,5 +150,50 @@ describe('parseStopKeyParam', () => {
 
   it('returns null for an absent param', () => {
     expect(parseStopKeyParam(null)).toBeNull();
+  });
+});
+
+describe('parseStopKeysParam', () => {
+  it('reads one key as a list of one', () => {
+    expect(parseStopKeysParam('rail:union-station')).toEqual([
+      'rail:union-station',
+    ]);
+  });
+
+  it('reads a comma-joined list in the order written', () => {
+    expect(
+      parseStopKeysParam('rail:union-station,bus:vermont-wilshire'),
+    ).toEqual(['rail:union-station', 'bus:vermont-wilshire']);
+  });
+
+  /**
+   * A malformed part is dropped rather than failing the whole param: a hand-edited URL
+   * naming three stops and one fragment of markup should still show the three stops.
+   */
+  it('drops a malformed part and keeps the rest', () => {
+    expect(
+      parseStopKeysParam('rail:union-station,tram:nope,bus:vermont-wilshire'),
+    ).toEqual(['rail:union-station', 'bus:vermont-wilshire']);
+  });
+
+  it('rejects markup smuggled in beside a real key', () => {
+    expect(
+      parseStopKeysParam('bus:<script>alert(1)</script>,rail:union-station'),
+    ).toEqual(['rail:union-station']);
+  });
+
+  /* A key repeated in the URL draws one series, not two. */
+  it('collapses a duplicated key', () => {
+    expect(
+      parseStopKeysParam('rail:union-station,rail:union-station'),
+    ).toEqual(['rail:union-station']);
+  });
+
+  it('returns an empty list for an absent param', () => {
+    expect(parseStopKeysParam(null)).toEqual([]);
+  });
+
+  it('returns an empty list for an empty param', () => {
+    expect(parseStopKeysParam('')).toEqual([]);
   });
 });

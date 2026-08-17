@@ -6,7 +6,7 @@ import {
   dayOfWeekToParam,
   paramToDayOfWeek,
   parseModesFromParams,
-  parseStopKeyParam,
+  parseStopKeysParam,
   parseStopMeasureParam,
 } from '../utils/queryParams';
 import type { Line, LineJson } from '../@types/lines.types';
@@ -51,13 +51,27 @@ export interface UserDashboardInputState {
   stopMeasure: StopMeasure;
   setStopMeasure: React.Dispatch<React.SetStateAction<StopMeasure>>;
 
-  /** The Stop Place whose series is drawn, or `null`. `stop=<key>`. */
-  selectedStopKey: string | null;
-  setSelectedStopKey: React.Dispatch<React.SetStateAction<string | null>>;
+  /**
+   * The Stop Selection — every Stop Place whose series is drawn, in the order they were
+   * selected. `stop=<key>,<key>`. Empty when nothing is selected.
+   *
+   * Order is load-bearing: the chart assigns a colour per position, so selection order is
+   * what stops a re-sort of the table, or a stop added at the end, from recolouring the
+   * series already on screen.
+   */
+  selectedStopKeys: string[];
+
+  /** Narrows the stop table by stop name, and with it what `Select All` reaches. `stopq=`. */
+  stopSearchText: string;
+  setStopSearchText: React.Dispatch<React.SetStateAction<string>>;
 
   onToggleSelectLine: (line: Line) => void;
   clearSelections: () => void;
   selectAllListedLines: (ids: number[]) => void;
+
+  onToggleSelectStop: (key: string) => void;
+  clearStopSelections: () => void;
+  selectAllListedStops: (keys: string[]) => void;
 }
 
 
@@ -147,9 +161,13 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     return parseStopMeasureParam(params.get('measure')) ?? 'ons';
   });
 
-  const [selectedStopKey, setSelectedStopKey] = useState<string | null>(() => {
+  const [selectedStopKeys, setSelectedStopKeys] = useState<string[]>(() => {
     const params = new URLSearchParams(window.location.search);
-    return parseStopKeyParam(params.get('stop'));
+    return parseStopKeysParam(params.get('stop'));
+  });
+
+  const [stopSearchText, setStopSearchText] = useState<string>(() => {
+    return new URLSearchParams(window.location.search).get('stopq') ?? '';
   });
 
   // Sync state → URL query params
@@ -172,9 +190,13 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     // Written only when non-default, like every optional param above it. A stop key
     // is a slug by construction, so nothing about it needs escaping — though
     // `URLSearchParams.toString()` percent-encodes the `:` anyway. It decodes back to
-    // the same key, so a shared link still selects the stop it named.
+    // the same key, so a shared link still selects the stop it named. The comma
+    // joining several keys survives `toString()` unescaped, which is why the param
+    // stays readable however many stops are selected.
     if (stopMeasure !== 'ons') params.set('measure', stopMeasure);
-    if (selectedStopKey) params.set('stop', selectedStopKey);
+    if (selectedStopKeys.length > 0)
+      params.set('stop', selectedStopKeys.join(','));
+    if (stopSearchText) params.set('stopq', stopSearchText);
 
     window.history.replaceState(null, '', `?${params.toString()}`);
   }, [
@@ -188,7 +210,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     showContextLogs,
     showStops,
     stopMeasure,
-    selectedStopKey,
+    selectedStopKeys,
+    stopSearchText,
   ]);
 
   /**
@@ -230,6 +253,37 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     });
   };
 
+  /**
+   * The Stop Selection's three mutators, deliberately the same three the lines have and
+   * with the same asymmetry between them.
+   *
+   * `selectAllListedStops` is scoped to the rows the table is showing and adds to what is
+   * already selected; `clearStopSelections` is global. That is how the line pair behaves,
+   * and two ranked tables under one dashboard should not answer the same two words
+   * differently. Nothing here is capped, for the same reason nothing there is: the search
+   * is what narrows `Select All`, so a reader who wants a corridor searches for it first.
+   */
+  const selectAllListedStops = (keys: string[]): void => {
+    setSelectedStopKeys((prevKeys) => {
+      const selected = new Set(prevKeys);
+      // Appended in listed order, after what was already selected, because a colour is
+      // assigned per position and an insertion in the middle would recolour the rest.
+      return [...prevKeys, ...keys.filter((key) => !selected.has(key))];
+    });
+  };
+
+  const onToggleSelectStop = (key: string): void => {
+    setSelectedStopKeys((prevKeys) =>
+      prevKeys.includes(key)
+        ? prevKeys.filter((prevKey) => prevKey !== key)
+        : [...prevKeys, key],
+    );
+  };
+
+  const clearStopSelections = (): void => {
+    setSelectedStopKeys([]);
+  };
+
   const toggleIsAggregateVisible = (): void => {
     setIsAggregateVisible(
       (prevIsAggregateVisible: boolean) => !prevIsAggregateVisible,
@@ -261,8 +315,9 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     toggleShowStops,
     stopMeasure,
     setStopMeasure,
-    selectedStopKey,
-    setSelectedStopKey,
+    selectedStopKeys,
+    stopSearchText,
+    setStopSearchText,
     searchText,
     setSearchText,
     modes,
@@ -270,6 +325,9 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     onToggleSelectLine,
     clearSelections,
     selectAllListedLines,
+    onToggleSelectStop,
+    clearStopSelections,
+    selectAllListedStops,
   };
 };
 
