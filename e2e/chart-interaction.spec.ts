@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { gotoDashboard, desktopOnly } from './helpers';
+import { gotoDashboard, desktopOnly, mobileOnly } from './helpers';
 
 /**
  * DOM coverage for the chart's interactive layer: the pinned readout, the
@@ -311,12 +311,12 @@ test.describe('the Event Gutter', () => {
    * triangle the canvas sees a mouseout and the hover clears with the pin. The
    * log row is the unambiguous witness — it is DOM, and it tracks the pin alone.
    *
-   * Desktop only, and this one is a real limitation rather than a test artifact.
-   * The pinned readout is a fixed 256px box; on a 390px screen it covers the
-   * triangle that opened it, so a second tap on the same target lands on the
-   * readout and never reaches the canvas. Re-tapping is not how a phone reader
-   * gets out of it — pressing anywhere outside dismisses, which `OutputArea`
-   * owns and covers for every pin source, not just this one.
+   * Desktop only because that is the layout this asserts — the floating box.
+   * It was desktop only for a harder reason until #214: the readout was a fixed
+   * 256px box at every width, so on a 390px screen it covered the triangle that
+   * opened it and a second tap landed on the readout instead of the canvas. The
+   * strip sits wholly above the plot, so that is no longer true, and the touch
+   * case is covered on its own terms in `exiting on a touch screen` below.
    */
   test.describe('re-pointing', () => {
     desktopOnly();
@@ -335,6 +335,58 @@ test.describe('the Event Gutter', () => {
       await expect(
         page.locator('[data-testid="chart-tooltip"][data-pinned="true"]'),
       ).toHaveCount(0);
+    });
+  });
+
+  /**
+   * Touch only, and the mirror of `re-pointing` above: what "exit" means where
+   * there is no hover to fall back to.
+   *
+   * A finger has no resting position, so the hover a tap synthesises is never
+   * taken back — no `mouseout` follows it. Releasing the pin therefore used to
+   * leave the readout on screen in its *unpinned* form, which at this width is a
+   * strip still capped at a third of the plot but with no Expand control, no full
+   * description and no source link: a box naming a month it could not show. The
+   * pin is the only thing holding a readout up here, so releasing it dismisses.
+   *
+   * Asserted through the Event Gutter because that is where a phone reader taps
+   * for a month that has events, and it is the path whose replayed pointer state
+   * is stalest — see the guard in `eventGutter.ts`.
+   */
+  test.describe('exiting on a touch screen', () => {
+    mobileOnly();
+
+    test('tapping another month dismisses the readout, not only its pin', async ({
+      page,
+    }) => {
+      await gotoDashboard(page, WINDOW);
+
+      await tapGutter(page, '2020 3');
+      await expect(tooltip(page)).toHaveAttribute('data-layout', 'strip');
+      await expect(tooltip(page)).toHaveAttribute('data-pinned', 'true');
+
+      // The control exists because the strip is capped and this month carries an
+      // event — the state the whole readout-on-a-phone problem lives in.
+      const expand = tooltip(page).getByRole('button', { name: 'Expand' });
+      await expect(expand).toBeVisible();
+      await expand.tap();
+      await expect(tooltip(page)).toHaveAttribute('data-expanded', 'true');
+
+      // A *different* month, which is both what the reader does and the only
+      // version of this gesture that can fail. Tapping the same triangle twice
+      // lands on the coordinates the pointer is already at, so the browser
+      // synthesises no `mousemove` and there is no phantom hover to be left
+      // behind — it passes with or without the fix, and asserts nothing.
+      await tapGutter(page, '2020 6');
+
+      await expect(tooltip(page)).toHaveCount(0);
+      // The ghost named as well as counted. Both fail together today; they come
+      // apart the moment a hover is let back into the chain, and it is the
+      // unpinned readout specifically that is the bug.
+      await expect(
+        page.locator('[data-testid="chart-tooltip"][data-pinned="false"]'),
+      ).toHaveCount(0);
+      await expect(firstLogRow(page)).toHaveAttribute('aria-pressed', 'false');
     });
   });
 

@@ -128,6 +128,20 @@ export const eventGutterPlugin: Plugin<'line'> = {
    * See ADR-0010. Anything later drawn below the plot needs the same treatment.
    */
   afterEvent(chart, args) {
+    /**
+     * A repaint is not a gesture — the same rule `rangeSelect` keeps, for the
+     * same reason and with more force here.
+     *
+     * `Chart#update` replays `_lastEvent` through the event pipeline, and
+     * `determineLastEvent` keeps the *previous* event both across a click and
+     * whenever the pointer is outside `chartArea`. The gutter is outside
+     * `chartArea` by definition, so its `_lastEvent` is the stalest of any path:
+     * a pin re-renders the chart, the replay arrives here as a fresh `click` or
+     * `mousemove` at the old position, and the month the reader just left is
+     * pinned or hovered back over the one they chose.
+     */
+    if (args.replay) return;
+
     const { onGutterClick, onGutterHover } = readOptions(chart);
     const { type, x, y } = args.event;
 
