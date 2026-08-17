@@ -497,3 +497,71 @@ describe('StopPanel drawing several stops', () => {
     expect(document.querySelector('[data-qa="stop-series"]')).toBeNull();
   });
 });
+
+/**
+ * One stop, two selected lines — the case the whole Stop Selection term exists to pin down.
+ *
+ * The data's grain is stop × line, so this stop has two readouts and two genuinely
+ * different sets of figures. It is picked **once** and drawn **twice**, and collapsing the
+ * two would mean summing across lines, which is the rollup this project does not derive.
+ */
+describe('StopPanel drawing one stop on two lines', () => {
+  const sharedStop = {
+    lines: [
+      makeLineReadout({ id: 204, name: 'Line 204', mode: 'Bus' }),
+      makeLineReadout({ id: 206, name: 'Line 206', mode: 'Bus' }),
+    ],
+    view: makeView({
+      readouts: [
+        makeStopReadout({ line_name: 204 }),
+        makeStopReadout({ line_name: 206 }),
+      ],
+    }),
+    selectedStopKeys: ['bus:vermont-wilshire'],
+  };
+
+  it('draws one series per line the stop is served by', () => {
+    renderPanel(sharedStop);
+    expect(
+      document.querySelector('[data-qa="stop-series"]')?.getAttribute('data-drawn'),
+    ).toBe('Vermont / Wilshire · Line 204|Vermont / Wilshire · Line 206');
+  });
+
+  /**
+   * The caption counts stops, and there is one. Counting `drawn` would tell a reader they
+   * had picked two stops when they had picked one.
+   */
+  it('counts the stop once, not once per line', () => {
+    renderPanel(sharedStop);
+    const caption = document.querySelector(
+      '[data-qa="stop-series-figure"]',
+    )?.textContent;
+
+    expect(caption).toContain('1 stop');
+    expect(caption).not.toContain('2 stops');
+  });
+
+  /** And says how many series, since one stop drawing two lines would otherwise puzzle. */
+  it('names the series count when it differs from the stop count', () => {
+    renderPanel(sharedStop);
+    expect(
+      document.querySelector('[data-qa="stop-series-figure"]')?.textContent,
+    ).toContain('2 series');
+  });
+
+  it('says nothing about series when the two counts agree', () => {
+    renderPanel({ selectedStopKeys: ['bus:vermont-wilshire'] });
+    expect(
+      document.querySelector('[data-qa="stop-series-figure"]')?.textContent,
+    ).not.toContain('series');
+  });
+
+  /* Both rows check, because selection is by stop and both rows are that stop. */
+  it('checks every row the stop occupies', () => {
+    renderPanel(sharedStop);
+    const checked = document.querySelectorAll(
+      '[data-qa^="stop-select-"] [role="checkbox"][data-state="checked"]',
+    );
+    expect(checked).toHaveLength(2);
+  });
+});
