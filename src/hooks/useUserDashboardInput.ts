@@ -47,6 +47,17 @@ export interface UserDashboardInputState {
   showStops: boolean;
   toggleShowStops: () => void;
 
+  /**
+   * Whether the stop figure draws the Stop Aggregate Series — every drawn series
+   * totalled at each month. `stopagg=1`.
+   *
+   * Its own slice rather than a second reader of `isAggregateVisible`: that one is the
+   * line chart's, and one tick answering for two charts would mean a reader who wanted
+   * the stop total silently changed the chart above it too.
+   */
+  isStopAggregateVisible: boolean;
+  toggleIsStopAggregateVisible: () => void;
+
   /** Which figure the stop panel ranks, sizes and draws by. `measure=offs|both`. */
   stopMeasure: StopMeasure;
   setStopMeasure: React.Dispatch<React.SetStateAction<StopMeasure>>;
@@ -144,8 +155,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
   });
 
   /**
-   * The three stop-panel slices, read here and written in the effect below — both
-   * halves, or the panel stops being shareable (`CLAUDE.md`).
+   * The stop-panel slices, read here and written in the effect below — both halves, or
+   * the panel stops being shareable (`CLAUDE.md`).
    *
    * Off by default. The panel is the one view whose data covers a short window inside
    * the chart's, so opening it for a reader who did not ask would put an empty state
@@ -155,6 +166,13 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     const params = new URLSearchParams(window.location.search);
     return params.get('stops') === '1';
   });
+
+  const [isStopAggregateVisible, setIsStopAggregateVisible] = useState<boolean>(
+    () => {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('stopagg') === '1';
+    },
+  );
 
   const [stopMeasure, setStopMeasure] = useState<StopMeasure>(() => {
     const params = new URLSearchParams(window.location.search);
@@ -187,6 +205,7 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     if (isAggregateVisible) params.set('aggregate', '1');
     if (showContextLogs) params.set('logs', '1');
     if (showStops) params.set('stops', '1');
+    if (isStopAggregateVisible) params.set('stopagg', '1');
     // Written only when non-default, like every optional param above it. A stop key
     // is a slug by construction, so nothing about it needs escaping — though
     // `URLSearchParams.toString()` percent-encodes the `:` anyway. It decodes back to
@@ -209,6 +228,7 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     isAggregateVisible,
     showContextLogs,
     showStops,
+    isStopAggregateVisible,
     stopMeasure,
     selectedStopKeys,
     stopSearchText,
@@ -294,6 +314,10 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     setShowContextLogs((prevShowContextLogs: boolean) => !prevShowContextLogs);
   };
 
+  const toggleIsStopAggregateVisible = (): void => {
+    setIsStopAggregateVisible((previous: boolean) => !previous);
+  };
+
   const toggleShowStops = (): void => {
     setShowStops((prevShowStops: boolean) => !prevShowStops);
   };
@@ -313,6 +337,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     toggleShowContextLogs,
     showStops,
     toggleShowStops,
+    isStopAggregateVisible,
+    toggleIsStopAggregateVisible,
     stopMeasure,
     setStopMeasure,
     selectedStopKeys,

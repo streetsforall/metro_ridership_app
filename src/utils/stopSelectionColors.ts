@@ -30,6 +30,20 @@ const SELECTION_HUES = [
 ] as const;
 
 /**
+ * The Stop Aggregate Series' colour — deliberately **not** a hue from the palette above.
+ *
+ * Colour in this figure means which stop (ADR-0014), and the aggregate is not a stop. A
+ * ninth hue would say it was one; a Metro line colour would say it was a line. Neutral
+ * grey is the one thing left that claims neither, and it is the same move the map makes
+ * with its selection ring for the same reason.
+ *
+ * `700`, a step darker than the palette's `600`: the aggregate is the largest figure on
+ * the chart and sits above the series it totals, so it has to hold its own against eight
+ * saturated hues without becoming a ninth of them.
+ */
+export const AGGREGATE_COLOR = colors.stone['700'];
+
+/**
  * Colour for the `index`-th selected stop.
  *
  * **The palette cycles.** Selection is deliberately unbounded — `Select All` is scoped

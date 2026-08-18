@@ -57,6 +57,13 @@ export interface StopPanelProps {
   dayOfWeek: DayOfWeek;
   measure: StopMeasure;
   onMeasureChange: (measure: StopMeasure) => void;
+  /**
+   * Whether the figure draws the Stop Aggregate Series — every drawn series totalled at
+   * each month. The tick that sets it sits on the filter band's `Select All` row, where
+   * the line filter keeps its own.
+   */
+  isAggregateVisible: boolean;
+  toggleIsAggregateVisible: () => void;
   /** The Stop Selection, in the order the stops were selected. Empty is the opening state. */
   selectedStopKeys: readonly string[];
   onToggleStop: (stopKey: string) => void;
@@ -84,6 +91,8 @@ export default function StopPanel({
   dayOfWeek,
   measure,
   onMeasureChange,
+  isAggregateVisible,
+  toggleIsAggregateVisible,
   selectedStopKeys,
   onToggleStop,
   onClearStops,
@@ -287,7 +296,11 @@ export default function StopPanel({
               {drawnStopCount === 1 ? 'stop' : 'stops'}
               {drawn.length !== drawnStopCount && ` · ${String(drawn.length)} series`}
             </figcaption>
-            <StopSeriesChart drawn={drawn} measure={measure} />
+            <StopSeriesChart
+              drawn={drawn}
+              measure={measure}
+              showAggregate={isAggregateVisible}
+            />
           </figure>
         )}
 
@@ -297,6 +310,8 @@ export default function StopPanel({
           listedStopKeys={listedStopKeys}
           onSelectAllStops={onSelectAllStops}
           onClearStops={onClearStops}
+          isAggregateVisible={isAggregateVisible}
+          toggleIsAggregateVisible={toggleIsAggregateVisible}
         />
 
         <div className="mt-3">

@@ -3,7 +3,11 @@ import type { ChartOptions } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
 import { formatEventDate } from '../chart';
 import { stopSeriesDatasets } from '../utils/stopSeriesDatasets';
-import { colorForSelectionIndex } from '../utils/stopSelectionColors';
+import {
+  AGGREGATE_COLOR,
+  colorForSelectionIndex,
+} from '../utils/stopSelectionColors';
+import { stopAggregateSeries } from '../utils/stopAggregateSeries';
 import type { StopSeriesPoint } from '../utils/stopSeries';
 import type { StopMeasure } from '../@types/stops.types';
 
@@ -43,6 +47,15 @@ export interface StopSeriesChartProps {
   drawn: readonly DrawnStopSeries[];
   /** Which of the two series to draw. `both` draws them together. */
   measure: StopMeasure;
+  /**
+   * Draw the Stop Aggregate Series — every drawn series totalled at each month.
+   *
+   * Off by default, as the line chart's Aggregate is. It is a second reading of the same
+   * stops rather than a stop of its own, so it arrives as a flag rather than as another
+   * entry in `drawn`: an entry there would take a selection hue and a legend prefix
+   * naming a stop and a line, and it has neither.
+   */
+  showAggregate?: boolean;
 }
 
 const options: ChartOptions<'line'> = {
@@ -67,6 +80,7 @@ const options: ChartOptions<'line'> = {
 export default function StopSeriesChart({
   drawn,
   measure,
+  showAggregate = false,
 }: StopSeriesChartProps) {
   const data = useMemo(
     () => ({
@@ -82,17 +96,34 @@ export default function StopSeriesChart({
        * the part that differs: here it says which stop, and the legend prefix names
        * the stop and its line so the hue is never the only thing carrying that.
        */
-      datasets: drawn.flatMap((stop, index) =>
-        stopSeriesDatasets({
-          series: stop.series,
-          measure,
-          color: colorForSelectionIndex(index),
-          pointRadius: 2,
-          labelPrefix: `${stop.stopName} · ${stop.lineName}`,
-        }),
-      ),
+      datasets: [
+        ...drawn.flatMap((stop, index) =>
+          stopSeriesDatasets({
+            series: stop.series,
+            measure,
+            color: colorForSelectionIndex(index),
+            pointRadius: 2,
+            labelPrefix: `${stop.stopName} · ${stop.lineName}`,
+          }),
+        ),
+        /*
+         * Last, so it draws over the series it totals rather than under them — it is
+         * the largest figure on the chart and would otherwise be the one hidden. Same
+         * dash convention as every other series, because dash still means the measure;
+         * what tells it apart is the neutral colour and the legend's own word for it.
+         */
+        ...(showAggregate && drawn.length > 0
+          ? stopSeriesDatasets({
+              series: stopAggregateSeries(drawn),
+              measure,
+              color: AGGREGATE_COLOR,
+              pointRadius: 2,
+              labelPrefix: 'Aggregate',
+            })
+          : []),
+      ],
     }),
-    [drawn, measure],
+    [drawn, measure, showAggregate],
   );
 
   return (

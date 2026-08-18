@@ -216,6 +216,17 @@ Nothing bounds it. Picking a stop, unpicking it and clearing every pick are the 
 that change it, and a table row, its checkbox and its map circle all ask for the first two.
 _Avoid_: the selected stop, highlighted stops, active stops
 
+**Stop Aggregate Series**:
+The month-by-month total across everything the stop figure is drawing, offered by the Aggregate tick
+on the stop filter band and drawn as one additional series, always last. It totals **series, not
+stops**: a stop served by two selected Lines contributes both, which is why it is not the
+stop-total-across-lines rollup this project declines to derive — nothing about it claims to be a
+figure for a stop. A stop that did not report a Month contributes nothing rather than zero, and a
+Month no drawn stop reports stays a gap. Its colour is neutral because colour in that figure means
+which stop and the aggregate is not one
+([ADR-0015](docs/adr/0015-the-stop-aggregate-totals-series-and-takes-no-hue.md)).
+_Avoid_: the stop total, combined stops, the sum
+
 **Stop Coverage Window**:
 The span of Months stop-level data exists for at all — twelve, inside the chart's 2009 → 2026. It
 is a property of the **data**, not of the user's choice, and the panel states it persistently
