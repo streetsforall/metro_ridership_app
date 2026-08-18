@@ -1,5 +1,6 @@
 import { Fragment } from 'react';
 import type { LineReadout } from '../ridership';
+import { signedChange } from '../utils/signedChange';
 import infoIcon from '../assets/info.svg';
 
 interface SummaryDataProps {
@@ -118,12 +119,9 @@ export default function SummaryData({ lines }: SummaryDataProps) {
 
                 <span
                   aria-label="Change"
-                  className={
-                    changeInRidership < 0 ? 'text-red-600' : 'text-green-600'
-                  }
+                  className={signedChange(changeInRidership).className}
                 >
-                  {changeInRidership > 0 && '+'}
-                  {changeInRidership.toLocaleString()}
+                  {signedChange(changeInRidership).text}
                 </span>
               </div>
               <span

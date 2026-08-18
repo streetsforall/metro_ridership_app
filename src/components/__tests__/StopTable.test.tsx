@@ -559,3 +559,65 @@ describe('StopTable lazy sparklines', () => {
     expect(screen.getAllByRole('row')).toHaveLength(201);
   });
 });
+
+/**
+ * The Change column, which the line table's Change column is the sibling of — same
+ * `signedChange`, same `+`/green and `-`/red. What differs is zero and absence, and
+ * that difference is the point: Change here is Boardings less Alightings within a
+ * Month, so a zero is a balanced stop rather than a stop with nothing to report.
+ */
+describe('StopTable change column', () => {
+  /** The Change cell of the row named `name`. Column 5, after select, stop, line and the two averages. */
+  const changeCell = (name: string): HTMLElement => {
+    const row = screen
+      .getAllByRole('row')
+      .slice(1)
+      .find((candidate) => within(candidate).getAllByRole('cell')[1].textContent === name);
+    return within(row as HTMLElement).getAllByRole('cell')[5];
+  };
+
+  it('leads a gain with a plus and paints it green', () => {
+    renderTable();
+    const cell = changeCell('Vermont / Wilshire');
+    expect(cell.textContent).toBe('+400');
+    expect(cell.className).toContain('text-green-600');
+  });
+
+  it('paints a loss red, keeping its own minus', () => {
+    renderTable();
+    const cell = changeCell('Vermont / Santa Monica');
+    expect(cell.textContent).toBe('-300');
+    expect(cell.className).toContain('text-red-600');
+  });
+
+  it('draws a balanced stop as an uncoloured zero rather than an em dash', () => {
+    renderTable({
+      readouts: [
+        makeStopReadout({
+          key: 'bus:balanced',
+          name: 'Balanced',
+          netAverage: 0,
+        }),
+      ],
+    });
+    const cell = changeCell('Balanced');
+    expect(cell.textContent).toBe('0');
+    expect(cell.className).not.toContain('text-green-600');
+    expect(cell.className).not.toContain('text-red-600');
+  });
+
+  it('draws an absent figure as an em dash, uncoloured', () => {
+    renderTable({
+      readouts: [
+        makeStopReadout({
+          key: 'bus:unreported',
+          name: 'Unreported',
+          netAverage: undefined,
+        }),
+      ],
+    });
+    const cell = changeCell('Unreported');
+    expect(cell.textContent).toBe('—');
+    expect(cell.className).not.toContain('text-red-600');
+  });
+});

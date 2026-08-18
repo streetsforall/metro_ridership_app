@@ -5,6 +5,7 @@ import checkIcon from '../assets/check.svg';
 import { useVisibleRows } from '../hooks/useVisibleRows';
 import type { LineReadout } from '../ridership';
 import type { StopReadout } from '../stops';
+import { signedChange } from '../utils/signedChange';
 import type { StopSeriesIndex } from '../utils/stopSeries';
 import type { StopMeasure } from '../@types/stops.types';
 
@@ -145,6 +146,24 @@ const columns: Column[] = [
 
 const figure = (value: number | undefined): string =>
   value === undefined ? '—' : Math.round(value).toLocaleString();
+
+/**
+ * The Change cell's text and colour, drawn the way the line table draws its own — `+`
+ * and green for a gain, `-` and red for a loss, from the one `signedChange` both share.
+ *
+ * Two things this column does not share with that one. **Zero is a figure here, not an
+ * em dash**: Change is Boardings less Alightings within a Month, so zero is a stop where
+ * as many riders got off as on, and only `undefined` means no figure at all. And what
+ * the colours *mean* is narrower — green is a stop that takes on more riders than it
+ * sheds, not a stop doing well. A terminus is deeply negative by design. The column
+ * heading's own tooltip is where that is said to the reader.
+ */
+const changeCell = (
+  value: number | undefined,
+): { text: string; className: string } =>
+  value === undefined
+    ? { text: '—', className: '' }
+    : signedChange(Math.round(value));
 
 const share = (value: number | undefined): string =>
   value === undefined ? '—' : `${(value * 100).toFixed(1)}%`;
@@ -379,7 +398,11 @@ export default function StopTable({
                 <td className="text-right">
                   {figure(readout.averageAlightings)}
                 </td>
-                <td className="text-right">{figure(readout.netAverage)}</td>
+                <td
+                  className={`text-right ${changeCell(readout.netAverage).className}`}
+                >
+                  {changeCell(readout.netAverage).text}
+                </td>
                 <td className="text-right">{share(readout.shareOfLine)}</td>
 
                 {/* The observed box is the whole cell, so the ref goes here. The cell
