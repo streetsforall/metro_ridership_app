@@ -506,13 +506,18 @@ export default function Map({
         <label
           htmlFor="map-stop-ridership"
           data-qa="map-stop-ridership"
-          className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded bg-white/95 px-2 py-1.5 text-xs shadow cursor-pointer"
+          /* The pill is the pane's stone, not white, and that is the whole reason it is
+             not white: the checkbox itself is white when unticked, exactly as the filter
+             bar's is, and a white box on a white pill has no edge to see. On stone it
+             reads as a box, which is the same figure-on-ground the filter bar gets from
+             sitting on the pane. */
+          className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded bg-stone-100/95 px-2 py-1.5 text-xs shadow cursor-pointer"
         >
           <Checkbox.Root
             id="map-stop-ridership"
             onClick={onToggleShowStops}
             checked={showStops}
-            className="flex items-center justify-center bg-white border border-stone-300 data-[state=checked]:bg-[#033056] data-[state=checked]:border-[#033056] rounded p-0 h-5 w-5"
+            className="flex items-center justify-center bg-white data-[state=checked]:bg-[#033056] rounded p-0 h-5 w-5"
           >
             <Checkbox.Indicator>
               <img

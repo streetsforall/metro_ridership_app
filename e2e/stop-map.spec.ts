@@ -339,3 +339,60 @@ test('stop map — two circles can be selected at once', async ({ page }) => {
     'bus:vermont-wilshire,bus:vermont-santa-monica',
   );
 });
+
+/**
+ * The map's own Stop Ridership control — one piece of state, two controls.
+ *
+ * The point of the case is that the map's tick is not a map-local hide: turning it off
+ * here must also untick the filter bar's box and drop `stops=1`, because both write the
+ * same `showStops`. A map-local toggle would leave the panel open and the URL unchanged,
+ * and would still pass an assertion that only checked the circles.
+ */
+test('stop map — the map’s tick shares one state with the filter bar', async ({
+  page,
+}) => {
+  await gotoStopMap(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
+
+  const mapTick = page.locator('#map-stop-ridership');
+  await expect(mapTick).toHaveAttribute('aria-checked', 'true');
+  expect((await renderedStopKeys(page)).length).toBeGreaterThan(0);
+
+  await mapTick.click();
+
+  // All four halves of the one state, not just the circles.
+  await expect(page.locator('#stop-ridership')).toHaveAttribute(
+    'aria-checked',
+    'false',
+  );
+  await expect(page.locator('#stop-panel')).toHaveCount(0);
+  expect(page.url()).not.toContain('stops=1');
+  await waitForMapIdle(page);
+  expect(await renderedStopKeys(page)).toEqual([]);
+
+  // And back on from the map, which is the other direction of the same wire.
+  await mapTick.click();
+  await expect(page.locator('#stop-ridership')).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  await expect(page.locator('#stop-panel')).toBeVisible();
+  expect(page.url()).toContain('stops=1');
+  await waitForMapIdle(page);
+  expect((await renderedStopKeys(page)).length).toBeGreaterThan(0);
+});
+
+/**
+ * The control is on the map but is not the map's. MapLibre's own cluster is
+ * `.maplibregl-ctrl-group` and everything in it moves the camera; this one opens a panel
+ * and rewrites the URL, so it deliberately sits outside that chrome.
+ */
+test('stop map — the tick is not part of MapLibre’s control cluster', async ({
+  page,
+}) => {
+  await gotoStopMap(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
+
+  await expect(page.locator('#map-stop-ridership')).toBeVisible();
+  await expect(
+    page.locator('.maplibregl-ctrl-group #map-stop-ridership'),
+  ).toHaveCount(0);
+});

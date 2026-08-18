@@ -481,7 +481,9 @@ describe('Map stop-ridership control', () => {
     captured.addControl.mockClear();
     render(<Map lines={[]} showStops onToggleShowStops={vi.fn()} />);
 
-    const added = captured.addControl.mock.calls.map((call) => call[0]);
+    const added = captured.addControl.mock.calls.map(
+      (call) => call[0] as unknown,
+    );
     expect(added).toHaveLength(1);
     expect(added[0]).toBeInstanceOf(maplibregl.NavigationControl);
   });
