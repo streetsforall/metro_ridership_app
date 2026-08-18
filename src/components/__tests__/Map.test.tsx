@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, act } from '@testing-library/react';
+import { render, act, fireEvent } from '@testing-library/react';
 import maplibregl from 'maplibre-gl';
 import Map from '../Map';
 import { makeLine } from '../../test/builders';
@@ -427,5 +427,62 @@ describe('Map', () => {
       expect(properties).toContain('circle-stroke-width');
       expect(properties).not.toContain('circle-color');
     });
+  });
+});
+
+/**
+ * The Stop Ridership control that floats over the map.
+ *
+ * It is not a MapLibre control and the test says so: the navigation cluster is added
+ * through `addControl` and changes the camera, while this one is a React element that
+ * writes dashboard state. Confusing the two is exactly what the styling avoids.
+ */
+describe('Map stop-ridership control', () => {
+  const control = (): HTMLElement | null =>
+    document.querySelector('[data-qa="map-stop-ridership"]');
+
+  it('is not drawn when there is no state to toggle', () => {
+    render(<Map lines={[]} />);
+    expect(control()).toBeNull();
+  });
+
+  it('is drawn, named, and unticked when stops are off', () => {
+    render(<Map lines={[]} showStops={false} onToggleShowStops={vi.fn()} />);
+
+    expect(control()).toBeTruthy();
+    expect(control()?.textContent).toContain('Stop Ridership');
+    expect(
+      control()?.querySelector('[role="checkbox"]')?.getAttribute('aria-checked'),
+    ).toBe('false');
+  });
+
+  it('is ticked when stops are on', () => {
+    render(<Map lines={[]} showStops onToggleShowStops={vi.fn()} />);
+    expect(
+      control()?.querySelector('[role="checkbox"]')?.getAttribute('aria-checked'),
+    ).toBe('true');
+  });
+
+  /**
+   * One state, two controls. The map's tick calls the same toggle the filter bar's
+   * does, which is what makes unticking here also untick there and drop `stops=1`.
+   */
+  it('asks its owner to toggle rather than hiding circles locally', () => {
+    const onToggleShowStops = vi.fn();
+    render(<Map lines={[]} showStops onToggleShowStops={onToggleShowStops} />);
+
+    fireEvent.click(
+      control()?.querySelector('[role="checkbox"]') as HTMLElement,
+    );
+    expect(onToggleShowStops).toHaveBeenCalledOnce();
+  });
+
+  it('stays out of the map’s own control cluster', () => {
+    captured.addControl.mockClear();
+    render(<Map lines={[]} showStops onToggleShowStops={vi.fn()} />);
+
+    const added = captured.addControl.mock.calls.map((call) => call[0]);
+    expect(added).toHaveLength(1);
+    expect(added[0]).toBeInstanceOf(maplibregl.NavigationControl);
   });
 });

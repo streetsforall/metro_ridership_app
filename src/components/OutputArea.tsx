@@ -37,6 +37,11 @@ interface OutputAreaProps {
    * payloads it fetches land inside this lazy chunk instead of on the first-paint path.
    */
   showStops?: boolean;
+  /** Whether the stop figure draws the Stop Aggregate Series. `stopagg=1`. */
+  isStopAggregateVisible?: boolean;
+  onToggleStopAggregate?: () => void;
+  /** Turn Stop Ridership on or off from the map, the same state the filter bar's tick sets. */
+  onToggleShowStops?: () => void;
   stopMeasure?: StopMeasure;
   onStopMeasureChange?: (measure: StopMeasure) => void;
   selectedStopKeys?: readonly string[];
@@ -67,6 +72,9 @@ export default function OutputArea({
   isLoading = false,
   onRangeSelect,
   showStops = false,
+  isStopAggregateVisible = false,
+  onToggleStopAggregate,
+  onToggleShowStops,
   stopMeasure = 'ons',
   onStopMeasureChange,
   selectedStopKeys = NO_SELECTED_STOPS,
@@ -239,6 +247,8 @@ export default function OutputArea({
             stopMeasure={stopMeasure}
             selectedStopKeys={selectedStopKeys}
             onToggleStop={onToggleStop}
+            showStops={showStops}
+            onToggleShowStops={onToggleShowStops}
           />
         </div>
       </div>
@@ -263,6 +273,8 @@ export default function OutputArea({
           dayOfWeek={dayOfWeek}
           measure={stopMeasure}
           onMeasureChange={(measure) => onStopMeasureChange?.(measure)}
+          isAggregateVisible={isStopAggregateVisible}
+          toggleIsAggregateVisible={() => onToggleStopAggregate?.()}
           selectedStopKeys={selectedStopKeys}
           onToggleStop={(stopKey) => onToggleStop?.(stopKey)}
           onClearStops={() => onClearStops?.()}

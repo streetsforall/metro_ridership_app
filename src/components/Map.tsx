@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
+import * as Checkbox from '@radix-ui/react-checkbox';
 import maplibregl, { Popup } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { LineReadout } from '../ridership';
 import type { StopReadout, StopView } from '../stops';
 import type { StopMeasure } from '../@types/stops.types';
 import { buildPopupHTML, buildStopPopupHTML } from '../utils/mapPopup';
+import checkIcon from '../assets/check.svg';
 import './Map.css';
 
 const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
@@ -199,6 +201,18 @@ interface MapProps {
    * question about the selection, and the selection is the hook's to answer.
    */
   onToggleStop?: (stopKey: string) => void;
+  /**
+   * Whether Stop Ridership is on — **the same state the filter bar's tick sets**, not a
+   * map-local one. Circles come and go with it, the stop panel opens and closes with it,
+   * and `stops=1` enters and leaves the URL with it.
+   */
+  showStops?: boolean;
+  /**
+   * Toggle that state from here. Absent in tests and in any caller that has no state to
+   * offer, and the control is not drawn without it — a checkbox that cannot change
+   * anything is worse than no checkbox.
+   */
+  onToggleShowStops?: () => void;
 }
 
 
@@ -209,6 +223,8 @@ export default function Map({
   stopMeasure = 'ons',
   selectedStopKeys = NO_SELECTED_STOPS,
   onToggleStop,
+  showStops = false,
+  onToggleShowStops,
 }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -469,5 +485,48 @@ export default function Map({
     });
   }, [stopMarkers, stopReadouts, stopMeasure, selectedStopKeys, lines]);
 
-  return <div id="lineMap" ref={mapContainer} />;
+  /*
+   * The map, and one dashboard control floating over it.
+   *
+   * Deliberately **not** a MapLibre `IControl`. The navigation cluster top-right is the
+   * map's own chrome and everything in it changes the camera and nothing else; this tick
+   * opens a panel below the map and rewrites the URL, so dressing it as a sibling of the
+   * zoom buttons would understate what it does. It takes the filter bar's own checkbox
+   * and label instead — the same control, in the second place a reader looks for it.
+   *
+   * The wrapper exists to be the positioning context. `#lineMap` keeps `flex: 1` inside
+   * it and the wrapper claims the pane's spare height in its place, so the map's box is
+   * the one it always was.
+   */
+  return (
+    <div className="relative flex flex-1 flex-col">
+      <div id="lineMap" ref={mapContainer} />
+
+      {onToggleShowStops && (
+        <label
+          htmlFor="map-stop-ridership"
+          data-qa="map-stop-ridership"
+          className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded bg-white/95 px-2 py-1.5 text-xs shadow cursor-pointer"
+        >
+          <Checkbox.Root
+            id="map-stop-ridership"
+            onClick={onToggleShowStops}
+            checked={showStops}
+            className="flex items-center justify-center bg-white border border-stone-300 data-[state=checked]:bg-[#033056] data-[state=checked]:border-[#033056] rounded p-0 h-5 w-5"
+          >
+            <Checkbox.Indicator>
+              <img
+                src={checkIcon}
+                height={20}
+                width={20}
+                alt="Check"
+                className="recolor-white"
+              />
+            </Checkbox.Indicator>
+          </Checkbox.Root>
+          Stop Ridership
+        </label>
+      )}
+    </div>
+  );
 }
