@@ -63,6 +63,8 @@ function App() {
     toggleShowContextLogs,
     showStops,
     toggleShowStops,
+    isStopAggregateVisible,
+    toggleIsStopAggregateVisible,
     stopMeasure,
     setStopMeasure,
     selectedStopKeys,
@@ -217,6 +219,9 @@ function App() {
                  the URL. The panel's *data* is not: `useStopView` lives inside the
                  lazy chunk so its payloads never reach the first-paint path. */
               showStops={showStops}
+              isStopAggregateVisible={isStopAggregateVisible}
+              onToggleStopAggregate={toggleIsStopAggregateVisible}
+              onToggleShowStops={toggleShowStops}
               stopMeasure={stopMeasure}
               onStopMeasureChange={setStopMeasure}
               selectedStopKeys={selectedStopKeys}

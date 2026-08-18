@@ -4,6 +4,7 @@ import { Line as LineChart } from 'react-chartjs-2';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import { alignToMonthAxis, type LineReadout } from '../ridership';
 import { getLineColor } from '../utils/lines';
+import { signedChange } from '../utils/signedChange';
 import type { CustomChartData } from '../@types/chart.types';
 import type { Line } from '../@types/lines.types';
 import type { DayOfWeek, RidershipRecord } from '../@types/metrics.types';
@@ -183,18 +184,17 @@ export default function MetroLineTableRow({
             </td>
           )}
 
-          {/* Change in ridership (ex: +1000, -200) */}
+          {/* Change in ridership (ex: +1000, -200). A zero change is nothing to report
+              here — unlike the stop table's Change, where zero is a balanced stop — so
+              the falsy guard stays and `signedChange` draws the rest. */}
           {isExpanded &&
             (line.changeInRidership ? (
-              line.changeInRidership < 0 ? (
-                <td data-qa={`change-ridership-${line.id}`} className="text-right text-red-600">
-                  {line.changeInRidership.toLocaleString()}
-                </td>
-              ) : (
-                <td data-qa={`change-ridership-${line.id}`} className="text-right text-green-600">
-                  {'+' + line.changeInRidership.toLocaleString()}
-                </td>
-              )
+              <td
+                data-qa={`change-ridership-${line.id}`}
+                className={`text-right ${signedChange(line.changeInRidership).className}`}
+              >
+                {signedChange(line.changeInRidership).text}
+              </td>
             ) : (
               <td data-qa={`change-ridership-${line.id}`} className="text-right">—</td>
             ))}

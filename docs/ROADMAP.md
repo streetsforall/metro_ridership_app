@@ -330,9 +330,9 @@ made in PRs 1 and 2 of this batch and had lived only in `scripts/README.md` and 
 until now. The diagram set is still untouched — `07`, `08` and `10` are all being edited by the two
 open panel PRs, so regenerating them here would guarantee conflicts for no gain.
 
-**Diagram 10 is now five parameters behind, and that is worse than it was.** `10-url-contract.mmd`
+**Diagram 10 is now six parameters behind, and that is worse than it was.** `10-url-contract.mmd`
 is titled "The nine parameters" and enumerates them; this batch has added `stops`, `measure`,
-`stop`, and now `stopq`, so the count and the boxes are both wrong. It is the same file #181 and
+`stop`, `stopq`, and now `stopagg`, so the count and the boxes are both wrong. It is the same file #181 and
 #182 are rewriting, which is why it was left alone in the first place. Whoever lands those two
 should redraw it from `useUserDashboardInput`'s URL-sync effect rather than from the old diagram,
 and remember that `scripts/build_architecture_docs.mjs` fails the build when an edited `.mmd` has no

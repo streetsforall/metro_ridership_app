@@ -142,6 +142,28 @@ describe('initial state from URL params', () => {
     expect(result.current.showStops).toBe(false);
   });
 
+  it('sets isStopAggregateVisible to true when stopagg=1 in URL', () => {
+    window.history.replaceState({}, '', '?stopagg=1');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.isStopAggregateVisible).toBe(true);
+  });
+
+  it('leaves the stop aggregate off when stopagg is absent', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.isStopAggregateVisible).toBe(false);
+  });
+
+  /**
+   * Two aggregates, two slices. The line chart's tick must not answer for the stop
+   * figure's, or a reader who wanted one silently changed the other.
+   */
+  it('reads the stop aggregate independently of the line aggregate', () => {
+    window.history.replaceState({}, '', '?aggregate=1');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.isAggregateVisible).toBe(true);
+    expect(result.current.isStopAggregateVisible).toBe(false);
+  });
+
   it('reads the stop measure from URL', () => {
     window.history.replaceState({}, '', '?measure=offs');
     const { result } = renderHook(() => useUserDashboardInput());
@@ -390,8 +412,19 @@ describe('URL sync', () => {
     expect(window.location.search).toContain('stops=1');
   });
 
+  it('adds stopagg=1 to URL when toggleIsStopAggregateVisible is called', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.toggleIsStopAggregateVisible();
+    });
+
+    expect(window.location.search).toContain('stopagg=1');
+  });
+
   it('omits every stop param at its default', () => {
     renderHook(() => useUserDashboardInput());
+    expect(window.location.search).not.toContain('stopagg=');
     expect(window.location.search).not.toContain('stops=');
     expect(window.location.search).not.toContain('measure=');
     expect(window.location.search).not.toContain('stop=');

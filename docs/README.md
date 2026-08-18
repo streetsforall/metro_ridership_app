@@ -52,6 +52,7 @@ Then read whichever guide matches what you're about to do. Don't read them all.
 | [0012](adr/0012-the-stop-payload-is-columnar-dictionary-encoded-and-versioned.md) | The stop payload is columnar, dictionary-encoded and versioned, one file per mode — columns by name, unknown schema rejected | accepted |
 | [0013](adr/0013-a-stops-identity-is-its-normalised-name.md) | A stop's identity is its normalised name, not a number — `station_order` is an ordering attribute only | accepted |
 | [0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) | Colour in the stop series chart means which stop, and nowhere else does — the palette stops at the figure | accepted |
+| [0015](adr/0015-the-stop-aggregate-totals-series-and-takes-no-hue.md) | The stop aggregate totals series, not stops, and takes a neutral colour rather than a ninth hue | accepted |
 
 ## Not for humans
 

@@ -492,3 +492,64 @@ test('stop panel — absent, and silent, without stops=1', async ({ page }) => {
   await expect(page.locator('#stop-panel')).toHaveCount(0);
   expect(requested.filter((url) => url.includes('stop-ridership'))).toEqual([]);
 });
+
+/**
+ * The Aggregate tick, which is the stop panel's own version of the line filter's.
+ *
+ * The series it adds is drawn into a canvas and the legend naming it is drawn there too,
+ * so the DOM witnesses are the tick's own state and the URL. The screenshot is what
+ * actually covers the drawn series — including its neutral colour, which is the part
+ * ADR-0015 decided and the part a palette change would silently break.
+ */
+test('stop panel — the Aggregate tick draws a totalled series', async ({
+  page,
+}) => {
+  await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
+  await waitForStopTable(page);
+
+  await page.locator(stopQa('row', RAIL_LINE_ID, 'rail:union-station')).click();
+  await page
+    .locator(
+      stopQa('row', RAIL_LINE_ID, 'rail:7th-street-metro-center-station'),
+    )
+    .click();
+  await expect(page.locator('[data-qa="stop-series"]')).toBeVisible();
+
+  // Off until asked, like the line chart's.
+  expect(page.url()).not.toContain('stopagg=');
+
+  await page.locator('#stop-aggregate').click();
+
+  await expect(page.locator('#stop-aggregate')).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  expect(page.url()).toContain('stopagg=1');
+
+  await shootPanel(page, 'stop-panel-aggregate.png');
+});
+
+/**
+ * Its own slice, not a second reader of the line chart's `aggregate=1` — a shared link
+ * has to be able to carry one without the other.
+ */
+test('stop panel — the stop aggregate is read from the URL, independently', async ({
+  page,
+}) => {
+  await gotoStopPanel(
+    page,
+    `?stops=1&lines=${String(RAIL_LINE_ID)}&stop=rail:union-station&stopagg=1`,
+  );
+  await waitForStopTable(page);
+
+  await expect(page.locator('#stop-aggregate')).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+
+  // The line chart's own tick stayed off, because nothing in the URL asked for it.
+  await expect(page.locator('#aggregate')).toHaveAttribute(
+    'aria-checked',
+    'false',
+  );
+});

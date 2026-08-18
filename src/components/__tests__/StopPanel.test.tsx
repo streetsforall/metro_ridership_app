@@ -21,9 +21,16 @@ vi.mock('../StopSeriesChart', async () => {
   );
   return {
     ...actual,
-    default: ({ drawn }: { drawn: { stopName: string; lineName: string }[] }) => (
+    default: ({
+      drawn,
+      showAggregate,
+    }: {
+      drawn: { stopName: string; lineName: string }[];
+      showAggregate?: boolean;
+    }) => (
       <canvas
         data-qa="stop-series"
+        data-aggregate={showAggregate ? 'on' : 'off'}
         data-drawn={drawn
           .map((stop) => `${stop.stopName} · ${stop.lineName}`)
           .join('|')}
@@ -74,6 +81,8 @@ const renderPanel = (
       dayOfWeek={daysOfWeek.Weekday}
       measure="ons"
       onMeasureChange={vi.fn()}
+      isAggregateVisible={false}
+      toggleIsAggregateVisible={vi.fn()}
       selectedStopKeys={[]}
       onToggleStop={vi.fn()}
       onClearStops={vi.fn()}
@@ -563,5 +572,47 @@ describe('StopPanel drawing one stop on two lines', () => {
       '[data-qa^="stop-select-"] [role="checkbox"][data-state="checked"]',
     );
     expect(checked).toHaveLength(2);
+  });
+});
+
+
+/**
+ * The Aggregate tick, which sits on the filter band's `Select All` row exactly as the
+ * line filter's does. The panel neither owns the state nor totals anything itself — it
+ * passes the flag down and lets the figure draw it.
+ */
+describe('StopPanel aggregate toggle', () => {
+  const tick = (): HTMLElement =>
+    document.querySelector('[data-qa="stop-aggregate"]') as HTMLElement;
+
+  it('offers the tick beside the two selection actions', () => {
+    renderPanel({ selectedStopKeys: ['bus:vermont-wilshire'] });
+    expect(tick()).toBeTruthy();
+    expect(screen.getByText('Aggregate')).toBeTruthy();
+  });
+
+  it('leaves the figure without an aggregate while unticked', () => {
+    renderPanel({ selectedStopKeys: ['bus:vermont-wilshire'] });
+    expect(
+      document.querySelector('[data-qa="stop-series"]')?.getAttribute('data-aggregate'),
+    ).toBe('off');
+  });
+
+  it('asks the figure for one when ticked', () => {
+    renderPanel({
+      selectedStopKeys: ['bus:vermont-wilshire'],
+      isAggregateVisible: true,
+    });
+    expect(
+      document.querySelector('[data-qa="stop-series"]')?.getAttribute('data-aggregate'),
+    ).toBe('on');
+  });
+
+  it('asks its owner to toggle rather than holding the state itself', () => {
+    const toggleIsAggregateVisible = vi.fn();
+    renderPanel({ selectedStopKeys: ['bus:vermont-wilshire'], toggleIsAggregateVisible });
+
+    fireEvent.click(tick());
+    expect(toggleIsAggregateVisible).toHaveBeenCalledOnce();
   });
 });

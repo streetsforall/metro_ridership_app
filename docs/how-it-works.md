@@ -178,11 +178,31 @@ is proportional to it.
 further dynamic import. The panel itself is `#stop-panel`, opened with `stops=1`.
 
 - **The stop table is a multi-select, and it copies the line selector's chrome rather than inventing
-  its own.** A checkbox per row, a search bar above the table, and `Select All` / `Clear All` under
-  it — the same three controls `LineFilters` has, in the same arrangement. Both tables share the
-  asymmetry too: `Select All` reaches only the rows the search lists and adds to what is already
-  selected, while `Clear All` clears globally and leaves the search text alone. Neither table caps
-  its selection; the search is what narrows `Select All`.
+  its own.** A checkbox per row, a search bar above the table, `Select All` / `Clear All` under it
+  and an `Aggregate` tick at the right-hand end of that same row — the same four controls
+  `LineFilters` has, in the same arrangement. Both tables share the asymmetry too: `Select All`
+  reaches only the rows the search lists and adds to what is already selected, while `Clear All`
+  clears globally and leaves the search text alone. Neither table caps its selection; the search is
+  what narrows `Select All`.
+
+- **The stop aggregate totals the drawn series and takes no hue.** `stopagg=1`, its own slice rather
+  than a second reader of the line chart's `aggregate=1`. A stop drawn on two selected lines
+  contributes both series; a month no drawn stop reports stays a gap; the colour is neutral because
+  hue in that figure already means which stop —
+  [ADR-0015](adr/0015-the-stop-aggregate-totals-series-and-takes-no-hue.md).
+
+- **The Change column is signed and coloured**, `+`/green and `-`/red, from the same `signedChange`
+  the line table's Change cell and the summary's figure use. What "absent" means is each caller's
+  own: a zero change is nothing to report in the line table and draws an em dash, while a zero here
+  is a stop where as many riders got off as on — a balanced stop, drawn as `0`, with only `undefined`
+  meaning no figure. Note what the colours do *not* mean here: a terminus is deeply negative by
+  design, not doing badly.
+
+- **Stop Ridership has two controls and one piece of state.** The filter bar's tick and the control
+  floating over the map both write `showStops`, so turning it off from either drops `stops=1`, closes
+  the panel and takes the circles off the map. The map's is deliberately not a MapLibre `IControl`:
+  the navigation cluster is the map's own chrome and everything in it moves the camera, while this
+  one opens a panel and rewrites the URL, so it wears the filter bar's checkbox instead.
 
 - **The Stop Selection is an ordered set of stop keys**, comma-joined into `stop=`, with the search
   in `stopq=`. Order fixes each stop's colour on the chart, so a stop picked later is appended
