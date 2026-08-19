@@ -71,7 +71,7 @@ A new month of data moves some visual baselines. `dataDefaultEndDate` is compute
 `responsive-tablet` — are unaffected; `visual.spec.ts` calls `gotoDashboard(page)` with no search
 and therefore lands on the new default, so its six baselines move.
 
-`stop-panel` route-stubs both stop payloads, so new *stop* data does not move its baselines.
+`stop-panel` and `stop-map` route-stub both stop payloads, so new *stop* data does not move them.
 A new month still shifts `stop-panel`'s default Month Window, and its coverage line comes from
 `virtual:stop-ridership-manifest`, which is built from the real files — so expect its three
 baselines to move with the rest.

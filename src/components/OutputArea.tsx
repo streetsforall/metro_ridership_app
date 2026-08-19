@@ -218,7 +218,14 @@ export default function OutputArea({
          * stretch to a common height.
          */}
         <div className="pane flex flex-col">
-          <Map lines={lines} />
+          <Map
+            lines={lines}
+            stopMarkers={stopView.markers}
+            stopReadouts={stopView.readouts}
+            stopMeasure={stopMeasure}
+            selectedStopKeys={selectedStopKeys}
+            onToggleStop={onToggleStop}
+          />
         </div>
       </div>
 
