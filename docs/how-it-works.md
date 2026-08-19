@@ -180,9 +180,15 @@ further dynamic import. The panel itself is `#stop-panel`, opened with `stops=1`
   the search text alone. Neither table caps its selection; the search narrows `Select All`.
 
 - **The Stop Selection is an ordered set of stop keys**, comma-joined into `stop=`, with the search
-  in `stopq=`. Order is kept because it is what will fix each stop's colour, so a stop picked later
-  is appended rather than inserted. The table's grain is stop × line, so a stop served by two
-  selected lines is picked once and occupies two rows.
+  in `stopq=`. Order fixes each stop's colour, so a stop picked later is appended rather than
+  inserted — inserting would recolour every series already drawn. The table's grain is stop × line,
+  so a stop served by two selected lines is picked once and drawn twice.
+
+- **Colour in the figure above the table means which stop, and only there.** Hue was spoken for by
+  the line and dash by the Stop Measure, so several stops on one line had no channel left. The row
+  sparkline stays line-coloured, and no chart palette will reach the map;
+  [ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) records why the palette
+  stops where it does.
 
 - **The lazy-load rule is a gate on intent.** Rail (89 KB) loads when the panel is on. Bus (5.3 MB)
   loads only when the panel is on, the Month Window overlaps the Stop Coverage Window, **and** a

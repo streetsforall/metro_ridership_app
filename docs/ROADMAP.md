@@ -31,8 +31,8 @@ PRs update it rather than restating their own scope.
 | **5a** | The URL contract — `stops`, `measure`, `stop`, `stopq` — and the Stop Ridership checkbox | The checkbox round-trips through the URL; **the eight full-page baselines the checkbox moves are regenerated here and nowhere else** | ☐ |
 | **5b** | `useStopView`: the two payloads' fetch gate and their independent fates. **No UI.** | `ANALYZE=1 npm run build` — entry chunk unchanged; the hook has no importer yet | ☐ |
 | **5c** | `#stop-panel`, the ranked table, the coverage notice, the `OutputArea` wiring | New `stop-panel` baselines only; the eight 5a regenerated must **not** move again | ☐ |
-| **5d** | The ridership-over-time column: `stopSeries`, `useVisibleRows`, the row sparkline | No new payloads; the trend column is the only baseline move | ☐ this PR |
-| **5e** | The stop series chart and its colour rule | [ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) written | ☐ |
+| **5d** | The ridership-over-time column: `stopSeries`, `useVisibleRows`, the row sparkline | No new payloads; the trend column is the only baseline move | ☐ |
+| **5e** | The stop series chart and its colour rule | [ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) written | ☐ this PR |
 | **5f** | The map's circle layer and the `mapPopup` addition | Circles leave the map when the panel is unticked | ☐ |
 
 1 → 2 → 3 are pipeline-serial. 4 can start once PR 1's schema is fixed. PR 3 carries
@@ -280,6 +280,14 @@ stops, all of which the chart will try to draw. `Select All` adds only the liste
 clears globally — the line pair's asymmetry, copied deliberately, because two ranked tables under one
 dashboard should not answer the same two words differently.
 
+**Colour in the stop series chart now means which stop, and only there.** Hue was spoken for by the
+line and dash by the Stop Measure, so two stops on line 204 drew as identical teal lines. The figure's
+series take an eight-hue palette in selection order; the row sparkline stays line-coloured and the
+map's ring stays neutral navy. Colour therefore answers two questions on one screen, which is the cost
+— recorded in **ADR-0014** along with why the palette stops at the figure. `Map.test.tsx` asserts the
+ring is one colour, so extending the palette onto the map fails a test rather than sliding in unread.
+The palette cycles past eight, the honest consequence of capping nothing.
+
 **A stop row is identified by its line and its stop together, because a stop key alone does not
 identify one.** A stop serving two selected lines occupies two rows. `stop-row-`, `stop-select-` and
 `stop-sparkline-` all carry the row key — the identity React already keys on — rather than the stop
@@ -287,6 +295,16 @@ key, and a unit case renders one stop on lines 204 and 801 to hold it there. No 
 on two lines, so nothing failed; the trap was that an e2e locator would have matched two elements and
 failed strict mode the moment one did, and `document.querySelector` in a unit spec would have
 silently taken the first. The e2e half goes through `stopQa`, so the shape is written once.
+
+**A long stop name still clips out of the legend at mobile width, after two attempts to fix it.** The
+measure now joins a legend label only under `both`, where two datasets per stop need separating —
+under a single measure every series *is* that measure and the toggle already says which. And the
+checkbox column's `SELECT` heading became `sr-only`, because six characters cannot fit a `w-10` cell
+and were widening the column, pushing an already-overflowing mobile table further sideways; narrowing
+it brought `AVG. BOARDINGS` back into view. What remains is arithmetic: `7th Street / Metro Center
+Station · A Line` is 41 characters in a 294px box, so Chart.js truncates it. The row beneath names the
+stop in full and the desktop legend is clean, so nothing is unreadable — but a reader on a phone
+comparing two long station names is reading the table, not the legend.
 
 **The sparkline column mounts lazily, and on mobile that means not at all.** The ranked table can hold
 ~800 rows against the line table's ~180, so a Chart.js instance per row is not affordable up front;
@@ -452,3 +470,14 @@ layout** — asking for the same export shape is what makes the response drop st
 into this pipeline. Precedent: a requester obtained station-level rail + BRT for
 FY2022-23 and FY2023-24 this way (Streetsblog LA, 2024-08-14). Turnaround is weeks, so
 file early and build against the 11 months meanwhile.
+
+**A cleanup pass found two things that were not cleanup.** The stop series took its hue from a
+position in the *flattened* series list rather than in the Stop Selection, so a stop served by two
+selected lines drew in two hues and shifted every later stop's — the effect
+[ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) exists to prevent. The hue is
+now taken in `StopPanel`, where selection order is still in hand, and carried on `DrawnStopSeries`;
+two series of one stop share a hue and the legend prefix names the line.
+
+Separately, each stop row was **two** tab stops — the row and its checkbox — so an 800-row table held
+~1600 and a screen reader announced every row twice, only the second announcement carrying anything.
+The row keeps its click target and loses `tabIndex`, the convention `LineTableRow` already followed.
