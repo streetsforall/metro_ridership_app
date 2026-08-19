@@ -3,28 +3,23 @@ import magnifyingGlassIcon from '../assets/magnifying-glass.svg';
 /**
  * The stop table's chrome — search, then the two selection actions.
  *
- * A sibling of `LineFilters` on purpose. The two ranked tables in this dashboard offer the
- * same three controls, and the whole point of this component is that they offer them the
- * same way: the search in a row of its own closed by a rule, then `Select All` and
- * `Clear All` under it. Inlining that arrangement in `StopPanel` would have been a second
- * copy of a layout `LineFilters` already states, and the two would drift.
+ * A sibling of `LineFilters` on purpose: the dashboard's two ranked tables offer the same
+ * three controls and must offer them the same way — search in a row of its own closed by
+ * a rule, then `Select All` and `Clear All` beneath. It renders above the table because
+ * it acts on the table.
  *
- * It renders below the figure and above the table, because it acts on the table.
- *
- * Presentational and stateless: the search text and the Stop Selection are URL-synced
- * dashboard state, and `useUserDashboardInput` is the one place that reads and writes the
- * URL. Everything here arrives as a prop.
+ * Presentational and stateless. The search text and the Stop Selection are URL-synced
+ * state, and `useUserDashboardInput` is the one place that reads and writes the URL.
  */
 
 export interface StopFiltersProps {
   searchText: string;
   onSearchTextChange: (text: string) => void;
   /**
-   * Every stop the table is currently listing, deduplicated — what `Select All` adds.
+   * Every stop the table is listing, deduplicated — what `Select All` adds.
    *
-   * Passed in rather than derived here, because "which rows are listed" is the same
-   * question the table itself answers and deriving it twice is how the button and the
-   * table start disagreeing about what "all" means.
+   * Passed in rather than derived here: deriving "which rows are listed" twice is how the
+   * button and the table start disagreeing about what "all" means.
    */
   listedStopKeys: string[];
   onSelectAllStops: (stopKeys: string[]) => void;
@@ -32,13 +27,10 @@ export interface StopFiltersProps {
 }
 
 /**
- * `bg-transparent border-none p-0` is load-bearing on both buttons: without it the global
- * `button` rule in `index.css` paints each a filled navy pill. `type="button"` because a
- * bare `<button>` defaults to submit. Same teal, weight and size as the line filter's pair,
- * which are the dashboard's existing selection actions.
- *
- * One constant rather than the string twice, so the two buttons cannot drift apart — the
- * failure this class list has already had once, in the control it replaced.
+ * `bg-transparent border-none p-0` is load-bearing: without it the global `button` rule in
+ * `index.css` paints each button a filled navy pill. Same teal, weight and size as the
+ * line filter's pair. One constant rather than the string twice, because these two have
+ * drifted apart once already.
  */
 const ACTION_CLASS =
   'bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]';

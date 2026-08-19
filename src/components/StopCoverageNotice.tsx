@@ -10,26 +10,18 @@ import type { StopCoverageState } from '../utils/stopCoverage';
 /**
  * The Stop Coverage Window against the Month Window, said out loud.
  *
- * This is the panel's biggest usability risk and the reason it exists as its own
- * component. The chart above spans 2009 → 2026; stop data spans twelve months inside
- * that. A reader who drags the chart to 2015 and finds an empty table has been given a
- * broken panel unless the panel says what it covers — so the span is stated
- * **persistently**, not only when something is missing.
+ * The panel's biggest usability risk, and why this is its own component. The chart spans
+ * 2009 → 2026 and stop data spans twelve months inside it, so a reader who drags to 2015
+ * and finds an empty table has been handed a broken panel unless the panel says what it
+ * covers. The span is therefore stated **persistently**, not only when something is
+ * missing, and it comes from `virtual:stop-ridership-manifest` — filled at build time,
+ * which is what lets the sentence be true before any payload is fetched.
  *
- * The span comes from `virtual:stop-ridership-manifest`, which the Vite plugin fills
- * from the payloads at build time. That is what lets the sentence be true before any
- * payload is fetched, including on the empty-state path where none ever is.
+ * **It never clamps or widens the Month Window**, because the window is what the reader
+ * chose and what a shared link carries (ADR-0001). The no-overlap state offers a button
+ * instead, through the same setters a drag across the chart uses.
  *
- * ## What this component does not do
- *
- * **It never clamps or widens the Month Window.** The window is what the reader chose
- * and what a shared link carries; silently moving it would make the same URL mean
- * different things (ADR-0001). The no-overlap state offers a button instead, and that
- * button goes through the same setters a drag across the chart uses, so the pickers,
- * the chart and the URL all follow one gesture.
- *
- * **It states no window rule of its own.** Which state it is in is
- * `stopCoverageState` in `src/utils/stopCoverage.ts`, which reads the derivation's own
+ * **It states no window rule of its own**: `stopCoverageState` reads the derivation's
  * answers rather than comparing anything against the window (ADR-0009).
  */
 

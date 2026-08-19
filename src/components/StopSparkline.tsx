@@ -10,18 +10,13 @@ import type { StopMeasure } from '../@types/stops.types';
  * One row's series at 40px — a shape, not a readout. The figures beside it are the
  * readout; this says whether they are going up.
  *
- * Drawn in its **line's** colour, not its stop's selection colour. A row exists whether
- * or not its stop is selected, so there is no selection colour to give most of them, and
- * the sparkline's job is to sit beside the Line column and agree with it. The figure
- * above the table is where colour means which stop — ADR-0014 records the split.
+ * Drawn in its **line's** colour rather than its stop's, because a row exists whether or
+ * not its stop is selected, so most rows have no selection colour to take. The figure
+ * above the table is where colour means which stop (ADR-0014).
  *
- * Its own component rather than a variant of `StopSeriesChart`: at this size every
- * option that chart sets is wrong — axes, legend, hover, point radii. A `variant` prop
- * would be two charts sharing a name. What the two genuinely share is the Stop Measure
- * → dataset encoding, and that lives in `stopSeriesDatasets`.
- *
- * Chart.js is registered by `../chart`, which `StopSeriesChart` imports; a module is
- * evaluated once, so there is no second registration here and none is needed.
+ * Its own component rather than a variant of `StopSeriesChart`: at this size every option
+ * that chart sets is wrong, and a `variant` prop would be two charts sharing a name. What
+ * they do share is the Stop Measure → dataset encoding, in `stopSeriesDatasets`.
  */
 
 export interface StopSparklineProps {
@@ -31,9 +26,9 @@ export interface StopSparklineProps {
 }
 
 /*
- * Module-level, unlike `LineTableRow`'s inline object. At this row count, rebuilding an
- * options object per row per render is real allocation, and Chart.js treats a new
- * options identity as a reason to reconfigure.
+ * Module-level, unlike `LineTableRow`'s inline object: at this row count a fresh options
+ * object per row per render is real allocation, and Chart.js reads a new options identity
+ * as a reason to reconfigure.
  */
 const options: ChartOptions<'line'> = {
   responsive: true,
