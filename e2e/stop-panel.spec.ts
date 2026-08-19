@@ -12,9 +12,9 @@ import {
 } from './stop-sparkline-fixtures';
 
 /**
- * The stop panel's DOM — the ranked table, its trend column, the measure toggle and the
- * two coverage states, all served from stubbed payloads so an export can't move these
- * baselines.
+ * The stop panel's DOM — the ranked table, its trend column, the measure toggle, the
+ * per-stop series and the two coverage states, all served from stubbed payloads so an
+ * export can't move these baselines.
  */
 
 /** The panel is URL-gated: `stops=1`, plus whatever else the case needs. */
@@ -117,6 +117,39 @@ test('stop panel — the ranked table is the primary readout', async ({
   await shootPanel(page, 'stop-panel-table.png');
 });
 
+/**
+ * Two rows, not one, because the panel draws several stops at once now — the URL is the
+ * witness for *which*, since the legend is drawn into a canvas.
+ */
+test('stop panel — table rows draw those stops’ series', async ({ page }) => {
+  await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
+  await waitForStopTable(page);
+
+  await expect(page.locator('[data-qa="stop-series"]')).toHaveCount(0);
+  await page.locator(stopQa('row', RAIL_LINE_ID, 'rail:union-station')).click();
+
+  await expect(page.locator('[data-qa="stop-series"]')).toBeVisible();
+  await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
+    '1 stop',
+  );
+
+  await page
+    .locator(
+      stopQa('row', RAIL_LINE_ID, 'rail:7th-street-metro-center-station'),
+    )
+    .click();
+
+  await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
+    '2 stops',
+  );
+  expect(page.url()).toContain('stop=');
+  expect(decodeURIComponent(page.url())).toContain(
+    'rail:union-station,rail:7th-street-metro-center-station',
+  );
+
+  await shootPanel(page, 'stop-panel-selected-stop.png');
+});
+
 /** `Clear All` is the way out, without which the selection would be a one-way door. */
 test('stop panel — Clear All empties the selection, and the URL follows', async ({
   page,
@@ -125,6 +158,7 @@ test('stop panel — Clear All empties the selection, and the URL follows', asyn
   await waitForStopTable(page);
 
   await page.locator(stopQa('row', RAIL_LINE_ID, 'rail:union-station')).click();
+  await expect(page.locator('[data-qa="stop-series"]')).toBeVisible();
   expect(page.url()).toContain('stop=');
 
   await page.locator('[data-qa="stop-clear-all"]').click();
@@ -144,18 +178,10 @@ test('stop panel — clicking the selected row deselects it', async ({
   const row = page.locator(stopQa('row', RAIL_LINE_ID, 'rail:union-station'));
 
   await row.click();
-  await expect(
-    page.locator(
-      `${stopQa('select', RAIL_LINE_ID, 'rail:union-station')} [role="checkbox"]`,
-    ),
-  ).toHaveAttribute('data-state', 'checked');
+  await expect(page.locator('[data-qa="stop-series"]')).toBeVisible();
 
   await row.click();
-  await expect(
-    page.locator(
-      `${stopQa('select', RAIL_LINE_ID, 'rail:union-station')} [role="checkbox"]`,
-    ),
-  ).toHaveAttribute('data-state', 'unchecked');
+  await expect(page.locator('[data-qa="stop-series"]')).toHaveCount(0);
 });
 
 /** The checkbox sits inside a row that is itself a toggle, so one click must toggle once. */
@@ -173,10 +199,12 @@ test('stop panel — a row checkbox toggles once, not twice', async ({
   await checkbox.click();
 
   await expect(checkbox).toHaveAttribute('data-state', 'checked');
+  await expect(page.locator('[data-qa="stop-series"]')).toBeVisible();
 
   await checkbox.click();
 
   await expect(checkbox).toHaveAttribute('data-state', 'unchecked');
+  await expect(page.locator('[data-qa="stop-series"]')).toHaveCount(0);
 });
 
 /** Select All reaches every listed row; Clear All reaches everything. */
@@ -191,6 +219,9 @@ test('stop panel — Select All checks every listed row', async ({ page }) => {
       '[data-qa^="stop-select-"] [role="checkbox"][data-state="checked"]',
     ),
   ).toHaveCount(3);
+  await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
+    '3 stops',
+  );
 
   await page.locator('[data-qa="stop-clear-all"]').click();
 
@@ -223,11 +254,9 @@ test('stop panel — the search narrows the table and scopes Select All', async 
 
   await page.locator('[data-qa="stop-select-all"]').click();
 
-  await expect(
-    page.locator(
-      '[data-qa^="stop-select-"] [role="checkbox"][data-state="checked"]',
-    ),
-  ).toHaveCount(1);
+  await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
+    '1 stop',
+  );
 });
 
 /** The column paints rather than only reserving space, once scrolled into view. */

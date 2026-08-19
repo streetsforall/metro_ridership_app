@@ -39,7 +39,7 @@ because tests that touch the date bounds need `virtual:ridership-bounds` to reso
 
 ## Visual regression
 
-Playwright screenshots the app and compares against committed baselines. **Eleven specs, 51 Linux
+Playwright screenshots the app and compares against committed baselines. **Eleven specs, 53 Linux
 baselines.** A twelfth, [`chart-interaction.spec.ts`](../../e2e/chart-interaction.spec.ts), shoots
 nothing — the chart's interactive layer is an HTML tooltip and DOM attributes, so it is asserted
 rather than captured. [`stop-fixtures.ts`](../../e2e/stop-fixtures.ts) is not a spec either — it is
@@ -89,7 +89,7 @@ identical script.
 | [`responsive-tablet.spec.ts`](../../e2e/responsive-tablet.spec.ts) | 768×1024 via a file-level `test.use`, not a fourth project | 2 |
 | [`table-view.spec.ts`](../../e2e/table-view.spec.ts) | sort chrome and ordering, a partial-coverage row (desktop) | 2 |
 | [`loading.spec.ts`](../../e2e/loading.spec.ts) | the output pane mid-fetch, and that a failed fetch doesn't crash (desktop) | 1 |
-| [`stop-panel.spec.ts`](../../e2e/stop-panel.spec.ts) | the stop panel — the ranked table, its trend column, the no-overlap empty state, plus the lazy-load gate and the covered-period button (no shots) | 4 |
+| [`stop-panel.spec.ts`](../../e2e/stop-panel.spec.ts) | the stop panel — the ranked table, a selected stop's series, the no-overlap empty state, plus the lazy-load gate and the covered-period button (no shots) | 6 |
 
 The map is masked out of every full-page shot, because a live MapLibre map over third-party tiles
 never renders identically twice.

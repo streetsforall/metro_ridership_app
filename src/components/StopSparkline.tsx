@@ -6,7 +6,10 @@ import { getLineColor } from '../utils/lines';
 import type { StopSeriesPoint } from '../utils/stopSeries';
 import type { StopMeasure } from '../@types/stops.types';
 
-/** One row's series at 40px — a shape, not a readout, drawn in its line's colour. */
+/**
+ * One row's series at 40px — a shape, not a readout, drawn in its line's colour because
+ * most rows have no selection colour to take (ADR-0014).
+ */
 
 export interface StopSparklineProps {
   series: readonly StopSeriesPoint[];

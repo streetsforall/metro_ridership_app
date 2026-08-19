@@ -5,6 +5,27 @@ import { makeLineReadout, makeStopPlace, makeStopRecord } from '../../test/build
 import { daysOfWeek } from '../../@types/metrics.types';
 import type { StopReadout, StopView } from '../../stops';
 
+/**
+ * The series chart is stubbed, but not as a pure sink: it writes out the `drawn` list it
+ * was given, because assembling that list in the right order is the panel's own work.
+ */
+vi.mock('../StopSeriesChart', async () => {
+  const actual = await vi.importActual<typeof import('../StopSeriesChart')>(
+    '../StopSeriesChart',
+  );
+  return {
+    ...actual,
+    default: ({ drawn }: { drawn: { stopName: string; lineName: string }[] }) => (
+      <canvas
+        data-qa="stop-series"
+        data-drawn={drawn
+          .map((stop) => `${stop.stopName} · ${stop.lineName}`)
+          .join('|')}
+      />
+    ),
+  };
+});
+
 /** The per-row sparkline, stubbed here only so it doesn't need a 2D context. */
 vi.mock('../StopSparkline', () => ({
   default: () => <canvas data-qa="stop-sparkline" />,
@@ -78,6 +99,20 @@ describe('StopPanel', () => {
     renderPanel({ onMeasureChange });
     fireEvent.click(screen.getByText('Alightings'));
     expect(onMeasureChange).toHaveBeenCalledWith('offs');
+  });
+
+  it('draws no series until a stop is selected', () => {
+    renderPanel();
+    expect(document.querySelector('[data-qa="stop-series"]')).toBeNull();
+  });
+
+  it('draws the selected stop’s series and names its line', () => {
+    renderPanel({ selectedStopKeys: ['bus:vermont-wilshire'] });
+    const chart = document.querySelector('[data-qa="stop-series"]');
+    expect(chart).toBeTruthy();
+    expect(chart?.getAttribute('data-drawn')).toBe(
+      'Vermont / Wilshire · Line 204',
+    );
   });
 
   it('toggles a stop from a table row', () => {
@@ -259,6 +294,23 @@ describe('StopPanel table chrome', () => {
     expect(screen.queryByText('Vermont / Santa Monica')).toBeTruthy();
   });
 
+  /**
+   * The search narrows the table, not the chart. Searching is how a reader finds the next
+   * stop to add, so losing the comparison they were already building would defeat it.
+   */
+  it('keeps a selected stop drawn after a search hides its row', () => {
+    renderPanel({
+      view: twoReadouts,
+      searchText: 'santa',
+      selectedStopKeys: ['bus:vermont-wilshire'],
+    });
+
+    expect(screen.queryByText('Vermont / Wilshire')).toBeNull();
+    expect(
+      document.querySelector('[data-qa="stop-series"]')?.getAttribute('data-drawn'),
+    ).toBe('Vermont / Wilshire · Line 204');
+  });
+
   it('offers Select All and Clear All rather than a Deselect Stop link', () => {
     renderPanel({ selectedStopKeys: ['bus:vermont-wilshire'] });
     expect(screen.getByRole('button', { name: 'Select All' })).toBeTruthy();
@@ -341,4 +393,139 @@ describe('StopPanel table chrome', () => {
       expect(className).toContain('text-[#0fada8]');
     },
   );
+});
+
+/**
+ * With several stops drawn there is no one name for the caption to write, so it counts and
+ * the chart's legend names each series beside the colour it belongs to.
+ */
+describe('StopPanel drawing several stops', () => {
+  const twoSelected = {
+    view: makeView({
+      readouts: [
+        makeStopReadout(),
+        makeStopReadout({
+          key: 'bus:vermont-santa-monica',
+          name: 'Vermont / Santa Monica',
+        }),
+      ],
+    }),
+  };
+
+  it('draws every selected stop, not only the first', () => {
+    renderPanel({
+      ...twoSelected,
+      selectedStopKeys: ['bus:vermont-wilshire', 'bus:vermont-santa-monica'],
+    });
+
+    expect(
+      document.querySelector('[data-qa="stop-series"]')?.getAttribute('data-drawn'),
+    ).toBe('Vermont / Wilshire · Line 204|Vermont / Santa Monica · Line 204');
+  });
+
+  /**
+   * Selection order, not rank. The chart takes a hue by position, so walking the readouts
+   * instead would recolour every series whenever the table was re-sorted.
+   */
+  it('draws them in selection order rather than table order', () => {
+    renderPanel({
+      ...twoSelected,
+      selectedStopKeys: ['bus:vermont-santa-monica', 'bus:vermont-wilshire'],
+    });
+
+    expect(
+      document.querySelector('[data-qa="stop-series"]')?.getAttribute('data-drawn'),
+    ).toBe('Vermont / Santa Monica · Line 204|Vermont / Wilshire · Line 204');
+  });
+
+  it('counts the stops in the caption rather than naming one', () => {
+    renderPanel({
+      ...twoSelected,
+      selectedStopKeys: ['bus:vermont-wilshire', 'bus:vermont-santa-monica'],
+    });
+
+    expect(
+      document.querySelector('[data-qa="stop-series-figure"]')?.textContent,
+    ).toContain('2 stops');
+  });
+
+  it('writes the singular for one stop', () => {
+    renderPanel({ selectedStopKeys: ['bus:vermont-wilshire'] });
+    expect(
+      document.querySelector('[data-qa="stop-series-figure"]')?.textContent,
+    ).toContain('1 stop');
+  });
+
+  it('ignores a selected key no readout matches', () => {
+    renderPanel({ selectedStopKeys: ['rail:nowhere'] });
+    expect(document.querySelector('[data-qa="stop-series"]')).toBeNull();
+  });
+});
+
+/**
+ * One stop, two selected lines — the case the whole Stop Selection term exists to pin down.
+ *
+ * The data's grain is stop × line, so this stop has two readouts and two genuinely
+ * different sets of figures. It is picked **once** and drawn **twice**, and collapsing the
+ * two would mean summing across lines, which is the rollup this project does not derive.
+ */
+describe('StopPanel drawing one stop on two lines', () => {
+  const sharedStop = {
+    lines: [
+      makeLineReadout({ id: 204, name: 'Line 204', mode: 'Bus' }),
+      makeLineReadout({ id: 206, name: 'Line 206', mode: 'Bus' }),
+    ],
+    view: makeView({
+      readouts: [
+        makeStopReadout({ line_name: 204 }),
+        makeStopReadout({ line_name: 206 }),
+      ],
+    }),
+    selectedStopKeys: ['bus:vermont-wilshire'],
+  };
+
+  it('draws one series per line the stop is served by', () => {
+    renderPanel(sharedStop);
+    expect(
+      document.querySelector('[data-qa="stop-series"]')?.getAttribute('data-drawn'),
+    ).toBe('Vermont / Wilshire · Line 204|Vermont / Wilshire · Line 206');
+  });
+
+  /**
+   * The caption counts stops, and there is one. Counting `drawn` would tell a reader they
+   * had picked two stops when they had picked one.
+   */
+  it('counts the stop once, not once per line', () => {
+    renderPanel(sharedStop);
+    const caption = document.querySelector(
+      '[data-qa="stop-series-figure"]',
+    )?.textContent;
+
+    expect(caption).toContain('1 stop');
+    expect(caption).not.toContain('2 stops');
+  });
+
+  /** And says how many series, since one stop drawing two lines would otherwise puzzle. */
+  it('names the series count when it differs from the stop count', () => {
+    renderPanel(sharedStop);
+    expect(
+      document.querySelector('[data-qa="stop-series-figure"]')?.textContent,
+    ).toContain('2 series');
+  });
+
+  it('says nothing about series when the two counts agree', () => {
+    renderPanel({ selectedStopKeys: ['bus:vermont-wilshire'] });
+    expect(
+      document.querySelector('[data-qa="stop-series-figure"]')?.textContent,
+    ).not.toContain('series');
+  });
+
+  /* Both rows check, because selection is by stop and both rows are that stop. */
+  it('checks every row the stop occupies', () => {
+    renderPanel(sharedStop);
+    const checked = document.querySelectorAll(
+      '[data-qa^="stop-select-"] [role="checkbox"][data-state="checked"]',
+    );
+    expect(checked).toHaveLength(2);
+  });
 });
