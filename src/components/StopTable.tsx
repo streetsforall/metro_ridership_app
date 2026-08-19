@@ -1,9 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
-import * as Checkbox from '@radix-ui/react-checkbox';
-import StopSparkline from './StopSparkline';
-import checkIcon from '../assets/check.svg';
+import StopTableRow, { ALIGN_CLASS } from './StopTableRow';
 import { useVisibleRows } from '../hooks/useVisibleRows';
-import { formatRiders, formatShare } from '../utils/figures';
 import type { LineReadout } from '../ridership';
 import type { StopReadout } from '../stops';
 import type { StopSeriesIndex } from '../utils/stopSeries';
@@ -18,6 +15,11 @@ import type { StopMeasure } from '../@types/stops.types';
  *
  * Every number comes off a Stop Readout that `buildStopView` derived; nothing is
  * recomputed here.
+ *
+ * A row lives in `StopTableRow` and is memoised there. This component re-renders on
+ * every IntersectionObserver batch, because that is where `useVisibleRows` keeps its
+ * state, so the props below have to stay reference-stable or the memo never holds and
+ * all ~800 rows reconcile on each notification.
  */
 
 type SortKey =
@@ -60,10 +62,16 @@ type Column = ColumnBase &
 type SortableColumn = Extract<Column, { kind: 'sortable' }>;
 
 /**
- * Spelled out rather than interpolated: Tailwind scans source text for whole class names,
- * so a `text-${align}` template produces a class that is never generated.
+ * A row's identity, and React's key for it: the line id and the stop key together.
+ *
+ * The line has to be in it because a stop serving two selected lines is two rows, and a
+ * stop key alone would name them both. Keying by this is also what lets a re-sort
+ * re-parent an already-mounted sparkline instead of remounting it. `useVisibleRows` is
+ * asked by the same string, and `StopTableRow` suffixes each of its `data-qa` names
+ * with it.
  */
-const ALIGN_CLASS = { left: 'text-left', right: 'text-right' } as const;
+const rowKey = (readout: StopReadout): string =>
+  `${String(readout.line_name)}-${readout.key}`;
 
 const AVERAGE_TITLE =
   'Averaged over this stop’s own reported months inside the selected period.';
@@ -147,7 +155,14 @@ export interface StopTableProps {
   lines: readonly LineReadout[];
   /** The Stop Selection. Every row whose key is in it is checked and highlighted. */
   selectedStopKeys: readonly string[];
-  /** A row click or its checkbox toggles that stop, as a map circle does. */
+  /**
+   * A row click or its checkbox toggles that stop, as a map circle does.
+   *
+   * **Must be stable across renders**, as must `readouts`, `lines` and `seriesIndex`:
+   * every row is memoised on the props it is handed, so a fresh callback per render
+   * would re-render all ~800 of them on every observer notification. The dashboard's
+   * mutators are `useCallback`ed in `useUserDashboardInput` for this reason.
+   */
   onToggleStop: (stopKey: string) => void;
   /** Every row's series, from one pass over the records. See `buildStopSeriesIndex`. */
   seriesIndex: StopSeriesIndex;
@@ -276,102 +291,22 @@ export default function StopTable({
 
         <tbody>
           {sorted.map((readout) => {
-            const isSelected = selected.has(readout.key);
-            /* The row's identity needs the line in it: a stop serving two selected lines
-               is two rows, and a stop key alone would name them both. React keys by this,
-               so a re-sort re-parents an already-mounted sparkline rather than remounting
-               it, and every `data-qa` below is suffixed with it. */
-            const rowKey = `${readout.line_name}-${readout.key}`;
-            const lineName =
-              lineNames.get(readout.line_name) ?? String(readout.line_name);
-            /* One toggle for both routes in — the row and its checkbox. Whether this adds
-               or removes is the selection's question, asked of the hook. */
-            const toggle = (): void => onToggleStop(readout.key);
-
+            const key = rowKey(readout);
             return (
-              /* The whole row is a click target, but **not a tab stop**. The checkbox
-                 inside it is the keyboard route, as it is in `LineTableRow`: focusing
-                 both would put ~1600 stops in an 800-row table and announce every row
-                 twice, and the row itself carries no role saying it is actionable.
-
-                 No `aria-current` either — it means "the current item in a set", which
-                 several selected rows are not. The checkbox's checked state says a row is
-                 selected, in the one place a reader looks for that answer. */
-              <tr
-                key={rowKey}
-                data-qa={`stop-row-${rowKey}`}
-                onClick={toggle}
-                className={`cursor-pointer ${
-                  isSelected ? 'bg-stone-200' : 'even:bg-[rgba(0,0,0,0.05)]'
-                }`}
-              >
-                {/* The row's only visible statement of whether it is selected, and the
-                    one route in from the keyboard.
-
-                    No `id`: the accessible name comes from `aria-label` here rather than
-                    from a `<label htmlFor>` as the line table's does. */}
-                <td data-qa={`stop-select-${rowKey}`} className="w-10">
-                  <Checkbox.Root
-                    aria-label={`${readout.name} · ${lineName}`}
-                    checked={isSelected}
-                    onClick={(event) => {
-                      // The row is a click target too, so without this one click would
-                      // toggle twice and land back where it started.
-                      event.stopPropagation();
-                      toggle();
-                    }}
-                    className="flex items-center justify-center bg-white data-[state=checked]:bg-[#033056] mx-auto rounded p-0 h-5 w-5"
-                  >
-                    <Checkbox.Indicator>
-                      <img
-                        src={checkIcon}
-                        height={20}
-                        width={20}
-                        alt="Check"
-                        className="recolor-white"
-                      />
-                    </Checkbox.Indicator>
-                  </Checkbox.Root>
-                </td>
-
-                <td className="py-2">{readout.name}</td>
-                <td className="whitespace-nowrap">{lineName}</td>
-                <td className={ALIGN_CLASS.right}>
-                  {formatRiders(readout.averageBoardings)}
-                </td>
-                <td className={ALIGN_CLASS.right}>
-                  {formatRiders(readout.averageAlightings)}
-                </td>
-                <td className={ALIGN_CLASS.right}>
-                  {formatRiders(readout.netAverage)}
-                </td>
-                <td className={ALIGN_CLASS.right}>
-                  {formatShare(readout.shareOfLine)}
-                </td>
-
-                {/* The observed box is the whole cell, so the ref goes here. The cell has
-                    no accessible text on purpose: a canvas is opaque to assistive tech
-                    regardless, and the figures beside it carry the information. */}
-                <td
-                  data-qa={`stop-sparkline-${rowKey}`}
-                  ref={visibleRows.observe(rowKey)}
-                >
-                  {/* The same box whether or not the chart has mounted, so a sparkline
-                      arriving never moves the rows below it. */}
-                  <div className="h-10 w-52">
-                    {visibleRows.isVisible(rowKey) && (
-                      <StopSparkline
-                        series={seriesIndex.seriesFor(
-                          readout.key,
-                          readout.line_name,
-                        )}
-                        measure={measure}
-                        lineId={readout.line_name}
-                      />
-                    )}
-                  </div>
-                </td>
-              </tr>
+              <StopTableRow
+                key={key}
+                rowKey={key}
+                readout={readout}
+                lineName={
+                  lineNames.get(readout.line_name) ?? String(readout.line_name)
+                }
+                isSelected={selected.has(readout.key)}
+                isVisible={visibleRows.isVisible(key)}
+                seriesIndex={seriesIndex}
+                measure={measure}
+                onToggleStop={onToggleStop}
+                observe={visibleRows.observe(key)}
+              />
             );
           })}
         </tbody>
