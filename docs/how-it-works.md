@@ -160,9 +160,9 @@ These are the things that look like bugs and aren't.
 ## Stop-level ridership
 
 Everything above is per **line**. `src/stops/` is the same shape one grain down, per **Stop Place**,
-and it is a second sealed module for the reason the first one is: every reader of the stop grain
-reads one derivation, so the stop-key ↔ coordinate join and the Month Window filter must happen in
-one place or two readers disagree about which stops exist and which months are on screen.
+and it is a second sealed module for the reason the first one is: the ranked table and the per-stop
+series read one derivation, so the stop-key ↔ coordinate join and the Month Window filter must
+happen in one place or two readers disagree about which stops exist and which months are on screen.
 
 **One call again.** `buildStopView({ records, places, lineIds, startDate, endDate, dayOfWeek,
 measure })` returns `{ months, readouts, markers, coverage }`. `markers` is a GeoJSON

@@ -118,6 +118,7 @@ export default function OutputArea({
 
   const {
     view: stopView,
+    records: stopRecords,
     isLoading: isStopLoading,
     hasFailed: stopsFailed,
   } = useStopView({
@@ -229,9 +230,11 @@ export default function OutputArea({
         <StopPanel
           view={stopView}
           windowMonths={windowMonths}
+          records={stopRecords}
           isLoading={isStopLoading}
           hasFailed={stopsFailed}
           lines={selectedLines}
+          dayOfWeek={dayOfWeek}
           measure={stopMeasure}
           onMeasureChange={onStopMeasureChange}
           selectedStopKeys={selectedStopKeys}
