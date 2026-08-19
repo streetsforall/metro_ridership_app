@@ -4,6 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import type { LineReadout } from '../ridership';
 import type { StopReadout, StopView } from '../stops';
 import type { StopMeasure } from '../@types/stops.types';
+import { NO_SELECTED_STOPS } from '../utils/stopDefaults';
 import { buildPopupHTML, buildStopPopupHTML } from '../utils/mapPopup';
 import './Map.css';
 
@@ -52,14 +53,20 @@ const MEASURE_PAINT: Record<
 const SELECTED_STROKE_COLOR = '#033056';
 const SELECTED_STROKE_WIDTH = 3;
 
-/** Shared defaults, so each prop's identity is stable between renders. */
+/** Shared default, so this prop's identity is stable between renders. */
 const NO_READOUTS: readonly StopReadout[] = [];
-const NO_SELECTED_STOPS: readonly string[] = [];
+
+/** Which lines are selected — asked by the route layer, the stop layer and `load`. */
+const selectedLineIds = (lines: readonly LineReadout[]): number[] =>
+  lines.filter((line) => line.selected).map((line) => line.id);
+
+/** A layer-scoped pointer event, which carries the features under the cursor. */
+type LayerMouseEvent = maplibregl.MapMouseEvent & {
+  features?: maplibregl.MapGeoJSONFeature[];
+};
 
 /** The selected-lines filter, shared by the route layer and the stop layer. */
-const selectedFilter = (
-  ids: number[],
-): maplibregl.FilterSpecification => [
+const selectedFilter = (ids: number[]): maplibregl.FilterSpecification => [
   'in',
   ['get', 'line_id'],
   ['literal', ids],
@@ -201,7 +208,6 @@ interface MapProps {
   onToggleStop?: (stopKey: string) => void;
 }
 
-
 export default function Map({
   lines,
   stopMarkers = NO_MARKERS,
@@ -213,23 +219,20 @@ export default function Map({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const isStyleLoaded = useRef(false);
-  const linesRef = useRef<LineReadout[]>(lines);
   /**
-   * Read by the layer's event handlers, which are registered once inside `load` and
-   * therefore close over the first render's props. Refs are how the existing line
-   * hover already stays current; the stop handlers follow it rather than inventing a
-   * second pattern.
+   * The props as of this render, for the layers' handlers to read.
+   *
+   * Every handler below is registered once, inside `load`, so it closes over the first
+   * render's props; and `load` fires whenever MapLibre finishes its style, which can be
+   * several renders later. Each ref is assigned here in the render body rather than in an
+   * effect, because `load` is a MapLibre event that can fire before React flushes one.
    */
+  const linesRef = useRef<LineReadout[]>(lines);
+  linesRef.current = lines;
   const stopReadoutsRef = useRef<readonly StopReadout[]>(stopReadouts);
+  stopReadoutsRef.current = stopReadouts;
   const onToggleStopRef = useRef(onToggleStop);
   onToggleStopRef.current = onToggleStop;
-  /**
-   * The stop props as of this render, for `load` to apply.
-   *
-   * `load` fires whenever MapLibre finishes its style, which can be after several
-   * renders — reading the props it closed over would paint the panel's first state
-   * rather than its current one.
-   */
   const stopMarkersRef = useRef(stopMarkers);
   stopMarkersRef.current = stopMarkers;
   const stopMeasureRef = useRef(stopMeasure);
@@ -307,11 +310,7 @@ export default function Map({
 
       let hoveredId: string | number | undefined;
 
-      const onMouseMove = (
-        e: maplibregl.MapMouseEvent & {
-          features?: maplibregl.MapGeoJSONFeature[];
-        },
-      ) => {
+      const onMouseMove = (e: LayerMouseEvent) => {
         if (!e.features?.length) return;
 
         map.current!.getCanvas().style.cursor = 'pointer';
@@ -333,7 +332,9 @@ export default function Map({
         const lineData = linesRef.current.find((l) => l.id === lineId);
         popup
           .setLngLat(e.lngLat)
-          .setHTML(buildPopupHTML(e.features[0].properties.name as string, lineData))
+          .setHTML(
+            buildPopupHTML(e.features[0].properties.name as string, lineData),
+          )
           .addTo(map.current!);
       };
 
@@ -366,11 +367,7 @@ export default function Map({
        * event time. Registering once, in `load`, is what keeps the handler count fixed
        * however often the panel is opened and closed.
        */
-      const onStopMouseMove = (
-        e: maplibregl.MapMouseEvent & {
-          features?: maplibregl.MapGeoJSONFeature[];
-        },
-      ) => {
+      const onStopMouseMove = (e: LayerMouseEvent) => {
         const feature = e.features?.[0];
         if (!feature) return;
 
@@ -416,9 +413,7 @@ export default function Map({
       });
 
       // Apply initial selection state
-      const selectedIds = linesRef.current
-        .filter((l) => l.selected)
-        .map((l) => l.id);
+      const selectedIds = selectedLineIds(linesRef.current);
       map.current!.setFilter('lines-selected', selectedFilter(selectedIds));
       syncStopLayer(map.current!, {
         markers: stopMarkersRef.current,
@@ -441,10 +436,11 @@ export default function Map({
 
   // Sync selected lines with the route layer's filter whenever selection changes.
   useEffect(() => {
-    linesRef.current = lines;
     if (!isStyleLoaded.current) return;
-    const selectedIds = lines.filter((l) => l.selected).map((l) => l.id);
-    map.current?.setFilter('lines-selected', selectedFilter(selectedIds));
+    map.current?.setFilter(
+      'lines-selected',
+      selectedFilter(selectedLineIds(lines)),
+    );
   }, [lines]);
 
   /**
@@ -455,19 +451,18 @@ export default function Map({
    * through three effects — and the layer they apply to may not exist yet, which is a
    * condition only one of them should have to know about.
    *
-   * `stopReadouts` is a ref update rather than a paint: the popup handler reads it at
-   * event time.
+   * `stopReadouts` is not among them: the popup handler reads it from a ref at event
+   * time, so a change to it paints nothing and must not re-upload the source.
    */
   useEffect(() => {
-    stopReadoutsRef.current = stopReadouts;
     if (!isStyleLoaded.current || !map.current) return;
     syncStopLayer(map.current, {
       markers: stopMarkers,
-      selectedLineIds: lines.filter((l) => l.selected).map((l) => l.id),
+      selectedLineIds: selectedLineIds(lines),
       measure: stopMeasure,
       selectedStopKeys,
     });
-  }, [stopMarkers, stopReadouts, stopMeasure, selectedStopKeys, lines]);
+  }, [stopMarkers, stopMeasure, selectedStopKeys, lines]);
 
   return <div id="lineMap" ref={mapContainer} />;
 }

@@ -12,9 +12,7 @@ import type { LineReadout } from '../ridership';
 import type { TransitEvent } from '../@types/events.types';
 import type { DayOfWeek } from '../@types/metrics.types';
 import type { StopMeasure } from '../@types/stops.types';
-
-/** Shared default, so an unselected panel's prop identity is stable between renders. */
-const NO_SELECTED_STOPS: readonly string[] = [];
+import { NO_SELECTED_STOPS } from '../utils/stopDefaults';
 
 interface OutputAreaProps {
   chartDatasets: ChartDataset<'line', CustomChartData[]>[];
@@ -174,7 +172,8 @@ export default function OutputArea({
     if (pinnedMonth === null) return;
 
     const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setPinnedMonth(null);
+      if (!rootRef.current?.contains(event.target as Node))
+        setPinnedMonth(null);
     };
 
     document.addEventListener('pointerdown', onPointerDown);
@@ -200,7 +199,11 @@ export default function OutputArea({
           id="output-placeholder"
           className="pane flex-1 flex items-center justify-center text-sm text-stone-400"
         >
-          <p>{isLoading ? 'Loading ridership data…' : 'Please select a Metro line.'}</p>
+          <p>
+            {isLoading
+              ? 'Loading ridership data…'
+              : 'Please select a Metro line.'}
+          </p>
         </div>
       )}
 
