@@ -14,6 +14,17 @@ import type { DayOfWeek } from '../@types/metrics.types';
 import type { StopMeasure } from '../@types/stops.types';
 import { NO_SELECTED_STOPS } from '../utils/stopDefaults';
 
+/**
+ * The stand-in for an absent stop handler.
+ *
+ * `StopPanel` declares its five callbacks non-optional while they arrive here optional,
+ * and the gap used to be closed by wrapping each in an arrow at the call site. That made
+ * five new functions per render of this component, which is what a `React.memo` on a stop
+ * row would have had to survive — it could not. One module-level no-op closes the same gap
+ * with an identity that never changes.
+ */
+const noop = (): void => {};
+
 interface OutputAreaProps {
   chartDatasets: ChartDataset<'line', CustomChartData[]>[];
   months: string[];
@@ -66,13 +77,13 @@ export default function OutputArea({
   onRangeSelect,
   showStops = false,
   stopMeasure = 'ons',
-  onStopMeasureChange,
+  onStopMeasureChange = noop,
   selectedStopKeys = NO_SELECTED_STOPS,
-  onToggleStop,
-  onClearStops,
-  onSelectAllStops,
+  onToggleStop = noop,
+  onClearStops = noop,
+  onSelectAllStops = noop,
   stopSearchText = '',
-  onStopSearchTextChange,
+  onStopSearchTextChange = noop,
   startDate,
   endDate,
   dayOfWeek,
@@ -265,13 +276,13 @@ export default function OutputArea({
           lines={selectedLines}
           dayOfWeek={dayOfWeek}
           measure={stopMeasure}
-          onMeasureChange={(measure) => onStopMeasureChange?.(measure)}
+          onMeasureChange={onStopMeasureChange}
           selectedStopKeys={selectedStopKeys}
-          onToggleStop={(stopKey) => onToggleStop?.(stopKey)}
-          onClearStops={() => onClearStops?.()}
-          onSelectAllStops={(stopKeys) => onSelectAllStops?.(stopKeys)}
+          onToggleStop={onToggleStop}
+          onClearStops={onClearStops}
+          onSelectAllStops={onSelectAllStops}
           searchText={stopSearchText}
-          onSearchTextChange={(text) => onStopSearchTextChange?.(text)}
+          onSearchTextChange={onStopSearchTextChange}
           onUseCoverageWindow={useCoverageWindow}
         />
       )}

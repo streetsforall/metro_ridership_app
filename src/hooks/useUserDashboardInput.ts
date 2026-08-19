@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getLineNames, lineNameSortFunction } from '../utils/lines';
 import {
   parseMonthParam,
@@ -214,12 +214,23 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     stopSearchText,
   ]);
 
+  /*
+   * Every mutator below is wrapped in `useCallback` with an empty dependency list.
+   *
+   * Each closes over nothing but a `useState` setter, which React already keeps stable,
+   * so the wrapper costs nothing and buys a stable identity all the way down. That
+   * matters because these are the dashboard's whole callback surface: App hands them
+   * straight to `OutputArea`, which hands them to `StopPanel` and `StopTable`, and a
+   * `React.memo` on a row is worth nothing while the callback it receives is a new
+   * function on every render. The ~800-row stop table is where that bill comes due.
+   */
+
   /**
    * Select every row the table is currently showing, on top of whatever is already
    * selected. The hook cannot re-derive which rows those are — the rule needs Line
    * Readouts, which live in App — so it takes the displayed ids instead.
    */
-  const selectAllListedLines = (ids: number[]): void => {
+  const selectAllListedLines = useCallback((ids: number[]): void => {
     const listed = new Set(ids);
     setLines((prevLines) =>
       prevLines.map((prevLine) => ({
@@ -227,9 +238,9 @@ const useUserDashboardInput = (): UserDashboardInputState => {
         selected: listed.has(prevLine.id) || prevLine.selected,
       })),
     );
-  };
+  }, []);
 
-  const onToggleSelectLine = (line: Line): void => {
+  const onToggleSelectLine = useCallback((line: Line): void => {
     setLines((prevLines: Line[]) => {
       const updatedLines = [...prevLines];
 
@@ -243,15 +254,15 @@ const useUserDashboardInput = (): UserDashboardInputState => {
 
       return updatedLines;
     });
-  };
+  }, []);
 
-  const clearSelections = (): void => {
+  const clearSelections = useCallback((): void => {
     setLines((prevLines: Line[]): Line[] => {
       return prevLines.map((prevLine) => {
         return { ...prevLine, selected: false } as Line;
       });
     });
-  };
+  }, []);
 
   /**
    * The Stop Selection's three mutators, deliberately the same three the lines have and
@@ -263,40 +274,40 @@ const useUserDashboardInput = (): UserDashboardInputState => {
    * differently. Nothing here is capped, for the same reason nothing there is: the search
    * is what narrows `Select All`, so a reader who wants a corridor searches for it first.
    */
-  const selectAllListedStops = (keys: string[]): void => {
+  const selectAllListedStops = useCallback((keys: string[]): void => {
     setSelectedStopKeys((prevKeys) => {
       const selected = new Set(prevKeys);
       // Appended in listed order, after what was already selected, because a colour is
       // assigned per position and an insertion in the middle would recolour the rest.
       return [...prevKeys, ...keys.filter((key) => !selected.has(key))];
     });
-  };
+  }, []);
 
-  const onToggleSelectStop = (key: string): void => {
+  const onToggleSelectStop = useCallback((key: string): void => {
     setSelectedStopKeys((prevKeys) =>
       prevKeys.includes(key)
         ? prevKeys.filter((prevKey) => prevKey !== key)
         : [...prevKeys, key],
     );
-  };
+  }, []);
 
-  const clearStopSelections = (): void => {
+  const clearStopSelections = useCallback((): void => {
     setSelectedStopKeys([]);
-  };
+  }, []);
 
-  const toggleIsAggregateVisible = (): void => {
+  const toggleIsAggregateVisible = useCallback((): void => {
     setIsAggregateVisible(
       (prevIsAggregateVisible: boolean) => !prevIsAggregateVisible,
     );
-  };
+  }, []);
 
-  const toggleShowContextLogs = (): void => {
+  const toggleShowContextLogs = useCallback((): void => {
     setShowContextLogs((prevShowContextLogs: boolean) => !prevShowContextLogs);
-  };
+  }, []);
 
-  const toggleShowStops = (): void => {
+  const toggleShowStops = useCallback((): void => {
     setShowStops((prevShowStops: boolean) => !prevShowStops);
-  };
+  }, []);
 
   return {
     startDate,

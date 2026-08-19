@@ -643,3 +643,49 @@ describe('selectAllListedLines', () => {
     expect(result.current.lines.find((l) => l.id === 802)?.selected).toBe(true);
   });
 });
+
+/**
+ * The mutators are the dashboard's callback surface, and everything downstream that
+ * memoises is memoising on their identity — the ~800-row stop table above all, whose
+ * rows re-render whenever the callback they are handed is a new function. These tests
+ * are what stops a later edit turning one back into a plain declaration.
+ */
+describe('mutator identity', () => {
+  const mutators = [
+    'onToggleSelectLine',
+    'clearSelections',
+    'selectAllListedLines',
+    'onToggleSelectStop',
+    'clearStopSelections',
+    'selectAllListedStops',
+    'toggleIsAggregateVisible',
+    'toggleShowContextLogs',
+    'toggleShowStops',
+  ] as const;
+
+  it('hands back the same function across a re-render', () => {
+    const { result, rerender } = renderHook(() => useUserDashboardInput());
+    const before = result.current;
+
+    rerender();
+
+    for (const name of mutators)
+      expect(result.current[name], name).toBe(before[name]);
+  });
+
+  /** The harder case: identity has to survive the state changes the mutators cause. */
+  it('hands back the same function after the state it sets has changed', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+    const before = result.current;
+
+    act(() => {
+      result.current.onToggleSelectStop('bus:vermont-wilshire');
+    });
+    act(() => {
+      result.current.toggleShowStops();
+    });
+
+    for (const name of mutators)
+      expect(result.current[name], name).toBe(before[name]);
+  });
+});
