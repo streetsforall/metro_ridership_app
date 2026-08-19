@@ -3,6 +3,7 @@ import * as Checkbox from '@radix-ui/react-checkbox';
 import StopSparkline from './StopSparkline';
 import checkIcon from '../assets/check.svg';
 import { useVisibleRows } from '../hooks/useVisibleRows';
+import { formatRiders, formatShare } from '../utils/figures';
 import type { LineReadout } from '../ridership';
 import type { StopReadout } from '../stops';
 import type { StopSeriesIndex } from '../utils/stopSeries';
@@ -11,14 +12,12 @@ import type { StopMeasure } from '../@types/stops.types';
 /**
  * The ranked stop table — the panel's **primary** readout.
  *
- * It answers "which stops carry this line" without the reader ever touching the map,
- * which is how the rest of the dashboard behaves: the line table is the primary view
- * of line ridership and the map highlights it. A map-click-only stop view would make
- * this the one figure in the app you have to hunt for.
+ * It answers "which stops carry this line" without the reader touching the map, which is
+ * how the rest of the dashboard behaves. A map-click-only stop view would make this the
+ * one figure in the app you have to hunt for.
  *
- * Every number here comes off a Stop Readout that `buildStopView` derived. Nothing is
- * recomputed, including the share of line, which needs every stop on the line and so
- * cannot be derived from a row.
+ * Every number comes off a Stop Readout that `buildStopView` derived; nothing is
+ * recomputed here.
  */
 
 type SortKey =
@@ -31,45 +30,47 @@ type SortKey =
 
 type SortDirection = 'asc' | 'desc';
 
+interface ColumnBase {
+  label: string;
+  align: 'left' | 'right';
+  /** Hover copy on the header. */
+  title?: string;
+}
+
 /**
- * A column is sortable, presentational, or the selection checkbox, and the type says which.
+ * A column is sortable, presentational, or the selection checkbox.
  *
- * Neither `select` nor `ridershipOverTime` is a field on a Stop Readout — each is a
- * column's identity and nothing more. Keeping them out of `SortKey` rather than adding a
- * boolean flag means "sort by the sparkline" is unrepresentable instead of merely a
- * no-op: the comparator below indexes a readout by `sort.key`, and the compiler is what
- * stops that ever being a key no readout has.
+ * Neither `select` nor `ridershipOverTime` is a field on a Stop Readout, so keeping them
+ * out of `SortKey` makes "sort by the sparkline" unrepresentable rather than a no-op: the
+ * comparator indexes a readout by `sort.key`, and the compiler is what stops that ever
+ * being a key no readout has.
  */
-type Column =
-  | {
-      kind: 'sortable';
-      key: SortKey;
-      label: string;
-      align: 'left' | 'right';
-      /** Which way a first click on this header sorts. Figures rank high-first. */
-      initialDirection: SortDirection;
-      title?: string;
-    }
-  | {
-      kind: 'presentational';
-      key: 'ridershipOverTime';
-      label: string;
-      align: 'left' | 'right';
-      title?: string;
-    }
-  | {
-      kind: 'select';
-      key: 'select';
-      label: string;
-      align: 'left' | 'right';
-      title?: string;
-    };
+type Column = ColumnBase &
+  (
+    | {
+        kind: 'sortable';
+        key: SortKey;
+        /** Which way a first click sorts. Figures rank high-first. */
+        initialDirection: SortDirection;
+      }
+    | { kind: 'presentational'; key: 'ridershipOverTime' }
+    | { kind: 'select'; key: 'select' }
+  );
 
 type SortableColumn = Extract<Column, { kind: 'sortable' }>;
 
 /**
- * **Boardings and Alightings**, never "ons"/"offs" — `CONTEXT.md`'s vocabulary, and
- * these strings are the reader's only exposure to it.
+ * Spelled out rather than interpolated: Tailwind scans source text for whole class names,
+ * so a `text-${align}` template produces a class that is never generated.
+ */
+const ALIGN_CLASS = { left: 'text-left', right: 'text-right' } as const;
+
+const AVERAGE_TITLE =
+  'Averaged over this stop’s own reported months inside the selected period.';
+
+/**
+ * **Boardings and Alightings**, never "ons"/"offs" — `CONTEXT.md`'s vocabulary, and these
+ * strings are the reader's only exposure to it.
  */
 const columns: Column[] = [
   {
@@ -100,8 +101,7 @@ const columns: Column[] = [
     label: 'Avg. Boardings',
     align: 'right',
     initialDirection: 'desc',
-    title:
-      'Averaged over this stop’s own reported months inside the selected period.',
+    title: AVERAGE_TITLE,
   },
   {
     kind: 'sortable',
@@ -109,8 +109,7 @@ const columns: Column[] = [
     label: 'Avg. Alightings',
     align: 'right',
     initialDirection: 'desc',
-    title:
-      'Averaged over this stop’s own reported months inside the selected period.',
+    title: AVERAGE_TITLE,
   },
   {
     kind: 'sortable',
@@ -118,9 +117,9 @@ const columns: Column[] = [
     label: 'Change',
     align: 'right',
     initialDirection: 'desc',
-    /* The tooltip carries more weight than the other columns' because the heading sits two
-       away from "Ridership over time", where "change" would naturally read as a trend. It
-       is not one: this is a net flow within each month, not a movement between months. */
+    /* Longer than its neighbours because the heading sits two columns from "Ridership
+       over time", where "change" would read as a trend. It is not one: this is a net flow
+       within each month, not a movement between them. */
     title:
       'Boardings less alightings — the net change in riders on board at this stop, within each month rather than between them. Negative where more riders get off than on, which is information rather than an error.',
   },
@@ -130,8 +129,7 @@ const columns: Column[] = [
     label: 'Share of line',
     align: 'right',
     initialDirection: 'desc',
-    title:
-      'This stop’s share of its line’s total under the current measure.',
+    title: 'This stop’s share of its line’s total under the current measure.',
   },
   {
     kind: 'presentational',
@@ -142,12 +140,6 @@ const columns: Column[] = [
       'This stop’s reported months across the selected period, under the current measure. A break is a month the stop did not report.',
   },
 ];
-
-const figure = (value: number | undefined): string =>
-  value === undefined ? '—' : Math.round(value).toLocaleString();
-
-const share = (value: number | undefined): string =>
-  value === undefined ? '—' : `${(value * 100).toFixed(1)}%`;
 
 export interface StopTableProps {
   readouts: readonly StopReadout[];
@@ -171,16 +163,14 @@ export default function StopTable({
   seriesIndex,
   measure,
 }: StopTableProps) {
-  /*
-   * The scroller is the sparklines' observation root, so it needs a ref it did not have
-   * before. See `useVisibleRows` for why the viewport will not do.
-   */
+  /* The scroller is the sparklines' observation root. See `useVisibleRows` for why the
+     viewport will not do. */
   const scroller = useRef<HTMLDivElement | null>(null);
   const visibleRows = useVisibleRows(scroller);
   /**
-   * Ranked high-first by boardings until the reader says otherwise. A table whose
-   * default order is "whatever the derivation emitted" is a list, not a ranking, and
-   * the whole point of this view is which stops carry the line.
+   * Ranked high-first by boardings until the reader says otherwise. A table ordered by
+   * "whatever the derivation emitted" is a list, not a ranking, and which stops carry the
+   * line is the point of this view.
    */
   const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection }>({
     key: 'averageBoardings',
@@ -192,11 +182,9 @@ export default function StopTable({
     [lines],
   );
 
-  /*
-   * A set, not `selectedStopKeys.includes` per row. Selection is uncapped and a five-line
-   * table is ~800 rows, so the array scan would be quadratic in exactly the case the
-   * feature invites — `Select All`, then read the table.
-   */
+  /* A set, not `selectedStopKeys.includes` per row. Selection is uncapped and a five-line
+     table is ~800 rows, so the array scan would be quadratic in exactly the case the
+     feature invites — `Select All`, then read the table. */
   const selected = useMemo(() => new Set(selectedStopKeys), [selectedStopKeys]);
 
   const sorted = useMemo(() => {
@@ -208,9 +196,9 @@ export default function StopTable({
         const nameB = lineNames.get(b.line_name) ?? String(b.line_name);
         return factor * nameA.localeCompare(nameB);
       }
-      // An absent figure sorts last in either direction rather than reading as zero:
-      // a stop with no figures did not report nobody (ADR-0004's contract at stop
-      // grain), so it must not out-rank one that reported a genuine 0.
+      // An absent figure sorts last in either direction rather than reading as zero: a
+      // stop with no figures did not report nobody (ADR-0004 at stop grain), so it must
+      // not out-rank one that reported a genuine 0.
       const valueA = a[sort.key];
       const valueB = b[sort.key];
       if (valueA === undefined) return valueB === undefined ? 0 : 1;
@@ -231,10 +219,9 @@ export default function StopTable({
   };
 
   return (
-    /* The list scrolls rather than the page. A five-line selection is up to ~800 rows
-       — nothing is truncated, because a silently capped table reads as a complete
-       ranking — so the cap is on height, and `sticky top-0` keeps the headers in view
-       once this element is the scroller. */
+    /* The list scrolls rather than the page. Nothing is truncated, because a silently
+       capped table reads as a complete ranking, so the cap is on height — and `sticky
+       top-0` keeps the headers in view once this element is the scroller. */
     <div className="max-h-[28rem] overflow-y-auto" ref={scroller}>
       <table className="text-sm w-full" data-qa="stop-table">
         <thead className="sticky top-0">
@@ -247,9 +234,9 @@ export default function StopTable({
                 <th
                   key={column.key}
                   title={column.title}
-                  /* Only on a sortable header. `aria-sort="none"` does not mean "not
-                     sortable" — it means "sortable, not currently sorted" — so putting
-                     it on the sparkline column would announce a control that isn't one. */
+                  /* Only on a sortable header. `aria-sort="none"` means "sortable, not
+                     currently sorted", so on the sparkline column it would announce a
+                     control that isn't one. */
                   aria-sort={
                     !isSortable
                       ? undefined
@@ -259,13 +246,10 @@ export default function StopTable({
                           : 'descending'
                         : 'none'
                   }
-                  /* Spelled out rather than interpolated: Tailwind scans source text for
-                     whole class names, so a `text-${align}` template produces a class
-                     that is never generated. */
                   className={`bg-stone-300 p-2 uppercase ${
                     isSortable ? 'cursor-pointer' : ''
                   } ${column.kind === 'select' ? 'w-10' : ''} ${
-                    column.align === 'right' ? 'text-right' : 'text-left'
+                    ALIGN_CLASS[column.align]
                   } ${
                     isSorted
                       ? sort.direction === 'asc'
@@ -273,15 +257,12 @@ export default function StopTable({
                         : 'headerSortDown'
                       : ''
                   }`}
-                  onClick={
-                    isSortable ? () => onHeaderClick(column) : undefined
-                  }
+                  onClick={isSortable ? () => onHeaderClick(column) : undefined}
                 >
-                  {/* The checkbox column's heading is named but not drawn. Its label is
-                      six characters against a 20px control, and a `w-10` cell cannot hold
-                      it — the text would widen the column and push an already-overflowing
-                      mobile table further sideways. `sr-only` keeps the accessible name,
-                      which is what `aria-sort`'s absence and the row labels rely on. */}
+                  {/* The checkbox column's heading is named but not drawn: six characters
+                      against a 20px control would widen a `w-10` cell and push an
+                      already-overflowing mobile table further sideways. `sr-only` keeps
+                      the accessible name. */}
                   {column.kind === 'select' ? (
                     <span className="sr-only">{column.label}</span>
                   ) : (
@@ -296,28 +277,25 @@ export default function StopTable({
         <tbody>
           {sorted.map((readout) => {
             const isSelected = selected.has(readout.key);
-            /* The row's identity, and it needs the line in it: a stop serving two
-               selected lines is two rows, and a stop key alone would name them both.
-               React keys by this, so a re-sort re-parents an already-mounted sparkline
-               rather than remounting it, and every `data-qa` below is suffixed with it
-               so a locator matches one row rather than two. */
+            /* The row's identity needs the line in it: a stop serving two selected lines
+               is two rows, and a stop key alone would name them both. React keys by this,
+               so a re-sort re-parents an already-mounted sparkline rather than remounting
+               it, and every `data-qa` below is suffixed with it. */
             const rowKey = `${readout.line_name}-${readout.key}`;
             const lineName =
               lineNames.get(readout.line_name) ?? String(readout.line_name);
-            /* One toggle for all three routes in — the row, the keyboard, the checkbox.
-               Whether this adds or removes is the selection's question, so it is asked
-               of the hook rather than answered again here. */
+            /* One toggle for all three routes in — row, keyboard, checkbox. Whether this
+               adds or removes is the selection's question, asked of the hook. */
             const toggle = (): void => onToggleStop(readout.key);
 
             return (
-              /* Selecting a stop is a click *or* a key press. A map circle is the
-                 only other route in and that one is mouse-only by nature, so without
-                 this the per-stop series would be unreachable from the keyboard.
+              /* Selecting a stop is a click *or* a key press. The only other route in is
+                 a map circle, which is mouse-only by nature, so without this the per-stop
+                 series would be unreachable from the keyboard.
 
-                 No `aria-current`: it means "the current item in a set", which is not
-                 what several selected rows are. The checkbox's own checked state is
-                 what now says a row is selected, and it says it in the one place a
-                 reader looks for that answer. */
+                 No `aria-current`: it means "the current item in a set", which several
+                 selected rows are not. The checkbox's checked state says a row is
+                 selected, in the one place a reader looks for that answer. */
               <tr
                 key={rowKey}
                 data-qa={`stop-row-${rowKey}`}
@@ -325,7 +303,7 @@ export default function StopTable({
                 onClick={toggle}
                 onKeyDown={(event) => {
                   if (event.key !== 'Enter' && event.key !== ' ') return;
-                  // Space scrolls the page otherwise, and the row is the thing being
+                  // Space would scroll the page otherwise, and the row is the thing being
                   // acted on rather than a page-level gesture.
                   event.preventDefault();
                   toggle();
@@ -334,20 +312,17 @@ export default function StopTable({
                   isSelected ? 'bg-stone-200' : 'even:bg-[rgba(0,0,0,0.05)]'
                 }`}
               >
-                {/* A second hit target for the row's own action, and the row's only
-                    visible statement of whether it is selected.
+                {/* A second hit target for the row's action, and the row's only visible
+                    statement of whether it is selected.
 
                     Both handlers stop propagating, because this cell sits inside a row
-                    that is itself a toggle: without them one click would toggle twice
-                    and land back where it started. The keyboard needs the same guard as
-                    the mouse — Radix renders a real `<button>`, so Space fires its click
-                    *and* bubbles a keydown to the row.
+                    that is itself a toggle: without them one click would toggle twice and
+                    land back where it started. The keyboard needs the same guard — Radix
+                    renders a real `<button>`, so Space fires its click *and* bubbles a
+                    keydown to the row.
 
-                    No `id`. The line table's checkbox needs one because its accessible
-                    name comes from a `<label htmlFor>` on the name cell; this one carries
-                    `aria-label` directly, so an id here would be an attribute nothing
-                    reads — and a stop key contains a `:`, which any `#`-selector would
-                    then have to escape for no gain. */}
+                    No `id`: the accessible name comes from `aria-label` here rather than
+                    from a `<label htmlFor>` as the line table's does. */}
                 <td data-qa={`stop-select-${rowKey}`} className="w-10">
                   <Checkbox.Root
                     aria-label={`${readout.name} · ${lineName}`}
@@ -373,19 +348,22 @@ export default function StopTable({
 
                 <td className="py-2">{readout.name}</td>
                 <td className="whitespace-nowrap">{lineName}</td>
-                <td className="text-right">
-                  {figure(readout.averageBoardings)}
+                <td className={ALIGN_CLASS.right}>
+                  {formatRiders(readout.averageBoardings)}
                 </td>
-                <td className="text-right">
-                  {figure(readout.averageAlightings)}
+                <td className={ALIGN_CLASS.right}>
+                  {formatRiders(readout.averageAlightings)}
                 </td>
-                <td className="text-right">{figure(readout.netAverage)}</td>
-                <td className="text-right">{share(readout.shareOfLine)}</td>
+                <td className={ALIGN_CLASS.right}>
+                  {formatRiders(readout.netAverage)}
+                </td>
+                <td className={ALIGN_CLASS.right}>
+                  {formatShare(readout.shareOfLine)}
+                </td>
 
-                {/* The observed box is the whole cell, so the ref goes here. The cell
-                    has no accessible text on purpose: a canvas is opaque to assistive
-                    tech regardless, and the figures beside it already carry the
-                    information. */}
+                {/* The observed box is the whole cell, so the ref goes here. The cell has
+                    no accessible text on purpose: a canvas is opaque to assistive tech
+                    regardless, and the figures beside it carry the information. */}
                 <td
                   data-qa={`stop-sparkline-${rowKey}`}
                   ref={visibleRows.observe(rowKey)}
