@@ -33,7 +33,9 @@ const points: StopSeriesPoint[] = [
 
 const stubIndex = (): StopSeriesIndex => ({ seriesFor: () => points });
 
-const makeStopReadout = (overrides: Partial<StopReadout> = {}): StopReadout => ({
+const makeStopReadout = (
+  overrides: Partial<StopReadout> = {},
+): StopReadout => ({
   ...makeStopPlace(),
   line_name: 204,
   measuredAverage: 1000,
@@ -69,7 +71,9 @@ const readouts = [
   }),
 ];
 
-const renderTable = (props: Partial<React.ComponentProps<typeof StopTable>> = {}) =>
+const renderTable = (
+  props: Partial<React.ComponentProps<typeof StopTable>> = {},
+) =>
   render(
     <StopTable
       readouts={readouts}
@@ -195,7 +199,10 @@ describe('StopTable', () => {
   it('renders an em dash for an absent figure', () => {
     renderTable({
       readouts: [
-        makeStopReadout({ averageBoardings: undefined, shareOfLine: undefined }),
+        makeStopReadout({
+          averageBoardings: undefined,
+          shareOfLine: undefined,
+        }),
       ],
     });
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
@@ -208,24 +215,28 @@ describe('StopTable', () => {
     expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-wilshire');
   });
 
-  it('toggles a stop from the keyboard', () => {
-    const onToggleStop = vi.fn();
-    renderTable({ onToggleStop });
-    fireEvent.keyDown(
-      document.querySelector('[data-qa="stop-row-204-bus:vermont-wilshire"]')!,
-      { key: 'Enter' },
-    );
-    expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-wilshire');
+  /**
+   * One tab stop per row, not two. The checkbox is the keyboard route — as it is in the
+   * line table — so a focusable row as well would put ~1600 stops in an 800-row table and
+   * announce every row twice, the second announcement being the only informative one.
+   */
+  it('does not make the row itself a tab stop', () => {
+    renderTable({});
+    const row = document.querySelector(
+      '[data-qa="stop-row-204-bus:vermont-wilshire"]',
+    )!;
+    expect(row.hasAttribute('tabindex')).toBe(false);
   });
 
-  it('leaves other keys alone', () => {
+  it('toggles a stop from the keyboard, through its checkbox', () => {
     const onToggleStop = vi.fn();
     renderTable({ onToggleStop });
-    fireEvent.keyDown(
-      document.querySelector('[data-qa="stop-row-204-bus:vermont-wilshire"]')!,
-      { key: 'a' },
-    );
-    expect(onToggleStop).not.toHaveBeenCalled();
+    // Space is the key the browser turns into a click; `fireEvent` does not synthesise
+    // that click, so both halves are dispatched here.
+    const checkbox = rowCheckbox('bus:vermont-wilshire');
+    fireEvent.keyDown(checkbox, { key: ' ', code: 'Space' });
+    fireEvent.click(checkbox);
+    expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-wilshire');
   });
 
   /**
@@ -283,10 +294,14 @@ describe('StopTable', () => {
     });
 
     expect(
-      document.querySelectorAll('[data-qa="stop-row-204-bus:vermont-wilshire"]'),
+      document.querySelectorAll(
+        '[data-qa="stop-row-204-bus:vermont-wilshire"]',
+      ),
     ).toHaveLength(1);
     expect(
-      document.querySelectorAll('[data-qa="stop-row-801-bus:vermont-wilshire"]'),
+      document.querySelectorAll(
+        '[data-qa="stop-row-801-bus:vermont-wilshire"]',
+      ),
     ).toHaveLength(1);
     expect(rowCheckbox('bus:vermont-wilshire', 204)).not.toBe(
       rowCheckbox('bus:vermont-wilshire', 801),
@@ -342,7 +357,6 @@ describe('StopTable selection column', () => {
       '[data-qa="stop-row-204-bus:vermont-wilshire"]',
     );
     expect(row?.hasAttribute('aria-current')).toBe(false);
-    expect(row?.getAttribute('tabindex')).toBe('0');
   });
 
   it('toggles the stop from its checkbox', () => {
@@ -368,12 +382,9 @@ describe('StopTable selection column', () => {
   });
 
   /**
-   * **Space, not Enter.** Radix cancels Enter on a checkbox, so no click follows it and a
-   * test driving Enter would pass with `onKeyDown` deleted. Space is the key the browser
-   * turns into a click, so Space is the one that reaches the row's handler on the way up.
-   *
-   * `fireEvent` does not synthesise the click a real Space produces, so both halves are
-   * dispatched here — that is what the browser does, and it is what the guard is for.
+   * **Space, not Enter.** Radix cancels Enter on a checkbox, so no click follows it.
+   * Space is the key the browser turns into a click, and `fireEvent` does not synthesise
+   * that click, so both halves are dispatched here — which is what the browser does.
    */
   it('fires one toggle per Space press on the checkbox, not two', () => {
     const onToggleStop = vi.fn();
@@ -386,7 +397,7 @@ describe('StopTable selection column', () => {
     expect(onToggleStop).toHaveBeenCalledTimes(1);
   });
 
-  /** The row's own keydown must not see it, which is what stops the second toggle. */
+  /** The row has no key handler of its own, so a keydown alone toggles nothing. */
   it('does not let a Space press on the checkbox reach the row', () => {
     const onToggleStop = vi.fn();
     renderTable({ onToggleStop });
@@ -529,7 +540,9 @@ describe('StopTable lazy sparklines', () => {
     renderTable();
 
     scrollTo(
-      document.querySelector('[data-qa="stop-sparkline-204-bus:vermont-wilshire"]')!,
+      document.querySelector(
+        '[data-qa="stop-sparkline-204-bus:vermont-wilshire"]',
+      )!,
     );
 
     expect(screen.getAllByTestId('sparkline')).toHaveLength(1);
@@ -544,7 +557,9 @@ describe('StopTable lazy sparklines', () => {
     renderTable();
 
     scrollTo(
-      document.querySelector('[data-qa="stop-sparkline-204-bus:vermont-wilshire"]')!,
+      document.querySelector(
+        '[data-qa="stop-sparkline-204-bus:vermont-wilshire"]',
+      )!,
     );
     fireEvent.click(screen.getByText('Avg. Alightings'));
 

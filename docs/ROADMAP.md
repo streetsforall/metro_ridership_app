@@ -478,3 +478,15 @@ layout** — asking for the same export shape is what makes the response drop st
 into this pipeline. Precedent: a requester obtained station-level rail + BRT for
 FY2022-23 and FY2023-24 this way (Streetsblog LA, 2024-08-14). Turnaround is weeks, so
 file early and build against the 11 months meanwhile.
+
+**A cleanup pass found two things that were not cleanup.** The stop series took its hue from a
+position in the *flattened* series list rather than from a position in the Stop Selection, so a stop
+served by two selected lines drew in two hues and shifted every later stop's — the one effect
+[ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) exists to prevent. The hue is now
+taken in `StopPanel`, where the selection order is still in hand, and carried on `DrawnStopSeries`;
+two series of one stop share a hue and the legend prefix names the line.
+
+Separately, each stop row was **two** tab stops — the row and its checkbox — so an 800-row table held
+~1600, and a screen reader announced every row twice with only the second announcement carrying
+anything. The row keeps its click target and loses `tabIndex`, which is the convention `LineTableRow`
+already followed.

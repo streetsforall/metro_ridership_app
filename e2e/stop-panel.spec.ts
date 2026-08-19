@@ -60,7 +60,9 @@ async function gotoStopPanel(page: Page, search: string): Promise<void> {
 
 /** Wait for the ranked table — the panel's own "data has landed" signal. */
 async function waitForStopTable(page: Page): Promise<void> {
-  await expect(page.locator('[data-qa="stop-table"] tbody tr').first()).toBeVisible();
+  await expect(
+    page.locator('[data-qa="stop-table"] tbody tr').first(),
+  ).toBeVisible();
   await page.evaluate(async () => {
     await document.fonts.ready;
   });
@@ -110,7 +112,9 @@ async function shootPanel(page: Page, name: string): Promise<void> {
   });
 }
 
-test('stop panel — the ranked table is the primary readout', async ({ page }) => {
+test('stop panel — the ranked table is the primary readout', async ({
+  page,
+}) => {
   await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
   await waitForStopTable(page);
 
@@ -202,8 +206,10 @@ test('stop panel — Clear All empties the selection, and the URL follows', asyn
   expect(page.url()).not.toContain('stop=');
 });
 
-/** The row is a toggle, which is the only route out the keyboard can reach. */
-test('stop panel — clicking the selected row deselects it', async ({ page }) => {
+/** The whole row is a click target, not just the checkbox inside it. */
+test('stop panel — clicking the selected row deselects it', async ({
+  page,
+}) => {
   await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
   await waitForStopTable(page);
 
@@ -221,7 +227,9 @@ test('stop panel — clicking the selected row deselects it', async ({ page }) =
  * that is itself a toggle — so a click that toggled twice would land back where it started
  * and look like a dead control.
  */
-test('stop panel — a row checkbox toggles once, not twice', async ({ page }) => {
+test('stop panel — a row checkbox toggles once, not twice', async ({
+  page,
+}) => {
   await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
   await waitForStopTable(page);
 
@@ -249,7 +257,9 @@ test('stop panel — Select All checks every listed row', async ({ page }) => {
   await page.locator('[data-qa="stop-select-all"]').click();
 
   await expect(
-    page.locator('[data-qa^="stop-select-"] [role="checkbox"][data-state="checked"]'),
+    page.locator(
+      '[data-qa^="stop-select-"] [role="checkbox"][data-state="checked"]',
+    ),
   ).toHaveCount(3);
   await expect(page.locator('[data-qa="stop-series-figure"]')).toContainText(
     '3 stops',
@@ -258,7 +268,9 @@ test('stop panel — Select All checks every listed row', async ({ page }) => {
   await page.locator('[data-qa="stop-clear-all"]').click();
 
   await expect(
-    page.locator('[data-qa^="stop-select-"] [role="checkbox"][data-state="checked"]'),
+    page.locator(
+      '[data-qa^="stop-select-"] [role="checkbox"][data-state="checked"]',
+    ),
   ).toHaveCount(0);
 });
 
@@ -270,7 +282,10 @@ test('stop panel — Select All checks every listed row', async ({ page }) => {
 test('stop panel — the search narrows the table and scopes Select All', async ({
   page,
 }) => {
-  await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}&stopq=union`);
+  await gotoStopPanel(
+    page,
+    `?stops=1&lines=${String(RAIL_LINE_ID)}&stopq=union`,
+  );
   await waitForStopTable(page);
 
   await expect(page.locator('[data-qa="stop-table"] tbody tr')).toHaveCount(1);
@@ -293,7 +308,9 @@ test('stop panel — the search narrows the table and scopes Select All', async 
  * is what makes this hold at either viewport: at mobile width the cell is outside the
  * table's own horizontal scroll until something brings it in.
  */
-test('stop panel — a scrolled-to sparkline actually draws', async ({ page }) => {
+test('stop panel — a scrolled-to sparkline actually draws', async ({
+  page,
+}) => {
   await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
   await waitForStopTable(page);
 
@@ -381,7 +398,9 @@ test('stop panel — a row below the fold draws nothing until scrolled to', asyn
   ).toBeGreaterThan(mounted);
 });
 
-test('stop panel — the measure toggle switches to Alightings', async ({ page }) => {
+test('stop panel — the measure toggle switches to Alightings', async ({
+  page,
+}) => {
   await gotoStopPanel(
     page,
     `?stops=1&lines=${String(RAIL_LINE_ID)}&measure=offs`,
@@ -390,9 +409,10 @@ test('stop panel — the measure toggle switches to Alightings', async ({ page }
 
   // The measure is URL state, so a shared link opens on it. Assert the control agrees
   // with the param rather than only that the param parsed.
-  await expect(
-    page.getByRole('radio', { name: 'Alightings' }),
-  ).toHaveAttribute('data-state', 'on');
+  await expect(page.getByRole('radio', { name: 'Alightings' })).toHaveAttribute(
+    'data-state',
+    'on',
+  );
 });
 
 test('stop panel — a period with no stop data offers the covered one', async ({

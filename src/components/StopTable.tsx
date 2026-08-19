@@ -147,7 +147,7 @@ export interface StopTableProps {
   lines: readonly LineReadout[];
   /** The Stop Selection. Every row whose key is in it is checked and highlighted. */
   selectedStopKeys: readonly string[];
-  /** A row click, a key press or its checkbox toggles that stop, as a map circle does. */
+  /** A row click or its checkbox toggles that stop, as a map circle does. */
   onToggleStop: (stopKey: string) => void;
   /** Every row's series, from one pass over the records. See `buildStopSeriesIndex`. */
   seriesIndex: StopSeriesIndex;
@@ -284,42 +284,29 @@ export default function StopTable({
             const rowKey = `${readout.line_name}-${readout.key}`;
             const lineName =
               lineNames.get(readout.line_name) ?? String(readout.line_name);
-            /* One toggle for all three routes in — row, keyboard, checkbox. Whether this
-               adds or removes is the selection's question, asked of the hook. */
+            /* One toggle for both routes in — the row and its checkbox. Whether this adds
+               or removes is the selection's question, asked of the hook. */
             const toggle = (): void => onToggleStop(readout.key);
 
             return (
-              /* Selecting a stop is a click *or* a key press. The only other route in is
-                 a map circle, which is mouse-only by nature, so without this the per-stop
-                 series would be unreachable from the keyboard.
+              /* The whole row is a click target, but **not a tab stop**. The checkbox
+                 inside it is the keyboard route, as it is in `LineTableRow`: focusing
+                 both would put ~1600 stops in an 800-row table and announce every row
+                 twice, and the row itself carries no role saying it is actionable.
 
-                 No `aria-current`: it means "the current item in a set", which several
-                 selected rows are not. The checkbox's checked state says a row is
+                 No `aria-current` either — it means "the current item in a set", which
+                 several selected rows are not. The checkbox's checked state says a row is
                  selected, in the one place a reader looks for that answer. */
               <tr
                 key={rowKey}
                 data-qa={`stop-row-${rowKey}`}
-                tabIndex={0}
                 onClick={toggle}
-                onKeyDown={(event) => {
-                  if (event.key !== 'Enter' && event.key !== ' ') return;
-                  // Space would scroll the page otherwise, and the row is the thing being
-                  // acted on rather than a page-level gesture.
-                  event.preventDefault();
-                  toggle();
-                }}
                 className={`cursor-pointer ${
                   isSelected ? 'bg-stone-200' : 'even:bg-[rgba(0,0,0,0.05)]'
                 }`}
               >
-                {/* A second hit target for the row's action, and the row's only visible
-                    statement of whether it is selected.
-
-                    Both handlers stop propagating, because this cell sits inside a row
-                    that is itself a toggle: without them one click would toggle twice and
-                    land back where it started. The keyboard needs the same guard — Radix
-                    renders a real `<button>`, so Space fires its click *and* bubbles a
-                    keydown to the row.
+                {/* The row's only visible statement of whether it is selected, and the
+                    one route in from the keyboard.
 
                     No `id`: the accessible name comes from `aria-label` here rather than
                     from a `<label htmlFor>` as the line table's does. */}
@@ -328,10 +315,11 @@ export default function StopTable({
                     aria-label={`${readout.name} · ${lineName}`}
                     checked={isSelected}
                     onClick={(event) => {
+                      // The row is a click target too, so without this one click would
+                      // toggle twice and land back where it started.
                       event.stopPropagation();
                       toggle();
                     }}
-                    onKeyDown={(event) => event.stopPropagation()}
                     className="flex items-center justify-center bg-white data-[state=checked]:bg-[#033056] mx-auto rounded p-0 h-5 w-5"
                   >
                     <Checkbox.Indicator>
