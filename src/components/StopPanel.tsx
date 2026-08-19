@@ -6,6 +6,7 @@ import StopSeriesChart, { type DrawnStopSeries } from './StopSeriesChart';
 import StopTable from './StopTable';
 import { stopCoverageState } from '../utils/stopCoverage';
 import { buildStopSeriesIndex } from '../utils/stopSeries';
+import { colorForSelectionIndex } from '../utils/stopSelectionColors';
 import type { LineReadout } from '../ridership';
 import type { StopReadout, StopView } from '../stops';
 import type { DayOfWeek } from '../@types/metrics.types';
@@ -199,7 +200,7 @@ export default function StopPanel({
    */
   const drawn = useMemo<DrawnStopSeries[]>(
     () =>
-      selectedStopKeys.flatMap((key) =>
+      selectedStopKeys.flatMap((key, selectionIndex) =>
         (readoutsByKey.get(key) ?? []).map((readout) => ({
           key: readout.key,
           lineId: readout.line_name,
@@ -207,6 +208,9 @@ export default function StopPanel({
           lineName:
             lineNamesById.get(readout.line_name) ?? String(readout.line_name),
           series: seriesIndex.seriesFor(readout.key, readout.line_name),
+          // The hue belongs to the stop, so it is taken here, where the selection's
+          // order is still in hand — not from a position in the flattened list.
+          color: colorForSelectionIndex(selectionIndex),
         })),
       ),
     [selectedStopKeys, readoutsByKey, lineNamesById, seriesIndex],

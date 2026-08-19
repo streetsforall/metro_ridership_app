@@ -3,7 +3,6 @@ import type { ChartOptions } from 'chart.js';
 import { Line as LineChart } from 'react-chartjs-2';
 import { formatEventDate } from '../chart';
 import { stopSeriesDatasets } from '../utils/stopSeriesDatasets';
-import { colorForSelectionIndex } from '../utils/stopSelectionColors';
 import type { StopSeriesPoint } from '../utils/stopSeries';
 import type { StopMeasure } from '../@types/stops.types';
 
@@ -32,6 +31,16 @@ export interface DrawnStopSeries {
   stopName: string;
   lineName: string;
   series: StopSeriesPoint[];
+  /**
+   * The hue for this series, taken from the stop's position in the Stop Selection.
+   *
+   * Carried rather than computed here, because the chart's own list has one entry per
+   * `(stop, line)` pair: a stop served by two selected lines would take two hues and
+   * shift every later stop's, which is the one thing colour-means-which-stop is for
+   * (ADR-0014). Two series of one stop therefore share a hue, and the legend prefix is
+   * what names the line.
+   */
+  color: string;
 }
 
 export interface StopSeriesChartProps {
@@ -75,18 +84,19 @@ export default function StopSeriesChart({
        * own month list — `seriesFor` returns a full-length, all-null series for a pair
        * with no records — so they all share this axis and none of them can shorten it.
        */
-      labels: drawn[0]?.series.map((point) => formatEventDate(point.month)) ?? [],
+      labels:
+        drawn[0]?.series.map((point) => formatEventDate(point.month)) ?? [],
       /*
        * Boardings solid, Alightings dashed — the split shared with the table's
        * sparklines, so one measure is not encoded two ways on one screen. Colour is
        * the part that differs: here it says which stop, and the legend prefix names
        * the stop and its line so the hue is never the only thing carrying that.
        */
-      datasets: drawn.flatMap((stop, index) =>
+      datasets: drawn.flatMap((stop) =>
         stopSeriesDatasets({
           series: stop.series,
           measure,
-          color: colorForSelectionIndex(index),
+          color: stop.color,
           pointRadius: 2,
           labelPrefix: `${stop.stopName} · ${stop.lineName}`,
         }),
