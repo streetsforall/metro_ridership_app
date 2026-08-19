@@ -28,6 +28,49 @@ export interface DateRangeSelectorProps {
 
 type IntervalEndpoint = 'start' | 'end';
 
+/**
+ * One panel's on/off control, so a third panel is a call rather than another 20 lines.
+ *
+ * The markup was written twice here before it was written once; the pair have to look
+ * identical and nothing but a shared component was holding them to it.
+ */
+function PanelToggle({
+  id,
+  label,
+  checked,
+  onToggle,
+}: {
+  id: string;
+  label: string;
+  checked: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="flex items-center">
+      <Checkbox.Root
+        id={id}
+        onClick={onToggle}
+        checked={checked}
+        className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
+      >
+        <Checkbox.Indicator>
+          <img
+            src={checkIcon}
+            height={20}
+            width={20}
+            alt="Check"
+            className="recolor-white"
+          />
+        </Checkbox.Indicator>
+      </Checkbox.Root>
+
+      <label className="pl-2" htmlFor={id}>
+        {label}
+      </label>
+    </div>
+  );
+}
+
 export default function DateRangeSelector({
   startDate,
   setStartDate,
@@ -180,51 +223,18 @@ export default function DateRangeSelector({
         <legend>Panel Visibility</legend>
 
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex items-center">
-            <Checkbox.Root
-              id="context-logs"
-              onClick={toggleShowContextLogs}
-              checked={showContextLogs}
-              className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
-            >
-              <Checkbox.Indicator>
-                <img
-                  src={checkIcon}
-                  height={20}
-                  width={20}
-                  alt="Check"
-                  className="recolor-white"
-                />
-              </Checkbox.Indicator>
-            </Checkbox.Root>
-
-            <label className="pl-2" htmlFor="context-logs">
-              Context Logs
-            </label>
-          </div>
-
-          <div className="flex items-center">
-            <Checkbox.Root
-              id="stop-ridership"
-              onClick={toggleShowStops}
-              checked={showStops}
-              className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
-            >
-              <Checkbox.Indicator>
-                <img
-                  src={checkIcon}
-                  height={20}
-                  width={20}
-                  alt="Check"
-                  className="recolor-white"
-                />
-              </Checkbox.Indicator>
-            </Checkbox.Root>
-
-            <label className="pl-2" htmlFor="stop-ridership">
-              Stop Ridership
-            </label>
-          </div>
+          <PanelToggle
+            id="context-logs"
+            label="Context Logs"
+            checked={showContextLogs}
+            onToggle={toggleShowContextLogs}
+          />
+          <PanelToggle
+            id="stop-ridership"
+            label="Stop Ridership"
+            checked={showStops}
+            onToggle={toggleShowStops}
+          />
         </div>
       </fieldset>
     </div>
