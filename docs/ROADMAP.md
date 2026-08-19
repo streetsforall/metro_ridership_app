@@ -30,8 +30,8 @@ PRs update it rather than restating their own scope.
 | **4** | Vite plugin, manifest, `src/stops/`, `stops.types.ts`, the `isInMonthWindow` extraction, vitest specs. **No visible UI.** | `ANALYZE=1 npm run build` — entry chunk unchanged; no visual baseline moves | ☑ [#180](https://github.com/streetsforall/metro_ridership_app/pull/180) — entry +36 B (the extracted predicate, nothing else) · 0 of 80 baselines moved |
 | **5a** | The URL contract — `stops`, `measure`, `stop`, `stopq` — and the Stop Ridership checkbox | The checkbox round-trips through the URL; **the eight full-page baselines the checkbox moves are regenerated here and nowhere else** | ☐ |
 | **5b** | `useStopView`: the two payloads' fetch gate and their independent fates. **No UI.** | `ANALYZE=1 npm run build` — entry chunk unchanged; the hook has no importer yet | ☐ |
-| **5c** | `#stop-panel`, the ranked table, the coverage notice, the `OutputArea` wiring | New `stop-panel` baselines only; the eight 5a regenerated must **not** move again | ☐ this PR |
-| **5d** | The ridership-over-time column: `stopSeries`, `useVisibleRows`, the row sparkline | No new payloads; the trend column is the only baseline move | ☐ |
+| **5c** | `#stop-panel`, the ranked table, the coverage notice, the `OutputArea` wiring | New `stop-panel` baselines only; the eight 5a regenerated must **not** move again | ☐ |
+| **5d** | The ridership-over-time column: `stopSeries`, `useVisibleRows`, the row sparkline | No new payloads; the trend column is the only baseline move | ☐ this PR |
 | **5e** | The stop series chart and its colour rule | [ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) written | ☐ |
 | **5f** | The map's circle layer and the `mapPopup` addition | Circles leave the map when the panel is unticked | ☐ |
 
@@ -231,6 +231,26 @@ which are editing the same component.
 decodes back to the same key, so a shared link still selects the stop it named; only the plan's claim
 about the literal spelling was wrong.
 
+**`src/stops/index.ts` exposes no per-stop series.** The panel assembles them in
+`src/utils/stopSeries.ts` from the module's own month axis and `stopMetrics` — no window arithmetic,
+no second copy of the Day Of Week → column mapping. It would sit better inside the module, next to
+`stopMetrics`.
+
+`buildStopSeriesIndex` is the whole panel's supply: one pass groups every record by (stop, line), and
+a pair's months are aligned on first ask and cached. Both readers — the sparkline column and the
+figure above it — read that one cache, so a stop's row and its chart draw the identical array. The
+per-call scan it replaced was O(rows × records), ~800 × ~106,000 once every row has a sparkline.
+
+**The selected stop can be deselected, four ways.** It was a one-way door: a reader who opened a
+series could reach another stop or close the panel, but not return to the state the panel opens in.
+Every route in is now a toggle — the table row, its checkbox, the map circle — and `Clear All` empties
+the selection outright. The map's handler is registered once in `load`, so it calls out through a
+ref; a closed-over prop would be the first render's and would leave the map wired to a selection
+nobody has any more.
+
+The toggling added no state. The URL sync already wrote `stop` conditionally, so clearing drops the
+param and a cleared panel is as shareable as a selected one.
+
 **`selectedStopKey: string | null` became `selectedStopKeys: string[]`**, comma-joined into the same
 `stop=` param. A comma cannot occur inside a key, whose charset is `^(bus|rail):[a-z0-9-]+$`, so
 splitting is unambiguous — and every link shared before this carries one key and still works. The
@@ -267,6 +287,18 @@ key, and a unit case renders one stop on lines 204 and 801 to hold it there. No 
 on two lines, so nothing failed; the trap was that an e2e locator would have matched two elements and
 failed strict mode the moment one did, and `document.querySelector` in a unit spec would have
 silently taken the first. The e2e half goes through `stopQa`, so the shape is written once.
+
+**The sparkline column mounts lazily, and on mobile that means not at all.** The ranked table can hold
+~800 rows against the line table's ~180, so a Chart.js instance per row is not affordable up front;
+`useVisibleRows` mounts a row's chart when it is scrolled to and keeps it mounted. One observer for
+the table, rooted on the `max-h-[28rem]` scroller rather than the viewport, because `rootMargin` grows
+the *root* rect and a viewport root would grow the wrong box and pre-mount nothing.
+
+The consequence, measured: at mobile width the table is 696px of content in a 294px scroller, so the
+last column sits outside the box and **no sparkline mounts until the reader scrolls sideways.** The
+observer is right not to draw it, and the horizontal scroll is pre-existing — six columns were already
+472px in that 294px — but the new column widens it by 224px. Hiding the column below `sm` is one
+class; it was left visible because it was asked for and is reachable.
 
 **The PR body carries four mermaid diagrams, and the committed diagram set does not.** A data flow of
 the stop grain with the new modules accented, a sequence for the payload intent gate, a sequence for
