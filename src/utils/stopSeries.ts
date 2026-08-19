@@ -1,4 +1,5 @@
 import { stopMetrics } from '../stops';
+import { formatMonth } from './month';
 import type { DayOfWeek } from '../@types/metrics.types';
 import type { StopRecord } from '../@types/stops.types';
 
@@ -53,8 +54,14 @@ export interface StopSeriesIndex {
   seriesFor(stopKey: string, lineId: number): StopSeriesPoint[];
 }
 
-const monthKey = (record: { year: number; month: number }): string =>
-  `${record.year}-${String(record.month).padStart(2, '0')}`;
+/** Get the entry, creating it first if this is the first time it is asked for. */
+function getOrCreate<K, V>(map: Map<K, V>, key: K, make: () => V): V {
+  const hit = map.get(key);
+  if (hit !== undefined) return hit;
+  const made = make();
+  map.set(key, made);
+  return made;
+}
 
 /**
  * Group every record once, and align a pair's months only when someone asks for it.
@@ -80,19 +87,20 @@ export function buildStopSeriesIndex({
    */
   const grouped = new Map<number, Map<string, Map<string, StopRecord>>>();
   for (const record of records) {
-    let byStop = grouped.get(record.line_name);
-    if (!byStop) {
-      byStop = new Map<string, Map<string, StopRecord>>();
-      grouped.set(record.line_name, byStop);
-    }
-
-    let byMonth = byStop.get(record.stop_key);
-    if (!byMonth) {
-      byMonth = new Map<string, StopRecord>();
-      byStop.set(record.stop_key, byMonth);
-    }
-
-    byMonth.set(monthKey(record), record);
+    const byStop = getOrCreate(
+      grouped,
+      record.line_name,
+      () => new Map<string, Map<string, StopRecord>>(),
+    );
+    const byMonth = getOrCreate(
+      byStop,
+      record.stop_key,
+      () => new Map<string, StopRecord>(),
+    );
+    // `formatMonth`, not a second `padStart` here: these keys must match the axis
+    // strings `buildStopView` emitted, or every lookup below misses and every sparkline
+    // draws blank.
+    byMonth.set(formatMonth(record), record);
   }
 
   /*
@@ -105,11 +113,11 @@ export function buildStopSeriesIndex({
 
   return {
     seriesFor(stopKey: string, lineId: number): StopSeriesPoint[] {
-      let cache = aligned.get(lineId);
-      if (!cache) {
-        cache = new Map<string, StopSeriesPoint[]>();
-        aligned.set(lineId, cache);
-      }
+      const cache = getOrCreate(
+        aligned,
+        lineId,
+        () => new Map<string, StopSeriesPoint[]>(),
+      );
 
       const hit = cache.get(stopKey);
       if (hit) return hit;

@@ -38,6 +38,10 @@ const MEASURE_LABELS: Record<StopMeasure, string> = {
 
 const MEASURES = Object.keys(MEASURE_LABELS) as StopMeasure[];
 
+/** The panel instead of a table, and a note beside one. Stated once each. */
+const EMPTY_CLASS = 'py-8 text-center text-sm text-stone-400';
+const NOTE_CLASS = 'mt-2 text-xs text-stone-400';
+
 export interface StopPanelProps {
   view: StopView;
   /**
@@ -130,38 +134,37 @@ export default function StopPanel({
   );
 
   /**
+   * The month axis, keyed by its value rather than its identity.
+   *
+   * `buildStopView` returns a fresh array every time it runs, including on a measure
+   * change, so keying the index below on `view.months` directly would regroup every
+   * record and throw away the alignment cache each time the reader toggled Boardings to
+   * Alightings — the one change the index is explicitly independent of.
+   */
+  const monthsKey = view.months.join(',');
+  const months = useMemo(
+    () => (monthsKey ? monthsKey.split(',') : []),
+    [monthsKey],
+  );
+
+  /**
    * One index for the whole panel, not one build per row.
    *
    * `records` is memoised by `useStopView`, so this rebuilds only when a payload lands,
    * the window moves or the Day Of Week changes — never on a re-sort, a selection or a
-   * measure change. Deliberately not keyed on `measure`: the measure picks which of two
-   * figures a chart draws, and both are already in every point.
+   * measure change. The measure picks which of two figures a chart draws, and both are
+   * already in every point.
    */
   const seriesIndex = useMemo(
     () =>
       buildStopSeriesIndex({
         records: records ?? [],
-        months: view.months,
+        months,
         dayOfWeek,
       }),
-    [records, view.months, dayOfWeek],
+    [records, months, dayOfWeek],
   );
 
-  /**
-   * What the figure draws, one entry per selected `(stop, line)` pair.
-   *
-   * Walked in **selection order**, outer loop over the keys, because that order fixes the
-   * colours: the chart takes a hue by position, so iterating the readouts instead would
-   * recolour every series whenever the table was re-sorted.
-   *
-   * A stop served by several selected lines yields several entries rather than one. Its
-   * figures genuinely differ per line and `seriesFor` is keyed on the pair, so collapsing
-   * them would mean summing across lines — the stop-total rollup this project deliberately
-   * does not derive.
-   *
-   * The figure and every row's sparkline read the same cache, so a selected stop's row and
-   * the chart above it draw the identical array.
-   */
   /*
    * Indexed, not scanned. Selection is uncapped and a five-line table is ~800 readouts, so
    * a `find` per selected key would be quadratic in exactly the case `Select All` invites —
@@ -182,6 +185,18 @@ export default function StopPanel({
     [lines],
   );
 
+  /**
+   * What the figure draws, one entry per selected `(stop, line)` pair.
+   *
+   * Walked in **selection order**, outer loop over the keys, because that order fixes the
+   * colours: the chart takes its hue by position, so iterating the readouts instead would
+   * recolour every series on a re-sort.
+   *
+   * A stop on several selected lines yields several entries. Its figures genuinely differ
+   * per line, so collapsing them would mean summing across lines — the stop-total rollup
+   * this project deliberately does not derive. The figure and the row sparklines read one
+   * cache, so both draw the identical array.
+   */
   const drawn = useMemo<DrawnStopSeries[]>(
     () =>
       selectedStopKeys.flatMap((key) =>
@@ -223,31 +238,24 @@ export default function StopPanel({
   const hasReadouts = view.readouts.length > 0;
 
   const body = () => {
+    // Order matters: `overlapsWindow` is `false` while nothing has loaded, so the
+    // loading state has to be answered before the empty one or a slow network reads as
+    // "this period has no stop data". `no-overlap` says nothing here because the notice
+    // above the body has already said it.
     if (hasFailed && !hasReadouts)
       return (
-        <p className="py-8 text-center text-sm text-stone-400">
-          Stop-level ridership could not be loaded.
-        </p>
+        <p className={EMPTY_CLASS}>Stop-level ridership could not be loaded.</p>
       );
-    // Order matters: `overlapsWindow` is `false` while nothing has loaded, so the
-    // loading state has to be answered before the empty one or a slow network reads
-    // as "this period has no stop data".
     if (isLoading && !hasReadouts)
-      return (
-        <p className="py-8 text-center text-sm text-stone-400">
-          Loading stop ridership…
-        </p>
-      );
+      return <p className={EMPTY_CLASS}>Loading stop ridership…</p>;
     if (coverageState === 'no-overlap') return null;
     if (!hasSelectedLines)
       return (
-        <p className="py-8 text-center text-sm text-stone-400">
-          Select a Metro line to see its stops.
-        </p>
+        <p className={EMPTY_CLASS}>Select a Metro line to see its stops.</p>
       );
     if (!hasReadouts)
       return (
-        <p className="py-8 text-center text-sm text-stone-400">
+        <p className={EMPTY_CLASS}>
           No stop-level data for the selected lines in this period.
         </p>
       );
@@ -258,7 +266,7 @@ export default function StopPanel({
             A note, not a takeover — see `hasReadouts`. */}
         {isLoading && (
           <p
-            className="mt-2 text-xs text-stone-400"
+            className={NOTE_CLASS}
             data-qa="stop-loading-more"
             aria-live="polite"
           >
@@ -266,7 +274,7 @@ export default function StopPanel({
           </p>
         )}
         {hasFailed && !isLoading && (
-          <p className="mt-2 text-xs text-stone-400" data-qa="stop-partial-failure">
+          <p className={NOTE_CLASS} data-qa="stop-partial-failure">
             Some stop-level ridership could not be loaded.
           </p>
         )}
@@ -285,7 +293,8 @@ export default function StopPanel({
             <figcaption className="mb-1 text-xs text-stone-500">
               Ridership over time · {drawnStopCount}{' '}
               {drawnStopCount === 1 ? 'stop' : 'stops'}
-              {drawn.length !== drawnStopCount && ` · ${String(drawn.length)} series`}
+              {drawn.length !== drawnStopCount &&
+                ` · ${String(drawn.length)} series`}
             </figcaption>
             <StopSeriesChart drawn={drawn} measure={measure} />
           </figure>
@@ -349,7 +358,7 @@ export default function StopPanel({
       <div className="mt-2">
         <StopCoverageNotice
           state={coverageState}
-          months={view.months}
+          months={months}
           onUseCoverageWindow={onUseCoverageWindow}
         />
       </div>

@@ -18,34 +18,28 @@ import type {
 /**
  * Fetching the stop payloads on intent, and handing the one derivation what it needs.
  *
- * ## Why the fetches are here and not in `App`
- *
- * `App`'s `/ridership.json` effect is the first-paint path, and `OutputArea` is lazy
- * precisely to keep MapLibre out of the entry chunk. Putting a 5.3 MB payload on that
- * path would undo it. This hook is imported by `OutputArea` only, so every byte it
- * pulls sits inside that lazy chunk or behind a further dynamic import.
+ * The fetches live here rather than in `App` because `App`'s `/ridership.json` effect is
+ * the first-paint path and `OutputArea` is lazy precisely to keep MapLibre out of the
+ * entry chunk; a 5.3 MB payload on that path would undo it. Only `OutputArea` imports
+ * this hook, so every byte it pulls sits in that lazy chunk or behind a dynamic import.
  *
  * ## The intent gate
  *
- * - **Rail** (89 KB) loads when the panel is on. It is small enough that the panel can
- *   answer "is there stop data in this window" from it alone.
- * - **Bus** (5.3 MB) loads only when the panel is on, the Month Window overlaps the
- *   Stop Coverage Window, **and** a selected line is not one the rail payload serves.
- * - **Stop locations** (1.6 MB) are `import()`ed rather than imported statically, so
- *   they land in their own async chunk instead of inflating `OutputArea`'s.
+ * - **Rail** (89 KB) loads when the panel is on — small enough to answer "is there stop
+ *   data in this window" by itself.
+ * - **Bus** (5.3 MB) loads only when the panel is on, the window overlaps the Stop
+ *   Coverage Window, **and** a selected line is not one rail serves.
+ * - **Stop locations** (1.6 MB) are `import()`ed, so they land in their own chunk.
  *
- * Each is fetched at most once and kept, so toggling the panel off and on again costs
- * nothing. `AbortController`s are held for the hook's lifetime and fired on unmount.
+ * Each is fetched at most once and kept, so toggling the panel costs nothing the second
+ * time. `AbortController`s live for the hook's lifetime and fire on unmount.
  *
- * ## Which lines the bus payload serves is read off the data, never hardcoded
- *
- * G Line (901) and J Line (910) BRT arrive in the *Bus* workbook while the app lists
- * them under the train filter, so "is this a bus line" is the wrong question to gate a
- * fetch on — asking it of `metro_line_metadata_current.json` would leave a reader who
- * selected only the G Line looking at an empty panel. The question asked instead is
- * "does the rail payload already serve this line", answered from the rail records
- * themselves. A line in neither payload falls to the bus side, which fetches a file
- * that turns out not to help — the safe direction of that error.
+ * **Which lines bus serves is read off the data, never hardcoded.** G Line (901) and J
+ * Line (910) BRT arrive in the *Bus* workbook while the app lists them under the train
+ * filter, so gating on "is this a bus line" would leave a reader who selected only the G
+ * Line looking at an empty panel. The question asked instead is whether the rail payload
+ * already serves the line, answered from the rail records. A line in neither falls to the
+ * bus side and fetches a file that does not help — the safe direction of that error.
  */
 
 const RAIL_URL = '/stop-ridership.rail.json';
@@ -100,9 +94,14 @@ async function loadPayload(
   signal: AbortSignal,
 ): Promise<DecodedStopRidership | null> {
   const response = await fetch(url, { signal });
-  if (!response.ok) throw new Error(`${url} responded ${String(response.status)}`);
+  if (!response.ok)
+    throw new Error(`${url} responded ${String(response.status)}`);
   return decodeStopRidership((await response.json()) as ColumnarStopRidership);
 }
+
+/** Still outstanding — neither loaded nor given up on. */
+const isPending = (status: LoadStatus): boolean =>
+  status !== 'ready' && status !== 'error';
 
 export default function useStopView({
   enabled,
@@ -245,10 +244,7 @@ export default function useStopView({
   }, [wantsBus, busStatus]);
 
   const isLoading =
-    enabled &&
-    (railStatus === 'idle' ||
-      railStatus === 'loading' ||
-      (wantsBus && busStatus !== 'ready' && busStatus !== 'error'));
+    enabled && (isPending(railStatus) || (wantsBus && isPending(busStatus)));
 
   return {
     view,
