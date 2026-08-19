@@ -1,28 +1,21 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 
 /**
- * Which of a long list's rows have been scrolled into view.
+ * Which of a long list's rows have been scrolled into view. The stop table draws a
+ * Chart.js sparkline per row across ~800 rows, so this reports which are worth mounting.
  *
- * The stop table draws a Chart.js sparkline per row and can hold ~800 rows, so
- * constructing every chart up front is not an option. This reports which rows are worth
- * mounting.
+ * One observer for the list, not one per row: 800 `IntersectionObserver` instances is a
+ * worse problem than the one being solved.
  *
- * **One observer for the list, not one per row.** Eight hundred
- * `IntersectionObserver` instances is a worse problem than the one being solved.
- *
- * **Add-only.** A row that has been seen stays visible. Unmounting on scroll-away turns
- * a scroll into a construct/destroy treadmill, and a Chart.js instance is expensive to
- * build. It also makes re-sorting a non-event: the caller keys rows by the same string
- * this hook does, so React re-parents the existing DOM rather than remounting it.
+ * Add-only — a row once seen stays visible, because unmounting on scroll-away turns a
+ * scroll into a construct/destroy treadmill of expensive Chart.js instances. It also makes
+ * re-sorting a non-event, since the caller keys rows by the same string this hook does.
  */
 
 export interface VisibleRows {
   /**
-   * A `ref` callback for the row's observed element.
-   *
-   * Cached per key, because an inline arrow is a new function every render and React
-   * answers that by calling the old one with `null` and the new one with the element —
-   * which would be an unobserve/observe pair per row per render.
+   * A `ref` callback for the row's observed element, cached per key: an inline arrow is a
+   * new function every render, and React answers that with an unobserve/observe pair.
    */
   observe: (key: string) => (element: Element | null) => void;
   isVisible: (key: string) => boolean;
@@ -45,11 +38,8 @@ export function useVisibleRows(
   const callbacks = useRef(new Map<string, (element: Element | null) => void>());
   const observer = useRef<IntersectionObserver | null>(null);
 
-  /*
-   * No IntersectionObserver means every row is visible. jsdom does not implement it,
-   * and the fallback there has to be a table that draws rather than a table of blank
-   * cells — the benign answer, the same stance the test setup takes on `matchMedia`.
-   */
+  // No IntersectionObserver means every row is visible. jsdom does not implement it, and
+  // the fallback has to be a table that draws rather than one of blank cells.
   const supported =
     typeof window !== 'undefined' &&
     typeof window.IntersectionObserver === 'function';
@@ -59,13 +49,10 @@ export function useVisibleRows(
     if (!supported || !scroller) return;
 
     /*
-     * `root` is the scroller, not the viewport.
-     *
-     * A viewport-rooted observer does account for clipping by an ancestor
-     * `overflow-y-auto`, so it would report the right rows — but `rootMargin` grows the
-     * *root* rect, and with `root: null` that is the viewport. The intermediate clip
-     * this table imposes is not grown, so the margin would buy nothing and every
-     * sparkline would mount exactly as it became visible, popping in on each scroll.
+     * `root` is the scroller, not the viewport. A viewport-rooted observer would report
+     * the right rows, but `rootMargin` grows the root rect — the viewport, under
+     * `root: null` — and not this table's clip, so the margin would buy nothing and every
+     * sparkline would pop in exactly as it became visible.
      */
     const instance = new IntersectionObserver(
       (entries) => {
@@ -78,8 +65,8 @@ export function useVisibleRows(
         if (arrived.length === 0) return;
 
         setVisible((previous) => {
-          // A set rebuilt on every scroll notification re-renders every row for
-          // nothing, so bail when the batch adds nothing new.
+          // A set rebuilt on every notification re-renders every row for nothing, so
+          // bail when the batch adds nothing new.
           if (arrived.every((key) => previous.has(key))) return previous;
           const next = new Set(previous);
           for (const key of arrived) next.add(key);

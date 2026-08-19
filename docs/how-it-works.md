@@ -159,61 +159,58 @@ These are the things that look like bugs and aren't.
 
 ## Stop-level ridership
 
-Everything above is per **line**. `src/stops/` is the same shape one grain down — per **Stop
-Place** — and it is a second sealed module for the same reason the first one is: the map layer, the
-ranked table, the per-stop series and the popup all read one derivation, and the stop-key ↔
-coordinate join and the Month Window filter must happen in one place or the map and the table
-disagree about which stops exist and which months are on screen.
+Everything above is per **line**. `src/stops/` is the same shape one grain down, per **Stop Place**,
+and it is a second sealed module for the reason the first one is: the map layer, the ranked table,
+the per-stop series and the popup all read one derivation, so the stop-key ↔ coordinate join and the
+Month Window filter must happen in one place or the map and the table disagree about which stops
+exist and which months are on screen.
 
 **One call again.** `buildStopView({ records, places, lineIds, startDate, endDate, dayOfWeek,
 measure })` returns `{ months, readouts, markers, coverage }`. `markers` is a GeoJSON
-`FeatureCollection` ready for `setData` — **radius and colour are feature properties the module
-computed**, so `Map.tsx`'s paint expressions are a plain `['get', 'radius']` / `['get', 'color']`
-and nothing recomputes the scale. Radius is sqrt-normalised **per mode**, because rail and bus
-differ by two orders of magnitude at stop grain, and it sqrt-scales the *value* so the drawn *area*
-is proportional to it.
+`FeatureCollection` ready for `setData`, and **radius and colour are feature properties the module
+computed**, so `Map.tsx`'s paint expressions are a plain `['get', 'radius']` / `['get', 'color']`.
+Radius is sqrt-normalised **per mode**, because rail and bus differ by two orders of magnitude at
+stop grain, and it scales the *value* so the drawn *area* is proportional to it.
 
 `useStopView` ([`src/hooks/useStopView.ts`](../src/hooks/useStopView.ts)) is the fetch side, and
 `OutputArea` is its only importer, so everything it pulls lands in that lazy chunk or behind a
 further dynamic import. The panel itself is `#stop-panel`, opened with `stops=1`.
 
-- **The stop table is a multi-select, and it copies the line selector's chrome rather than inventing
-  its own.** A checkbox per row, a search bar above the table, and `Select All` / `Clear All` under
-  it — the same three controls `LineFilters` has, in the same arrangement. Both tables share the
-  asymmetry too: `Select All` reaches only the rows the search lists and adds to what is already
-  selected, while `Clear All` clears globally and leaves the search text alone. Neither table caps
-  its selection; the search is what narrows `Select All`.
+- **The stop table is a multi-select, and it copies the line selector's chrome.** A checkbox per
+  row, a search bar above the table, `Select All` / `Clear All` under it — `LineFilters`'s three
+  controls in `LineFilters`'s arrangement. They share the asymmetry too: `Select All` reaches only
+  the rows the search lists and adds to the selection, while `Clear All` clears globally and leaves
+  the search text alone. Neither table caps its selection; the search narrows `Select All`.
 
 - **The Stop Selection is an ordered set of stop keys**, comma-joined into `stop=`, with the search
-  in `stopq=`. Order fixes each stop's colour on the chart, so a stop picked later is appended
-  rather than inserted — inserting would recolour every series already drawn. The table's grain is
-  stop × line, so a stop served by two selected lines is picked once and drawn twice.
+  in `stopq=`. Order fixes each stop's colour, so a stop picked later is appended rather than
+  inserted — inserting would recolour every series already drawn. The table's grain is stop × line,
+  so a stop served by two selected lines is picked once and drawn twice.
 
-- **Colour in the figure above the table means which stop, and only there** — hue was already spoken
-  for by the line and dash by the Stop Measure, so several stops on one line had no channel left.
-  The row sparkline stays line-coloured and the map's ring stays neutral;
-  [ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) records the split and why
-  the palette stops where it does.
+- **Colour in the figure above the table means which stop, and only there.** Hue was spoken for by
+  the line and dash by the Stop Measure, so several stops on one line had no channel left. The row
+  sparkline stays line-coloured and the map's ring stays neutral;
+  [ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) records why the palette
+  stops where it does.
 
 - **The lazy-load rule is a gate on intent.** Rail (89 KB) loads when the panel is on. Bus (5.3 MB)
   loads only when the panel is on, the Month Window overlaps the Stop Coverage Window, **and** a
   selected line is not one the rail payload serves. `stop_locations.json` (1.6 MB) is `import()`ed
-  so it gets its own async chunk. **Neither payload goes anywhere near `App`'s `/ridership.json`
-  effect** — that is the first-paint path, and `OutputArea` is lazy precisely to keep large things
-  off it. `ANALYZE=1 npm run build` gates this: the stop payloads must appear as emitted assets and
-  never inside a `dist/assets/*.js`.
+  into its own async chunk. **Neither payload goes near `App`'s `/ridership.json` effect** — the
+  first-paint path, which `OutputArea` is lazy to keep large things off. `ANALYZE=1 npm run build`
+  gates this: the stop payloads must be emitted assets and never inside a `dist/assets/*.js`.
 
 - **G Line (901) and J Line (910) BRT live in the *bus* payload** while the app lists them under the
-  train filter, because the split is by source export. So "is this a bus line" is the wrong question
-  to gate the bus fetch on — the question asked instead is "does the **rail payload** already serve
-  this line", answered from the rail records. The app's mode *filter* likewise keys off
+  train filter, because the split is by source export. So "is this a bus line" is the wrong gate on
+  the bus fetch; the question asked instead is whether the **rail payload** already serves the line,
+  answered from the rail records. The mode *filter* likewise keys off
   `metro_line_metadata_current.json`, never off which file a row came from.
 
 - **The Stop Coverage Window is stated, never enforced.** Stop data covers twelve months inside the
   chart's 2009 → 2026, so the panel names both spans persistently, labels partial coverage in the
-  line table's own words, and — where the window reaches no stop data at all — offers a button that
-  sets the window through the same setters a chart drag uses. It **never** clamps or widens the
-  window; that would make one URL mean two things.
+  line table's own words, and where the window reaches no stop data offers a button that moves it
+  through the same setters a chart drag uses. It **never** clamps or widens the window, because that
+  would make one URL mean two things.
 
 ## The map
 
@@ -225,17 +222,16 @@ when `VITE_MAPTILER_KEY` is set, otherwise OpenFreeMap.
 
 The map instance lives in a ref and is initialised once. **Selection changes only update the layer
 filter** — the map itself is never rebuilt. The stop source and layer are added **once, on first
-use** — the first time there are markers to draw, which is never for a reader who does not open the
-panel — and after that new markers reach the source through `getSource(...).setData(...)`, and the
-Stop Measure and the Stop Selection through `setPaintProperty`. **Nothing re-adds a source or a
-layer**; `map.getLayer` is the guard. Every selected stop rings, from one `['in', ['get', 'stop_key'],
-['literal', keys]]` test, and every ring is the same neutral colour — **no chart palette reaches the
-map**, so colour here keeps meaning which line in the fill and selected-or-not in the ring. The layer's pointer handlers are still registered once in
-`load`, because a layer-scoped MapLibre listener is a delegated one and resolves its layer at event
-time.
+use**, the first time there are markers to draw, which never happens for a reader who does not open
+the panel. After that, markers reach the source through `setData` and the Stop Measure and Selection
+through `setPaintProperty`; **nothing re-adds a source or a layer**, with `map.getLayer` as the
+guard. Every selected stop rings from one `['in', ['get', 'stop_key'], ['literal', keys]]` test, in
+the same neutral colour — **no chart palette reaches the map**, so colour keeps meaning which line in
+the fill and selected-or-not in the ring. The pointer handlers are still registered once in `load`,
+because a layer-scoped MapLibre listener is delegated and resolves its layer at event time.
 
-Clutter on the stop layer is controlled by **selection, not zoom-gating**: the busiest bus line has
-~154 stops, so a five-line selection draws ≤ ~800 circles.
+Clutter is controlled by **selection, not zoom-gating**: the busiest bus line has ~154 stops, so a
+five-line selection draws ≤ ~800 circles.
 
 `Map.tsx` publishes the live instance as `window.__metroMap`. Nothing in the app reads it; it is a
 test seam, and it is the only way to await a WebGL canvas or inspect what actually rendered. Don't

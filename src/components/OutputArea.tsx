@@ -15,13 +15,10 @@ import type { StopMeasure } from '../@types/stops.types';
 import { NO_SELECTED_STOPS } from '../utils/stopDefaults';
 
 /**
- * The stand-in for an absent stop handler.
- *
- * `StopPanel` declares its five callbacks non-optional while they arrive here optional,
- * and the gap used to be closed by wrapping each in an arrow at the call site. That made
- * five new functions per render of this component, which is what a `React.memo` on a stop
- * row would have had to survive — it could not. One module-level no-op closes the same gap
- * with an identity that never changes.
+ * The stand-in for an absent stop handler. `StopPanel` declares its five callbacks
+ * non-optional while they arrive here optional, and closing that gap with an arrow per
+ * call site made five new functions per render — which the memo on a stop row could not
+ * survive. One module-level no-op has an identity that never changes.
  */
 const noop = (): void => {};
 
@@ -38,12 +35,10 @@ interface OutputAreaProps {
   onRangeSelect?: (startMonth: string, endMonth: string) => void;
 
   /**
-   * The stop panel's slice of dashboard state.
-   *
-   * It arrives as props rather than being read here, because it is URL-synced state
-   * and `useUserDashboardInput` is the one place that reads and writes the URL. The
-   * derivation itself is local: `useStopView` is imported by this module only, so the
-   * payloads it fetches land inside this lazy chunk instead of on the first-paint path.
+   * The stop panel's slice of dashboard state. It arrives as props because it is
+   * URL-synced and `useUserDashboardInput` is the one place that reads and writes the URL.
+   * The derivation is local: this module is `useStopView`'s only importer, so its payloads
+   * land in this lazy chunk rather than on the first-paint path.
    */
   showStops?: boolean;
   stopMeasure?: StopMeasure;
@@ -54,7 +49,7 @@ interface OutputAreaProps {
   onSelectAllStops?: (stopKeys: string[]) => void;
   stopSearchText?: string;
   onStopSearchTextChange?: (text: string) => void;
-  /** The Month Window and Day Of Week the stop derivation reads. */
+  /** The month window and day of week the stop derivation reads. */
   startDate: Date;
   endDate: Date;
   dayOfWeek: DayOfWeek;
@@ -120,10 +115,8 @@ export default function OutputArea({
 
   /**
    * The selected lines, and their ids in the order readouts and markers should follow.
-   *
-   * Memoised because both are the stop derivation's inputs: a fresh array each render
-   * would rebuild the Stop View — and with it the whole marker collection — on every
-   * unrelated state change.
+   * Memoised because both feed the stop derivation, so a fresh array each render would
+   * rebuild the view — and the whole marker collection — on any unrelated state change.
    */
   const selectedLines = useMemo(
     () => lines.filter((line) => line.selected),
@@ -149,21 +142,16 @@ export default function OutputArea({
   });
 
   /**
-   * The chart's own month axis, respelled for the stop panel.
-   *
-   * The two derivations spell a month differently — the chart's labels are `"YYYY M"`,
-   * the stop grain's are `YYYY-MM` — and `src/chart/months.ts` is where every
-   * conversion between them lives. This is a respelling and nothing more: both lists
-   * came out of a derivation that applied the one window predicate.
+   * The chart's month axis, respelled for the stop panel: chart labels are `"YYYY M"` and
+   * the stop grain's are `YYYY-MM`, with every conversion in `src/chart/months.ts`. A
+   * respelling and nothing more — both lists came out of the one window predicate.
    */
   const windowMonths = useMemo(() => months.map(labelToEventDate), [months]);
 
   /**
-   * Jump the Month Window to the Stop Coverage Window.
-   *
-   * Routed through `onRangeSelect` — the very setters a drag across the chart uses —
-   * so one press moves the pickers, the chart and the URL together. The only work here
-   * is the spelling: coverage is `YYYY-MM`, the chart's labels are `"YYYY M"`.
+   * Jump the month window to the stop coverage window. Routed through `onRangeSelect`, the
+   * setters a chart drag uses, so one press moves the pickers, the chart and the URL
+   * together. The only work here is the spelling.
    */
   const useCoverageWindow = useCallback(
     (from: string, to: string) => {

@@ -15,10 +15,8 @@ const STYLE_URL = mapTilerKey
   : 'https://tiles.openfreemap.org/styles/positron';
 
 /**
- * The stop layer's starting data, and what it falls back to when the panel is off.
- *
- * A module constant rather than an inline object literal so the effect that pushes it
- * through `setData` is not handed a new reference every render.
+ * Empty marker set: the layer's initial data, and its fallback when the panel is off.
+ * A module constant so the effect that calls `setData` sees a stable reference.
  */
 const NO_MARKERS: StopView['markers'] = {
   type: 'FeatureCollection',
@@ -26,14 +24,9 @@ const NO_MARKERS: StopView['markers'] = {
 };
 
 /**
- * How each Stop Measure is drawn — **fill and stroke, never a second colour ramp**.
- *
- * Colour already means *which line*, shared with the chart, the legend and the line
- * popup. Giving it a second meaning would make a stop's hue answer two questions at
- * once, so the measure gets the channels colour is not using: Boardings are a solid
- * disc, Alightings a ring, and Both a filled disc with a ring around it. Radius stays
- * the magnitude in all three, because `buildStopView` already computed it against the
- * measure the reader picked.
+ * How each measure is drawn: fill and stroke, never a second colour ramp. Colour already
+ * means which line, so the measure gets the unused channels — boardings a solid disc,
+ * alightings a ring, both a disc with a ring. Radius is the magnitude throughout.
  */
 const MEASURE_PAINT: Record<
   StopMeasure,
@@ -45,22 +38,20 @@ const MEASURE_PAINT: Record<
 };
 
 /**
- * A selected stop's ring. Neutral, so it reads as selection rather than as a line — and
- * one colour for every selected stop, however many are selected. The chart above the
- * table gives each stop its own hue; the map deliberately does not follow it there, so
- * colour on the map keeps answering one question (ADR-0014).
+ * A selected stop's ring: neutral, and the same for every selected stop, so it reads as
+ * selection rather than as a line. The chart's per-stop palette stops there (ADR-0014).
  */
 const SELECTED_STROKE_COLOR = '#033056';
 const SELECTED_STROKE_WIDTH = 3;
 
-/** Shared default, so this prop's identity is stable between renders. */
+/** Shared default, so the prop's identity is stable between renders. */
 const NO_READOUTS: readonly StopReadout[] = [];
 
 /** Which lines are selected — asked by the route layer, the stop layer and `load`. */
 const selectedLineIds = (lines: readonly LineReadout[]): number[] =>
   lines.filter((line) => line.selected).map((line) => line.id);
 
-/** A layer-scoped pointer event, which carries the features under the cursor. */
+/** A layer-scoped pointer event, carrying the features under the cursor. */
 type LayerMouseEvent = maplibregl.MapMouseEvent & {
   features?: maplibregl.MapGeoJSONFeature[];
 };
@@ -73,23 +64,17 @@ const selectedFilter = (ids: number[]): maplibregl.FilterSpecification => [
 ];
 
 /**
- * Add the stop source and its circle layer — **once, and only once there are stops to
- * draw.** Returns whether the layer is now on the map.
+ * Add the stop source and circle layer, once and only once there are stops to draw.
+ * Returns whether the layer is now on the map.
  *
- * Once added it is never re-added: `map.getLayer` is the guard, so every later change
- * of markers, measure or selection is a `setData` / `setFilter` / `setPaintProperty`
- * on the live layer, never a teardown and rebuild.
+ * `map.getLayer` guards re-entry, so every later change is a `setData` / `setFilter` /
+ * `setPaintProperty` rather than a rebuild. Adding on first use rather than inside
+ * `load` keeps a map that never opened the panel at its original two layers, which is
+ * also what keeps `e2e/map.spec.ts`'s layer-stack assertion true.
  *
- * Creating it on first use rather than inside `load` is deliberate. The stop panel is
- * off by default and most readers never open it, so a map that was never asked for
- * stops carries exactly the two route layers it always did — which is also what keeps
- * `e2e/map.spec.ts`'s layer-stack assertion true without that spec being edited.
- *
- * Everything the layer paints per feature is read straight off the feature. `radius` is
- * the per-mode sqrt-normalised scale `buildStopView` computed where the domain is
- * known, and `color` is `getLineColor` — the same hue the chart and the popups use.
- * Recomputing either here is how the map and the table start disagreeing about what a
- * circle means.
+ * `radius` and `color` are read straight off each feature; `buildStopView` computed them
+ * where the domain is known, and recomputing here is how the map and table start
+ * disagreeing about what a circle means.
  */
 function ensureStopLayer(
   map: maplibregl.Map,
@@ -100,8 +85,8 @@ function ensureStopLayer(
 
   map.addSource('stop-ridership', { type: 'geojson', data: markers });
 
-  // No `beforeId`: appended last, which puts the circles above both route layers so a
-  // stop is never hidden under the line it belongs to.
+  // No `beforeId`: appended last, so circles sit above both route layers and a stop is
+  // never hidden under its own line.
   map.addLayer({
     id: 'stops-selected',
     type: 'circle',
@@ -127,22 +112,16 @@ function applyStopMarkers(
   map.getSource<maplibregl.GeoJSONSource>('stop-ridership')?.setData(markers);
 }
 
-/** Fill, ring and the selected stops' marks — everything the measure and selection drive. */
+/** Fill, ring and selection marks — everything the measure and selection drive. */
 function applyStopPaint(
   map: maplibregl.Map,
   measure: StopMeasure,
   selectedStopKeys: readonly string[],
 ): void {
   const { opacity, strokeWidth } = MEASURE_PAINT[measure];
-  /*
-   * Every selected stop rings, in the one neutral colour. **No palette reaches the map.**
-   * The chart colours a series per stop, but colour here already answers a different
-   * question — which line, in the fill — and a second meaning in the ring beside it would
-   * compete with the line hues rather than clarify them (ADR-0014).
-   *
-   * An empty selection needs no sentinel: `['in', …, ['literal', []]]` matches nothing on
-   * its own, which is what the old `?? ''` comparison had to fake.
-   */
+  // No palette reaches the map: the fill already means which line, and a second meaning
+  // in the ring would compete with it (ADR-0014). An empty selection needs no sentinel —
+  // `['in', …, ['literal', []]]` matches nothing on its own.
   const isSelected = [
     'in',
     ['get', 'stop_key'],
@@ -172,11 +151,10 @@ interface StopLayerState {
 }
 
 /**
- * Bring the stop layer in line with the current state — the one place that happens.
- *
- * Called from `load` and from the effect below, so a map that finishes its style after
- * the panel already has data paints the current state rather than the first render's.
- * A no-op until there is something to draw.
+ * The one place the stop layer is brought in line with current state. Called from `load`
+ * and from the effect below, so a map whose style finishes after the panel has data
+ * paints the current state rather than the first render's. A no-op until there is
+ * something to draw.
  */
 function syncStopLayer(
   map: maplibregl.Map,
@@ -191,19 +169,19 @@ function syncStopLayer(
 interface MapProps {
   lines: LineReadout[];
   /**
-   * Markers from `buildStopView`, ready for `setData`. Radius and colour are feature
-   * properties the module computed; **nothing here recomputes either.**
+   * Markers from `buildStopView`, ready for `setData`. Radius and colour arrive as
+   * feature properties; nothing here recomputes either.
    */
   stopMarkers?: StopView['markers'];
-  /** The Stop Readouts those markers were built from, for the hover popup. */
+  /** The readouts those markers were built from, for the hover popup. */
   stopReadouts?: readonly StopReadout[];
   stopMeasure?: StopMeasure;
-  /** The Stop Selection — every stop the panel is drawing, each marked with a ring. */
+  /** Every stop the panel is drawing, each marked with a ring. */
   selectedStopKeys?: readonly string[];
   /**
    * A click on a circle toggles that stop, exactly as its table row does. One callback
-   * rather than a select/clear pair, because whether the click adds or removes is a
-   * question about the selection, and the selection is the hook's to answer.
+   * rather than a select/clear pair, because whether a click adds or removes is a
+   * question about the selection, which is the hook's to answer.
    */
   onToggleStop?: (stopKey: string) => void;
 }
@@ -220,12 +198,10 @@ export default function Map({
   const map = useRef<maplibregl.Map | null>(null);
   const isStyleLoaded = useRef(false);
   /**
-   * The props as of this render, for the layers' handlers to read.
-   *
-   * Every handler below is registered once, inside `load`, so it closes over the first
-   * render's props; and `load` fires whenever MapLibre finishes its style, which can be
-   * several renders later. Each ref is assigned here in the render body rather than in an
-   * effect, because `load` is a MapLibre event that can fire before React flushes one.
+   * This render's props, for the handlers to read. Handlers are registered once inside
+   * `load`, so they close over the first render's props, and `load` can fire several
+   * renders later. Assigned in the render body rather than an effect, because `load` can
+   * fire before React flushes one.
    */
   const linesRef = useRef<LineReadout[]>(lines);
   linesRef.current = lines;
@@ -355,17 +331,13 @@ export default function Map({
       map.current!.on('mouseleave', 'lines-selected', onMouseLeave);
 
       /**
-       * Stop hover and click, on the **same** popup instance as the line hover.
+       * Stop hover, on the same popup instance as the line hover. Registered after the
+       * line handlers because a circle sits above its route, so both layers' `mousemove`
+       * fire for one pointer position and the last `setHTML` should win.
        *
-       * Registered after the line handlers on purpose. A circle sits on top of the
-       * route it belongs to, so both layers' `mousemove` fire for one pointer position
-       * and the last `setHTML` wins — which should be the thing actually under the
-       * cursor.
-       *
-       * Registered here even though `stops-selected` does not exist yet: a
-       * layer-scoped listener is a delegated one, and MapLibre resolves the layer at
-       * event time. Registering once, in `load`, is what keeps the handler count fixed
-       * however often the panel is opened and closed.
+       * `stops-selected` need not exist yet: layer-scoped listeners are delegated, and
+       * MapLibre resolves the layer at event time. Registering once in `load` keeps the
+       * handler count fixed however often the panel is opened.
        */
       const onStopMouseMove = (e: LayerMouseEvent) => {
         const feature = e.features?.[0];
@@ -393,15 +365,10 @@ export default function Map({
       map.current!.on('mousemove', 'stops-selected', onStopMouseMove);
       map.current!.on('mouseleave', 'stops-selected', onMouseLeave);
       /**
-       * A circle is the same toggle its table row is: clicking a selected stop deselects
-       * it. Called through `onToggleStopRef` rather than a closed-over prop — this
-       * handler is registered once, in `load`, so the prop it captured is the first
-       * render's, and calling that stale callback would leave the map wired to a
-       * selection nobody has any more.
-       *
-       * The handler no longer asks *whether* the stop is selected. It says "toggle this
-       * one" and the hook answers from the current selection, so there is one membership
-       * rule instead of a copy here that could disagree with it.
+       * A circle is the same toggle its table row is. Called through `onToggleStopRef`
+       * because this handler is registered once and the prop it captured is the first
+       * render's. It never asks whether the stop is selected — the hook answers that from
+       * the current selection, so there is one membership rule rather than a copy here.
        */
       map.current!.on('click', 'stops-selected', (e) => {
         const stopKey = e.features?.[0]?.properties.stop_key as
@@ -429,9 +396,8 @@ export default function Map({
       isStyleLoaded.current = false;
       delete window.__metroMap;
     };
-    // Deliberately empty: the map is initialised once. Everything the `load` handler
-    // needs from a later render it reads through a ref, which is why this no longer
-    // needs an exhaustive-deps exemption.
+    // Deliberately empty: the map is initialised once, and the `load` handler reads
+    // anything from a later render through a ref, so no exhaustive-deps exemption.
   }, []);
 
   // Sync selected lines with the route layer's filter whenever selection changes.
@@ -444,15 +410,12 @@ export default function Map({
   }, [lines]);
 
   /**
-   * The stop layer, in one effect.
+   * The stop layer in one effect. Markers, selected lines, measure and selection are four
+   * views of one layer's state, so they are applied together rather than racing through
+   * three effects — and only one of them then has to know the layer may not exist yet.
    *
-   * Markers, the selected lines, the Stop Measure and the Stop Selection are four views
-   * of one layer's state, so they are applied together rather than racing each other
-   * through three effects — and the layer they apply to may not exist yet, which is a
-   * condition only one of them should have to know about.
-   *
-   * `stopReadouts` is not among them: the popup handler reads it from a ref at event
-   * time, so a change to it paints nothing and must not re-upload the source.
+   * `stopReadouts` is absent: the popup handler reads it from a ref at event time, so a
+   * change to it paints nothing and must not re-upload the source.
    */
   useEffect(() => {
     if (!isStyleLoaded.current || !map.current) return;

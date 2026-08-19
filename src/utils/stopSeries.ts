@@ -4,18 +4,14 @@ import type { DayOfWeek } from '../@types/metrics.types';
 import type { StopRecord } from '../@types/stops.types';
 
 /**
- * Every stop's Boardings and Alightings across a Stop View's month axis.
+ * Every stop's boardings and alightings across a stop view's month axis. `src/stops/`
+ * exposes no per-stop series, so the panel assembles one — a gap to close there rather
+ * than a licence to re-derive anything here. The months come from the derivation's axis
+ * and the figures from `stopMetrics`, so this states no window rule and keeps no second
+ * copy of the day-of-week → column mapping.
  *
- * `src/stops/index.ts` exposes readouts and markers but no per-stop series, so the
- * panel assembles one. That is a gap worth closing in the module rather than a licence
- * to re-derive anything here: the months come from the derivation's own axis, and each
- * month's figures come from `stopMetrics`, so this file neither states the window rule
- * nor keeps a second copy of the Day Of Week → column mapping.
- *
- * There is one index per panel, not one build per row. The ranked table draws a
- * sparkline in every row and the figure above it draws the selected stop, so a
- * per-caller scan of the records would be O(rows × records) — ~800 × ~106,000. Both
- * read this.
+ * One index per panel, not one build per row: the table draws a sparkline per row and the
+ * figure draws the selection, so a per-caller scan would be ~800 × ~106,000.
  */
 
 export interface StopSeriesPoint {
@@ -27,14 +23,12 @@ export interface StopSeriesPoint {
 }
 
 export interface BuildStopSeriesIndexInput {
-  /** Every Stop Ridership Record loaded, unfiltered. */
+  /** Every loaded stop record, unfiltered. */
   records: readonly StopRecord[];
   /**
-   * The Stop View's month axis — the months **the derivation** put in the window.
-   *
-   * Taking the axis from the view is what keeps the window rule to one statement: this
-   * file compares month keys against a list `buildStopView` produced and never asks
-   * whether a month is in the window (ADR-0009).
+   * The stop view's month axis — the months the derivation put in the window. Taking it
+   * from the view keeps the window rule to one statement: this file compares keys against
+   * a list `buildStopView` produced and never asks what "in the window" means (ADR-0009).
    */
   months: readonly string[];
   dayOfWeek: DayOfWeek;
@@ -42,19 +36,15 @@ export interface BuildStopSeriesIndexInput {
 
 export interface StopSeriesIndex {
   /**
-   * The series for one (stop, line), aligned to the view's month axis.
-   *
-   * Never null and never short: a pair with no records in the window still yields one
-   * point per month with every figure `null`, so a caller drawing it gets an empty
-   * chart of the right width rather than a chart of the wrong width.
-   *
-   * The returned array is cached, so repeat calls hand back the identical reference —
-   * which is what stops Chart.js rebuilding a dataset it already has.
+   * The series for one (stop, line), aligned to the view's month axis. Never null and
+   * never short: a pair with no records still yields one all-`null` point per month, so a
+   * caller gets an empty chart of the right width. The array is cached, so repeat calls
+   * hand back the same reference and Chart.js does not rebuild a dataset it has.
    */
   seriesFor(stopKey: string, lineId: number): StopSeriesPoint[];
 }
 
-/** Get the entry, creating it first if this is the first time it is asked for. */
+/** Get the entry, creating it on first ask. */
 function getOrCreate<K, V>(map: Map<K, V>, key: K, make: () => V): V {
   const hit = map.get(key);
   if (hit !== undefined) return hit;
@@ -64,27 +54,21 @@ function getOrCreate<K, V>(map: Map<K, V>, key: K, make: () => V): V {
 }
 
 /**
- * Group every record once, and align a pair's months only when someone asks for it.
+ * Group every record once, and align a pair's months only when asked. Each month's figures
+ * come from `stopMetrics` over that month's single record — an average of one value is
+ * that value — so a sparkline plots the figures the table ranks by. Reading the record's
+ * fields directly would mean a second copy of the day-of-week → column mapping.
  *
- * Each month's figures come from `stopMetrics` over that month's single record — an
- * average of one value is that value — so the boardings a sparkline plots are the same
- * figures the table ranks by and the marker is sized from. Reading the record's fields
- * directly would mean a second copy of the Day Of Week → column mapping, which is
- * private to `src/stops/` for exactly that reason.
- *
- * A month with no record contributes `null` rather than `0`, and no chart drawing this
- * sets `spanGaps`, so the line breaks there.
+ * A month with no record contributes `null` rather than `0`, and nothing drawing this sets
+ * `spanGaps`, so the line breaks there.
  */
 export function buildStopSeriesIndex({
   records,
   months,
   dayOfWeek,
 }: BuildStopSeriesIndexInput): StopSeriesIndex {
-  /*
-   * Nested line → stop → month rather than a `${lineId}:${stopKey}` composite key.
-   * Stop keys are themselves colon-delimited (`bus:vermont-wilshire`), so any
-   * delimiter cheap enough to concatenate is one a key could already contain.
-   */
+  // Nested line → stop → month rather than a composite key: stop keys are themselves
+  // colon-delimited, so any cheap delimiter is one a key could already contain.
   const grouped = new Map<number, Map<string, Map<string, StopRecord>>>();
   for (const record of records) {
     const byStop = getOrCreate(
@@ -97,18 +81,14 @@ export function buildStopSeriesIndex({
       record.stop_key,
       () => new Map<string, StopRecord>(),
     );
-    // `formatMonth`, not a second `padStart` here: these keys must match the axis
-    // strings `buildStopView` emitted, or every lookup below misses and every sparkline
-    // draws blank.
+    // `formatMonth`, not a second `padStart`: these keys must match the axis strings
+    // `buildStopView` emitted, or every lookup below misses and the sparklines draw
+    // blank.
     byMonth.set(formatMonth(record), record);
   }
 
-  /*
-   * Alignment is deferred, not done in the loop above. Grouping the records is one
-   * cheap pass; the cost is a `stopMetrics` call per month per pair, and the table
-   * mounts a row's sparkline only when it is scrolled to. Aligning every pair up front
-   * would do that work for rows nobody looks at.
-   */
+  // Alignment is deferred: grouping is one cheap pass, but the cost is a `stopMetrics`
+  // call per month per pair, and the table mounts a sparkline only when scrolled to.
   const aligned = new Map<number, Map<string, StopSeriesPoint[]>>();
 
   return {

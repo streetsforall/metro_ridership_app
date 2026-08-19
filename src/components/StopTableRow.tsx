@@ -8,42 +8,32 @@ import type { StopSeriesIndex } from '../utils/stopSeries';
 import type { StopMeasure } from '../@types/stops.types';
 
 /**
- * One row of the ranked stop table.
+ * One row of the ranked stop table, memoised because of how the table learns what is
+ * visible. `useVisibleRows` keeps the visible set in React state, so every
+ * IntersectionObserver batch re-renders `StopTable` — dozens of times per scroll — and
+ * inline that reconciled all ~800 rows, Radix subtree and mounted sparkline included.
  *
- * **Its own memoised component because of how the table learns what is visible.**
- * `useVisibleRows` keeps the visible set in React state, so every IntersectionObserver
- * batch re-renders `StopTable` — dozens of times during one scroll. Inline, that
- * reconciled all ~800 rows each time, eight cells and a Radix subtree apiece, plus a
- * Chart.js sparkline for every row already mounted. Behind `memo` only the row that
- * actually changed does any work.
- *
- * Every prop is therefore either a primitive or a reference the caller keeps stable, and
- * that is a standing constraint rather than an incidental fact: one fresh object or arrow
- * per render here would put the whole table back where it started.
+ * Every prop is therefore a primitive or a reference the caller keeps stable. That is a
+ * standing constraint: one fresh object per render here undoes the whole thing.
  */
 
 /**
- * Spelled out rather than interpolated: Tailwind scans source text for whole class names,
- * so a `text-${align}` template produces a class that is never generated.
- *
- * It lives here, and the table's headers import it, so that the dependency runs one way —
- * `StopTable` → `StopTableRow` — and the two never form a cycle.
+ * Spelled out rather than interpolated, because Tailwind scans source text for whole class
+ * names and a `text-${align}` template produces a class that is never generated. It lives
+ * here and the headers import it, so the dependency runs one way and never cycles.
  */
 export const ALIGN_CLASS = { left: 'text-left', right: 'text-right' } as const;
 
 export interface StopTableRowProps {
   /**
-   * The row's figures. A stable reference: the readouts come from `buildStopView` and a
+   * The row's figures. A stable reference: readouts come from `buildStopView`, and a
    * re-sort reorders the array without minting new objects.
    */
   readout: StopReadout;
   /**
-   * The row's identity, `${lineId}-${stopKey}`.
-   *
-   * The line has to be in it: a stop serving two selected lines is two rows, and a stop
-   * key alone would name them both. React keys by this, so a re-sort re-parents an
-   * already-mounted sparkline rather than remounting it, and every `data-qa` below is
-   * suffixed with it.
+   * The row's identity, `${lineId}-${stopKey}`. The line has to be in it because a stop on
+   * two selected lines is two rows. React keys by this, so a re-sort re-parents an
+   * already-mounted sparkline rather than remounting it.
    */
   rowKey: string;
   /** The display name of the line this row is measured on. */
@@ -52,22 +42,16 @@ export interface StopTableRowProps {
   /** Whether the row has been scrolled to, and so whether its sparkline is drawn. */
   isVisible: boolean;
   /**
-   * The panel's one series index, passed rather than the series itself.
-   *
-   * `seriesFor` aligns a pair's months on first call and caches the result, deliberately
-   * so — see `buildStopSeriesIndex`. Resolving the series in the parent's map would align
-   * all ~800 pairs up front, doing that work for rows nobody scrolls to. Asking here, and
-   * only when the row is visible, keeps that deferral intact; the index itself is
-   * memoised by `StopPanel`, so it is as stable a prop as the array would have been.
+   * The panel's one series index, passed rather than the series itself. `seriesFor` aligns
+   * a pair's months on first call and caches the result, so resolving in the parent's map
+   * would align all ~800 pairs up front for rows nobody scrolls to. Asking here, only when
+   * the row is visible, keeps that deferral; the index is memoised by `StopPanel`.
    */
   seriesIndex: StopSeriesIndex;
   measure: StopMeasure;
-  /** Whether this adds or removes is the selection's question, asked of the hook. */
+  /** Whether this adds or removes is the hook's question to answer. */
   onToggleStop: (stopKey: string) => void;
-  /**
-   * The `ref` callback for the observed cell, from `visibleRows.observe(rowKey)`, which
-   * caches one callback per key.
-   */
+  /** The observed cell's `ref`, from `visibleRows.observe(rowKey)` — one per key. */
   observe: (element: Element | null) => void;
 }
 
@@ -82,18 +66,14 @@ function StopTableRow({
   onToggleStop,
   observe,
 }: StopTableRowProps) {
-  /* One toggle for both routes in — the row and its checkbox. */
+  /* One toggle for both routes in: the row and its checkbox. */
   const toggle = (): void => onToggleStop(readout.key);
 
   return (
-    /* The whole row is a click target, but **not a tab stop**. The checkbox inside it is
-       the keyboard route, as it is in `LineTableRow`: focusing both would put ~1600 stops
-       in an 800-row table and announce every row twice, and the row itself carries no
-       role saying it is actionable.
-
-       No `aria-current` either — it means "the current item in a set", which several
-       selected rows are not. The checkbox's checked state says a row is selected, in the
-       one place a reader looks for that answer. */
+    /* A click target but not a tab stop; the checkbox is the keyboard route, as in
+       `LineTableRow`. Focusing both would put ~1600 stops in an 800-row table and announce
+       every row twice. No `aria-current` either: it means "the current item in a set",
+       which several selected rows are not — the checkbox says a row is selected. */
     <tr
       data-qa={`stop-row-${rowKey}`}
       onClick={toggle}
@@ -101,18 +81,15 @@ function StopTableRow({
         isSelected ? 'bg-stone-200' : 'even:bg-[rgba(0,0,0,0.05)]'
       }`}
     >
-      {/* The row's only visible statement of whether it is selected, and the one route in
-          from the keyboard.
-
-          No `id`: the accessible name comes from `aria-label` here rather than from a
-          `<label htmlFor>` as the line table's does. */}
+      {/* The row's only visible statement that it is selected, and the keyboard route in.
+          No `id`: the accessible name comes from `aria-label` rather than a `<label
+          htmlFor>` as the line table's does. */}
       <td data-qa={`stop-select-${rowKey}`} className="w-10">
         <Checkbox.Root
           aria-label={`${readout.name} · ${lineName}`}
           checked={isSelected}
           onClick={(event) => {
-            // The row is a click target too, so without this one click would toggle
-            // twice and land back where it started.
+            // The row is a click target too, so without this one click toggles twice.
             event.stopPropagation();
             toggle();
           }}
@@ -141,12 +118,12 @@ function StopTableRow({
       <td className={ALIGN_CLASS.right}>{formatRiders(readout.netAverage)}</td>
       <td className={ALIGN_CLASS.right}>{formatShare(readout.shareOfLine)}</td>
 
-      {/* The observed box is the whole cell, so the ref goes here. The cell has no
-          accessible text on purpose: a canvas is opaque to assistive tech regardless, and
-          the figures beside it carry the information. */}
+      {/* The observed box is the whole cell. No accessible text on purpose: a canvas is
+          opaque to assistive tech anyway, and the figures beside it carry the same
+          information. */}
       <td data-qa={`stop-sparkline-${rowKey}`} ref={observe}>
         {/* The same box whether or not the chart has mounted, so a sparkline arriving
-            never moves the rows below it. */}
+            never moves the rows below. */}
         <div className="h-10 w-52">
           {isVisible && (
             <StopSparkline

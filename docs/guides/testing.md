@@ -42,7 +42,7 @@ because tests that touch the date bounds need `virtual:ridership-bounds` to reso
 Playwright screenshots the app and compares against committed baselines. **Twelve specs, 54 Linux
 baselines.** A thirteenth, [`chart-interaction.spec.ts`](../../e2e/chart-interaction.spec.ts), shoots
 nothing — the chart's interactive layer is an HTML tooltip and DOM attributes, so it is asserted
-rather than captured. [`stop-fixtures.ts`](../../e2e/stop-fixtures.ts) is not a spec either: it is
+rather than captured. [`stop-fixtures.ts`](../../e2e/stop-fixtures.ts) is not a spec either — it is
 the route stub the two stop suites share.
 
 ```bash
@@ -98,16 +98,15 @@ never renders identically twice.
 **Spec names route to projects, so `stop-map.spec.ts` is named the way it is on purpose.** The
 `map` project's `testMatch` and the two viewport projects' `testIgnore` are both the unanchored
 `/map\.spec\.ts/`, so any name *ending* in `map.spec.ts` lands in the `map` project and nowhere
-else — which is where a WebGL baseline has to be, because that project pins SwiftShader and
-`deviceScaleFactor: 1`. Renaming such a file to something else moves it silently into both viewport
-projects, where it would shoot two baselines off the host GPU.
+else — where a WebGL baseline has to be, because that project pins SwiftShader and
+`deviceScaleFactor: 1`. Renaming such a file moves it silently into both viewport projects, where it
+would shoot two baselines off the host GPU.
 
-The two stop suites route-stub both payloads with `stop-fixtures.ts` rather than reading
-`src/data/stop_ridership.bus.json`. That file is 5.3 MB and is rewritten every time an export
-lands; a baseline shot against it would move for reasons that have nothing to do with the code. The
-fixtures use **real stop keys**, because `attachStopLocations` joins against the bundled
-`stop_locations.json` and an invented key would decode fine and then be silently absent from the
-map.
+The two stop suites route-stub both payloads with `stop-fixtures.ts` rather than reading the 5.3 MB
+`stop_ridership.bus.json`, which is rewritten every time an export lands: a baseline shot against it
+would move for reasons unrelated to the code. The fixtures use **real stop keys**, because
+`attachStopLocations` joins against the bundled `stop_locations.json` and an invented key would
+decode fine and then be silently absent from the map.
 
 ### Why some shots are element-scoped
 

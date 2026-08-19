@@ -186,157 +186,148 @@ fetcher. Worth moving, in a PR that is allowed to touch both.
 
 **The panel's visibility control was deferred, then added.** The panel opens with `stops=1`, and the
 hook has always exposed `showStops` / `toggleShowStops`. No checkbox was added at first, for two
-reasons that pointed the same way: any new chrome in the filter bar moves the full-page baselines,
-which this PR's original gate forbade; and
+reasons pointing the same way: new chrome in the filter bar moves the full-page baselines, which this
+PR's original gate forbade, and
 [#181](https://github.com/streetsforall/metro_ridership_app/pull/181) and
 [#182](https://github.com/streetsforall/metro_ridership_app/pull/182) are both open, both rewriting
 `DateRangeSelector` into a Panel Settings section, and both regenerating those baselines.
 
-It was added anyway, on request — a second checkbox in `DateRangeSelector`'s existing **Panel
+It was added anyway, on request: a second checkbox in `DateRangeSelector`'s existing **Panel
 Visibility** fieldset, beside Context Logs, labelled *Stop Ridership*. `App` threads `showStops` and
 `toggleShowStops` down explicitly, because `DateRangeSelector` takes named props rather than the
 `{...userDashboardInputState}` spread `LineSelector` gets.
 
 **This trades the gate away, and the cost was eight baselines, not nine and not six.** Three specs
-screenshot `fullPage` with the filter bar in frame: `visual.spec.ts` (6),
-`responsive-tablet.spec.ts` (2 — its own comment at `:45` names the `sm:flex-row` date range
-selector as a branch under test), and `chart-tooltip.spec.ts`'s `chart-tooltip-strip-mobile` (1).
-**Eight moved and are regenerated** in `a068d96`; the ninth did not move at all.
+screenshot `fullPage` with the filter bar in frame: `visual.spec.ts` (6), `responsive-tablet.spec.ts`
+(2 — its comment at `:45` names the `sm:flex-row` date range selector as a branch under test), and
+`chart-tooltip.spec.ts`'s `chart-tooltip-strip-mobile` (1). **Eight moved and are regenerated** in
+`a068d96`; the ninth did not move at all.
 
-`chart-tooltip-strip-mobile` is the exception, and the reason is worth keeping. It shoots
+`chart-tooltip-strip-mobile` is the exception, and the reason is worth keeping: it shoots
 `fullPage: true` with a `clip` computed from `#ridership-chart`'s own document rect
-(`e2e/chart-tooltip.spec.ts:237-265`), so a taller filter bar shifts the pane and the clip by the
-same amount and the captured pixels are unchanged. Do not regenerate it looking for a diff that is
-not there.
+(`e2e/chart-tooltip.spec.ts:237-265`), so a taller filter bar shifts the pane and the clip by the same
+amount and the captured pixels are unchanged. Do not regenerate it looking for a diff that is not
+there.
 
 Where the movement was real it was layout displacement rather than sub-threshold jitter, so it could
 not have hidden inside `maxDiffPixelRatio`. Whoever regenerates these must reconcile with #181/#182,
 which are editing the same component.
 
-**`stop=<key>` needs no encoding, and gets some anyway.** The key really is a URL-safe slug, but
+**`stop=<key>` needs no encoding, and gets some anyway.** The key is a URL-safe slug, but
 `URLSearchParams.toString()` percent-encodes `:` regardless, so the written form is `bus%3A…`. It
-decodes back to the same key, so a shared link still selects the stop it named; only the plan's
-claim about the literal spelling was wrong.
+decodes back to the same key, so a shared link still selects the stop it named; only the plan's claim
+about the literal spelling was wrong.
 
-**`stop_locations.json` is 1.6 MB, and `stops.types.ts` calls it "small".** Importing it statically
-would have put it in `OutputArea`'s chunk — which every reader downloads — so the panel `import()`s
-it and it gets its own chunk, fetched with the rail payload when the panel opens. Worth correcting
-the comment; worth more not bundling it.
+**`stop_locations.json` is 1.6 MB, and `stops.types.ts` calls it "small".** A static import would have
+put it in `OutputArea`'s chunk, which every reader downloads, so the panel `import()`s it into its own
+chunk, fetched with the rail payload when the panel opens. Worth correcting the comment; worth more
+not bundling it.
 
-**`src/stops/index.ts` exposes no per-stop series.** The panel needs one per stop, so it assembles
-them in `src/utils/stopSeries.ts` from the module's own month axis and `stopMetrics` — no window
-arithmetic, no second copy of the Day Of Week → column mapping. It would sit better inside the
-module, next to `stopMetrics`.
+**`src/stops/index.ts` exposes no per-stop series.** The panel assembles them in
+`src/utils/stopSeries.ts` from the module's own month axis and `stopMetrics` — no window arithmetic,
+no second copy of the Day Of Week → column mapping. It would sit better inside the module, next to
+`stopMetrics`.
 
-`buildStopSeriesIndex` is the whole panel's supply: one pass groups every record by (stop, line),
-and a pair's months are aligned on first ask and cached. Both readers — the ranked table's
-sparkline column and the figure above it — read that one cache, so the selected stop's row and its
-chart are drawing the identical array. The per-call scan it replaced was O(rows × records), which
-is ~800 × ~106,000 once the table draws a sparkline per row.
+`buildStopSeriesIndex` is the whole panel's supply: one pass groups every record by (stop, line), and
+a pair's months are aligned on first ask and cached. Both readers — the sparkline column and the
+figure above it — read that one cache, so a stop's row and its chart draw the identical array. The
+per-call scan it replaced was O(rows × records), ~800 × ~106,000 once every row has a sparkline.
 
 **The selected stop can be deselected, four ways.** It was a one-way door: a reader who opened a
-series could reach another stop or close the panel, but not get back to the state the panel opens
-in. Now every route in is a toggle — the table row, its checkbox, the map circle — and `Clear All`
-above the table empties the selection outright. The map's handler is registered once in `load`, so
-it calls out through a ref; a closed-over prop would be the first render's and would leave the map
-wired to a selection nobody has any more.
+series could reach another stop or close the panel, but not return to the state the panel opens in.
+Every route in is now a toggle — the table row, its checkbox, the map circle — and `Clear All` empties
+the selection outright. The map's handler is registered once in `load`, so it calls out through a
+ref; a closed-over prop would be the first render's and would leave the map wired to a selection
+nobody has any more.
 
-No state was added by the toggling itself. The URL sync already wrote `stop` conditionally, so
-clearing drops the param and a cleared panel is as shareable as a selected one.
+The toggling added no state. The URL sync already wrote `stop` conditionally, so clearing drops the
+param and a cleared panel is as shareable as a selected one.
 
-**The stop table became a multi-select, and the two ranked tables now match.** The line selector had
-a checkbox per row, a search bar and a `Select All` / `Clear All` pair; the stop table had none of
-them. It has all three now, laid out as `LineFilters` lays them out — search in a row of its own
-closed by a rule, then the two actions under it, both above the table they act on. `Deselect Stop`
-went away, because `Clear All` replaces it and belongs above the table rather than inside one
-series' caption.
+**The stop table became a multi-select, and the two ranked tables now match.** The line selector had a
+checkbox per row, a search bar and a `Select All` / `Clear All` pair; the stop table had none. It has
+all three now, laid out as `LineFilters` lays them out — search in a row of its own closed by a rule,
+then the two actions under it, both above the table they act on. `Deselect Stop` went away, because
+`Clear All` replaces it and belongs above the table rather than inside one series' caption.
 
 `selectedStopKey: string | null` became `selectedStopKeys: string[]`, comma-joined into the same
 `stop=` param. A comma cannot occur inside a key, whose charset is `^(bus|rail):[a-z0-9-]+$`, so
 splitting is unambiguous — and every link shared before this carries one key and still works. The
 search is its own param, `stopq=`, wired through both the lazy initialiser and the URL-sync effect.
 
-Selection order is load-bearing rather than incidental: the chart takes a hue by position, so a stop
-added later must land at the end. Inserting anywhere else would recolour every series already drawn.
+Selection order is load-bearing: the chart takes a hue by position, so a stop added later must land at
+the end, since inserting anywhere else would recolour every series already drawn.
 
-**Nothing caps the selection, and `Select All` is scoped by the search instead.** This is strict
-analogy with the line selector, which caps nothing either and relies on its own search to narrow
-what `Select All` reaches. The exposure is real and is recorded rather than fixed: press `Select All`
-on an unsearched five-line table and you select ~800 stops, and the chart will try to draw all of
-them. `Select All` adds only the listed rows; `Clear All` clears globally. That asymmetry is the
-line pair's, copied deliberately, because two ranked tables under one dashboard should not answer
-the same two words differently.
+**Nothing caps the selection, and `Select All` is scoped by the search instead.** Strict analogy with
+the line selector, which caps nothing either and relies on its own search. The exposure is real and
+recorded rather than fixed: press `Select All` on an unsearched five-line table and you pick ~800
+stops, all of which the chart will try to draw. `Select All` adds only the listed rows and `Clear All`
+clears globally — the line pair's asymmetry, copied deliberately, because two ranked tables under one
+dashboard should not answer the same two words differently.
 
-**Colour in the stop series chart now means which stop — and only there.** Hue was spoken for by the
-line and dash by the Stop Measure, so two stops on line 204 drew as two identical teal lines. The
-figure's series are coloured from an eight-hue palette in selection order; the row sparkline beside
-them stays line-coloured, and the map's selection ring stays the one neutral navy. So colour answers
-two different questions on one screen, which is the cost — recorded in **ADR-0014**, along with why
-the palette deliberately stops at the figure. `Map.test.tsx` asserts the ring is one colour rather
-than a colour per stop, so extending the palette onto the map fails a test instead of sliding in
-unread. The palette cycles past eight, which is the honest consequence of capping nothing.
+**Colour in the stop series chart now means which stop, and only there.** Hue was spoken for by the
+line and dash by the Stop Measure, so two stops on line 204 drew as identical teal lines. The figure's
+series take an eight-hue palette in selection order; the row sparkline stays line-coloured and the
+map's ring stays neutral navy. Colour therefore answers two questions on one screen, which is the cost
+— recorded in **ADR-0014** along with why the palette stops at the figure. `Map.test.tsx` asserts the
+ring is one colour, so extending the palette onto the map fails a test rather than sliding in unread.
+The palette cycles past eight, the honest consequence of capping nothing.
 
-**A stop row is now identified by its line and its stop together, because a stop key alone does not
+**A stop row is identified by its line and its stop together, because a stop key alone does not
 identify one.** A stop serving two selected lines occupies two rows, and `stop-row-`, `stop-select-`
-and `stop-sparkline-` were each suffixed with the stop key alone — so both rows answered to one name
+and `stop-sparkline-` were each suffixed with the stop key alone, so both rows answered to one name
 while React keyed them apart by `${line_name}-${key}`. No fixture puts one stop on two lines, so
-nothing failed; the trap was that an e2e locator would have matched two elements and failed
-Playwright's strict mode the moment one did, and `document.querySelector` in a unit spec would have
-silently taken the first of the two rather than complain. All three attributes now carry the row key,
-which is the identity React already used, and a unit case renders one stop on lines 204 and 801 to
-hold it there. The cost was churning every stop selector in two e2e specs and one unit spec; the e2e
-half goes through `stopQa` in `stop-fixtures.ts`, so the shape is written once.
+nothing failed — the trap was that an e2e locator would have matched two elements and failed strict
+mode the moment one did, and `document.querySelector` in a unit spec would have silently taken the
+first. All three attributes now carry the row key, the identity React already used, and a unit case
+renders one stop on lines 204 and 801 to hold it there. The cost was churning every stop selector in
+two e2e specs and one unit spec; the e2e half goes through `stopQa`, so the shape is written once.
 
-**A long stop name still clips out of the legend at mobile width, and two things were changed before
-giving up on it.** The measure now joins a legend label only under `both`, where two datasets per
-stop genuinely need separating — under a single measure every series *is* that measure and the
-toggle above the panel already says which, so appending it bought nothing. And the checkbox column's
-`SELECT` heading became `sr-only`, because six characters cannot fit a `w-10` cell and the text was
-widening the column, pushing an already-overflowing mobile table further sideways; narrowing it
-brought `AVG. BOARDINGS` back into view. What remains is arithmetic: `7th Street / Metro Center
-Station · A Line` is 41 characters in a 294px box, so Chart.js truncates it. The row beneath names
-the stop in full, and the desktop legend is clean, so nothing is unreadable — but a reader on a phone
+**A long stop name still clips out of the legend at mobile width, after two attempts to fix it.** The
+measure now joins a legend label only under `both`, where two datasets per stop need separating —
+under a single measure every series *is* that measure and the toggle already says which. And the
+checkbox column's `SELECT` heading became `sr-only`, because six characters cannot fit a `w-10` cell
+and were widening the column, pushing an already-overflowing mobile table further sideways; narrowing
+it brought `AVG. BOARDINGS` back into view. What remains is arithmetic: `7th Street / Metro Center
+Station · A Line` is 41 characters in a 294px box, so Chart.js truncates it. The row beneath names the
+stop in full and the desktop legend is clean, so nothing is unreadable — but a reader on a phone
 comparing two long station names is reading the table, not the legend.
 
-**The stop table's sparkline column mounts lazily, and on mobile that means not at all.** The
-ranked table can hold ~800 rows against the line table's ~180, so a Chart.js instance per row is
-not affordable up front; `useVisibleRows` mounts a row's chart when it is scrolled to and keeps it
-mounted thereafter. One observer for the table, rooted on the `max-h-[28rem]` scroller rather than
-the viewport — `rootMargin` grows the *root* rect, so a viewport root would grow the wrong box and
-pre-mount nothing.
+**The sparkline column mounts lazily, and on mobile that means not at all.** The ranked table can hold
+~800 rows against the line table's ~180, so a Chart.js instance per row is not affordable up front;
+`useVisibleRows` mounts a row's chart when it is scrolled to and keeps it mounted. One observer for
+the table, rooted on the `max-h-[28rem]` scroller rather than the viewport, because `rootMargin` grows
+the *root* rect and a viewport root would grow the wrong box and pre-mount nothing.
 
-The consequence, measured: at mobile width the table is 696px of content in a 294px scroller, so
-the last column sits outside the box entirely and **no sparkline mounts until the reader scrolls
-sideways.** The observer is right not to draw it, and the horizontal scroll is pre-existing — the
-six-column table was already 472px in that 294px — but the new column widens it by 224px. If that
-is not wanted, hiding the column below `sm` is one class; it was left visible because the column
-was asked for and it is reachable.
+The consequence, measured: at mobile width the table is 696px of content in a 294px scroller, so the
+last column sits outside the box and **no sparkline mounts until the reader scrolls sideways.** The
+observer is right not to draw it, and the horizontal scroll is pre-existing — six columns were already
+472px in that 294px — but the new column widens it by 224px. Hiding the column below `sm` is one
+class; it was left visible because it was asked for and is reachable.
 
 **The PR body carries four mermaid diagrams, and the committed diagram set does not.** A data flow of
 the stop grain with the new modules accented, a sequence for the payload intent gate, a sequence for
 picking a stop, and a small picture of the stop × line grain. They live in the pull request rather
-than in `docs/architecture/mermaid/` for the same reason nothing else here touches that directory:
+than in `docs/architecture/mermaid/` for the reason nothing else here touches that directory:
 `diagrams.md` is one generated file, and regenerating it would put this PR back in the path of #181
 and #182. That reasoning expires when those land, so **#228** holds the decision about which of the
 four earn a stem of their own — the data flow being the strongest candidate, since `05` covers line
 grain and the set has no stop-grain counterpart. Each fence was rendered against the pinned mermaid
-before it was published; GitHub renders with its own build, so a fence that parses locally is
-necessary rather than sufficient.
+before publishing; GitHub renders with its own build, so parsing locally is necessary rather than
+sufficient.
 
 **The two ADRs the batch owed are now written.** The stop wire format is **ADR-0012** and
-name-as-identity is **ADR-0013** — the two numbers held in reserve while 0014 took the colour
-decision, which is why the numbering runs out of order. Neither records a new decision: both were
-made in PRs 1 and 2 of this batch and had lived only in `scripts/README.md` and the module comments
-until now. The diagram set is still untouched — `07`, `08` and `10` are all being edited by the two
-open panel PRs, so regenerating them here would guarantee conflicts for no gain.
+name-as-identity is **ADR-0013**, the two numbers held in reserve while 0014 took the colour decision,
+which is why the numbering runs out of order. Neither records a new decision: both were made in PRs 1
+and 2 and had lived only in `scripts/README.md` and the module comments. The diagram set is still
+untouched — `07`, `08` and `10` are all being edited by the two open panel PRs, so regenerating them
+here would guarantee conflicts for no gain.
 
-**Diagram 10 is now five parameters behind, and that is worse than it was.** `10-url-contract.mmd`
-is titled "The nine parameters" and enumerates them; this batch has added `stops`, `measure`,
-`stop`, and now `stopq`, so the count and the boxes are both wrong. It is the same file #181 and
-#182 are rewriting, which is why it was left alone in the first place. Whoever lands those two
-should redraw it from `useUserDashboardInput`'s URL-sync effect rather than from the old diagram,
-and remember that `scripts/build_architecture_docs.mjs` fails the build when an edited `.mmd` has no
-matching `captions.md` section.
+**Diagram 10 is now five parameters behind.** `10-url-contract.mmd` is titled "The nine parameters"
+and enumerates them; this batch added `stops`, `measure`, `stop` and `stopq`, so the count and the
+boxes are both wrong. It is the same file #181 and #182 are rewriting, which is why it was left alone.
+Whoever lands those two should redraw it from `useUserDashboardInput`'s URL-sync effect rather than
+from the old diagram, and remember that `scripts/build_architecture_docs.mjs` fails the build when an
+edited `.mmd` has no matching `captions.md` section.
 
 ## The contract PR 1 freezes
 
@@ -480,13 +471,12 @@ FY2022-23 and FY2023-24 this way (Streetsblog LA, 2024-08-14). Turnaround is wee
 file early and build against the 11 months meanwhile.
 
 **A cleanup pass found two things that were not cleanup.** The stop series took its hue from a
-position in the *flattened* series list rather than from a position in the Stop Selection, so a stop
-served by two selected lines drew in two hues and shifted every later stop's — the one effect
-[ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) exists to prevent. The hue is now
-taken in `StopPanel`, where the selection order is still in hand, and carried on `DrawnStopSeries`;
+position in the *flattened* series list rather than in the Stop Selection, so a stop served by two
+selected lines drew in two hues and shifted every later stop's — the effect
+[ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) exists to prevent. The hue is
+now taken in `StopPanel`, where selection order is still in hand, and carried on `DrawnStopSeries`;
 two series of one stop share a hue and the legend prefix names the line.
 
 Separately, each stop row was **two** tab stops — the row and its checkbox — so an 800-row table held
-~1600, and a screen reader announced every row twice with only the second announcement carrying
-anything. The row keeps its click target and loses `tabIndex`, which is the convention `LineTableRow`
-already followed.
+~1600 and a screen reader announced every row twice, only the second announcement carrying anything.
+The row keeps its click target and loses `tabIndex`, the convention `LineTableRow` already followed.

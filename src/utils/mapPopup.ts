@@ -17,15 +17,13 @@ export function buildPopupHTML(name: string, line?: LineReadout): string {
 }
 
 /**
- * The hover popup for one stop marker, in the same shape as the line popup.
+ * The hover popup for one stop marker, in the same shape as the line popup. Boardings and
+ * alightings, never "ons"/"offs" — `CONTEXT.md`'s vocabulary binds UI copy.
  *
- * **Boardings and Alightings**, never "ons"/"offs": `CONTEXT.md`'s vocabulary binds UI
- * copy, and this is UI copy.
- *
- * `lineName` is passed in because the readout carries a numeric line id and the display
- * name lives in line metadata — the same split the line popup has. A readout with no
- * figures renders as a bare name; `buildStopView` cannot produce one, but the fields are
- * optional and the contract should not depend on the caller knowing that.
+ * `lineName` is passed in because the readout carries a numeric id and the display name
+ * lives in line metadata. A readout with no figures renders as a bare name: `buildStopView`
+ * cannot produce one, but the fields are optional and the contract should not assume the
+ * caller knows that.
  */
 export function buildStopPopupHTML(
   readout: StopReadout,

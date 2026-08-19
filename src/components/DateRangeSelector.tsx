@@ -29,10 +29,8 @@ export interface DateRangeSelectorProps {
 type IntervalEndpoint = 'start' | 'end';
 
 /**
- * One panel's on/off control, so a third panel is a call rather than another 20 lines.
- *
- * The markup was written twice here before it was written once; the pair have to look
- * identical and nothing but a shared component was holding them to it.
+ * One panel's on/off control, so a third panel is a call rather than another 20 lines of
+ * markup. The pair have to look identical, and nothing but this was holding them to it.
  */
 function PanelToggle({
   id,

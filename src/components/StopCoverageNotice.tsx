@@ -8,35 +8,30 @@ import { dataMaxYear, dataMinYear } from '../utils/dataDateRange';
 import type { StopCoverageState } from '../utils/stopCoverage';
 
 /**
- * The Stop Coverage Window against the Month Window, said out loud.
+ * The stop coverage window against the month window, said out loud. The chart spans
+ * 2009 → 2026 and stop data twelve months inside it, so a reader who drags to 2015 and
+ * finds an empty table has been handed a broken panel unless the panel says what it
+ * covers. The span is stated persistently, not only when something is missing, and comes
+ * from the build-time manifest so the sentence is true before any payload is fetched.
  *
- * The panel's biggest usability risk, and why this is its own component. The chart spans
- * 2009 → 2026 and stop data spans twelve months inside it, so a reader who drags to 2015
- * and finds an empty table has been handed a broken panel unless the panel says what it
- * covers. The span is therefore stated **persistently**, not only when something is
- * missing, and it comes from `virtual:stop-ridership-manifest` — filled at build time,
- * which is what lets the sentence be true before any payload is fetched.
- *
- * **It never clamps or widens the Month Window**, because the window is what the reader
- * chose and what a shared link carries (ADR-0001). The no-overlap state offers a button
- * instead, through the same setters a drag across the chart uses.
- *
- * **It states no window rule of its own**: `stopCoverageState` reads the derivation's
- * answers rather than comparing anything against the window (ADR-0009).
+ * It never clamps or widens the window, because the window is the reader's choice and what
+ * a shared link carries (ADR-0001); the no-overlap state offers a button instead. It also
+ * states no window rule of its own — `stopCoverageState` reads the derivation's answers
+ * rather than comparing against the window (ADR-0009).
  */
 
 /** `"2025-07"` → `"Jul 2025"`. Absent months read as an em dash rather than "null". */
 const monthLabel = (month: string | null): string =>
   month ? formatEventDate(month) : '—';
 
-/** The build-time span, for the sentence that must be true before any fetch. */
+/** The build-time span, so the sentence is true before any fetch. */
 const coveredSpan = `${monthLabel(minMonth)} – ${monthLabel(maxMonth)}`;
 
 export interface StopCoverageNoticeProps {
   state: StopCoverageState;
-  /** The Stop View's month axis, for the partial-coverage label. */
+  /** The stop view's month axis, for the partial-coverage label. */
   months: readonly string[];
-  /** Set the Month Window to the Stop Coverage Window. `YYYY-MM` both ends. */
+  /** Set the month window to the coverage window. `YYYY-MM` both ends. */
   onUseCoverageWindow: (from: string, to: string) => void;
 }
 
@@ -46,12 +41,9 @@ export default function StopCoverageNotice({
   onUseCoverageWindow,
 }: StopCoverageNoticeProps) {
   /**
-   * Whether stop data exists **at all** is the manifest's answer, not the view's.
-   *
-   * The view reports empty coverage while a payload is in flight and again if one
-   * fails, so deciding this from `coverage` would tell a reader on a slow connection
-   * that the dataset had never been ingested. The manifest is filled from the files at
-   * build time, so it is right before the first fetch and right if every fetch fails.
+   * Whether stop data exists at all is the manifest's answer, not the view's. The view
+   * reports empty coverage while a payload is in flight and again if one fails, so asking
+   * `coverage` would tell a reader on a slow connection that nothing had been ingested.
    */
   if (minMonth === null)
     return (
@@ -77,11 +69,9 @@ export default function StopCoverageNotice({
             The selected period has no stop-level data. It is available for{' '}
             {coveredSpan}.
           </p>
-          {/* The span the button *sets* is the span it *names* — both from the
-              manifest. Sending the view's own `coverage` instead would send the span
-              of whatever happens to be loaded, which in this state is the rail payload
-              alone, because the bus fetch is gated on the window overlapping. Today
-              the two agree; one source is what keeps them agreeing. */}
+          {/* The span the button sets is the span it names, both from the manifest.
+              Sending the view's `coverage` would send whatever happens to be loaded —
+              here the rail payload alone, since the bus fetch is gated on overlap. */}
           <button
             type="button"
             id="use-stop-coverage-window"
@@ -93,8 +83,8 @@ export default function StopCoverageNotice({
         </div>
       )}
 
-      {/* The line table's own words for the same idea, so a reader meets one
-          vocabulary for partial coverage rather than two — see `LineTableRow`. */}
+      {/* The line table's own words for the same idea, so partial coverage reads one way
+          across the dashboard — see `LineTableRow`. */}
       {state === 'partial' && (
         <p
           data-qa="stop-coverage-partial"

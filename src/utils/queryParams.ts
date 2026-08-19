@@ -35,12 +35,10 @@ export function parseModesFromParams(params: URLSearchParams): string[] {
 const STOP_MEASURES: readonly StopMeasure[] = ['ons', 'offs', 'both'];
 
 /**
- * `measure=offs` → `'offs'`. Anything else, including absent, → `null`.
- *
- * The literals are the URL's values and the app's values at once (see `StopMeasure`),
- * so there is no translation table here the way `paramToDayOfWeek` needs one — only a
- * membership check, which is what stops a hand-edited `?measure=nonsense` from reaching
- * the derivation as a fourth measure.
+ * `measure=offs` → `'offs'`. Anything else, absent included, → `null`. The literals are the
+ * URL's values and the app's at once, so this needs no translation table the way
+ * `paramToDayOfWeek` does — only the membership check that keeps `?measure=nonsense` from
+ * reaching the derivation as a fourth measure.
  */
 export function parseStopMeasureParam(
   value: string | null,
@@ -51,11 +49,9 @@ export function parseStopMeasureParam(
 }
 
 /**
- * The shape the pipeline mints stop keys in — `^(bus|rail):[a-z0-9-]+$`.
- *
- * Slugs by construction, which is what lets `stop=<key>` go into the query string
- * unencoded. Validating the shape rather than trusting it keeps a hand-edited param
- * from selecting a "stop" that is really a fragment of markup.
+ * The shape the pipeline mints stop keys in. Slugs by construction, which is what lets
+ * `stop=<key>` go into the query string unencoded; validating rather than trusting the
+ * shape keeps a hand-edited param from selecting a fragment of markup.
  */
 const STOP_KEY_PATTERN = /^(bus|rail):[a-z0-9-]+$/;
 
@@ -65,16 +61,13 @@ export function parseStopKeyParam(value: string | null): string | null {
 }
 
 /**
- * `stop=rail:union-station,bus:vermont-wilshire` → both keys, in the order written.
+ * `stop=rail:union-station,bus:vermont-wilshire` → both keys, in the order written. The
+ * same param holds one key or many, so a link shared before the panel could select several
+ * still works. Splitting on a comma is unambiguous because `STOP_KEY_PATTERN`'s charset
+ * has no room for one — the property `lines=801,802` already relies on.
  *
- * The same param holds one key or many, so a link shared before the panel could select
- * more than one stop still selects the stop it named. Splitting on a comma is
- * unambiguous because a comma cannot occur inside a key — `STOP_KEY_PATTERN`'s charset
- * has no room for one — which is the same property that lets `lines=801,802` work.
- *
- * A malformed part is dropped rather than failing the whole param: a hand-edited URL
- * that names three stops and one fragment of markup should still show the three stops.
- * Duplicates collapse, so a key repeated in the URL draws one series, not two.
+ * A malformed part is dropped rather than failing the whole param, and duplicates collapse
+ * so a key repeated in the URL draws one series.
  */
 export function parseStopKeysParam(value: string | null): string[] {
   if (value === null) return [];
