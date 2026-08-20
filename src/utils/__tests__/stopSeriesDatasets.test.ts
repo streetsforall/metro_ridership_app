@@ -2,14 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { stopSeriesDatasets } from '../stopSeriesDatasets';
 import type { StopSeriesPoint } from '../stopSeries';
 
-/**
- * The Stop Measure → dataset encoding, tested here rather than through either chart.
- *
- * Two components draw it — the figure above the table and the sparkline in every row —
- * and the whole reason it lives in one module is that a measure encoded two ways on one
- * screen is the same reader's question answered twice. That contract needs a test of its
- * own, not two indirect ones.
- */
+/** The Stop Measure → dataset encoding, tested directly rather than through either chart. */
 
 const series: StopSeriesPoint[] = [
   { month: '2025-07', boardings: 100, alightings: 90 },
@@ -79,10 +72,7 @@ describe('stopSeriesDatasets', () => {
     expect(datasets[0].data[1]).toBeNull();
   });
 
-  /**
-   * Dash is the *only* thing this module encodes about a measure. Colour arrives from the
-   * caller, because the two callers mean different things by it — ADR-0014.
-   */
+  /** Dash is the only thing this module encodes; colour is the caller's (ADR-0014). */
   it('dashes Alightings and leaves Boardings solid', () => {
     const datasets = stopSeriesDatasets({
       series,
@@ -137,11 +127,7 @@ describe('stopSeriesDatasets', () => {
     for (const dataset of datasets) expect(dataset.pointRadius).toBe(0);
   });
 
-  /**
-   * The figure draws several stops at once, so `Boardings` alone would not say whose. The
-   * sparkline has no legend and passes no prefix, which is why the prefix is optional
-   * rather than always required.
-   */
+  /** The figure draws several stops at once, so `Boardings` alone would not say whose. */
   it('names the stop in each label when a prefix is given', () => {
     const datasets = stopSeriesDatasets({
       series,
@@ -168,11 +154,7 @@ describe('stopSeriesDatasets', () => {
     expect(datasets[0].label).toBe('Boardings');
   });
 
-  /**
-   * Under a single measure every series *is* that measure and the panel's toggle already
-   * says which, so appending it to a stop name long enough to begin with only pushed
-   * legend entries off the edge at mobile width.
-   */
+  /** Under a single measure the toggle already says which, so the label doesn't repeat it. */
   it.each(['ons', 'offs'] as const)(
     'names the stop alone under the %s measure',
     (measure) => {

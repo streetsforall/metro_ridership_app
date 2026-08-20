@@ -1,22 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 
 /**
- * Which of a long list's rows have been scrolled into view. The stop table draws a
- * Chart.js sparkline per row across ~800 rows, so this reports which are worth mounting.
- *
- * One observer for the list, not one per row: 800 `IntersectionObserver` instances is a
- * worse problem than the one being solved.
- *
- * Add-only — a row once seen stays visible, because unmounting on scroll-away turns a
- * scroll into a construct/destroy treadmill of expensive Chart.js instances. It also makes
- * re-sorting a non-event, since the caller keys rows by the same string this hook does.
+ * Which of a long list's rows have been scrolled into view, so the table mounts only the
+ * sparklines worth drawing — add-only, because unmounting on scroll-away thrashes Chart.js.
  */
 
 export interface VisibleRows {
-  /**
-   * A `ref` callback for the row's observed element, cached per key: an inline arrow is a
-   * new function every render, and React answers that with an unobserve/observe pair.
-   */
+  /** A `ref` callback per row, cached because a fresh one costs an unobserve/observe pair. */
   observe: (key: string) => (element: Element | null) => void;
   isVisible: (key: string) => boolean;
 }
@@ -38,8 +28,7 @@ export function useVisibleRows(
   const callbacks = useRef(new Map<string, (element: Element | null) => void>());
   const observer = useRef<IntersectionObserver | null>(null);
 
-  // No IntersectionObserver means every row is visible. jsdom does not implement it, and
-  // the fallback has to be a table that draws rather than one of blank cells.
+  // No IntersectionObserver — jsdom, mostly — means every row counts as visible.
   const supported =
     typeof window !== 'undefined' &&
     typeof window.IntersectionObserver === 'function';
@@ -48,12 +37,8 @@ export function useVisibleRows(
     const scroller = root.current;
     if (!supported || !scroller) return;
 
-    /*
-     * `root` is the scroller, not the viewport. A viewport-rooted observer would report
-     * the right rows, but `rootMargin` grows the root rect — the viewport, under
-     * `root: null` — and not this table's clip, so the margin would buy nothing and every
-     * sparkline would pop in exactly as it became visible.
-     */
+    /* `root` is the scroller, because `rootMargin` grows the root rect and the viewport's
+       is the wrong one to grow. */
     const instance = new IntersectionObserver(
       (entries) => {
         const arrived: string[] = [];
@@ -65,8 +50,7 @@ export function useVisibleRows(
         if (arrived.length === 0) return;
 
         setVisible((previous) => {
-          // A set rebuilt on every notification re-renders every row for nothing, so
-          // bail when the batch adds nothing new.
+          // Bail when the batch adds nothing new, or every row re-renders for nothing.
           if (arrived.every((key) => previous.has(key))) return previous;
           const next = new Set(previous);
           for (const key of arrived) next.add(key);

@@ -49,12 +49,8 @@ async function waitForStopTable(page: Page): Promise<void> {
 }
 
 /**
- * Wait for a row's sparkline to have actually painted.
- *
- * The cell is an empty fixed-size box until two things have happened: the row has been
- * reported visible, and Chart.js has drawn. A visible `<canvas>` proves only the first,
- * so this reads the alpha channel — the same technique `table-view.spec.ts` uses for
- * the line table's column, and for the same reason.
+ * Waits for a row's sparkline to have actually painted, by reading the alpha channel — a
+ * visible `<canvas>` only proves the row was reported visible.
  */
 async function waitForSparkline(
   page: Page,
@@ -107,13 +103,8 @@ test('stop panel — the ranked table is the primary readout', async ({
   ).toBeVisible();
   await expect(page.locator('[data-qa="stop-table"] tbody tr')).toHaveCount(3);
 
-  /*
-   * Only that the column reserved its cell. Whether the chart inside it has mounted is
-   * viewport-dependent — at mobile width the table is wider than its scroller and the
-   * last column sits outside it, so nothing draws until the reader scrolls sideways.
-   * That is asserted properly below, where a scroll is free; here it would make a
-   * screenshot's precondition depend on the viewport it is shot at.
-   */
+  /* Only that the column reserved its cell, since whether the chart mounted is
+     viewport-dependent. */
   await expect(
     page.locator(stopQa('sparkline', RAIL_LINE_ID, 'rail:union-station')),
   ).toBeAttached();
@@ -239,11 +230,7 @@ test('stop panel — the search narrows the table and scopes Select All', async 
   ).toHaveCount(1);
 });
 
-/**
- * The column paints, rather than only reserving space. Scrolled into view first, which
- * is what makes this hold at either viewport: at mobile width the cell is outside the
- * table's own horizontal scroll until something brings it in.
- */
+/** The column paints rather than only reserving space, once scrolled into view. */
 test('stop panel — a scrolled-to sparkline actually draws', async ({
   page,
 }) => {
@@ -257,7 +244,7 @@ test('stop panel — a scrolled-to sparkline actually draws', async ({
   await waitForSparkline(page, RAIL_LINE_ID, 'rail:union-station');
 });
 
-/** Presentational. A shape has no ordering, and the header must not claim otherwise. */
+/** Presentational: a shape has no ordering, and the header must not claim otherwise. */
 test('stop panel — the ridership-over-time header does not sort', async ({
   page,
 }) => {
@@ -276,10 +263,7 @@ test('stop panel — the ridership-over-time header does not sort', async ({
   ).toContainText('Union Station');
 });
 
-/**
- * The laziness itself. Three stops all fit on screen, so this needs its own fixture —
- * with a short list the assertion would pass on a table that deferred nothing.
- */
+/** The laziness itself, which needs a list too long to fit on screen to be visible at all. */
 test('stop panel — a row below the fold draws nothing until scrolled to', async ({
   page,
 }) => {
@@ -300,19 +284,13 @@ test('stop panel — a row below the fold draws nothing until scrolled to', asyn
     MANY_ROWS_COUNT,
   );
 
-  // Every row reserves its cell, whether or not a chart is in it yet — the box is the
-  // same size either way, so a sparkline arriving never moves the rows below it.
+  // Every row reserves its cell, so a sparkline arriving never moves the rows below it.
   await expect(page.locator('[data-qa^="stop-sparkline-"]')).toHaveCount(
     MANY_ROWS_COUNT,
   );
 
-  /*
-   * Only that the list is not fully mounted, not that some particular number is.
-   * How many rows start mounted is viewport-dependent, and at mobile width it is
-   * legitimately zero: the table is wider than its scroller there (696px of content in
-   * 294px), so the last column sits outside the box entirely until the reader scrolls
-   * sideways, and the observer is right not to draw it.
-   */
+  /* Only that the list is not fully mounted, because how many rows start mounted is
+     viewport-dependent. */
   const mounted = await page
     .locator('[data-qa^="stop-sparkline-"] canvas')
     .count();
