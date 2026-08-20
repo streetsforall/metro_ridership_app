@@ -1,12 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { colorForSelectionIndex } from '../stopSelectionColors';
 
-/**
- * The palette contract, restated independently of the module — the same habit
- * `src/chart/__tests__/eventGutter.test.ts` keeps for the event hues. Spelling the eight
- * values out here rather than importing the list means a silent edit to a hue fails a
- * test instead of passing quietly, which is the only review a colour decision gets.
- */
+/** The eight hues spelled out rather than imported, so a silent edit fails a test. */
 const PALETTE = [
   '#2563eb', // blue-600
   '#ea580c', // orange-600
@@ -30,11 +25,7 @@ describe('colorForSelectionIndex', () => {
     expect(new Set(PALETTE).size).toBe(8);
   });
 
-  /**
-   * Selection is uncapped by design, so a ninth stop has to get *some* colour. It repeats
-   * the first rather than coming back undefined, and the legend is what tells the two
-   * apart — nothing here is the sole signal for which series is which.
-   */
+  /** Selection is uncapped, so a ninth stop repeats the first hue rather than getting none. */
   it('cycles rather than running out', () => {
     expect(colorForSelectionIndex(8)).toBe(colorForSelectionIndex(0));
     expect(colorForSelectionIndex(9)).toBe(colorForSelectionIndex(1));
@@ -53,11 +44,7 @@ describe('colorForSelectionIndex', () => {
     expect(colorForSelectionIndex(-8)).toBe(colorForSelectionIndex(0));
   });
 
-  /**
-   * `NaN` survives neither `%` nor `Math.trunc`, so it would index the array with `NaN`,
-   * get `undefined`, and throw on `['600']` — a function that promises a colour must not
-   * throw for a number it was handed.
-   */
+  /** `NaN` survives neither `%` nor `Math.trunc`, and a colour was promised for any number. */
   it.each([NaN, Infinity, -Infinity])(
     'still yields a colour for %s',
     (index) => {

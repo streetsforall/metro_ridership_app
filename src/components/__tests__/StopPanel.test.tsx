@@ -294,10 +294,7 @@ describe('StopPanel table chrome', () => {
     expect(screen.queryByText('Vermont / Santa Monica')).toBeTruthy();
   });
 
-  /**
-   * The search narrows the table, not the chart. Searching is how a reader finds the next
-   * stop to add, so losing the comparison they were already building would defeat it.
-   */
+  /** The search narrows the table, not the chart the reader is still building. */
   it('keeps a selected stop drawn after a search hides its row', () => {
     renderPanel({
       view: twoReadouts,
@@ -395,10 +392,7 @@ describe('StopPanel table chrome', () => {
   );
 });
 
-/**
- * With several stops drawn there is no one name for the caption to write, so it counts and
- * the chart's legend names each series beside the colour it belongs to.
- */
+/** With several stops drawn the caption counts them, and the legend does the naming. */
 describe('StopPanel drawing several stops', () => {
   const twoSelected = {
     view: makeView({
@@ -423,10 +417,7 @@ describe('StopPanel drawing several stops', () => {
     ).toBe('Vermont / Wilshire · Line 204|Vermont / Santa Monica · Line 204');
   });
 
-  /**
-   * Selection order, not rank. The chart takes a hue by position, so walking the readouts
-   * instead would recolour every series whenever the table was re-sorted.
-   */
+  /** Selection order, not rank, because the chart takes a hue by position. */
   it('draws them in selection order rather than table order', () => {
     renderPanel({
       ...twoSelected,
@@ -462,13 +453,7 @@ describe('StopPanel drawing several stops', () => {
   });
 });
 
-/**
- * One stop, two selected lines — the case the whole Stop Selection term exists to pin down.
- *
- * The data's grain is stop × line, so this stop has two readouts and two genuinely
- * different sets of figures. It is picked **once** and drawn **twice**, and collapsing the
- * two would mean summing across lines, which is the rollup this project does not derive.
- */
+/** One stop on two selected lines is picked once and drawn twice, never summed. */
 describe('StopPanel drawing one stop on two lines', () => {
   const sharedStop = {
     lines: [
@@ -491,10 +476,7 @@ describe('StopPanel drawing one stop on two lines', () => {
     ).toBe('Vermont / Wilshire · Line 204|Vermont / Wilshire · Line 206');
   });
 
-  /**
-   * The caption counts stops, and there is one. Counting `drawn` would tell a reader they
-   * had picked two stops when they had picked one.
-   */
+  /** The caption counts stops, and there is one, however many series it draws. */
   it('counts the stop once, not once per line', () => {
     renderPanel(sharedStop);
     const caption = document.querySelector(
