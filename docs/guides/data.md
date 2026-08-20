@@ -38,6 +38,11 @@ New data wins on conflicts; old data backfills.
   columnar blob the app fetches.
 - **`src/data/metro_line_metadata_current.json`** — the line catalog (line number, mode, provider),
   updated automatically when new lines appear in the data.
+- **`src/data/stop_ridership.{bus,rail}.json`** — the same months at stop grain, with Boardings
+  *and* Alightings. Written **already columnar** by the pipeline and passed through by the
+  `stop-ridership` Vite plugin, unlike `ridership.json` which the build re-encodes. Suppress with
+  `--no-stops`. The split is by source export, so G Line (901) and J Line (910) BRT arrive in the
+  *Bus* workbook.
 - **[`DATA_RELEASE_NOTES.md`](../../DATA_RELEASE_NOTES.md)** — a dated entry is prepended whenever
   new months are added. Suppress with `--no-release-notes`.
 
@@ -65,6 +70,11 @@ A new month of data moves some visual baselines. `dataDefaultEndDate` is compute
 `chart-content`, `context-logs`, `line-filters`, `summary-tiles`, `table-view`,
 `responsive-tablet` — are unaffected; `visual.spec.ts` calls `gotoDashboard(page)` with no search
 and therefore lands on the new default, so its six baselines move.
+
+`stop-panel` route-stubs both stop payloads, so new *stop* data does not move its baselines.
+A new month still shifts `stop-panel`'s default Month Window, and its coverage line comes from
+`virtual:stop-ridership-manifest`, which is built from the real files — so expect its three
+baselines to move with the rest.
 
 Regenerate in the same PR:
 
