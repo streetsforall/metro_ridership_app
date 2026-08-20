@@ -60,8 +60,9 @@ Type definitions live in [`src/@types/metrics.types.ts`](../src/@types/metrics.t
 `src/` is flat — `components/`, `hooks/`, `utils/`, `data/`, `@types/` — with one exception.
 
 **A folder with an `index.ts` is a sealed module. That index is its entire public surface.**
-`src/ridership/` is the only one today. Importing `../ridership/chartData` from outside the folder
-is visibly reaching past a seam and should fail review; go through `index.ts` instead.
+`src/ridership/` and `src/stops/` are the two today. Importing `../ridership/chartData` or
+`../stops/buildStopView` from outside the folder is visibly reaching past a seam and should fail
+review; go through `index.ts` instead.
 
 Everything else in `src/` is loose by default. A new folder is earned when a body of logic has
 invariants a caller must not reach past — not by topical tidiness. See
@@ -156,15 +157,62 @@ These are the things that look like bugs and aren't.
   ([`src/utils/lines.ts`](../src/utils/lines.ts)); every other bus line gets a deterministic
   golden-angle HSL hue, so the chart and the map always agree.
 
+## Stop-level ridership
+
+Everything above is per **line**. `src/stops/` is the same shape one grain down, per **Stop Place**,
+and it is a second sealed module for the reason the first one is: every reader of the stop grain
+reads one derivation, so the stop-key ↔ coordinate join and the Month Window filter must happen in
+one place or two readers disagree about which stops exist and which months are on screen.
+
+**One call again.** `buildStopView({ records, places, lineIds, startDate, endDate, dayOfWeek,
+measure })` returns `{ months, readouts, markers, coverage }`. `markers` is a GeoJSON
+`FeatureCollection` ready for `setData`, with **radius and colour as feature properties the module
+computed** — drawn by the map layer, which arrives with the circle layer.
+
+`useStopView` ([`src/hooks/useStopView.ts`](../src/hooks/useStopView.ts)) is the fetch side, and
+`OutputArea` is its only importer, so everything it pulls lands in that lazy chunk or behind a
+further dynamic import. The panel itself is `#stop-panel`, opened with `stops=1`.
+
+- **The stop table is a multi-select, and it copies the line selector's chrome.** A checkbox per
+  row, a search bar above the table, `Select All` / `Clear All` under it — `LineFilters`'s three
+  controls in `LineFilters`'s arrangement. They share the asymmetry too: `Select All` reaches only
+  the rows the search lists and adds to the selection, while `Clear All` clears globally and leaves
+  the search text alone. Neither table caps its selection; the search narrows `Select All`.
+
+- **The Stop Selection is an ordered set of stop keys**, comma-joined into `stop=`, with the search
+  in `stopq=`. Order is kept because it is what will fix each stop's colour, so a stop picked later
+  is appended rather than inserted. The table's grain is stop × line, so a stop served by two
+  selected lines is picked once and occupies two rows.
+
+- **The lazy-load rule is a gate on intent.** Rail (89 KB) loads when the panel is on. Bus (5.3 MB)
+  loads only when the panel is on, the Month Window overlaps the Stop Coverage Window, **and** a
+  selected line is not one the rail payload serves. `stop_locations.json` (1.6 MB) is `import()`ed
+  into its own async chunk. **Neither payload goes near `App`'s `/ridership.json` effect** — the
+  first-paint path, which `OutputArea` is lazy to keep large things off. `ANALYZE=1 npm run build`
+  gates this: the stop payloads must be emitted assets and never inside a `dist/assets/*.js`.
+
+- **G Line (901) and J Line (910) BRT live in the *bus* payload** while the app lists them under the
+  train filter, because the split is by source export. So "is this a bus line" is the wrong gate on
+  the bus fetch; the question asked instead is whether the **rail payload** already serves the line,
+  answered from the rail records. The mode *filter* likewise keys off
+  `metro_line_metadata_current.json`, never off which file a row came from.
+
+- **The Stop Coverage Window is stated, never enforced.** Stop data covers twelve months inside the
+  chart's 2009 → 2026, so the panel names both spans persistently, labels partial coverage in the
+  line table's own words, and where the window reaches no stop data offers a button that moves it
+  through the same setters a chart drag uses. It **never** clamps or widens the window, because that
+  would make one URL mean two things.
+
 ## The map
 
 [`src/components/Map.tsx`](../src/components/Map.tsx) uses MapLibre GL and loads route geometry from
-`public/metro_lines.geojson`. Two layers: `lines-all` (dimmed) and `lines-selected` (brand colours,
-filtered by selected line ids via `setFilter`). Base tiles come from MapTiler when
-`VITE_MAPTILER_KEY` is set, otherwise OpenFreeMap.
+`public/metro_lines.geojson`. Two layers: `lines-all` (dimmed, and the only unfiltered one — it
+draws the whole network) and `lines-selected` (brand colours), filtered by the selected line ids via
+`setFilter`. Base tiles come from MapTiler when `VITE_MAPTILER_KEY` is set, otherwise OpenFreeMap.
 
 The map instance lives in a ref and is initialised once. **Selection changes only update the layer
-filter** — the map itself is never rebuilt.
+filter** — the map itself is never rebuilt. The pointer handlers are registered once in `load`,
+because a layer-scoped MapLibre listener is delegated and resolves its layer at event time.
 
 `Map.tsx` publishes the live instance as `window.__metroMap`. Nothing in the app reads it; it is a
 test seam, and it is the only way to await a WebGL canvas or inspect what actually rendered. Don't

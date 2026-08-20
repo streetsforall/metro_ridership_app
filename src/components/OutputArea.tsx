@@ -1,12 +1,26 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChartDataset } from 'chart.js';
 import SummaryData from './SummaryData';
 import Map from './Map';
 import RidershipChart from './RidershipChart';
 import ContextLogPanel from './ContextLogPanel';
+import StopPanel from './StopPanel';
+import useStopView from '../hooks/useStopView';
+import { eventDateToLabel, labelToEventDate } from '../chart';
 import type { CustomChartData } from '../@types/chart.types';
 import type { LineReadout } from '../ridership';
 import type { TransitEvent } from '../@types/events.types';
+import type { DayOfWeek } from '../@types/metrics.types';
+import type { StopMeasure } from '../@types/stops.types';
+import { NO_SELECTED_STOPS } from '../utils/stopDefaults';
+
+/**
+ * The stand-in for an absent stop handler. `StopPanel` declares its five callbacks
+ * non-optional while they arrive here optional, and closing that gap with an arrow per
+ * call site made five new functions per render — which the memo on a stop row could not
+ * survive. One module-level no-op has an identity that never changes.
+ */
+const noop = (): void => {};
 
 interface OutputAreaProps {
   chartDatasets: ChartDataset<'line', CustomChartData[]>[];
@@ -19,6 +33,26 @@ interface OutputAreaProps {
   isLoading?: boolean;
   /** Set the month window from a drag across the chart. Labels are `"YYYY M"`. */
   onRangeSelect?: (startMonth: string, endMonth: string) => void;
+
+  /**
+   * The stop panel's slice of dashboard state. It arrives as props because it is
+   * URL-synced and `useUserDashboardInput` is the one place that reads and writes the URL.
+   * The derivation is local: this module is `useStopView`'s only importer, so its payloads
+   * land in this lazy chunk rather than on the first-paint path.
+   */
+  showStops?: boolean;
+  stopMeasure?: StopMeasure;
+  onStopMeasureChange?: (measure: StopMeasure) => void;
+  selectedStopKeys?: readonly string[];
+  onToggleStop?: (stopKey: string) => void;
+  onClearStops?: () => void;
+  onSelectAllStops?: (stopKeys: string[]) => void;
+  stopSearchText?: string;
+  onStopSearchTextChange?: (text: string) => void;
+  /** The month window and day of week the stop derivation reads. */
+  startDate: Date;
+  endDate: Date;
+  dayOfWeek: DayOfWeek;
 }
 
 /**
@@ -36,6 +70,18 @@ export default function OutputArea({
   showContextLogs,
   isLoading = false,
   onRangeSelect,
+  showStops = false,
+  stopMeasure = 'ons',
+  onStopMeasureChange = noop,
+  selectedStopKeys = NO_SELECTED_STOPS,
+  onToggleStop = noop,
+  onClearStops = noop,
+  onSelectAllStops = noop,
+  stopSearchText = '',
+  onStopSearchTextChange = noop,
+  startDate,
+  endDate,
+  dayOfWeek,
 }: OutputAreaProps) {
   /**
    * The chart and the context log are two views of the same months, so the two
@@ -68,6 +114,52 @@ export default function OutputArea({
   const hasSelection = chartDatasets.length > 0;
 
   /**
+   * The selected lines, and their ids in the order readouts and markers should follow.
+   * Memoised because both feed the stop derivation, so a fresh array each render would
+   * rebuild the view — and the whole marker collection — on any unrelated state change.
+   */
+  const selectedLines = useMemo(
+    () => lines.filter((line) => line.selected),
+    [lines],
+  );
+  const selectedLineIds = useMemo(
+    () => selectedLines.map((line) => line.id),
+    [selectedLines],
+  );
+
+  const {
+    view: stopView,
+    isLoading: isStopLoading,
+    hasFailed: stopsFailed,
+  } = useStopView({
+    enabled: showStops,
+    lineIds: selectedLineIds,
+    startDate,
+    endDate,
+    dayOfWeek,
+    measure: stopMeasure,
+  });
+
+  /**
+   * The chart's month axis, respelled for the stop panel: chart labels are `"YYYY M"` and
+   * the stop grain's are `YYYY-MM`, with every conversion in `src/chart/months.ts`. A
+   * respelling and nothing more — both lists came out of the one window predicate.
+   */
+  const windowMonths = useMemo(() => months.map(labelToEventDate), [months]);
+
+  /**
+   * Jump the month window to the stop coverage window. Routed through `onRangeSelect`, the
+   * setters a chart drag uses, so one press moves the pickers, the chart and the URL
+   * together. The only work here is the spelling.
+   */
+  const useCoverageWindow = useCallback(
+    (from: string, to: string) => {
+      onRangeSelect?.(eventDateToLabel(from), eventDateToLabel(to));
+    },
+    [onRangeSelect],
+  );
+
+  /**
    * A press anywhere outside this whole area releases the pin — scoped to the
    * area rather than to the chart, because the context log is the other half of
    * the same interaction. Scoped to the chart alone, clicking a log row would
@@ -78,7 +170,8 @@ export default function OutputArea({
     if (pinnedMonth === null) return;
 
     const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setPinnedMonth(null);
+      if (!rootRef.current?.contains(event.target as Node))
+        setPinnedMonth(null);
     };
 
     document.addEventListener('pointerdown', onPointerDown);
@@ -104,7 +197,11 @@ export default function OutputArea({
           id="output-placeholder"
           className="pane flex-1 flex items-center justify-center text-sm text-stone-400"
         >
-          <p>{isLoading ? 'Loading ridership data…' : 'Please select a Metro line.'}</p>
+          <p>
+            {isLoading
+              ? 'Loading ridership data…'
+              : 'Please select a Metro line.'}
+          </p>
         </div>
       )}
 
@@ -139,6 +236,34 @@ export default function OutputArea({
           <Map lines={lines} />
         </div>
       </div>
+
+      {/**
+       * The stop panel — opt-in via `stops=1`, and its own full-width pane below the
+       * summary-and-map row rather than between them.
+       *
+       * The plan put it "between SummaryData and the map"; those two have since become
+       * one two-column row, and a table of up to ~800 rows does not belong in a 2fr
+       * track beside a map. Full width below the row is where the context log already
+       * sits, and it keeps the row's two panes stretching to a common height.
+       */}
+      {showStops && (
+        <StopPanel
+          view={stopView}
+          windowMonths={windowMonths}
+          isLoading={isStopLoading}
+          hasFailed={stopsFailed}
+          lines={selectedLines}
+          measure={stopMeasure}
+          onMeasureChange={onStopMeasureChange}
+          selectedStopKeys={selectedStopKeys}
+          onToggleStop={onToggleStop}
+          onClearStops={onClearStops}
+          onSelectAllStops={onSelectAllStops}
+          searchText={stopSearchText}
+          onSearchTextChange={onStopSearchTextChange}
+          onUseCoverageWindow={useCoverageWindow}
+        />
+      )}
 
       {/* Context log panel — opt-in from the filter bar, and only when events exist and a line is selected */}
       {showContextLogs && transitEvents.length > 0 && hasSelection && (

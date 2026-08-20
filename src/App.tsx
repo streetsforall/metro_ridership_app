@@ -63,6 +63,14 @@ function App() {
     toggleShowContextLogs,
     showStops,
     toggleShowStops,
+    stopMeasure,
+    setStopMeasure,
+    selectedStopKeys,
+    onToggleSelectStop,
+    clearStopSelections,
+    selectAllListedStops,
+    stopSearchText,
+    setStopSearchText,
   } = userDashboardInputState;
 
   const isLoading = ridershipRecords === null;
@@ -204,6 +212,22 @@ function App() {
               showContextLogs={showContextLogs}
               isLoading={isLoading}
               onRangeSelect={handleRangeSelect}
+              /* The panel's state is threaded through rather than read in `OutputArea`,
+                 because it is URL-synced and `useUserDashboardInput` owns the URL. Its
+                 data is not: `useStopView` lives in the lazy chunk, so the payloads never
+                 reach the first-paint path. */
+              showStops={showStops}
+              stopMeasure={stopMeasure}
+              onStopMeasureChange={setStopMeasure}
+              selectedStopKeys={selectedStopKeys}
+              onToggleStop={onToggleSelectStop}
+              onClearStops={clearStopSelections}
+              onSelectAllStops={selectAllListedStops}
+              stopSearchText={stopSearchText}
+              onStopSearchTextChange={setStopSearchText}
+              startDate={startDate}
+              endDate={endDate}
+              dayOfWeek={dayOfWeek}
             />
           </Suspense>
         </div>
