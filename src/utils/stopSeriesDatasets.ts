@@ -3,29 +3,18 @@ import type { StopSeriesPoint } from './stopSeries';
 import type { StopMeasure } from '../@types/stops.types';
 
 /**
- * Which datasets a measure yields, and how each is drawn: boardings solid, alightings
- * dashed. Dash is the only thing encoded here. Colour comes from the caller because the
- * two mean different things by it — a sparkline passes its line's colour, the figure the
- * stop's selection colour, hue being the only channel left there (ADR-0014).
- *
- * Shared rather than stated in each chart, because a measure the two encoded differently
- * would answer one reader's question two ways on one screen.
+ * Which datasets a measure yields and how each is dashed, shared so two charts can't
+ * encode one measure differently — colour is the caller's to choose (ADR-0014).
  */
 
 export interface StopSeriesDatasetsInput {
   series: readonly StopSeriesPoint[];
   measure: StopMeasure;
-  /**
-   * What the series is drawn in: the line's colour in a sparkline, the stop's selection
-   * colour in the figure. The caller decides which question colour answers.
-   */
+  /** What the series is drawn in, which is the caller's question to answer. */
   color: string;
   /** `0` in a sparkline, where a dot per month is noise at 40px. */
   pointRadius: number;
-  /**
-   * What the legend calls each dataset. Absent in a sparkline, which has no legend; in the
-   * figure it names the stop and line, since `Boardings` alone would not say whose.
-   */
+  /** What the legend calls each dataset, absent in a sparkline because it has no legend. */
   labelPrefix?: string;
 }
 
@@ -36,9 +25,7 @@ export function stopSeriesDatasets({
   pointRadius,
   labelPrefix,
 }: StopSeriesDatasetsInput): ChartDataset<'line', (number | null)[]>[] {
-  // The measure joins the label only under `both`, where two datasets per stop need
-  // telling apart. Under a single measure the toggle above the panel already says which,
-  // and appending it pushed legend entries off the edge at mobile width.
+  // The measure joins the label only under `both`, where two datasets per stop need telling apart.
   const label = (measureName: string): string => {
     if (!labelPrefix) return measureName;
     return measure === 'both' ? `${labelPrefix} · ${measureName}` : labelPrefix;

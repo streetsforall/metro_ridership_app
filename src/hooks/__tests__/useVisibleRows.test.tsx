@@ -2,12 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useVisibleRows } from '../useVisibleRows';
 
-/**
- * Nothing scrolls in jsdom, so the observer is stubbed and driven by hand. The
- * behaviours worth pinning are the ones a reader would never notice until they broke:
- * the fallback when the API is missing, the root the observer is given, and the fact
- * that visibility only ever accumulates.
- */
+/** Nothing scrolls in jsdom, so the observer is stubbed and driven by hand. */
 
 let notify: IntersectionObserverCallback;
 let constructedWith: IntersectionObserverInit | undefined;
@@ -76,11 +71,7 @@ afterEach(() => {
 });
 
 describe('useVisibleRows', () => {
-  /**
-   * The benign answer. jsdom has no IntersectionObserver, and neither do a handful of
-   * real environments; the fallback there must be a table that draws rather than a
-   * table of blank cells.
-   */
+  /** Without the API the fallback has to be a table that draws, not one of blank cells. */
   it('reports every row visible when IntersectionObserver is unavailable', () => {
     const root = { current: document.createElement('div') };
     const { result } = renderHook(() => useVisibleRows(root));
@@ -95,11 +86,7 @@ describe('useVisibleRows', () => {
     expect(result.current.isVisible('a')).toBe(false);
   });
 
-  /**
-   * The whole reason the scroller is passed in. `rootMargin` grows the *root* rect, so
-   * with `root: null` the margin would grow the viewport and not the table's own
-   * `overflow-y-auto` clip — buying no pre-mount at all.
-   */
+  /** The whole reason the scroller is passed in: `rootMargin` grows the *root* rect. */
   it('observes against the scroller it was given, with a margin', () => {
     stubObserver();
     const { root } = renderWithRoot();
@@ -153,11 +140,7 @@ describe('useVisibleRows', () => {
     expect(result.current.isVisible('b')).toBe(false);
   });
 
-  /**
-   * An inline arrow would be a new ref callback every render, and React answers that
-   * with a `null` call then an element call — an unobserve/observe pair per row per
-   * render, at ~800 rows.
-   */
+  /** An inline arrow would cost an unobserve/observe pair per row per render. */
   it('hands back the same ref callback for a key', () => {
     stubObserver();
     const { result, rerender } = renderWithRoot();

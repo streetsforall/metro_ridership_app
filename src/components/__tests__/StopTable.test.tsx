@@ -5,10 +5,7 @@ import { makeLineReadout, makeStopPlace } from '../../test/builders';
 import type { StopReadout } from '../../stops';
 import type { StopSeriesIndex, StopSeriesPoint } from '../../utils/stopSeries';
 
-/**
- * The sparkline is a Chart.js canvas; jsdom has no 2D context. Stub it and capture the
- * datasets so the measure's encoding is assertable without a real canvas.
- */
+/** The sparkline is stubbed, because jsdom has no 2D context for Chart.js to draw on. */
 const { chartSpy } = vi.hoisted(() => ({ chartSpy: vi.fn() }));
 
 vi.mock('react-chartjs-2', () => ({
@@ -390,10 +387,7 @@ describe('StopTable ridership-over-time column', () => {
     expect(screen.getByText('Ridership over time')).toBeTruthy();
   });
 
-  /**
-   * The column is presentational. `aria-sort="none"` would be wrong here — it means
-   * "sortable, not currently sorted", so it would announce a control that isn't one.
-   */
+  /** The column is presentational, so `aria-sort="none"` would announce a control that isn't one. */
   it('does not advertise itself as sortable', () => {
     renderTable();
     const header = screen.getByText('Ridership over time');
@@ -415,10 +409,7 @@ describe('StopTable ridership-over-time column', () => {
     ).toHaveLength(readouts.length);
   });
 
-  /**
-   * jsdom has no IntersectionObserver, and the fallback there must be a table that
-   * draws rather than a table of blank cells.
-   */
+  /** Without an IntersectionObserver the fallback has to be a table that draws. */
   it('draws every row when IntersectionObserver is unavailable', () => {
     renderTable();
     expect(screen.getAllByTestId('sparkline')).toHaveLength(readouts.length);
@@ -507,10 +498,7 @@ describe('StopTable lazy sparklines', () => {
     expect(screen.getAllByTestId('sparkline')).toHaveLength(1);
   });
 
-  /**
-   * Add-only: a mounted chart survives a re-sort. React keys rows by the same identity
-   * the hook does, so the DOM is re-parented rather than rebuilt.
-   */
+  /** Add-only, so a mounted chart survives a re-sort rather than being rebuilt. */
   it('keeps a mounted sparkline through a re-sort', () => {
     withObserver();
     renderTable();

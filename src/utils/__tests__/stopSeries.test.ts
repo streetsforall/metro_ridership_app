@@ -4,11 +4,7 @@ import { makeStopRecord } from '../../test/builders';
 import { daysOfWeek } from '../../@types/metrics.types';
 import type { StopRecord } from '../../@types/stops.types';
 
-/**
- * The seam is spied rather than replaced, so the figures stay real while the number of
- * calls stays observable — the deferred alignment below is a perf contract, and a
- * contract nothing checks is one someone will optimise away.
- */
+/** Spied rather than replaced, so the figures stay real while the call count stays observable. */
 const { metricsSpy } = vi.hoisted(() => ({ metricsSpy: vi.fn() }));
 
 vi.mock('../../stops', async (importOriginal) => {
@@ -48,10 +44,7 @@ describe('buildStopSeriesIndex', () => {
     ).toEqual(['2025-07', '2025-08', '2025-09']);
   });
 
-  /**
-   * A month the stop did not report is a gap, never a zero — the same rule the chart
-   * follows, which is why `spanGaps` is off there and this returns `null` here.
-   */
+  /** A month the stop did not report is a gap, never a zero. */
   it('leaves an unreported month null rather than zero', () => {
     const august = series(['2025-07', '2025-08', '2025-09'])[1];
     expect(august.boardings).toBeNull();
@@ -75,10 +68,7 @@ describe('buildStopSeriesIndex', () => {
     expect(july.alightings).toBe(550);
   });
 
-  /**
-   * The grain is (stop, line), not stop. A flat index keyed by stop key alone would
-   * silently merge these two — the bug this test exists to prevent.
-   */
+  /** The grain is (stop, line), because a stop-only key would silently merge these two. */
   it('keeps two lines at the same stop apart', () => {
     const index = build(['2025-07'], [
       makeStopRecord({ year: 2025, month: 7, line_name: 206, wkday_ons: 9999 }),
@@ -102,11 +92,7 @@ describe('buildStopSeriesIndex', () => {
     expect(index.seriesFor('bus:elsewhere', 204)[0].boardings).toBe(9999);
   });
 
-  /**
-   * The one thing this must not do is decide which months are in the window. It is
-   * handed the derivation's own axis, so a record outside it cannot appear no matter
-   * what the window is.
-   */
+  /** It is handed the derivation's axis, so it never decides what is in the window. */
   it('drops a record whose month is not on the axis it was given', () => {
     expect(series(['2025-09']).map((p) => p.boardings)).toEqual([300]);
   });
@@ -115,10 +101,7 @@ describe('buildStopSeriesIndex', () => {
     expect(series([])).toEqual([]);
   });
 
-  /**
-   * A pair with no records still gets one point per month. A caller drawing it gets an
-   * empty chart of the right width rather than a chart of the wrong width.
-   */
+  /** A pair with no records still gets one point per month, so the chart is the right width. */
   it('gives an unknown pair a full-length, all-null series', () => {
     const points = build(['2025-07', '2025-08']).seriesFor('bus:nowhere', 999);
 
@@ -133,10 +116,7 @@ describe('buildStopSeriesIndex', () => {
     );
   });
 
-  /**
-   * The perf contract. Grouping is one cheap pass; aligning every pair up front would
-   * do a `stopMetrics` call per month for ~800 rows nobody has scrolled to yet.
-   */
+  /** The perf contract: no pair is aligned until something asks for it. */
   it('does no per-stop work until a series is asked for', () => {
     build(['2025-07', '2025-08', '2025-09']);
     expect(metricsSpy).not.toHaveBeenCalled();

@@ -5,10 +5,7 @@ import { makeLineReadout, makeStopPlace, makeStopRecord } from '../../test/build
 import { daysOfWeek } from '../../@types/metrics.types';
 import type { StopReadout, StopView } from '../../stops';
 
-/**
- * The table's per-row sparkline, for the same reason: a Chart.js canvas that
- * `StopTable`'s own spec covers. Here it only has to not need a 2D context.
- */
+/** The per-row sparkline, stubbed here only so it doesn't need a 2D context. */
 vi.mock('../StopSparkline', () => ({
   default: () => <canvas data-qa="stop-sparkline" />,
 }));

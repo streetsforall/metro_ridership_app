@@ -5,28 +5,14 @@ import { makeLineReadout, makeStopPlace } from '../../test/builders';
 import type { StopReadout } from '../../stops';
 import type { StopSeriesIndex, StopSeriesPoint } from '../../utils/stopSeries';
 
-/**
- * What one row costs when a *different* row scrolls into view.
- *
- * `useVisibleRows` keeps the visible set in state, so every IntersectionObserver batch
- * re-renders `StopTable`. Whether that re-renders all ~800 rows or only the one that
- * arrived is the difference this file measures. Nothing here asserts a timing; it counts
- * renders, which is the cost itself rather than a proxy for it.
- */
+/** What one row costs, in renders, when a *different* row scrolls into view. */
 
 const { rowSpy, chartSpy } = vi.hoisted(() => ({
   rowSpy: vi.fn<(label: string | undefined) => void>(),
   chartSpy: vi.fn<() => void>(),
 }));
 
-/**
- * Two counters, one per half of a row's cost.
- *
- * The checkbox stands in for the row body — every row renders exactly one, visible or
- * not — and the chart for the sparkline subtree, which only mounted rows carry. Both are
- * stubs rather than spies on the real components because jsdom has no 2D context and
- * because a Radix subtree would drown the count in its own internals.
- */
+/** Two counters: the checkbox stands in for the row body, the chart for the sparkline. */
 vi.mock('@radix-ui/react-checkbox', () => ({
   Root: ({
     children,
@@ -57,11 +43,7 @@ const points: StopSeriesPoint[] = [
   { month: '2025-08', boardings: 120, alightings: 110 },
 ];
 
-/**
- * The real index caches per `(stop, line)` pair, so the array a row gets back is stable
- * across renders. This stub has to be stable for the same reason: a fresh array per call
- * would defeat any memo on the row and the measurement would be of the stub.
- */
+/** Stable like the real index, or the measurement would be of the stub's churn. */
 const stubIndex: StopSeriesIndex = { seriesFor: () => points };
 
 const lines = [makeLineReadout({ id: 204, name: 'Line 204', mode: 'Bus' })];
@@ -151,10 +133,7 @@ describe('StopTable row rendering', () => {
     expect(renderedRows()).toEqual(['Stop 1 · Line 204']);
   });
 
-  /**
-   * The expensive half. A mounted sparkline is a Chart.js instance, and reconciling it
-   * because a row twelve places away arrived is work with no output.
-   */
+  /** The expensive half: a mounted sparkline is a whole Chart.js instance. */
   it('leaves an already-mounted sparkline alone when another row arrives', () => {
     withObserver();
     renderTable();

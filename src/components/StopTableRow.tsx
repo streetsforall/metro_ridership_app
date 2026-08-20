@@ -25,12 +25,7 @@ export interface StopTableRowProps {
   isSelected: boolean;
   /** Whether the row has been scrolled to, and so whether its sparkline is drawn. */
   isVisible: boolean;
-  /**
-   * The panel's one series index, passed rather than the series itself. `seriesFor` aligns
-   * a pair's months on first call and caches the result, so resolving in the parent's map
-   * would align all ~800 pairs up front for rows nobody scrolls to. Asking here, only when
-   * the row is visible, keeps that deferral; the index is memoised by `StopPanel`.
-   */
+  /** The index rather than the series, so a row nobody scrolls to costs no alignment. */
   seriesIndex: StopSeriesIndex;
   measure: StopMeasure;
   /** Whether this adds or removes is the hook's question to answer. */

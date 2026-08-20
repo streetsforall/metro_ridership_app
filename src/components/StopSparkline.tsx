@@ -6,14 +6,7 @@ import { getLineColor } from '../utils/lines';
 import type { StopSeriesPoint } from '../utils/stopSeries';
 import type { StopMeasure } from '../@types/stops.types';
 
-/**
- * One row's series at 40px — a shape, not a readout. Drawn in its line's colour, because
- * a row exists whether or not its stop is selected.
- *
- * The measure → dataset encoding is `stopSeriesDatasets`' rather than this file's, so a
- * larger chart of the same series can share it without sharing this component's options,
- * every one of which is chosen for 40px.
- */
+/** One row's series at 40px — a shape, not a readout, drawn in its line's colour. */
 
 export interface StopSparklineProps {
   series: readonly StopSeriesPoint[];
@@ -21,9 +14,7 @@ export interface StopSparklineProps {
   lineId: number;
 }
 
-// Module-level, unlike `LineTableRow`'s inline object: at this row count a fresh options
-// object per render is real allocation, and Chart.js treats a new identity as a reason to
-// reconfigure.
+// Module-level, because at this row count a fresh options object per render makes Chart.js reconfigure.
 const options: ChartOptions<'line'> = {
   responsive: true,
   maintainAspectRatio: false,
@@ -31,8 +22,7 @@ const options: ChartOptions<'line'> = {
   normalized: true,
   // No listeners: nothing here is hoverable, and the click belongs to the row.
   events: [],
-  // No spanGaps: a month this stop did not report is a gap, and 40px is no reason to draw
-  // through data that was never collected.
+  // No spanGaps: a month this stop did not report is a gap, at 40px as anywhere else.
   plugins: { legend: { display: false } },
   scales: { x: { display: false }, y: { display: false } },
   elements: { point: { radius: 0 } },
