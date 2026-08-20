@@ -14,12 +14,7 @@ import type { DayOfWeek } from '../@types/metrics.types';
 import type { StopMeasure } from '../@types/stops.types';
 import { NO_SELECTED_STOPS } from '../utils/stopDefaults';
 
-/**
- * The stand-in for an absent stop handler. `StopPanel` declares its five callbacks
- * non-optional while they arrive here optional, and closing that gap with an arrow per
- * call site made five new functions per render — which the memo on a stop row could not
- * survive. One module-level no-op has an identity that never changes.
- */
+/** One shared no-op for absent stop handlers, so no row's memo sees a fresh function. */
 const noop = (): void => {};
 
 interface OutputAreaProps {
@@ -35,10 +30,8 @@ interface OutputAreaProps {
   onRangeSelect?: (startMonth: string, endMonth: string) => void;
 
   /**
-   * The stop panel's slice of dashboard state. It arrives as props because it is
-   * URL-synced and `useUserDashboardInput` is the one place that reads and writes the URL.
-   * The derivation is local: this module is `useStopView`'s only importer, so its payloads
-   * land in this lazy chunk rather than on the first-paint path.
+   * The stop panel's slice of dashboard state, passed in because `useUserDashboardInput`
+   * is the one place that reads and writes the URL.
    */
   showStops?: boolean;
   stopMeasure?: StopMeasure;
@@ -113,11 +106,7 @@ export default function OutputArea({
   /** Whether any line is selected, and so whether there is anything to chart. */
   const hasSelection = chartDatasets.length > 0;
 
-  /**
-   * The selected lines, and their ids in the order readouts and markers should follow.
-   * Memoised because both feed the stop derivation, so a fresh array each render would
-   * rebuild the view — and the whole marker collection — on any unrelated state change.
-   */
+  /** The selected lines and their ids, memoised so the stop derivation doesn't rerun. */
   const selectedLines = useMemo(
     () => lines.filter((line) => line.selected),
     [lines],
@@ -140,17 +129,12 @@ export default function OutputArea({
     measure: stopMeasure,
   });
 
-  /**
-   * The chart's month axis, respelled for the stop panel: chart labels are `"YYYY M"` and
-   * the stop grain's are `YYYY-MM`, with every conversion in `src/chart/months.ts`. A
-   * respelling and nothing more — both lists came out of the one window predicate.
-   */
+  /** The chart's month axis respelled from `"YYYY M"` to the stop grain's `YYYY-MM`. */
   const windowMonths = useMemo(() => months.map(labelToEventDate), [months]);
 
   /**
-   * Jump the month window to the stop coverage window. Routed through `onRangeSelect`, the
-   * setters a chart drag uses, so one press moves the pickers, the chart and the URL
-   * together. The only work here is the spelling.
+   * Jumps the month window to the stop coverage window, through the same setters a chart
+   * drag uses.
    */
   const useCoverageWindow = useCallback(
     (from: string, to: string) => {
@@ -238,13 +222,8 @@ export default function OutputArea({
       </div>
 
       {/**
-       * The stop panel — opt-in via `stops=1`, and its own full-width pane below the
-       * summary-and-map row rather than between them.
-       *
-       * The plan put it "between SummaryData and the map"; those two have since become
-       * one two-column row, and a table of up to ~800 rows does not belong in a 2fr
-       * track beside a map. Full width below the row is where the context log already
-       * sits, and it keeps the row's two panes stretching to a common height.
+       * The stop panel — opt-in via `stops=1`, full width below the summary-and-map row
+       * because a ~800-row table doesn't fit beside a map.
        */}
       {showStops && (
         <StopPanel

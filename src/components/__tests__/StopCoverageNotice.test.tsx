@@ -35,16 +35,7 @@ describe('StopCoverageNotice', () => {
     ).toBeTruthy();
   });
 
-  /**
-   * The button sets the window; it never clamps one. Handing the endpoints back
-   * verbatim is what lets the caller route them through the same setters a drag
-   * across the chart uses, so the URL, the pickers and the chart all follow.
-   *
-   * **The span it sends is the span it names**, both from the manifest. Sending the
-   * view's own coverage would send whatever happens to be loaded — the rail payload
-   * alone in this state, since the bus fetch is gated on the window overlapping — so
-   * the button could name one period and set another.
-   */
+  /** The button hands back the span it names, verbatim, and never clamps it. */
   it('sets the same span it offers', () => {
     const onUseCoverageWindow = vi.fn();
     renderNotice({ state: 'no-overlap', onUseCoverageWindow });
@@ -77,12 +68,7 @@ describe('StopCoverageNotice', () => {
     ).toBeNull();
   });
 
-  /**
-   * The manifest is built from the committed payloads, which are present, so the
-   * "nothing ingested" branch is not reachable in this suite — and that is the point
-   * of the branch living there rather than being read off the view, where it *was*
-   * reachable, by any slow fetch.
-   */
+  /** The manifest is built from the committed payloads, so "nothing ingested" can't happen here. */
   it('states the covered span while a payload is still loading', () => {
     renderNotice({ state: 'unknown', months: [] });
     expect(

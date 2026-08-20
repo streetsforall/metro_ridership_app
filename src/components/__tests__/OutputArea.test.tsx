@@ -28,12 +28,7 @@ vi.mock('../Map', () => ({
   ),
 }));
 
-/**
- * The Month Window and Day Of Week are required props now that OutputArea hosts the
- * stop derivation. They are inert in these tests — the stop panel is off, so nothing
- * is fetched and nothing is derived from them — but the component genuinely needs
- * them, so they are stated rather than defaulted.
- */
+/** The Month Window and Day Of Week are required props, though inert with the panel off. */
 const stopWindowProps = {
   startDate: new Date(2023, 0),
   endDate: new Date(2023, 11),

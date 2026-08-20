@@ -1,8 +1,4 @@
-/**
- * How a rider figure is spelled, everywhere one is shown. The table and the map popup show
- * the same stop and a reader flips between them, so they must round the same way — before
- * this was one function they agreed only by coincidence.
- */
+/** How a rider figure is spelled, so the table and the map popup round the same way. */
 
 /** `1234.5` → `"1,235"`; nothing → `"—"`. */
 export const formatRiders = (value: number | undefined): string =>

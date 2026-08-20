@@ -79,11 +79,7 @@ describe('StopPanel', () => {
     expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-wilshire');
   });
 
-  /**
-   * `overlapsWindow` is `false` while nothing has loaded, so the loading state has to
-   * win — otherwise a slow network is indistinguishable from a window with no stop
-   * data, and the panel offers to move a window that is already right.
-   */
+  /** Loading has to win, or a slow network reads as a window with no stop data. */
   it('shows loading rather than the empty state while a payload is in flight', () => {
     renderPanel({
       isLoading: true,
@@ -95,8 +91,7 @@ describe('StopPanel', () => {
     });
     expect(screen.getByText('Loading stop ridership…')).toBeTruthy();
     expect(document.querySelector('[data-qa="stop-coverage-empty"]')).toBeNull();
-    // And it must not claim the dataset was never ingested either. An empty coverage
-    // is the loading state; the manifest is what knows whether stop data exists.
+    // Nor may it claim the dataset was never ingested, which is the manifest's answer.
     expect(
       document.querySelector('[data-qa="stop-coverage-no-data"]'),
     ).toBeNull();
@@ -160,10 +155,8 @@ describe('StopPanel', () => {
   });
 
   /**
-   * Rail and bus are separate requests with independent fates, and bus is 5.3 MB and
-   * arrives later. Neither its wait nor its failure may take the panel over once there
-   * is a table on screen — that would blank what the reader is looking at, or report
-   * one 404 as "nothing could be loaded" when half of it loaded.
+   * Bus is a separate 5.3 MB request, so neither its wait nor its failure may blank a
+   * table the reader is already looking at.
    */
   it('keeps the table on screen while a second payload loads', () => {
     renderPanel({ isLoading: true });
@@ -195,11 +188,7 @@ describe('StopPanel', () => {
     expect(document.querySelector('[data-qa="stop-coverage-span"]')).toBeTruthy();
   });
 
-  /**
-   * The ordinary case: the chart above covers years, the stop panel covers twelve
-   * months inside them. That is partial coverage in exactly the sense the line table
-   * uses, and the panel labels it the same way.
-   */
+  /** The ordinary case: twelve months of stop data inside a chart that spans years. */
   it('labels partial coverage against the chart’s own month axis', () => {
     renderPanel({
       windowMonths: ['2020-07', '2025-07', '2026-06'],
@@ -211,14 +200,7 @@ describe('StopPanel', () => {
   });
 });
 
-/**
- * The table's chrome, laid out as the line filter's is.
- *
- * `Deselect Stop` is gone: `Clear All` replaces it and sits above the table, because it
- * acts on the table rather than on one stop. Without
- * a way back the panel would be a one-way door — a reader could reach a different stop, or
- * close the panel, but never return to the state it opens in.
- */
+/** The table's chrome, laid out as the line filter's is. */
 describe('StopPanel table chrome', () => {
   const twoReadouts = makeView({
     readouts: [
@@ -309,11 +291,7 @@ describe('StopPanel table chrome', () => {
     ]);
   });
 
-  /**
-   * Scoped by the search, exactly as the line filter's `Select All` is scoped by its own.
-   * That scoping is what stands in for a cap: nothing is capped, so a reader who wants a
-   * corridor searches for it first.
-   */
+  /** Scoped by the search, exactly as the line filter's `Select All` is. */
   it('scopes Select All to the searched rows', () => {
     const onSelectAllStops = vi.fn();
     renderPanel({ view: twoReadouts, searchText: 'santa', onSelectAllStops });
@@ -343,12 +321,7 @@ describe('StopPanel table chrome', () => {
     },
   );
 
-  /**
-   * Both read as text links, like the line filter's pair — the dashboard's existing
-   * selection actions. `bg-transparent border-none` is what does that: the global button
-   * rule otherwise paints each a filled navy pill, which is how the old control first
-   * shipped.
-   */
+  /** Both read as text links, which is what `bg-transparent border-none` buys. */
   it.each(['Select All', 'Clear All'])(
     '%s is styled as a text link, not a filled button',
     (name) => {

@@ -1,31 +1,17 @@
 import magnifyingGlassIcon from '../assets/magnifying-glass.svg';
 
-/**
- * The stop table's chrome: search, then the two selection actions. A sibling of
- * `LineFilters` on purpose — the dashboard's two ranked tables offer the same three
- * controls and must offer them the same way.
- *
- * Presentational and stateless. The search text and the selection are URL-synced state,
- * and `useUserDashboardInput` is the one place that reads and writes the URL.
- */
+/** The stop table's chrome — search and the two selection actions, mirroring `LineFilters`. */
 
 export interface StopFiltersProps {
   searchText: string;
   onSearchTextChange: (text: string) => void;
-  /**
-   * What `Select All` adds. Passed in rather than derived here, because deriving "which
-   * rows are listed" twice is how the button and the table start disagreeing.
-   */
+  /** What `Select All` adds, passed in so the button and the table can't disagree. */
   listedStopKeys: string[];
   onSelectAllStops: (stopKeys: string[]) => void;
   onClearStops: () => void;
 }
 
-/**
- * `bg-transparent border-none p-0` is load-bearing: without it the global `button` rule in
- * `index.css` paints a filled navy pill. One constant rather than the string twice,
- * because these two buttons have drifted apart once already.
- */
+/** `bg-transparent border-none p-0` is load-bearing, or `index.css` paints a navy pill. */
 const ACTION_CLASS =
   'bg-transparent border-none p-0 font-bold text-xs text-[#0fada8]';
 

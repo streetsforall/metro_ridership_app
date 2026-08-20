@@ -8,19 +8,11 @@ import { dataMaxYear, dataMinYear } from '../utils/dataDateRange';
 import type { StopCoverageState } from '../utils/stopCoverage';
 
 /**
- * The stop coverage window against the month window, said out loud. The chart spans
- * 2009 → 2026 and stop data twelve months inside it, so a reader who drags to 2015 and
- * finds an empty table has been handed a broken panel unless the panel says what it
- * covers. The span is stated persistently, not only when something is missing, and comes
- * from the build-time manifest so the sentence is true before any payload is fetched.
- *
- * It never clamps or widens the window, because the window is the reader's choice and what
- * a shared link carries (ADR-0001); the no-overlap state offers a button instead. It also
- * states no window rule of its own — `stopCoverageState` reads the derivation's answers
- * rather than comparing against the window (ADR-0009).
+ * Says what stop data covers, so a reader who drags the window to 2015 sees why the table
+ * is empty rather than a broken panel (ADR-0001, ADR-0009).
  */
 
-/** `"2025-07"` → `"Jul 2025"`. Absent months read as an em dash rather than "null". */
+/** `"2025-07"` → `"Jul 2025"`, or an em dash when the month is absent. */
 const monthLabel = (month: string | null): string =>
   month ? formatEventDate(month) : '—';
 
@@ -41,9 +33,8 @@ export default function StopCoverageNotice({
   onUseCoverageWindow,
 }: StopCoverageNoticeProps) {
   /**
-   * Whether stop data exists at all is the manifest's answer, not the view's. The view
-   * reports empty coverage while a payload is in flight and again if one fails, so asking
-   * `coverage` would tell a reader on a slow connection that nothing had been ingested.
+   * Whether stop data exists at all is the manifest's answer, because the view reports
+   * empty coverage while a payload is still in flight.
    */
   if (minMonth === null)
     return (

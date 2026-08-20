@@ -55,24 +55,14 @@ const renderTable = (
     />,
   );
 
-/**
- * The stop names in the order the table currently lists them.
- *
- * Cell `1`, not `0`: the selection checkbox is the first column now.
- */
+/** The stop names in the order the table lists them, from cell 1 past the checkbox. */
 const rowNames = (): string[] =>
   screen
     .getAllByRole('row')
     .slice(1)
     .map((row) => within(row).getAllByRole('cell')[1].textContent ?? '');
 
-/**
- * A row's selection checkbox, by stop key and the line the row is measured on.
- *
- * The line belongs in the selector because a stop key alone does not identify a row: one
- * interchange stop on two selected lines is two rows. Every readout here is on 204, so
- * that is the default.
- */
+/** A row's checkbox, keyed by stop and line because one stop can be two rows. */
 const rowCheckbox = (key: string, lineId = 204): HTMLElement =>
   document.querySelector(
     `[data-qa="stop-select-${String(lineId)}-${key}"] [role="checkbox"]`,
@@ -136,10 +126,7 @@ describe('StopTable', () => {
     ]);
   });
 
-  /**
-   * ADR-0004's contract at stop grain: no figures is not zero figures. A stop that
-   * reported nothing must not out-rank one that genuinely reported zero riders.
-   */
+  /** No figures is not zero figures, at stop grain (ADR-0004). */
   it('sinks a readout with no figures below one reporting zero', () => {
     renderTable({
       readouts: [
@@ -177,11 +164,7 @@ describe('StopTable', () => {
     expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-wilshire');
   });
 
-  /**
-   * One tab stop per row, not two. The checkbox is the keyboard route — as it is in the
-   * line table — so a focusable row as well would put ~1600 stops in an 800-row table and
-   * announce every row twice, the second announcement being the only informative one.
-   */
+  /** One tab stop per row: the checkbox is the keyboard route, as in the line table. */
   it('does not make the row itself a tab stop', () => {
     renderTable({});
     const row = document.querySelector(
@@ -193,19 +176,14 @@ describe('StopTable', () => {
   it('toggles a stop from the keyboard, through its checkbox', () => {
     const onToggleStop = vi.fn();
     renderTable({ onToggleStop });
-    // Space is the key the browser turns into a click; `fireEvent` does not synthesise
-    // that click, so both halves are dispatched here.
+    // `fireEvent` doesn't synthesise the click a Space press causes, so both are sent.
     const checkbox = rowCheckbox('bus:vermont-wilshire');
     fireEvent.keyDown(checkbox, { key: ' ', code: 'Space' });
     fireEvent.click(checkbox);
     expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-wilshire');
   });
 
-  /**
-   * The row asks to be toggled and says nothing about whether that adds or removes. The
-   * selection is the hook's to know, so there is one membership rule rather than a copy
-   * here that could disagree with it.
-   */
+  /** The row asks to be toggled, and whether that adds or removes is the hook's to know. */
   it('asks for the same toggle whether or not the stop is already selected', () => {
     const onToggleStop = vi.fn();
     renderTable({
@@ -232,13 +210,7 @@ describe('StopTable', () => {
     expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-santa-monica');
   });
 
-  /**
-   * One interchange stop on two selected lines is two rows, and each row's `data-qa` has
-   * to name only itself. Suffixing the three attributes with the stop key alone gave both
-   * rows the same names, which no fixture happened to produce: a Playwright locator would
-   * then match two elements and fail strict mode, and a `querySelector` here would
-   * silently take the first and assert about a row nobody meant.
-   */
+  /** Each row's `data-qa` names only itself, since one stop can appear on two lines. */
   it('gives a stop on two lines two rows, each identified on its own', () => {
     renderTable({
       readouts: [
@@ -271,13 +243,7 @@ describe('StopTable', () => {
   });
 });
 
-/**
- * The selection column.
- *
- * `aria-current` is gone: it means "the current item in a set", which is not what several
- * selected rows are. The checkbox's own checked state is what says a row is selected now,
- * and it says it where a reader looks for that answer.
- */
+/** The selection column, where the checkbox's checked state is what says a row is selected. */
 describe('StopTable selection column', () => {
   it('gives every row a checkbox', () => {
     renderTable();
@@ -330,10 +296,7 @@ describe('StopTable selection column', () => {
     expect(onToggleStop).toHaveBeenCalledWith('bus:vermont-wilshire');
   });
 
-  /**
-   * The checkbox sits inside a row that is itself a toggle, so without `stopPropagation`
-   * one click would toggle twice and land back where it started.
-   */
+  /** The row is a toggle too, so without `stopPropagation` one click toggles twice. */
   it('fires one toggle per checkbox click, not two', () => {
     const onToggleStop = vi.fn();
     renderTable({ onToggleStop });
@@ -343,11 +306,7 @@ describe('StopTable selection column', () => {
     expect(onToggleStop).toHaveBeenCalledTimes(1);
   });
 
-  /**
-   * **Space, not Enter.** Radix cancels Enter on a checkbox, so no click follows it.
-   * Space is the key the browser turns into a click, and `fireEvent` does not synthesise
-   * that click, so both halves are dispatched here — which is what the browser does.
-   */
+  /** Space, not Enter, because Radix cancels Enter on a checkbox. */
   it('fires one toggle per Space press on the checkbox, not two', () => {
     const onToggleStop = vi.fn();
     renderTable({ onToggleStop });

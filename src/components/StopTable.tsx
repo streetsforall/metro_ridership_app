@@ -4,12 +4,8 @@ import type { LineReadout } from '../ridership';
 import type { StopReadout } from '../stops';
 
 /**
- * The ranked stop table, the panel's primary readout: it answers "which stops carry this
- * line" without the reader touching the map. Every number comes off a readout
- * `buildStopView` derived; nothing is recomputed here.
- *
- * Rows are memoised in `StopTableRow`, so the props below must stay reference-stable or
- * all ~800 rows reconcile on every re-sort and every selection.
+ * The ranked stop table, which answers "which stops carry this line" without the map —
+ * every prop here must stay reference-stable, because all ~800 rows are memoised.
  */
 
 type SortKey =
@@ -30,10 +26,8 @@ interface ColumnBase {
 }
 
 /**
- * A column is sortable, presentational, or the selection checkbox. Neither `select` nor
- * `ridershipOverTime` is a readout field, so keeping them out of `SortKey` makes "sort by
- * the sparkline" unrepresentable rather than a no-op — the comparator indexes a readout by
- * `sort.key`, and the compiler is what stops that being a key no readout has.
+ * A column is sortable, presentational, or the checkbox, so that sorting by a column with
+ * no readout field behind it won't compile.
  */
 type Column = ColumnBase &
   (
@@ -49,11 +43,7 @@ type Column = ColumnBase &
 
 type SortableColumn = Extract<Column, { kind: 'sortable' }>;
 
-/**
- * A row's identity, and React's key for it. The line has to be in it because a stop on two
- * selected lines is two rows, which a stop key alone would name both of. Keying by this
- * also lets a re-sort re-parent an already-mounted sparkline rather than remount it.
- */
+/** A row's identity, line included, because one stop on two selected lines is two rows. */
 const rowKey = (readout: StopReadout): string =>
   `${String(readout.line_name)}-${readout.key}`;
 
@@ -106,8 +96,7 @@ const columns: Column[] = [
     label: 'Change',
     align: 'right',
     initialDirection: 'desc',
-    /* Longer than its neighbours because "change" reads as a trend unless said
-       otherwise. It is a net flow within each month. */
+    /* Longer than its neighbours because "change" reads as a trend unless said otherwise. */
     title:
       'Boardings less alightings — the net change in riders on board at this stop, within each month rather than between them. Negative where more riders get off than on, which is information rather than an error.',
   },
@@ -127,11 +116,7 @@ export interface StopTableProps {
   lines: readonly LineReadout[];
   /** Every row whose key is in it is checked and highlighted. */
   selectedStopKeys: readonly string[];
-  /**
-   * A row click or its checkbox toggles that stop, as a map circle does. Must be stable
-   * across renders, as must `readouts` and `lines`, because every row is memoised on the
-   * props it is handed and a fresh callback would re-render all ~800 at once.
-   */
+  /** Toggles one stop, and must be stable across renders like `readouts` and `lines`. */
   onToggleStop: (stopKey: string) => void;
 }
 
@@ -141,10 +126,7 @@ export default function StopTable({
   selectedStopKeys,
   onToggleStop,
 }: StopTableProps) {
-  /**
-   * Ranked high-first by boardings until the reader says otherwise, because a table
-   * ordered by whatever the derivation emitted is a list rather than a ranking.
-   */
+  /** Ranked high-first by boardings until the reader sorts it otherwise. */
   const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection }>({
     key: 'averageBoardings',
     direction: 'desc',
@@ -155,8 +137,7 @@ export default function StopTable({
     [lines],
   );
 
-  /* A set, not `includes` per row: selection is uncapped and a five-line table is ~800
-     rows, so the scan would be quadratic in the case the feature invites. */
+  /* A set, not `includes` per row, which would be quadratic over ~800 rows. */
   const selected = useMemo(() => new Set(selectedStopKeys), [selectedStopKeys]);
 
   const sorted = useMemo(() => {
@@ -168,9 +149,7 @@ export default function StopTable({
         const nameB = lineNames.get(b.line_name) ?? String(b.line_name);
         return factor * nameA.localeCompare(nameB);
       }
-      // An absent figure sorts last either way rather than reading as zero, because a
-      // stop with no figures did not report nobody (ADR-0004) and must not out-rank one
-      // that reported a genuine 0.
+      // An absent figure sorts last either way rather than reading as zero (ADR-0004).
       const valueA = a[sort.key];
       const valueB = b[sort.key];
       if (valueA === undefined) return valueB === undefined ? 0 : 1;
@@ -191,8 +170,7 @@ export default function StopTable({
   };
 
   return (
-    /* The list scrolls rather than the page, and the cap is on height rather than rows,
-       because a silently truncated table reads as a complete ranking. */
+    /* Capped by height rather than rows, because a truncated table reads as the whole ranking. */
     <div className="max-h-[28rem] overflow-y-auto">
       <table className="text-sm w-full" data-qa="stop-table">
         <thead className="sticky top-0">
@@ -205,8 +183,7 @@ export default function StopTable({
                 <th
                   key={column.key}
                   title={column.title}
-                  /* Sortable headers only: `aria-sort="none"` means "sortable, not
-                     currently sorted", which the sparkline column is not. */
+                  /* Sortable headers only, since `aria-sort="none"` still claims sortability. */
                   aria-sort={
                     !isSortable
                       ? undefined
