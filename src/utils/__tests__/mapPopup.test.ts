@@ -98,11 +98,7 @@ describe('buildStopPopupHTML', () => {
     expect(html).toContain('<div class="map-popup-sub">Line 204</div>');
   });
 
-  /**
-   * The vocabulary check. `CONTEXT.md` registers Boardings and Alightings and lists
-   * ons/offs under *avoid*; this popup is UI copy, so the wire's own abbreviations
-   * must not reach it.
-   */
+  /** The vocabulary check: the wire's "ons"/"offs" must not reach UI copy (`CONTEXT.md`). */
   it('says Boardings and Alightings, never ons or offs', () => {
     const html = buildStopPopupHTML(makeStopReadout(), 'Line 204');
     expect(html).toContain('Avg. Boardings');

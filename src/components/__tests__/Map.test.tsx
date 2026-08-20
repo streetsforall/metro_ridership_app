@@ -17,12 +17,8 @@ const captured = vi.hoisted(() => ({
   /** The stop source's `setData`, so a test can read what was pushed at it. */
   setStopData: vi.fn(),
   /**
-   * Layer ids in the order they were added, kept outside the mocks.
-   *
-   * `getLayer` has to answer for the whole life of one map instance, and a test that
-   * clears `addLayer` to prove nothing was re-added would otherwise also erase the
-   * record `getLayer` reads — making the component add the layer a second time and the
-   * test pass for the wrong reason.
+   * Layer ids in the order added, kept outside the mocks so clearing `addLayer` doesn't
+   * also erase what `getLayer` answers from.
    */
   layerIds: [] as string[],
 }));
@@ -40,8 +36,7 @@ vi.mock('maplibre-gl', () => ({
         addControl: captured.addControl,
         remove: captured.mapRemove,
         setPaintProperty: captured.setPaintProperty,
-        // Only the stop source is asked for by id; anything else would be a bug in
-        // the component, so it gets `undefined` rather than a silent stub.
+        // Only the stop source is asked for by id, so anything else gets `undefined`.
         getSource: vi
           .fn()
           .mockImplementation((id: string) =>
@@ -49,8 +44,7 @@ vi.mock('maplibre-gl', () => ({
               ? { setData: captured.setStopData }
               : undefined,
           ),
-        // Mirrors `addLayer`, so `ensureStopLayer`'s "already there?" guard is answered
-        // by what the component actually added rather than by a fixed value.
+        // Mirrors `addLayer`, so the "already there?" guard reads what was really added.
         getLayer: vi
           .fn()
           .mockImplementation((id: string) =>
@@ -205,13 +199,7 @@ describe('Map', () => {
     });
   });
 
-  /**
-   * The stop layer. What is asserted here is the seam between `src/stops/` and
-   * MapLibre: the paint expressions read feature properties the module wrote, the
-   * source is added exactly once and only once there is something to draw, and
-   * everything after that is `setData` / `setFilter` / `setPaintProperty` on the live
-   * map.
-   */
+  /** The seam between `src/stops/` and MapLibre: what the module wrote gets painted. */
   describe('stop markers', () => {
     const markers: StopView['markers'] = {
       type: 'FeatureCollection',
@@ -250,11 +238,7 @@ describe('Map', () => {
       );
     });
 
-    /**
-     * The stop panel is off by default and most readers never open it, so a map that
-     * was never asked for stops carries exactly the two route layers it always did.
-     * `e2e/map.spec.ts` asserts that stack exactly, and this is what keeps it true.
-     */
+    /** A map never asked for stops carries exactly the two route layers it always did. */
     it('adds no stop layer at all when there is nothing to draw', () => {
       loaded();
       expect(captured.addSource).not.toHaveBeenCalledWith(
@@ -350,11 +334,7 @@ describe('Map', () => {
       expect(captured.addLayer).not.toHaveBeenCalled();
     });
 
-    /**
-     * One membership test, not one comparison per stop. The empty case needs no sentinel
-     * either: an empty literal array matches nothing on its own, which is what the old
-     * `?? ''` comparison had to fake.
-     */
+    /** One membership test, not one comparison per stop, and no sentinel for the empty case. */
     it('rings every selected stop from one membership test', () => {
       const { rerender } = loaded({ stopMarkers: markers });
       captured.setPaintProperty.mockClear();
@@ -383,12 +363,8 @@ describe('Map', () => {
     });
 
     /**
-     * **The map imports no palette.** The chart gives each selected stop its own hue;
-     * the ring deliberately does not follow it there, so colour on the map keeps
-     * answering one question — which line, in the fill (ADR-0014).
-     *
-     * This assertion is the guard: extending the palette onto the ring should fail a
-     * test rather than slide in unread.
+     * The map imports no palette, so colour there keeps answering one question — which
+     * line (ADR-0014).
      */
     it('rings every selected stop in the one neutral colour, not a colour per stop', () => {
       const { rerender } = loaded({ stopMarkers: markers });
