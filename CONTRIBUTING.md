@@ -67,6 +67,12 @@ chose.
 If you supersede one, mark the old one superseded rather than editing it. The reasoning in a
 superseded ADR is usually still worth reading.
 
+## Comments
+
+One sentence, plain language. Say what the thing is or why it's there, in words a reader takes in
+once. If the reasoning needs a paragraph it belongs in an ADR — cite it `(ADR-00NN)` and leave the
+comment at one sentence.
+
 ## Issues
 
 Issues live in GitHub Issues on `streetsforall/metro_ridership_app`. If you notice something out of

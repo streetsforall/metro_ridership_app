@@ -160,11 +160,7 @@ describe('initial state from URL params', () => {
     expect(result.current.selectedStopKeys).toEqual(['rail:union-station']);
   });
 
-  /**
-   * The param carried one key before it carried several, so a link shared then still
-   * has to work now. That is why the plural list lives under `stop=` rather than a new
-   * param name.
-   */
+  /** One key or many share the `stop=` param, so older shared links still work. */
   it('reads several selected stop keys from one stop param', () => {
     window.history.replaceState(
       {},
@@ -409,14 +405,8 @@ describe('URL sync', () => {
   });
 
   /**
-   * A stop key survives the round trip whole.
-   *
-   * The plan expected the key to appear literally, on the grounds that it is a
-   * URL-safe slug. It is — but `URLSearchParams.toString()` percent-encodes `:`
-   * regardless of whether a query string needs it to, so the written form is
-   * `bus%3A…`. What matters is that `params.get('stop')` gives the key back
-   * unchanged, so a shared link selects the stop it named; asserting the literal
-   * spelling would be asserting `URLSearchParams`' escaping policy.
+   * A stop key survives the round trip whole, even though `toString()` percent-encodes
+   * its `:`.
    */
   it('round-trips the selected stop key through the URL', () => {
     const { result } = renderHook(() => useUserDashboardInput());
@@ -430,10 +420,7 @@ describe('URL sync', () => {
     ).toBe('bus:vermont-wilshire');
   });
 
-  /**
-   * The comma survives `toString()` unescaped, unlike the `:` inside each key, so the
-   * param stays readable however many stops are selected.
-   */
+  /** The joining comma survives `toString()` unescaped, so the param stays readable. */
   it('round-trips several selected stop keys through the one param', () => {
     const { result } = renderHook(() => useUserDashboardInput());
 
@@ -473,11 +460,7 @@ describe('URL sync', () => {
   });
 });
 
-/**
- * The Stop Selection's three mutators, and the asymmetry they share with the line trio:
- * `selectAllListedStops` is scoped to what it is handed and adds, `clearStopSelections`
- * is global.
- */
+/** The Stop Selection's three mutators: `Select All` adds, `Clear All` clears everything. */
 describe('the Stop Selection', () => {
   it('selects a stop that was not selected', () => {
     const { result } = renderHook(() => useUserDashboardInput());
@@ -515,10 +498,7 @@ describe('the Stop Selection', () => {
     expect(result.current.selectedStopKeys).toEqual(['bus:vermont-wilshire']);
   });
 
-  /**
-   * Order is the colour assignment, so a stop added later must land at the end. If it
-   * were inserted anywhere else every series already on the chart would change hue.
-   */
+  /** Order is the colour assignment, so a stop added later has to land at the end. */
   it('appends a newly selected stop rather than reordering', () => {
     window.history.replaceState({}, '', '?stop=rail:union-station');
     const { result } = renderHook(() => useUserDashboardInput());
@@ -568,11 +548,7 @@ describe('the Stop Selection', () => {
     ]);
   });
 
-  /**
-   * Global, not scoped. `Select All` reaches only the rows the search lists, but
-   * `Clear All` clears everything — the line pair behaves the same way, and two ranked
-   * tables under one dashboard should not answer the same two words differently.
-   */
+  /** `Clear All` is global, unlike `Select All`, which reaches only the listed rows. */
   it('clears every selected stop, including ones no search would list', () => {
     window.history.replaceState(
       {},
@@ -645,10 +621,8 @@ describe('selectAllListedLines', () => {
 });
 
 /**
- * The mutators are the dashboard's callback surface, and everything downstream that
- * memoises is memoising on their identity — the ~800-row stop table above all, whose
- * rows re-render whenever the callback they are handed is a new function. These tests
- * are what stops a later edit turning one back into a plain declaration.
+ * The mutators must keep a stable identity, because the ~800-row stop table memoises on
+ * it.
  */
 describe('mutator identity', () => {
   const mutators = [
@@ -673,7 +647,7 @@ describe('mutator identity', () => {
       expect(result.current[name], name).toBe(before[name]);
   });
 
-  /** The harder case: identity has to survive the state changes the mutators cause. */
+  /** Identity has to survive the state changes the mutators themselves cause. */
   it('hands back the same function after the state it sets has changed', () => {
     const { result } = renderHook(() => useUserDashboardInput());
     const before = result.current;

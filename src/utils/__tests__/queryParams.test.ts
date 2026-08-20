@@ -166,10 +166,7 @@ describe('parseStopKeysParam', () => {
     ).toEqual(['rail:union-station', 'bus:vermont-wilshire']);
   });
 
-  /**
-   * A malformed part is dropped rather than failing the whole param: a hand-edited URL
-   * naming three stops and one fragment of markup should still show the three stops.
-   */
+  /** A malformed part is dropped rather than failing the whole param. */
   it('drops a malformed part and keeps the rest', () => {
     expect(
       parseStopKeysParam('rail:union-station,tram:nope,bus:vermont-wilshire'),

@@ -186,10 +186,7 @@ describe('DateRangeSelector stop ridership checkbox', () => {
     expect(toggleShowStops).toHaveBeenCalledOnce();
   });
 
-  /**
-   * The two Panel Visibility checkboxes are independent: showing stops must not
-   * disturb the context-log panel, which shares the fieldset.
-   */
+  /** The two Panel Visibility checkboxes are independent of each other. */
   it('leaves the Context Logs checkbox alone when only showStops is set', () => {
     render(<DateRangeSelector {...defaultProps} showStops={true} />);
     expect(

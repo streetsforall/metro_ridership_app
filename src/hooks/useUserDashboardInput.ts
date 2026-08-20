@@ -52,9 +52,8 @@ export interface UserDashboardInputState {
   setStopMeasure: React.Dispatch<React.SetStateAction<StopMeasure>>;
 
   /**
-   * Every stop whose series is drawn, in selection order. `stop=<key>,<key>`. The order is
-   * load-bearing: the chart assigns a colour per position, so it is what keeps a re-sort,
-   * or a stop added at the end, from recolouring the series already on screen.
+   * Every stop whose series is drawn, in selection order — the chart colours by position,
+   * so the order has to hold still.
    */
   selectedStopKeys: string[];
 
@@ -142,9 +141,7 @@ const useUserDashboardInput = (): UserDashboardInputState => {
 
   /**
    * The stop-panel slices, read here and written in the effect below — both halves, or the
-   * panel stops being shareable (`CLAUDE.md`). Off by default, because its data covers a
-   * short window inside the chart's, so opening it unasked would put an empty state under
-   * most shared links.
+   * panel stops being shareable (`CLAUDE.md`).
    */
   const [showStops, setShowStops] = useState<boolean>(() => {
     const params = new URLSearchParams(window.location.search);
@@ -182,9 +179,7 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     if (isAggregateVisible) params.set('aggregate', '1');
     if (showContextLogs) params.set('logs', '1');
     if (showStops) params.set('stops', '1');
-    // Written only when non-default, like every optional param above. A stop key is a slug
-    // by construction, so nothing needs escaping, though `toString()` percent-encodes the
-    // `:` anyway — it decodes back to the same key. The joining comma survives unescaped.
+    // Written only when non-default, like every optional param above.
     if (stopMeasure !== 'ons') params.set('measure', stopMeasure);
     if (selectedStopKeys.length > 0)
       params.set('stop', selectedStopKeys.join(','));
@@ -207,11 +202,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
   ]);
 
   /*
-   * Every mutator below is `useCallback`ed with an empty dependency list. Each closes over
-   * nothing but a `useState` setter, which React already keeps stable, so the wrapper costs
-   * nothing and buys a stable identity all the way down. These are the dashboard's whole
-   * callback surface, and a memo on a row is worth nothing while the callback it receives
-   * is new each render — the ~800-row stop table is where that bill comes due.
+   * Every mutator below is `useCallback`ed so its identity holds still, because the
+   * ~800-row stop table re-renders whenever a callback it receives is new.
    */
 
   /**
@@ -254,17 +246,13 @@ const useUserDashboardInput = (): UserDashboardInputState => {
   }, []);
 
   /**
-   * The selection's three mutators, deliberately the lines' three with the same asymmetry:
-   * `selectAllListedStops` is scoped to the listed rows and adds, `clearStopSelections` is
-   * global. Two ranked tables under one dashboard should not answer the same two words
-   * differently. Nothing is capped, for the same reason nothing there is — the search is
-   * what narrows `Select All`.
+   * `Select All` adds only the rows the search lists, while `Clear All` clears everything —
+   * the same asymmetry the line mutators have.
    */
   const selectAllListedStops = useCallback((keys: string[]): void => {
     setSelectedStopKeys((prevKeys) => {
       const selected = new Set(prevKeys);
-      // Appended after what was already selected, because a colour is assigned per
-      // position and an insertion in the middle would recolour the rest.
+      // Appended, because inserting in the middle would recolour the series already drawn.
       return [...prevKeys, ...keys.filter((key) => !selected.has(key))];
     });
   }, []);
