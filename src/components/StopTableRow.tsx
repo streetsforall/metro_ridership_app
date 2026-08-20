@@ -5,32 +5,17 @@ import { formatRiders, formatShare } from '../utils/figures';
 import type { StopReadout } from '../stops';
 
 /**
- * One row of the ranked stop table, memoised because there are ~800 of them: a re-sort or
- * a single selection re-renders the table, and inline that reconciled every row's Radix
- * subtree along with it.
- *
- * Every prop is therefore a primitive or a reference the caller keeps stable. That is a
- * standing constraint: one fresh object per render here undoes the whole thing.
+ * One row of the ranked stop table, memoised because there are ~800 of them — every prop
+ * has to be a primitive or a stable reference.
  */
 
-/**
- * Spelled out rather than interpolated, because Tailwind scans source text for whole class
- * names and a `text-${align}` template produces a class that is never generated. It lives
- * here and the headers import it, so the dependency runs one way and never cycles.
- */
+/** Spelled out rather than interpolated, because Tailwind only generates whole class names. */
 export const ALIGN_CLASS = { left: 'text-left', right: 'text-right' } as const;
 
 export interface StopTableRowProps {
-  /**
-   * The row's figures. A stable reference: readouts come from `buildStopView`, and a
-   * re-sort reorders the array without minting new objects.
-   */
+  /** The row's figures, a stable reference straight from `buildStopView`. */
   readout: StopReadout;
-  /**
-   * The row's identity, `${lineId}-${stopKey}`. The line has to be in it because a stop on
-   * two selected lines is two rows. React keys by this, so a re-sort re-parents an
-   * already-mounted sparkline rather than remounting it.
-   */
+  /** The row's identity, line included, because one stop on two selected lines is two rows. */
   rowKey: string;
   /** The display name of the line this row is measured on. */
   lineName: string;
@@ -61,9 +46,7 @@ function StopTableRow({
         isSelected ? 'bg-stone-200' : 'even:bg-[rgba(0,0,0,0.05)]'
       }`}
     >
-      {/* The row's only visible statement that it is selected, and the keyboard route in.
-          No `id`: the accessible name comes from `aria-label` rather than a `<label
-          htmlFor>` as the line table's does. */}
+      {/* The row's only visible statement that it is selected, and the keyboard route in. */}
       <td data-qa={`stop-select-${rowKey}`} className="w-10">
         <Checkbox.Root
           aria-label={`${readout.name} · ${lineName}`}

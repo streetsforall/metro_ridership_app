@@ -8,16 +8,7 @@ import type { LineReadout } from '../ridership';
 import type { StopView } from '../stops';
 import type { StopMeasure } from '../@types/stops.types';
 
-/**
- * Stop-level boardings and alightings for the selected lines, over the month window.
- *
- * The ranked table is the primary readout and never needs the map. Panel and map layer
- * are two views of one `buildStopView` call — same readouts, radius domain and month
- * axis — so a stop cannot appear in one and not the other.
- *
- * Nothing here re-derives any of that: every figure the table ranks by comes off the
- * `StopReadout`s the module returns, and the month axis is the module's own.
- */
+/** Stop-level boardings and alightings for the selected lines, over the month window. */
 
 const MEASURE_LABELS: Record<StopMeasure, string> = {
   ons: 'Boardings',
@@ -33,11 +24,7 @@ const NOTE_CLASS = 'mt-2 text-xs text-stone-400';
 
 export interface StopPanelProps {
   view: StopView;
-  /**
-   * The ridership view's month axis over the same window, `YYYY-MM`. Only for the
-   * partial-coverage label: stop data is partial exactly when it covers less of the
-   * period than the chart above does, which is the line table's meaning of the word.
-   */
+  /** The ridership view's month axis, used only to label partial coverage. */
   windowMonths: readonly string[];
   isLoading: boolean;
   hasFailed: boolean;
@@ -82,13 +69,8 @@ export default function StopPanel({
   });
 
   /**
-   * The rows the table shows. Case-insensitive substring against the stop name, the same
-   * rule the line filter uses; the line column is not matched because line selection has
-   * already filtered on it.
-   *
-   * The search narrows the table, not the selection. A stop stays selected once its row
-   * is hidden, because searching is how a reader finds the next stop to add and losing the
-   * selection in progress would defeat that.
+   * The rows the table shows — the search narrows the table, not the selection, so a stop
+   * stays selected once its row is hidden.
    */
   const listedReadouts = useMemo(() => {
     const query = searchText.toLocaleLowerCase();
@@ -98,20 +80,13 @@ export default function StopPanel({
     );
   }, [view.readouts, searchText]);
 
-  /**
-   * What `Select All` adds. Deduplicated because the table's grain is stop × line while
-   * selection is by stop, so a stop on two selected lines is two rows and one key.
-   */
+  /** What `Select All` adds, deduplicated because one stop can be two rows. */
   const listedStopKeys = useMemo(
     () => [...new Set(listedReadouts.map((readout) => readout.key))],
     [listedReadouts],
   );
 
-  /**
-   * The month axis, keyed by value rather than identity. `buildStopView` returns a fresh
-   * array on every run, including a measure change, so depending on `view.months` directly
-   * would rebuild the index below on the one change it is independent of.
-   */
+  /** The month axis keyed by value, since `buildStopView` returns a fresh array each run. */
   const monthsKey = view.months.join(',');
   const months = useMemo(
     () => (monthsKey ? monthsKey.split(',') : []),
@@ -121,17 +96,13 @@ export default function StopPanel({
   const hasSelectedLines = lines.length > 0;
 
   /**
-   * Is there anything on screen yet? The two payloads have independent fates — rail lands
-   * first, bus is a separate multi-megabyte request made later — so neither "loading" nor
-   * "failed" may take over the panel once there are readouts. Doing so would blank a table
-   * mid-read for the length of a 5.3 MB download. Both become a note beside the data.
+   * Is there anything on screen yet? Once there is, loading and failure become notes
+   * beside the table rather than replacing it.
    */
   const hasReadouts = view.readouts.length > 0;
 
   const body = () => {
-    // Order matters: `overlapsWindow` is `false` while nothing has loaded, so loading must
-    // be answered before empty or a slow network reads as "no stop data in this period".
-    // `no-overlap` says nothing here — the notice above the body has already said it.
+    // Loading is answered first, or a slow network reads as "no stop data in this period".
     if (hasFailed && !hasReadouts)
       return (
         <p className={EMPTY_CLASS}>Stop-level ridership could not be loaded.</p>

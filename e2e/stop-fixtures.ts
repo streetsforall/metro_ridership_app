@@ -1,22 +1,8 @@
 import type { Page } from '@playwright/test';
 
 /**
- * Route stubs for the two stop payloads.
- *
- * The committed bus payload is 5.3 MB. Nothing that gates a PR should depend on it:
- * a baseline shot against the real file re-renders every time an export lands, and a
- * 5.3 MB parse inside a screenshot run is time spent proving nothing. These fixtures
- * are small, fixed, and shaped exactly like the wire format `decodeStopRidership`
- * accepts — columns resolved by name, `stop` an index into the dictionary.
- *
- * **The stop keys are real.** `attachStopLocations` joins against the bundled
- * `src/data/stop_locations.json`, so a made-up key would decode fine, appear in the
- * table, and be silently missing from the map — which is the honest behaviour for a
- * stop GTFS has no geometry for, and useless as a fixture for the map layer.
- *
- * Kept out of `helpers.ts` deliberately: that file is shared by the suites this change
- * does not touch, and its `gotoDashboard` gates on the line table and the map rather
- * than on the stop table.
+ * Small route stubs for the two stop payloads, so no baseline depends on the committed
+ * 5.3 MB bus file — the stop keys are real, or the map would have no geometry to join.
  */
 
 const COLS = [
@@ -48,13 +34,8 @@ export const RAIL_LINE_ID = 801;
 export const BUS_LINE_ID = 204;
 
 /**
- * The selector for one cell of one stop row.
- *
- * A stop key alone does not identify a row: the same stop serves several lines, and a
- * reader selecting two of them gets two rows for it. `StopTable` therefore suffixes
- * `stop-row-`, `stop-select-` and `stop-sparkline-` with the line and the key together,
- * which is also what React keys the row by. Built here rather than written out at each
- * call site so the shape is stated once.
+ * The selector for one cell of one stop row, keyed by line and stop because one stop can
+ * be two rows.
  */
 export function stopQa(
   part: 'row' | 'select' | 'sparkline',
@@ -96,10 +77,8 @@ const BUS_STOPS: StopFixture[] = [
 ];
 
 /**
- * Build one payload. Alightings sit just below boardings so a shot that reads one
- * column where the other was meant is visibly wrong rather than plausibly right, and
- * each month steps by a fixed amount so the per-stop series is a legible slope rather
- * than a flat line.
+ * Builds one payload, with alightings just below boardings and a fixed step per month
+ * so a column read in the wrong place is visibly wrong.
  */
 function payload(stops: StopFixture[], lineId: number) {
   const rows: number[][] = [];
@@ -130,12 +109,7 @@ function payload(stops: StopFixture[], lineId: number) {
   };
 }
 
-/**
- * Serve both fixtures in place of the real payloads.
- *
- * MUST be called before navigating — a route registered after `page.goto` does not
- * apply to a request the page has already issued.
- */
+/** Serves both fixtures in place of the real payloads, and must be called before navigating. */
 export async function stubStopPayloads(page: Page): Promise<void> {
   await page.route('**/stop-ridership.rail.json', (route) =>
     route.fulfill({

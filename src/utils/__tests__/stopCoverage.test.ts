@@ -13,12 +13,7 @@ const coverage = (overrides: Partial<StopCoverage> = {}): StopCoverage => ({
 const WINDOW = ['2025-07', '2025-08', '2025-09', '2026-06'];
 
 describe('stopCoverageState', () => {
-  /**
-   * An empty coverage is `buildStopView`'s loading state *and* its failed-fetch state,
-   * so it cannot mean "there is no stop data" — reading it that way had the panel
-   * announcing an un-ingested dataset every time the network was slow. Whether stop
-   * data exists at all is a build-time fact and comes from the manifest instead.
-   */
+  /** An empty coverage is the loading state, not "there is no stop data". */
   it('says nothing about a window it has no data for yet', () => {
     expect(
       stopCoverageState({
@@ -29,11 +24,7 @@ describe('stopCoverageState', () => {
     ).toBe('unknown');
   });
 
-  /**
-   * The overlap answer is `buildStopView`'s, taken as given. Deriving it here from
-   * `from`/`to` against the window would be a second statement of the window rule,
-   * which is the failure ADR-0009 exists to prevent.
-   */
+  /** The overlap answer is `buildStopView`'s, taken as given (ADR-0009). */
   it('reports no overlap straight from the derivation', () => {
     expect(
       stopCoverageState({
@@ -54,11 +45,7 @@ describe('stopCoverageState', () => {
     ).toBe('full');
   });
 
-  /**
-   * The line table's meaning of the word: this readout's data covers only part of the
-   * selected period. It is the ordinary case — the chart spans 2009 → 2026 and stop
-   * data spans twelve months inside it — so the label is what a reader meets first.
-   */
+  /** Partial means what it means in the line table: only part of the selected period. */
   it('reports partial coverage when the stop axis ends before the chart’s does', () => {
     expect(
       stopCoverageState({

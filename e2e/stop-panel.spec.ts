@@ -8,34 +8,14 @@ import {
 
 /**
  * The stop panel's DOM — the ranked table, the measure toggle and the two coverage
- * states.
- *
- * Runs in the `desktop` and `mobile` projects. The panel is DOM only; anything the stop
- * grain draws on the map needs its own spec in the `map` project, which runs once rather
- * than per-viewport.
- *
- * ## Determinism
- *
- * Both payloads are route-stubbed with `stop-fixtures.ts`. Nothing here reads the
- * committed 5.3 MB bus file, so a monthly export cannot move these baselines.
- * `#lineMap` is masked out of the one full-panel shot for the usual reason — WebGL
- * over third-party tiles never renders identically twice.
- *
- * ## Its own navigation gate
- *
- * `helpers.ts`'s `gotoDashboard` gates on the line table and `#lineMap`, neither of
- * which says anything about whether the stop payload has landed. This spec defines its
- * own gate locally rather than widening a helper five other suites depend on.
+ * states, all served from stubbed payloads so an export can't move these baselines.
  */
 
 /** The panel is URL-gated: `stops=1`, plus whatever else the case needs. */
 async function gotoStopPanel(page: Page, search: string): Promise<void> {
   await stubStopPayloads(page);
 
-  // Chart.js `responsive: true` enters a 1px resize feedback loop during a full-page
-  // capture, so the document width never settles. Same stub as `gotoDashboardShell`,
-  // and it must stay ahead of `page.goto` — an init script only applies to documents
-  // created after it is registered.
+  // Chart.js's responsive mode never settles during a full-page capture without this stub.
   await page.addInitScript(() => {
     window.ResizeObserver = class {
       observe() {}
@@ -77,8 +57,7 @@ test('stop panel — the ranked table is the primary readout', async ({
   await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
   await waitForStopTable(page);
 
-  // Assert what the pixels are *of* before capturing them, so a mistyped param cannot
-  // be baked into a green baseline: the vocabulary, and the stops themselves.
+  // Assert what the pixels are *of*, so a mistyped param can't bake into a green baseline.
   await expect(page.getByText('Avg. Boardings')).toBeVisible();
   await expect(page.getByText('Avg. Alightings')).toBeVisible();
   await expect(
@@ -94,10 +73,7 @@ test('stop panel — the ranked table is the primary readout', async ({
   await shootPanel(page, 'stop-panel-table.png');
 });
 
-/**
- * The way back out. Without it the selection is a one-way door: a reader can reach another
- * stop or close the panel, but not return to the state the panel opens in.
- */
+/** The way back out, without which the selection would be a one-way door. */
 test('stop panel — Clear All empties the selection, and the URL follows', async ({
   page,
 }) => {
@@ -110,9 +86,7 @@ test('stop panel — Clear All empties the selection, and the URL follows', asyn
   await page.locator('[data-qa="stop-clear-all"]').click();
 
   await expect(page.locator('[data-qa="stop-series"]')).toHaveCount(0);
-  // `page.url()` is the right witness precisely here: the app re-serialises its own
-  // state over the query string, so a param that must *disappear* is the one thing the
-  // URL can prove.
+  // A param that must *disappear* is the one thing `page.url()` can actually prove.
   expect(page.url()).not.toContain('stop=');
 });
 
@@ -140,11 +114,7 @@ test('stop panel — clicking the selected row deselects it', async ({
   ).toHaveAttribute('data-state', 'unchecked');
 });
 
-/**
- * The checkbox is a second hit target for the row's own action, and it sits *inside* a row
- * that is itself a toggle — so a click that toggled twice would land back where it started
- * and look like a dead control.
- */
+/** The checkbox sits inside a row that is itself a toggle, so one click must toggle once. */
 test('stop panel — a row checkbox toggles once, not twice', async ({
   page,
 }) => {
@@ -188,9 +158,8 @@ test('stop panel — Select All checks every listed row', async ({ page }) => {
 });
 
 /**
- * The search narrows the table, and with it what `Select All` reaches. Driven through
- * `stopq=` rather than by typing, for the reason `line-filters.spec.ts:17` gives about
- * `#search-lines`: typing races the re-render, and the param is the state.
+ * The search narrows the table and with it what `Select All` reaches, driven through
+ * `stopq=` because typing races the re-render (`line-filters.spec.ts`).
  */
 test('stop panel — the search narrows the table and scopes Select All', async ({
   page,
@@ -205,8 +174,7 @@ test('stop panel — the search narrows the table and scopes Select All', async 
   await expect(
     page.locator(stopQa('row', RAIL_LINE_ID, 'rail:union-station')),
   ).toBeVisible();
-  // The search text is shared state, so a link opens on it — assert the box agrees with
-  // the param rather than only that the param parsed.
+  // The box has to agree with the param, not merely prove the param parsed.
   await expect(page.locator('#search-stops')).toHaveValue('union');
 
   await page.locator('[data-qa="stop-select-all"]').click();
@@ -227,8 +195,7 @@ test('stop panel — the measure toggle switches to Alightings', async ({
   );
   await waitForStopTable(page);
 
-  // The measure is URL state, so a shared link opens on it. Assert the control agrees
-  // with the param rather than only that the param parsed.
+  // The control has to agree with the param, not merely prove the param parsed.
   await expect(page.getByRole('radio', { name: 'Alightings' })).toHaveAttribute(
     'data-state',
     'on',
@@ -253,10 +220,8 @@ test('stop panel — a period with no stop data offers the covered one', async (
 });
 
 /**
- * The button must set the window through the same setters a chart drag uses, so the
- * pickers and the chart follow it. Asserted through the pickers rather than the URL:
- * the app re-serialises its own state over the query string, so `page.url()` is not a
- * witness to anything.
+ * The button sets the window through the same setters a chart drag uses, which the
+ * pickers — not the URL — are the witness to.
  */
 test('stop panel — the covered-period button moves the pickers and the chart', async ({
   page,
@@ -266,10 +231,7 @@ test('stop panel — the covered-period button moves the pickers and the chart',
     `?stops=1&lines=${String(RAIL_LINE_ID)}&start=2015-01&end=2015-12`,
   );
 
-  // The button sets the span it names, and both come from the manifest — which is
-  // built from the real payloads, not from the fixtures this spec serves. So the
-  // window it lands on is Jul 2025 – Jun 2026 even though the stubbed data stops in
-  // December, and the fixture months sit inside it.
+  // The span comes from the manifest, built from the real payloads rather than these fixtures.
   await page.locator('#use-stop-coverage-window').click();
 
   await expect(page.locator('#start-year')).toHaveValue('2025');
@@ -281,11 +243,7 @@ test('stop panel — the covered-period button moves the pickers and the chart',
   await waitForStopTable(page);
 });
 
-/**
- * The intent gate. Selecting a rail line must not pull the bus payload, because that
- * file is 5.3 MB and putting it on any path a reader did not ask for is the failure
- * that would undo `OutputArea`'s lazy-load.
- */
+/** Selecting a rail line must not pull the 5.3 MB bus payload. */
 test('stop panel — a rail-only selection never requests the bus payload', async ({
   page,
 }) => {
