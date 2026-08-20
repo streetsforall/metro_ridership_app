@@ -115,8 +115,7 @@ export default function StopPanel({
     [records, months, dayOfWeek],
   );
 
-  // Indexed, not scanned: selection is uncapped and a five-line table is ~800 readouts, so
-  // a `find` per selected key would be quadratic in exactly the case `Select All` invites.
+  // Indexed, not scanned, because a `find` per selected key would be quadratic.
   const readoutsByKey = useMemo(() => {
     const byKey = new Map<string, StopReadout[]>();
     for (const readout of view.readouts) {
@@ -133,12 +132,8 @@ export default function StopPanel({
   );
 
   /**
-   * What the figure draws, one entry per selected `(stop, line)` pair. Walked in selection
-   * order because that order fixes the colours: the chart takes its hue by position, so
-   * iterating the readouts instead would recolour every series on a re-sort.
-   *
-   * A stop on several selected lines yields several entries, because collapsing them would
-   * mean summing across lines — the stop-total rollup this project does not derive.
+   * What the figure draws, walked in selection order because the chart takes its hue by
+   * position.
    */
   const drawn = useMemo<DrawnStopSeries[]>(
     () =>
@@ -150,18 +145,14 @@ export default function StopPanel({
           lineName:
             lineNamesById.get(readout.line_name) ?? String(readout.line_name),
           series: seriesIndex.seriesFor(readout.key, readout.line_name),
-          // The hue belongs to the stop, so it is taken here, where selection order is
-          // still in hand — not from a position in the flattened list.
+          // The hue belongs to the stop, so it is taken here, in selection order.
           color: colorForSelectionIndex(selectionIndex),
         })),
       ),
     [selectedStopKeys, readoutsByKey, lineNamesById, seriesIndex],
   );
 
-  /**
-   * How many stops are drawn, which is not how many series are: a stop on two selected
-   * lines is two series and one stop, so counting `drawn` would overstate the selection.
-   */
+  /** How many stops are drawn, which is not how many series are. */
   const drawnStopCount = useMemo(
     () => new Set(drawn.map((stop) => stop.key)).size,
     [drawn],
