@@ -16,22 +16,8 @@ import type {
 } from '../@types/stops.types';
 
 /**
- * Fetching the stop payloads on intent, and handing the one derivation what it needs.
- *
- * The fetches live here rather than in `App` because `App`'s `/ridership.json` effect is
- * the first-paint path, and a 5.3 MB payload there would undo the lazy `OutputArea`. Only
- * `OutputArea` imports this hook, so every byte sits in that chunk or behind an `import()`.
- *
- * The gate: rail (89 KB) loads when the panel is on, small enough to answer "is there stop
- * data in this window" alone. Bus (5.3 MB) loads only when the panel is on, the window
- * overlaps coverage, and a selected line is not one rail serves. Stop locations (1.6 MB)
- * are `import()`ed into their own chunk. Each is fetched at most once and kept, and the
- * `AbortController`s live for the hook's lifetime.
- *
- * Which lines bus serves is read off the data, never hardcoded. The G (901) and J (910)
- * BRT lines arrive in the Bus workbook while the app lists them under the train filter, so
- * gating on "is this a bus line" would leave a G-Line-only reader with an empty panel. A
- * line in neither payload falls to the bus side — the safe direction of that error.
+ * Fetches the stop payloads only once something actually needs them, so the 5.3 MB bus
+ * file never loads for a reader who didn't ask for it.
  */
 
 const RAIL_URL = '/stop-ridership.rail.json';
@@ -54,24 +40,11 @@ export interface UseStopViewInput {
 export interface UseStopViewResult {
   /** The derivation's output. The empty view until the first payload lands. */
   view: StopView;
-  /**
-   * Every loaded record, unfiltered; `null` until the first payload lands. Returned
-   * because the per-stop series needs one stop's months and `StopView` carries readouts
-   * rather than records. The series is still aligned to `view.months`, so no consumer of
-   * this has to know what the month window is.
-   */
+  /** Every loaded record, unfiltered, for the per-stop series to slice. */
   records: StopRecord[] | null;
-  /**
-   * A payload this view still needs is in flight. Distinct from "the view is empty": a
-   * window outside coverage settles with no readouts and nothing loading, which is the
-   * empty state rather than a spinner that never stops.
-   */
+  /** A payload this view still needs is in flight, which is not the same as empty. */
   isLoading: boolean;
-  /**
-   * A payload the panel asked for did not arrive. Surfaced rather than swallowed, because
-   * a failed fetch and an out-of-window selection both leave the table empty and only one
-   * of them is worth retrying.
-   */
+  /** A payload didn't arrive, which is worth retrying where an empty table isn't. */
   hasFailed: boolean;
 }
 
@@ -105,9 +78,8 @@ export default function useStopView({
   const [busStatus, setBusStatus] = useState<LoadStatus>('idle');
 
   /**
-   * One controller per payload, aborted on unmount. A ref rather than an effect-scoped
-   * local because the effects below are gated on intent rather than on a dependency
-   * changing, so a re-run must not cancel the download the previous run started.
+   * One controller per payload, aborted on unmount and kept in a ref so a re-run can't
+   * cancel the download the previous one started.
    */
   const controllers = useRef<AbortController[]>([]);
   useEffect(
@@ -156,23 +128,15 @@ export default function useStopView({
     [rail, bus, locations],
   );
 
-  /**
-   * `null` until something has landed, which is the loading state `buildStopView` already
-   * understands: it yields the empty view rather than one asserting nobody reported.
-   */
+  /** `null` until something has landed, which `buildStopView` reads as the empty view. */
   const records: StopRecord[] | null = useMemo(() => {
     if (!rail && !bus) return null;
     return [...(rail?.records ?? []), ...(bus?.records ?? [])];
   }, [rail, bus]);
 
   /**
-   * The empty view whenever the panel is off, however much is cached. `records` survives
-   * the panel closing — that is the cache's point — but the map draws circles from
-   * `view.markers` whether the panel is open or not, so ungated, switching the panel off
-   * left circles on the map with no control governing them.
-   *
-   * Gated by handing `buildStopView` a `null` records list rather than building an empty
-   * view here, because the module already defines what an absent payload yields.
+   * The empty view whenever the panel is off, or the map would keep drawing circles no
+   * control governs.
    */
   const view = useMemo(
     () =>
@@ -189,10 +153,8 @@ export default function useStopView({
   );
 
   /**
-   * Is the 5.3 MB file worth fetching? `overlapsWindow` is read off the rail-only view
-   * rather than compared against the window here, because the window rule has exactly one
-   * statement (ADR-0009). Both payloads come from one pipeline run over the same archives,
-   * so rail's answer holds for bus: a window in 2015 costs one 89 KB request.
+   * Is the 5.3 MB file worth fetching? Rail's cheap answer stands in for bus's, and the
+   * window rule stays stated once (ADR-0009).
    */
   const wantsBus =
     enabled &&

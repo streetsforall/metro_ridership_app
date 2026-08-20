@@ -4,14 +4,7 @@ import useStopView from '../useStopView';
 import { daysOfWeek } from '../../@types/metrics.types';
 import type { ColumnarStopRidership } from '../../@types/stops.types';
 
-/**
- * The intent gate, which is the whole point of this hook.
- *
- * The bus payload is 5.3 MB. Everything asserted here is a rule about *not* fetching
- * it: not before the panel is on, not when the Month Window has no stop data in it,
- * and not when every selected line is already served by the 89 KB rail payload. The
- * failure this guards is the one that would undo `OutputArea`'s lazy-load.
- */
+/** Every test here is a rule about *not* fetching the 5.3 MB bus payload. */
 
 const cols = [
   'year',
@@ -114,11 +107,7 @@ describe('useStopView', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
   });
 
-  /**
-   * The window is not compared against anything here — `overlapsWindow` comes from
-   * `buildStopView`, which runs the one window predicate. This asserts the hook reads
-   * that answer before spending 5.3 MB.
-   */
+  /** The hook reads `buildStopView`'s window answer before spending 5.3 MB (ADR-0009). */
   it('does not fetch bus for a window with no stop data in it', async () => {
     const { result } = renderHook(() =>
       useStopView({
@@ -184,14 +173,7 @@ describe('useStopView', () => {
     expect(result.current.view.readouts).toHaveLength(1);
   });
 
-  /**
-   * The cache is not the view.
-   *
-   * `records` deliberately survives the panel closing, so reopening it costs nothing. But
-   * the map draws its circles from `view.markers` whether or not the panel is open, so a
-   * view built from a live cache while the panel is off left circles on the map with no
-   * panel beneath them and no control still claiming to govern them.
-   */
+  /** The cache is not the view: closing the panel has to clear the map's circles too. */
   it('yields the empty view while the panel is off, however much is cached', async () => {
     const { result, rerender } = renderHook(
       (enabled: boolean) =>
