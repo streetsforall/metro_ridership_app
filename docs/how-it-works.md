@@ -105,7 +105,7 @@ These are the things that look like bugs and aren't.
   ([ADR-0004](adr/0004-line-metrics-are-one-nullable-shape.md)).
 
 - **All dashboard state syncs to the URL** (`start`, `end`, `day`, `lines`, `q`, `buses`, `trains`,
-  `aggregate`, `logs`) so a view is shareable. The canonical set lives in
+  `aggregate`, `logs`, `stops`, `measure`, `stop`) so a view is shareable. The canonical set lives in
   [`useUserDashboardInput.ts`](../src/hooks/useUserDashboardInput.ts): read from the URL in lazy
   `useState` initialisers, written back with `history.replaceState` in an effect.
   [`queryParams.ts`](../src/utils/queryParams.ts) only holds the parse/format helpers. **New

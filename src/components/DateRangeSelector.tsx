@@ -21,9 +21,53 @@ export interface DateRangeSelectorProps {
 
   showContextLogs: boolean;
   toggleShowContextLogs: () => void;
+
+  showStops: boolean;
+  toggleShowStops: () => void;
 }
 
 type IntervalEndpoint = 'start' | 'end';
+
+/**
+ * One panel's on/off control, so a third panel is a call rather than another 20 lines of
+ * markup. The pair have to look identical, and nothing but this was holding them to it.
+ */
+function PanelToggle({
+  id,
+  label,
+  checked,
+  onToggle,
+}: {
+  id: string;
+  label: string;
+  checked: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="flex items-center">
+      <Checkbox.Root
+        id={id}
+        onClick={onToggle}
+        checked={checked}
+        className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
+      >
+        <Checkbox.Indicator>
+          <img
+            src={checkIcon}
+            height={20}
+            width={20}
+            alt="Check"
+            className="recolor-white"
+          />
+        </Checkbox.Indicator>
+      </Checkbox.Root>
+
+      <label className="pl-2" htmlFor={id}>
+        {label}
+      </label>
+    </div>
+  );
+}
 
 export default function DateRangeSelector({
   startDate,
@@ -34,6 +78,8 @@ export default function DateRangeSelector({
   setDayOfWeek,
   showContextLogs,
   toggleShowContextLogs,
+  showStops,
+  toggleShowStops,
 }: DateRangeSelectorProps) {
   const getDateSetter = (
     intervalEndpoint: IntervalEndpoint,
@@ -174,27 +220,19 @@ export default function DateRangeSelector({
       <fieldset>
         <legend>Panel Visibility</legend>
 
-        <div className="flex items-center">
-          <Checkbox.Root
+        <div className="flex flex-col sm:flex-row gap-4">
+          <PanelToggle
             id="context-logs"
-            onClick={toggleShowContextLogs}
+            label="Context Logs"
             checked={showContextLogs}
-            className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
-          >
-            <Checkbox.Indicator>
-              <img
-                src={checkIcon}
-                height={20}
-                width={20}
-                alt="Check"
-                className="recolor-white"
-              />
-            </Checkbox.Indicator>
-          </Checkbox.Root>
-
-          <label className="pl-2" htmlFor="context-logs">
-            Context Logs
-          </label>
+            onToggle={toggleShowContextLogs}
+          />
+          <PanelToggle
+            id="stop-ridership"
+            label="Stop Ridership"
+            checked={showStops}
+            onToggle={toggleShowStops}
+          />
         </div>
       </fieldset>
     </div>
