@@ -32,8 +32,8 @@ PRs update it rather than restating their own scope.
 | **5b** | `useStopView`: the two payloads' fetch gate and their independent fates. **No UI.** | `ANALYZE=1 npm run build` — entry chunk unchanged; the hook has no importer yet | ☐ |
 | **5c** | `#stop-panel`, the ranked table, the coverage notice, the `OutputArea` wiring | New `stop-panel` baselines only; the eight 5a regenerated must **not** move again | ☐ |
 | **5d** | The ridership-over-time column: `stopSeries`, `useVisibleRows`, the row sparkline | No new payloads; the trend column is the only baseline move | ☐ |
-| **5e** | The stop series chart and its colour rule | [ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) written | ☐ this PR |
-| **5f** | The map's circle layer and the `mapPopup` addition | Circles leave the map when the panel is unticked | ☐ |
+| **5e** | The stop series chart and its colour rule | [ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) written | ☐ |
+| **5f** | The map's circle layer and the `mapPopup` addition | Circles leave the map when the panel is unticked | ☐ this PR |
 
 1 → 2 → 3 are pipeline-serial. 4 can start once PR 1's schema is fixed. PR 3 carries
 the multi-megabyte data diff alone, so its review is "is the data right", not "is the

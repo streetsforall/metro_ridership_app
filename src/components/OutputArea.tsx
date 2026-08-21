@@ -186,7 +186,14 @@ export default function OutputArea({
          * reverted (ADR-0015).
          */}
         <div className="pane flex flex-col">
-          <Map lines={lines} />
+          <Map
+            lines={lines}
+            stopMarkers={stopView.markers}
+            stopReadouts={stopView.readouts}
+            stopMeasure={stopMeasure}
+            selectedStopKeys={selectedStopKeys}
+            onToggleStop={onToggleStop}
+          />
         </div>
       </div>
 

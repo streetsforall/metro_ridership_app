@@ -14,7 +14,7 @@ import {
 /**
  * The stop panel's DOM — the ranked table, its trend column, the measure toggle, the
  * per-stop series and the two coverage states, all served from stubbed payloads so an
- * export can't move these baselines.
+ * export can't move these baselines; the map layer is `stop-map.spec.ts`.
  */
 
 /** The panel is URL-gated: `stops=1`, plus whatever else the case needs. */

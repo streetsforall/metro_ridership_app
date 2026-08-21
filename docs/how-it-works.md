@@ -160,14 +160,17 @@ These are the things that look like bugs and aren't.
 ## Stop-level ridership
 
 Everything above is per **line**. `src/stops/` is the same shape one grain down, per **Stop Place**,
-and it is a second sealed module for the reason the first one is: the ranked table and the per-stop
-series read one derivation, so the stop-key ↔ coordinate join and the Month Window filter must
-happen in one place or two readers disagree about which stops exist and which months are on screen.
+and it is a second sealed module for the reason the first one is: the map layer, the ranked table,
+the per-stop series and the popup all read one derivation, so the stop-key ↔ coordinate join and the
+Month Window filter must happen in one place or the map and the table disagree about which stops
+exist and which months are on screen.
 
 **One call again.** `buildStopView({ records, places, lineIds, startDate, endDate, dayOfWeek,
 measure })` returns `{ months, readouts, markers, coverage }`. `markers` is a GeoJSON
-`FeatureCollection` ready for `setData`, with **radius and colour as feature properties the module
-computed** — drawn by the map layer, which arrives with the circle layer.
+`FeatureCollection` ready for `setData`, and **radius and colour are feature properties the module
+computed**, so `Map.tsx`'s paint expressions are a plain `['get', 'radius']` / `['get', 'color']`.
+Radius is sqrt-normalised **per mode**, because rail and bus differ by two orders of magnitude at
+stop grain, and it scales the *value* so the drawn *area* is proportional to it.
 
 `useStopView` ([`src/hooks/useStopView.ts`](../src/hooks/useStopView.ts)) is the fetch side, and
 `OutputArea` is its only importer, so everything it pulls lands in that lazy chunk or behind a
@@ -186,7 +189,7 @@ further dynamic import. The panel itself is `#stop-panel`, opened with `stops=1`
 
 - **Colour in the figure above the table means which stop, and only there.** Hue was spoken for by
   the line and dash by the Stop Measure, so several stops on one line had no channel left. The row
-  sparkline stays line-coloured, and no chart palette will reach the map;
+  sparkline stays line-coloured and the map's ring stays neutral;
   [ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) records why the palette
   stops where it does.
 
@@ -212,13 +215,23 @@ further dynamic import. The panel itself is `#stop-panel`, opened with `stops=1`
 ## The map
 
 [`src/components/Map.tsx`](../src/components/Map.tsx) uses MapLibre GL and loads route geometry from
-`public/metro_lines.geojson`. Two layers: `lines-all` (dimmed, and the only unfiltered one — it
-draws the whole network) and `lines-selected` (brand colours), filtered by the selected line ids via
-`setFilter`. Base tiles come from MapTiler when `VITE_MAPTILER_KEY` is set, otherwise OpenFreeMap.
+`public/metro_lines.geojson`. Three layers: `lines-all` (dimmed, and the only unfiltered one — it
+draws the whole network), then `lines-selected` (brand colours) and `stops-selected` (circles, above
+both), which are filtered by the selected line ids via `setFilter`. Base tiles come from MapTiler
+when `VITE_MAPTILER_KEY` is set, otherwise OpenFreeMap.
 
 The map instance lives in a ref and is initialised once. **Selection changes only update the layer
-filter** — the map itself is never rebuilt. The pointer handlers are registered once in `load`,
+filter** — the map itself is never rebuilt. The stop source and layer are added **once, on first
+use**, the first time there are markers to draw, which never happens for a reader who does not open
+the panel. After that, markers reach the source through `setData` and the Stop Measure and Selection
+through `setPaintProperty`; **nothing re-adds a source or a layer**, with `map.getLayer` as the
+guard. Every selected stop rings from one `['in', ['get', 'stop_key'], ['literal', keys]]` test, in
+the same neutral colour — **no chart palette reaches the map**, so colour keeps meaning which line in
+the fill and selected-or-not in the ring. The pointer handlers are still registered once in `load`,
 because a layer-scoped MapLibre listener is delegated and resolves its layer at event time.
+
+Clutter is controlled by **selection, not zoom-gating**: the busiest bus line has ~154 stops, so a
+five-line selection draws ≤ ~800 circles.
 
 `Map.tsx` publishes the live instance as `window.__metroMap`. Nothing in the app reads it; it is a
 test seam, and it is the only way to await a WebGL canvas or inspect what actually rendered. Don't
