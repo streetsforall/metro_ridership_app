@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { formatEventDate } from '../../chart';
 import StopCoverageNotice from '../StopCoverageNotice';
 
-/** Which state the notice is in is `stopCoverageState`, tested in `src/utils/`. */
+/** `stopCoverageState` decides which state the notice is in, tested in `src/utils/`. */
 
 /** `"2025-07"` → `"Jul 2025"`, the spelling the notice uses. */
 const monthLabel = (month: string) => formatEventDate(month);

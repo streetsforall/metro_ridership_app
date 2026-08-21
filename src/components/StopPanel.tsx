@@ -18,7 +18,7 @@ const MEASURE_LABELS: Record<StopMeasure, string> = {
 
 const MEASURES = Object.keys(MEASURE_LABELS) as StopMeasure[];
 
-/** An empty state in place of the table, and a note beside one. */
+/** One class for the empty state that replaces the table, one for a note beside it. */
 const EMPTY_CLASS = 'py-8 text-center text-sm text-stone-400';
 const NOTE_CLASS = 'mt-2 text-xs text-stone-400';
 
@@ -32,17 +32,16 @@ export interface StopPanelProps {
   lines: readonly LineReadout[];
   measure: StopMeasure;
   onMeasureChange: (measure: StopMeasure) => void;
-  /** The selection, in the order stops were picked. Empty is the opening state. */
+  /** The selection, in the order stops were picked, empty until the reader picks one. */
   selectedStopKeys: readonly string[];
   onToggleStop: (stopKey: string) => void;
-  /** Back to no stops selected. */
   onClearStops: () => void;
   /** Add every stop the table is listing — scoped by the search, as the line filter is. */
   onSelectAllStops: (stopKeys: string[]) => void;
-  /** Narrows the table by stop name. Lives in the URL as `stopq=`. */
+  /** Narrows the table by stop name. `stopq=`. */
   searchText: string;
   onSearchTextChange: (text: string) => void;
-  /** Set the month window to the stop coverage window. `YYYY-MM` at both ends. */
+  /** Sets the month window to the stop coverage window, `YYYY-MM` at both ends. */
   onUseCoverageWindow: (from: string, to: string) => void;
 }
 
@@ -96,13 +95,13 @@ export default function StopPanel({
   const hasSelectedLines = lines.length > 0;
 
   /**
-   * Is there anything on screen yet? Once there is, loading and failure become notes
-   * beside the table rather than replacing it.
+   * Once anything is on screen, loading and failure become notes beside the table
+   * rather than replacing it.
    */
   const hasReadouts = view.readouts.length > 0;
 
   const body = () => {
-    // Loading is answered first, or a slow network reads as "no stop data in this period".
+    // Loading comes first, or a slow network reads as "no stop data in this period".
     if (hasFailed && !hasReadouts)
       return (
         <p className={EMPTY_CLASS}>Stop-level ridership could not be loaded.</p>

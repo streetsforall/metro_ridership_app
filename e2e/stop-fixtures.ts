@@ -18,7 +18,7 @@ const COLS = [
   'su_offs',
 ];
 
-/** The months the fixtures report. Inside the app's default Month Window. */
+/** The months the fixtures report, all inside the app's default Month Window. */
 export const FIXTURE_MONTHS = [
   [2025, 7],
   [2025, 8],

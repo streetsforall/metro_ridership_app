@@ -310,7 +310,7 @@ describe('StopPanel table chrome', () => {
     expect(onClearStops).not.toHaveBeenCalled();
   });
 
-  /** A bare <button> submits; inside any future form that would reload the page. */
+  /** A bare `<button>` submits, which inside any future form would reload the page. */
   it.each(['Select All', 'Clear All'])(
     '%s is a button that does not submit',
     (name) => {
