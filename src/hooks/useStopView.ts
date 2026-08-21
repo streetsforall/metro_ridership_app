@@ -27,7 +27,7 @@ const BUS_URL = '/stop-ridership.bus.json';
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export interface UseStopViewInput {
-  /** The stop panel is on. Nothing is fetched until it is. */
+  /** The hook fetches nothing until the stop panel is on. */
   enabled: boolean;
   /** Selected line ids, in the order readouts and markers should follow. */
   lineIds: readonly number[];
@@ -38,7 +38,7 @@ export interface UseStopViewInput {
 }
 
 export interface UseStopViewResult {
-  /** The derivation's output. The empty view until the first payload lands. */
+  /** The derivation's output, which is the empty view until the first payload lands. */
   view: StopView;
   /** Every loaded record, unfiltered, for the per-stop series to slice. */
   records: StopRecord[] | null;
@@ -48,7 +48,7 @@ export interface UseStopViewResult {
   hasFailed: boolean;
 }
 
-/** Fetch, decode, and hand back — or `null` if the request was aborted or failed. */
+/** Fetches one payload and decodes it, throwing if the response is not ok. */
 async function loadPayload(
   url: string,
   signal: AbortSignal,
@@ -59,7 +59,7 @@ async function loadPayload(
   return decodeStopRidership((await response.json()) as ColumnarStopRidership);
 }
 
-/** Still outstanding — neither loaded nor given up on. */
+/** The payload has neither loaded nor been given up on. */
 const isPending = (status: LoadStatus): boolean =>
   status !== 'ready' && status !== 'error';
 
@@ -89,7 +89,7 @@ export default function useStopView({
     [],
   );
 
-  // Rail, plus the geometry both payloads join against. Panel on is the whole gate.
+  // Turning the panel on fetches rail and the geometry both payloads join against.
   useEffect(() => {
     if (!enabled || railStatus !== 'idle') return;
     setRailStatus('loading');
@@ -135,8 +135,8 @@ export default function useStopView({
   }, [rail, bus]);
 
   /**
-   * The empty view whenever the panel is off, or the map would keep drawing circles no
-   * control governs.
+   * The view goes empty whenever the panel is off, or the map would keep drawing circles
+   * no control governs.
    */
   const view = useMemo(
     () =>
@@ -153,7 +153,7 @@ export default function useStopView({
   );
 
   /**
-   * Is the 5.3 MB file worth fetching? Rail's cheap answer stands in for bus's, and the
+   * Rail's cheap answer decides whether the 5.3 MB bus file is worth fetching, so the
    * window rule stays stated once (ADR-0009).
    */
   const wantsBus =
