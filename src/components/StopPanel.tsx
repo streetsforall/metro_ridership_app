@@ -2,11 +2,13 @@ import { useMemo } from 'react';
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
 import StopCoverageNotice from './StopCoverageNotice';
 import StopFilters from './StopFilters';
+import StopSeriesChart, { type DrawnStopSeries } from './StopSeriesChart';
 import StopTable from './StopTable';
 import { stopCoverageState } from '../utils/stopCoverage';
 import { buildStopSeriesIndex } from '../utils/stopSeries';
+import { colorForSelectionIndex } from '../utils/stopSelectionColors';
 import type { LineReadout } from '../ridership';
-import type { StopView } from '../stops';
+import type { StopReadout, StopView } from '../stops';
 import type { DayOfWeek } from '../@types/metrics.types';
 import type { StopMeasure, StopRecord } from '../@types/stops.types';
 
@@ -75,8 +77,8 @@ export default function StopPanel({
   });
 
   /**
-   * The rows the table shows — the search narrows the table, not the selection, so a stop
-   * stays selected once its row is hidden.
+   * The rows the table shows — the search narrows the table, not the chart, so a stop
+   * stays drawn once its row is hidden.
    */
   const listedReadouts = useMemo(() => {
     const query = searchText.toLocaleLowerCase();
@@ -111,6 +113,49 @@ export default function StopPanel({
         dayOfWeek,
       }),
     [records, months, dayOfWeek],
+  );
+
+  // Indexed, not scanned, because a `find` per selected key would be quadratic.
+  const readoutsByKey = useMemo(() => {
+    const byKey = new Map<string, StopReadout[]>();
+    for (const readout of view.readouts) {
+      const existing = byKey.get(readout.key);
+      if (existing) existing.push(readout);
+      else byKey.set(readout.key, [readout]);
+    }
+    return byKey;
+  }, [view.readouts]);
+
+  const lineNamesById = useMemo(
+    () => new Map(lines.map((line) => [line.id, line.name])),
+    [lines],
+  );
+
+  /**
+   * What the figure draws, walked in selection order because the chart takes its hue by
+   * position.
+   */
+  const drawn = useMemo<DrawnStopSeries[]>(
+    () =>
+      selectedStopKeys.flatMap((key, selectionIndex) =>
+        (readoutsByKey.get(key) ?? []).map((readout) => ({
+          key: readout.key,
+          lineId: readout.line_name,
+          stopName: readout.name,
+          lineName:
+            lineNamesById.get(readout.line_name) ?? String(readout.line_name),
+          series: seriesIndex.seriesFor(readout.key, readout.line_name),
+          // The hue belongs to the stop, so it is taken here, in selection order.
+          color: colorForSelectionIndex(selectionIndex),
+        })),
+      ),
+    [selectedStopKeys, readoutsByKey, lineNamesById, seriesIndex],
+  );
+
+  /** How many stops are drawn, which is not how many series are. */
+  const drawnStopCount = useMemo(
+    () => new Set(drawn.map((stop) => stop.key)).size,
+    [drawn],
   );
 
   const hasSelectedLines = lines.length > 0;
@@ -158,6 +203,22 @@ export default function StopPanel({
           <p className={NOTE_CLASS} data-qa="stop-partial-failure">
             Some stop-level ridership could not be loaded.
           </p>
+        )}
+
+        {drawn.length > 0 && (
+          <figure className="mt-3" data-qa="stop-series-figure">
+            {/* The caption counts rather than names: with several stops drawn there is no
+                one name to write, and the legend already names each series beside its
+                colour. Series are counted separately only when the two numbers differ,
+                since "1 stop · 2 series" every time would be noise for the common case. */}
+            <figcaption className="mb-1 text-xs text-stone-500">
+              Ridership over time · {drawnStopCount}{' '}
+              {drawnStopCount === 1 ? 'stop' : 'stops'}
+              {drawn.length !== drawnStopCount &&
+                ` · ${String(drawn.length)} series`}
+            </figcaption>
+            <StopSeriesChart drawn={drawn} measure={measure} />
+          </figure>
         )}
 
         <StopFilters
