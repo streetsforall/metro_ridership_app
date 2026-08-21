@@ -52,8 +52,8 @@ export interface UserDashboardInputState {
   setStopMeasure: React.Dispatch<React.SetStateAction<StopMeasure>>;
 
   /**
-   * Every stop whose series is drawn, in selection order — the chart colours by position,
-   * so the order has to hold still.
+   * Every stop the chart draws, in selection order — colour comes from position, so the
+   * order has to hold still. `stop=`.
    */
   selectedStopKeys: string[];
 
@@ -140,8 +140,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
   });
 
   /**
-   * The stop-panel slices, read here and written in the effect below — both halves, or the
-   * panel stops being shareable (`CLAUDE.md`).
+   * Each stop-panel slice seeds itself from the URL here and the effect below writes it
+   * back, because a slice that skips either half stops being shareable (`CLAUDE.md`).
    */
   const [showStops, setShowStops] = useState<boolean>(() => {
     const params = new URLSearchParams(window.location.search);

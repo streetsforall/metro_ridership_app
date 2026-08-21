@@ -44,8 +44,8 @@ export function parseStopMeasureParam(
 }
 
 /**
- * The slug shape the pipeline mints stop keys in, checked so a hand-edited param can't
- * smuggle in junk.
+ * The pipeline mints stop keys in this slug shape, checked here so a hand-edited param
+ * can't smuggle in junk.
  */
 const STOP_KEY_PATTERN = /^(bus|rail):[a-z0-9-]+$/;
 

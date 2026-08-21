@@ -166,7 +166,6 @@ describe('parseStopKeysParam', () => {
     ).toEqual(['rail:union-station', 'bus:vermont-wilshire']);
   });
 
-  /** A malformed part is dropped rather than failing the whole param. */
   it('drops a malformed part and keeps the rest', () => {
     expect(
       parseStopKeysParam('rail:union-station,tram:nope,bus:vermont-wilshire'),
@@ -179,7 +178,7 @@ describe('parseStopKeysParam', () => {
     ).toEqual(['rail:union-station']);
   });
 
-  /* A key repeated in the URL draws one series, not two. */
+  /** A key repeated in the URL draws one series, not two. */
   it('collapses a duplicated key', () => {
     expect(
       parseStopKeysParam('rail:union-station,rail:union-station'),

@@ -28,7 +28,7 @@ export interface DateRangeSelectorProps {
 
 type IntervalEndpoint = 'start' | 'end';
 
-/** One panel's on/off control, shared so every panel toggle looks the same. */
+/** Renders one panel's on/off checkbox, shared so every panel toggle looks alike. */
 function PanelToggle({
   id,
   label,

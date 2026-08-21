@@ -460,7 +460,6 @@ describe('URL sync', () => {
   });
 });
 
-/** The Stop Selection's three mutators: `Select All` adds, `Clear All` clears everything. */
 describe('the Stop Selection', () => {
   it('selects a stop that was not selected', () => {
     const { result } = renderHook(() => useUserDashboardInput());
@@ -620,10 +619,7 @@ describe('selectAllListedLines', () => {
   });
 });
 
-/**
- * The mutators must keep a stable identity, because the ~800-row stop table memoises on
- * it.
- */
+/** Mutator identity must hold still, because the ~800-row stop table memoises on it. */
 describe('mutator identity', () => {
   const mutators = [
     'onToggleSelectLine',
@@ -647,7 +643,6 @@ describe('mutator identity', () => {
       expect(result.current[name], name).toBe(before[name]);
   });
 
-  /** Identity has to survive the state changes the mutators themselves cause. */
   it('hands back the same function after the state it sets has changed', () => {
     const { result } = renderHook(() => useUserDashboardInput());
     const before = result.current;
