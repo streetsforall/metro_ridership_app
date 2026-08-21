@@ -4,7 +4,6 @@ import useUserDashboardInput, { daysOfWeek } from '../useUserDashboardInput';
 import { dataDefaultEndDate } from '../../utils/dataDateRange';
 import { formatMonthParam } from '../../utils/queryParams';
 
-// Reset URL and replaceState spy before each test
 beforeEach(() => {
   window.history.replaceState({}, '', '/');
   vi.restoreAllMocks();
@@ -206,11 +205,7 @@ describe('initial state from URL params', () => {
 });
 
 describe('modes → mode filter state', () => {
-  /**
-   * These asserted on `Line.visible` until the write-back went. The mode clause now
-   * lives in `listedReadouts`, which is tested in `src/utils/lines.test.ts`; what is
-   * left here is the hook's own half — the URL contract onto `modes`.
-   */
+  /** What is left here is the hook's own half, the URL contract onto `modes`. */
   it('switches bus off when buses=0 is in URL', () => {
     window.history.replaceState({}, '', '?buses=0');
     const { result } = renderHook(() => useUserDashboardInput());
@@ -585,9 +580,7 @@ describe('line initialisation', () => {
 
 describe('selectAllListedLines', () => {
   it('selects a listed line', () => {
-    // Was `selectAllVisibleLines selects a zero-change line too`: the hook no longer
-    // re-derives which rows are listed, so the ids are passed in. That a zero-change
-    // line is among them is `listedReadouts`' assertion now.
+    // The ids are passed in now, so which rows are listed is `listedReadouts`' assertion.
     const { result } = renderHook(() => useUserDashboardInput());
 
     act(() => {

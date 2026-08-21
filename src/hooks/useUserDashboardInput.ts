@@ -71,9 +71,6 @@ export interface UserDashboardInputState {
 }
 
 
-/**
- * Default starting values
- */
 const DefaultStartDate: Date = new Date(2020, 6);
 const DefaultEndDate: Date = dataDefaultEndDate;
 
@@ -92,10 +89,7 @@ const createLinesData = (selectedLineIds: number[]): Line[] => {
     .sort(lineNameSortFunction);
 };
 
-/**
- * Contains selected user inputs like bus lines and starting date.
- * @returns
- */
+/** The dashboard's user input, seeded from the URL and synced back to it. */
 const useUserDashboardInput = (): UserDashboardInputState => {
   const [startDate, setStartDate] = useState<Date>(() => {
     const val = new URLSearchParams(window.location.search).get('start');
@@ -206,9 +200,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
    */
 
   /**
-   * Select every row the table is currently showing, on top of whatever is already
-   * selected. The hook cannot re-derive which rows those are — the rule needs Line
-   * Readouts, which live in App — so it takes the displayed ids instead.
+   * Selects every listed row, taking the ids in because the listing rule needs Line
+   * Readouts, which live in App.
    */
   const selectAllListedLines = useCallback((ids: number[]): void => {
     const listed = new Set(ids);
@@ -224,7 +217,6 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     setLines((prevLines: Line[]) => {
       const updatedLines = [...prevLines];
 
-      // Update checkbox value
       const updateIndex = updatedLines.findIndex(
         (updatedLine: Line) => updatedLine.id === line.id,
       );

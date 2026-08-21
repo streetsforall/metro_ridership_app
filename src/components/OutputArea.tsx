@@ -49,11 +49,8 @@ interface OutputAreaProps {
 }
 
 /**
- * `min-w-0` on the root opts this grid item out of its automatic minimum,
- * which is otherwise its min-content width. Without it a child that refuses
- * to wrap — the summary row below did at `xl` — hands the surrounding `1fr`
- * track a min-content width larger than its share, and the whole page scrolls
- * sideways.
+ * `min-w-0` opts this grid item out of its min-content minimum, or the page scrolls
+ * sideways (ADR-0015).
  */
 export default function OutputArea({
   chartDatasets,
@@ -77,27 +74,16 @@ export default function OutputArea({
   dayOfWeek,
 }: OutputAreaProps) {
   /**
-   * The chart and the context log are two views of the same months, so the two
-   * bits of state that link them live here rather than in either one: the pinned
-   * month (chart tooltip ↔ highlighted row) and the hovered month (row ↔ dot).
+   * The pinned and hovered months live here because the chart and the log are two views
+   * of them.
    */
   const [pinnedMonth, setPinnedMonth] = useState<string | null>(null);
   const [hoveredMonth, setHoveredMonth] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   /**
-   * The release-before-taking half of ADR-0011, stated once for every view that
-   * asks. While anything is pinned a request pins nothing; only a further
-   * request pins the month it names.
-   *
-   * The chart, the Event Gutter and the log all route through here rather than
-   * deciding for themselves, because they are three views of one piece of state
-   * and a state that behaves three ways is three states.
-   *
-   * A request naming no month releases whichever branch it takes, which is why
-   * Escape needs no rule of its own. Note that a plot click landing on no
-   * element is *not* such a request — it makes none at all, and the pin is held
-   * (ADR-0010); the tooltip's hint says "any month" for that reason.
+   * Release before taking, routed here so the chart, the gutter and the log cannot
+   * disagree (ADR-0010, ADR-0011).
    */
   const requestPin = useCallback((month: string | null) => {
     setPinnedMonth((pinned) => (pinned === null ? month : null));
@@ -145,11 +131,8 @@ export default function OutputArea({
   );
 
   /**
-   * A press anywhere outside this whole area releases the pin — scoped to the
-   * area rather than to the chart, because the context log is the other half of
-   * the same interaction. Scoped to the chart alone, clicking a log row would
-   * unpin on the press and re-pin on the click, and the pin could never be
-   * released from the panel at all.
+   * A press outside the whole area releases the pin, scoped wide because the log is the
+   * other half of the same interaction (ADR-0011).
    */
   useEffect(() => {
     if (pinnedMonth === null) return;
@@ -177,7 +160,6 @@ export default function OutputArea({
           onRangeSelect={onRangeSelect}
         />
       ) : (
-        /* Chart pane */
         <div
           id="output-placeholder"
           className="pane flex-1 flex items-center justify-center text-sm text-stone-400"
@@ -191,18 +173,8 @@ export default function OutputArea({
       )}
 
       {/**
-       * Summary and map share a row from `lg` up. The map is rendered here and
-       * nowhere else, in one JSX position that is never inside a branch: moving
-       * it between branches would unmount MapLibre whenever the last line is
-       * deselected, and the instance must survive that. With no summary beside
-       * it the row falls back to one column so the map spans the full width
-       * rather than sitting in a 2fr track with a hole next to it.
-       *
-       * The two panes stretch to a common height, and the map fills its pane
-       * rather than sitting at a fixed height inside a taller one — see
-       * `#lineMap` in Map.css, which is why the pane is a flex column. The row
-       * is as tall as whichever side is taller: the summary grows with the
-       * number of selected lines, and the map holds a 400px floor below that.
+       * The map sits in one JSX position that is never inside a branch, so MapLibre
+       * survives a deselect (ADR-0015).
        */}
       <div
         className={`grid gap-4 grid-cols-[1fr] ${hasSelection ? 'lg:grid-cols-[2fr_3fr]' : ''}`}
@@ -210,12 +182,8 @@ export default function OutputArea({
         {hasSelection && <SummaryData lines={lines} />}
 
         {/**
-         * The map pane keeps `.pane`'s 2rem padding, like every other pane. The
-         * map is inset inside a full-height card rather than filling it to the
-         * edge — a full-bleed variant was tried and reverted, because the
-         * complaint it was meant to answer was the *pane* not reaching the
-         * bottom of the row, which is fixed above by letting the two panes
-         * stretch to a common height.
+         * The map pane keeps `.pane`'s padding; the full-bleed variant was tried and
+         * reverted (ADR-0015).
          */}
         <div className="pane flex flex-col">
           <Map
