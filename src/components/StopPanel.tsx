@@ -4,9 +4,11 @@ import StopCoverageNotice from './StopCoverageNotice';
 import StopFilters from './StopFilters';
 import StopTable from './StopTable';
 import { stopCoverageState } from '../utils/stopCoverage';
+import { buildStopSeriesIndex } from '../utils/stopSeries';
 import type { LineReadout } from '../ridership';
 import type { StopView } from '../stops';
-import type { StopMeasure } from '../@types/stops.types';
+import type { DayOfWeek } from '../@types/metrics.types';
+import type { StopMeasure, StopRecord } from '../@types/stops.types';
 
 /** Stop-level boardings and alightings for the selected lines, over the month window. */
 
@@ -26,10 +28,13 @@ export interface StopPanelProps {
   view: StopView;
   /** The ridership view's month axis, used only to label partial coverage. */
   windowMonths: readonly string[];
+  /** Every loaded stop record, for the selected stops' series. */
+  records: StopRecord[] | null;
   isLoading: boolean;
   hasFailed: boolean;
   /** Selected lines, for display names and for the "nothing selected" state. */
   lines: readonly LineReadout[];
+  dayOfWeek: DayOfWeek;
   measure: StopMeasure;
   onMeasureChange: (measure: StopMeasure) => void;
   /** The selection, in the order stops were picked, empty until the reader picks one. */
@@ -48,9 +53,11 @@ export interface StopPanelProps {
 export default function StopPanel({
   view,
   windowMonths,
+  records,
   isLoading,
   hasFailed,
   lines,
+  dayOfWeek,
   measure,
   onMeasureChange,
   selectedStopKeys,
@@ -90,6 +97,20 @@ export default function StopPanel({
   const months = useMemo(
     () => (monthsKey ? monthsKey.split(',') : []),
     [monthsKey],
+  );
+
+  /**
+   * The whole panel shares one index, rebuilt only when a payload lands, the window moves
+   * or the day of week changes, because `records` is memoised upstream.
+   */
+  const seriesIndex = useMemo(
+    () =>
+      buildStopSeriesIndex({
+        records: records ?? [],
+        months,
+        dayOfWeek,
+      }),
+    [records, months, dayOfWeek],
   );
 
   const hasSelectedLines = lines.length > 0;
@@ -153,6 +174,8 @@ export default function StopPanel({
             lines={lines}
             selectedStopKeys={selectedStopKeys}
             onToggleStop={onToggleStop}
+            seriesIndex={seriesIndex}
+            measure={measure}
           />
         </div>
       </>

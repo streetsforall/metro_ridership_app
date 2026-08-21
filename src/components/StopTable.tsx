@@ -1,11 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import StopTableRow, { ALIGN_CLASS } from './StopTableRow';
+import { useVisibleRows } from '../hooks/useVisibleRows';
 import type { LineReadout } from '../ridership';
 import type { StopReadout } from '../stops';
+import type { StopSeriesIndex } from '../utils/stopSeries';
+import type { StopMeasure } from '../@types/stops.types';
 
 /**
  * The ranked stop table, which answers "which stops carry this line" without the map —
- * every prop here must stay reference-stable, because all ~800 rows are memoised.
+ * every prop here must stay reference-stable, because all ~800 rows are memoised and the
+ * table re-renders on every IntersectionObserver batch.
  */
 
 type SortKey =
@@ -95,7 +99,8 @@ const columns: Column[] = [
     label: 'Change',
     align: 'right',
     initialDirection: 'desc',
-    /* Longer than its neighbours because "change" reads as a trend unless said otherwise. */
+    /* Longer than its neighbours because "change" would otherwise read as a trend beside
+       "Ridership over time". */
     title:
       'Boardings less alightings — the net change in riders on board at this stop, within each month rather than between them. Negative where more riders get off than on, which is information rather than an error.',
   },
@@ -107,6 +112,14 @@ const columns: Column[] = [
     initialDirection: 'desc',
     title: 'This stop’s share of its line’s total under the current measure.',
   },
+  {
+    kind: 'presentational',
+    key: 'ridershipOverTime',
+    label: 'Ridership over time',
+    align: 'left',
+    title:
+      'This stop’s reported months across the selected period, under the current measure. A break is a month the stop did not report.',
+  },
 ];
 
 export interface StopTableProps {
@@ -115,8 +128,12 @@ export interface StopTableProps {
   lines: readonly LineReadout[];
   /** Every row whose key is in it is checked and highlighted. */
   selectedStopKeys: readonly string[];
-  /** Toggles one stop, and must be stable across renders like `readouts` and `lines`. */
+  /** Toggles one stop, and must be stable like `readouts`, `lines` and `seriesIndex`. */
   onToggleStop: (stopKey: string) => void;
+  /** Every row's series, from one pass over the records. See `buildStopSeriesIndex`. */
+  seriesIndex: StopSeriesIndex;
+  /** Which figure the sparklines draw. */
+  measure: StopMeasure;
 }
 
 export default function StopTable({
@@ -124,7 +141,12 @@ export default function StopTable({
   lines,
   selectedStopKeys,
   onToggleStop,
+  seriesIndex,
+  measure,
 }: StopTableProps) {
+  /* The scroller is the sparklines' observation root — see `useVisibleRows` for why. */
+  const scroller = useRef<HTMLDivElement | null>(null);
+  const visibleRows = useVisibleRows(scroller);
   /** Ranked high-first by boardings until the reader sorts it otherwise. */
   const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection }>({
     key: 'averageBoardings',
@@ -170,7 +192,7 @@ export default function StopTable({
 
   return (
     /* Capped by height rather than rows, because a truncated table reads as the whole ranking. */
-    <div className="max-h-[28rem] overflow-y-auto">
+    <div className="max-h-[28rem] overflow-y-auto" ref={scroller}>
       <table className="text-sm w-full" data-qa="stop-table">
         <thead className="sticky top-0">
           <tr>
@@ -231,7 +253,11 @@ export default function StopTable({
                   lineNames.get(readout.line_name) ?? String(readout.line_name)
                 }
                 isSelected={selected.has(readout.key)}
+                isVisible={visibleRows.isVisible(key)}
+                seriesIndex={seriesIndex}
+                measure={measure}
                 onToggleStop={onToggleStop}
+                observe={visibleRows.observe(key)}
               />
             );
           })}

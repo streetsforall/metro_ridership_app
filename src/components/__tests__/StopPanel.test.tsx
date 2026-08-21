@@ -1,8 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import StopPanel from '../StopPanel';
-import { makeLineReadout, makeStopPlace } from '../../test/builders';
+import { makeLineReadout, makeStopPlace, makeStopRecord } from '../../test/builders';
+import { daysOfWeek } from '../../@types/metrics.types';
 import type { StopReadout, StopView } from '../../stops';
+
+/** The per-row sparkline, stubbed here only so it doesn't need a 2D context. */
+vi.mock('../StopSparkline', () => ({
+  default: () => <canvas data-qa="stop-sparkline" />,
+}));
 
 const makeStopReadout = (overrides: Partial<StopReadout> = {}): StopReadout => ({
   ...makeStopPlace(),
@@ -31,9 +37,11 @@ const renderPanel = (
     <StopPanel
       view={makeView()}
       windowMonths={['2025-07', '2026-06']}
+      records={[makeStopRecord()]}
       isLoading={false}
       hasFailed={false}
       lines={[makeLineReadout({ id: 204, name: 'Line 204', mode: 'Bus' })]}
+      dayOfWeek={daysOfWeek.Weekday}
       measure="ons"
       onMeasureChange={vi.fn()}
       selectedStopKeys={[]}

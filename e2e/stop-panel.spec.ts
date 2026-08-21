@@ -5,10 +5,16 @@ import {
   stopQa,
   stubStopPayloads,
 } from './stop-fixtures';
+import {
+  MANY_ROWS_COUNT,
+  MANY_ROWS_LINE_ID,
+  stubManyStopRows,
+} from './stop-sparkline-fixtures';
 
 /**
- * The stop panel's DOM — the ranked table, the measure toggle and the two coverage
- * states, all served from stubbed payloads so an export can't move these baselines.
+ * The stop panel's DOM — the ranked table, its trend column, the measure toggle and the
+ * two coverage states, all served from stubbed payloads so an export can't move these
+ * baselines.
  */
 
 /** The panel is URL-gated: `stops=1`, plus whatever else the case needs. */
@@ -42,6 +48,37 @@ async function waitForStopTable(page: Page): Promise<void> {
   });
 }
 
+/**
+ * Waits for a row's sparkline to have actually painted, by reading the alpha channel — a
+ * visible `<canvas>` only proves the row was reported visible.
+ */
+async function waitForSparkline(
+  page: Page,
+  lineId: number,
+  stopKey: string,
+): Promise<void> {
+  const canvas = page.locator(`${stopQa('sparkline', lineId, stopKey)} canvas`);
+  await expect(canvas).toBeVisible();
+
+  await expect
+    .poll(
+      () =>
+        canvas.evaluate((element) => {
+          const context = (element as HTMLCanvasElement).getContext('2d');
+          if (!context) return 0;
+          const { width, height } = element as HTMLCanvasElement;
+          if (width === 0 || height === 0) return 0;
+          const { data } = context.getImageData(0, 0, width, height);
+          let painted = 0;
+          for (let index = 3; index < data.length; index += 4)
+            if (data[index] !== 0) painted += 1;
+          return painted;
+        }),
+      { message: `sparkline for ${stopKey} never painted` },
+    )
+    .toBeGreaterThan(0);
+}
+
 /** Shoots the panel pane on its own, at the tolerance element crops use. */
 async function shootPanel(page: Page, name: string): Promise<void> {
   await page.mouse.move(0, 0);
@@ -60,10 +97,17 @@ test('stop panel — the ranked table is the primary readout', async ({
   // Assert what the pixels are *of*, so a mistyped param can't bake into a green baseline.
   await expect(page.getByText('Avg. Boardings')).toBeVisible();
   await expect(page.getByText('Avg. Alightings')).toBeVisible();
+  await expect(page.getByText('Ridership over time')).toBeVisible();
   await expect(
     page.locator(stopQa('row', RAIL_LINE_ID, 'rail:union-station')),
   ).toBeVisible();
   await expect(page.locator('[data-qa="stop-table"] tbody tr')).toHaveCount(3);
+
+  /* Only that the column reserved its cell, since whether the chart mounted is
+     viewport-dependent. */
+  await expect(
+    page.locator(stopQa('sparkline', RAIL_LINE_ID, 'rail:union-station')),
+  ).toBeAttached();
 
   // Ranked, not listed: the busiest stop is first with no interaction at all.
   await expect(
@@ -184,6 +228,88 @@ test('stop panel — the search narrows the table and scopes Select All', async 
       '[data-qa^="stop-select-"] [role="checkbox"][data-state="checked"]',
     ),
   ).toHaveCount(1);
+});
+
+/** The column paints rather than only reserving space, once scrolled into view. */
+test('stop panel — a scrolled-to sparkline actually draws', async ({
+  page,
+}) => {
+  await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
+  await waitForStopTable(page);
+
+  await page
+    .locator(stopQa('sparkline', RAIL_LINE_ID, 'rail:union-station'))
+    .scrollIntoViewIfNeeded();
+
+  await waitForSparkline(page, RAIL_LINE_ID, 'rail:union-station');
+});
+
+/** Presentational: a shape has no ordering, and the header must not claim otherwise. */
+test('stop panel — the ridership-over-time header does not sort', async ({
+  page,
+}) => {
+  await gotoStopPanel(page, `?stops=1&lines=${String(RAIL_LINE_ID)}`);
+  await waitForStopTable(page);
+
+  const header = page.getByRole('columnheader', {
+    name: 'Ridership over time',
+  });
+  await expect(header).not.toHaveAttribute('aria-sort');
+
+  await header.click();
+
+  await expect(
+    page.locator('[data-qa="stop-table"] tbody tr').first(),
+  ).toContainText('Union Station');
+});
+
+/** The laziness itself, which needs a list too long to fit on screen to be visible at all. */
+test('stop panel — a row below the fold draws nothing until scrolled to', async ({
+  page,
+}) => {
+  await stubManyStopRows(page);
+  await page.addInitScript(() => {
+    window.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
+  });
+
+  await page.goto(`/?stops=1&lines=${String(MANY_ROWS_LINE_ID)}`);
+  await expect(page.locator('#stop-panel')).toBeVisible();
+  await waitForStopTable(page);
+
+  await expect(page.locator('[data-qa="stop-table"] tbody tr')).toHaveCount(
+    MANY_ROWS_COUNT,
+  );
+
+  // Every row reserves its cell, so a sparkline arriving never moves the rows below it.
+  await expect(page.locator('[data-qa^="stop-sparkline-"]')).toHaveCount(
+    MANY_ROWS_COUNT,
+  );
+
+  /* Only that the list is not fully mounted, because how many rows start mounted is
+     viewport-dependent. */
+  const mounted = await page
+    .locator('[data-qa^="stop-sparkline-"] canvas')
+    .count();
+  expect(mounted).toBeLessThan(MANY_ROWS_COUNT);
+
+  // Scrolling to a row is what mounts it — on either axis.
+  const last = page.locator(
+    stopQa(
+      'sparkline',
+      MANY_ROWS_LINE_ID,
+      `rail:sparkline-stop-${String(MANY_ROWS_COUNT - 1)}`,
+    ),
+  );
+  await last.scrollIntoViewIfNeeded();
+
+  await expect(last.locator('canvas')).toBeVisible();
+  expect(
+    await page.locator('[data-qa^="stop-sparkline-"] canvas').count(),
+  ).toBeGreaterThan(mounted);
 });
 
 test('stop panel — the measure toggle switches to Alightings', async ({

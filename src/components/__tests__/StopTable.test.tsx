@@ -1,8 +1,34 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import StopTable from '../StopTable';
 import { makeLineReadout, makeStopPlace } from '../../test/builders';
 import type { StopReadout } from '../../stops';
+import type { StopSeriesIndex, StopSeriesPoint } from '../../utils/stopSeries';
+
+/** The sparkline is stubbed, because jsdom has no 2D context for Chart.js to draw on. */
+const { chartSpy } = vi.hoisted(() => ({ chartSpy: vi.fn() }));
+
+vi.mock('react-chartjs-2', () => ({
+  Line: ({ data }: { data: { datasets: { label?: string }[] } }) => {
+    chartSpy(data.datasets);
+    return <canvas data-testid="sparkline" />;
+  },
+}));
+
+/** The datasets the most recent sparkline render received. */
+const lastDatasets = (): { label?: string; borderDash?: number[] }[] =>
+  (chartSpy.mock.calls.at(-1)?.[0] ?? []) as {
+    label?: string;
+    borderDash?: number[];
+  }[];
+
+const points: StopSeriesPoint[] = [
+  { month: '2025-07', boardings: 100, alightings: 90 },
+  { month: '2025-08', boardings: null, alightings: null },
+  { month: '2025-09', boardings: 120, alightings: 110 },
+];
+
+const stubIndex = (): StopSeriesIndex => ({ seriesFor: () => points });
 
 const makeStopReadout = (
   overrides: Partial<StopReadout> = {},
@@ -51,9 +77,18 @@ const renderTable = (
       lines={lines}
       selectedStopKeys={[]}
       onToggleStop={vi.fn()}
+      seriesIndex={stubIndex()}
+      measure="ons"
       {...props}
     />,
   );
+
+afterEach(() => {
+  // `restoreAllMocks` does not undo `stubGlobal`, and a leaked observer would put every
+  // later test on the lazy branch.
+  vi.unstubAllGlobals();
+  chartSpy.mockClear();
+});
 
 /** The stop names in the order the table lists them, from cell 1 past the checkbox. */
 const rowNames = (): string[] =>
@@ -343,5 +378,146 @@ describe('StopTable selection column', () => {
     const before = rowNames();
     fireEvent.click(screen.getByRole('columnheader', { name: 'Select' }));
     expect(rowNames()).toEqual(before);
+  });
+});
+
+describe('StopTable ridership-over-time column', () => {
+  it('renders the column header', () => {
+    renderTable();
+    expect(screen.getByText('Ridership over time')).toBeTruthy();
+  });
+
+  /** The column is presentational, so `aria-sort="none"` would announce a control that isn't one. */
+  it('does not advertise itself as sortable', () => {
+    renderTable();
+    const header = screen.getByText('Ridership over time');
+    expect(header.hasAttribute('aria-sort')).toBe(false);
+    expect(header.className).not.toContain('cursor-pointer');
+  });
+
+  it('does not reorder the table when its header is clicked', () => {
+    renderTable();
+    const before = rowNames();
+    fireEvent.click(screen.getByText('Ridership over time'));
+    expect(rowNames()).toEqual(before);
+  });
+
+  it('gives every row a sparkline cell', () => {
+    renderTable();
+    expect(
+      document.querySelectorAll('[data-qa^="stop-sparkline-"]'),
+    ).toHaveLength(readouts.length);
+  });
+
+  /** Without an IntersectionObserver the fallback has to be a table that draws. */
+  it('draws every row when IntersectionObserver is unavailable', () => {
+    renderTable();
+    expect(screen.getAllByTestId('sparkline')).toHaveLength(readouts.length);
+  });
+
+  it('draws the measure’s series: boardings only, alightings only, or both', () => {
+    renderTable({ measure: 'ons' });
+    expect(lastDatasets().map((d) => d.label)).toEqual(['Boardings']);
+
+    chartSpy.mockClear();
+    renderTable({ measure: 'offs' });
+    expect(lastDatasets().map((d) => d.label)).toEqual(['Alightings']);
+
+    chartSpy.mockClear();
+    renderTable({ measure: 'both' });
+    expect(lastDatasets().map((d) => d.label)).toEqual([
+      'Boardings',
+      'Alightings',
+    ]);
+    // Alightings dashed, so the two are distinguishable without a second colour.
+    expect(lastDatasets()[1].borderDash).toBeTruthy();
+  });
+
+  it('asks the index for each row’s own (stop, line) pair', () => {
+    const seriesFor = vi.fn(() => points);
+    renderTable({ seriesIndex: { seriesFor } });
+
+    expect(seriesFor.mock.calls).toEqual(
+      expect.arrayContaining([
+        ['bus:vermont-wilshire', 204],
+        ['bus:vermont-santa-monica', 204],
+      ]),
+    );
+  });
+});
+
+describe('StopTable lazy sparklines', () => {
+  /** The handle for driving the observer by hand, since nothing scrolls in jsdom. */
+  let notify: IntersectionObserverCallback;
+
+  const withObserver = (): void => {
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        root = null;
+        rootMargin = '';
+        thresholds: number[] = [];
+        constructor(callback: IntersectionObserverCallback) {
+          notify = callback;
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+        takeRecords() {
+          return [];
+        }
+      },
+    );
+  };
+
+  const scrollTo = (cell: Element): void => {
+    act(() => {
+      notify(
+        [{ target: cell, isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
+    });
+  };
+
+  it('mounts no chart until a row is scrolled to', () => {
+    withObserver();
+    renderTable();
+    expect(screen.queryAllByTestId('sparkline')).toHaveLength(0);
+  });
+
+  it('mounts only the row that came into view', () => {
+    withObserver();
+    renderTable();
+
+    scrollTo(
+      document.querySelector(
+        '[data-qa="stop-sparkline-204-bus:vermont-wilshire"]',
+      )!,
+    );
+
+    expect(screen.getAllByTestId('sparkline')).toHaveLength(1);
+  });
+
+  /** Add-only, so a mounted chart survives a re-sort rather than being rebuilt. */
+  it('keeps a mounted sparkline through a re-sort', () => {
+    withObserver();
+    renderTable();
+
+    scrollTo(
+      document.querySelector(
+        '[data-qa="stop-sparkline-204-bus:vermont-wilshire"]',
+      )!,
+    );
+    fireEvent.click(screen.getByText('Avg. Alightings'));
+
+    expect(screen.getAllByTestId('sparkline')).toHaveLength(1);
+  });
+
+  it('lists every readout — nothing is silently truncated', () => {
+    const many = Array.from({ length: 200 }, (_, index) =>
+      makeStopReadout({ key: `bus:stop-${index}`, name: `Stop ${index}` }),
+    );
+    renderTable({ readouts: many });
+    expect(screen.getAllByRole('row')).toHaveLength(201);
   });
 });

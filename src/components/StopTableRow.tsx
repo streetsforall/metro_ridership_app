@@ -1,12 +1,15 @@
 import { memo } from 'react';
 import * as Checkbox from '@radix-ui/react-checkbox';
+import StopSparkline from './StopSparkline';
 import checkIcon from '../assets/check.svg';
 import { formatRiders, formatShare } from '../utils/figures';
 import type { StopReadout } from '../stops';
+import type { StopSeriesIndex } from '../utils/stopSeries';
+import type { StopMeasure } from '../@types/stops.types';
 
 /**
- * One row of the ranked stop table, memoised because there are ~800 of them — every prop
- * has to be a primitive or a stable reference.
+ * One row of the ranked stop table, memoised because all ~800 of them re-render on every
+ * IntersectionObserver batch — every prop has to be a primitive or a stable reference.
  */
 
 /** Spelled out rather than interpolated, because Tailwind only generates whole class names. */
@@ -20,8 +23,15 @@ export interface StopTableRowProps {
   /** The display name of the line this row is measured on. */
   lineName: string;
   isSelected: boolean;
+  /** Whether the row has been scrolled to, and so whether its sparkline is drawn. */
+  isVisible: boolean;
+  /** The index rather than the series, so a row nobody scrolls to costs no alignment. */
+  seriesIndex: StopSeriesIndex;
+  measure: StopMeasure;
   /** Whether this adds or removes is the hook's question to answer. */
   onToggleStop: (stopKey: string) => void;
+  /** The observed cell's `ref`, from `visibleRows.observe(rowKey)` — one per key. */
+  observe: (element: Element | null) => void;
 }
 
 function StopTableRow({
@@ -29,7 +39,11 @@ function StopTableRow({
   rowKey,
   lineName,
   isSelected,
+  isVisible,
+  seriesIndex,
+  measure,
   onToggleStop,
+  observe,
 }: StopTableRowProps) {
   /* One toggle for both routes in: the row and its checkbox. */
   const toggle = (): void => onToggleStop(readout.key);
@@ -80,6 +94,23 @@ function StopTableRow({
       </td>
       <td className={ALIGN_CLASS.right}>{formatRiders(readout.netAverage)}</td>
       <td className={ALIGN_CLASS.right}>{formatShare(readout.shareOfLine)}</td>
+
+      {/* The observed box is the whole cell. No accessible text on purpose: a canvas is
+          opaque to assistive tech anyway, and the figures beside it carry the same
+          information. */}
+      <td data-qa={`stop-sparkline-${rowKey}`} ref={observe}>
+        {/* The same box whether or not the chart has mounted, so a sparkline arriving
+            never moves the rows below. */}
+        <div className="h-10 w-52">
+          {isVisible && (
+            <StopSparkline
+              series={seriesIndex.seriesFor(readout.key, readout.line_name)}
+              measure={measure}
+              lineId={readout.line_name}
+            />
+          )}
+        </div>
+      </td>
     </tr>
   );
 }
