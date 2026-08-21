@@ -38,7 +38,7 @@ describe('colorForSelectionIndex', () => {
     }
   });
 
-  /* The types forbid it, but the data does not, and `undefined` here would paint nothing. */
+  /** The types forbid it, but the data does not, and `undefined` here would paint nothing. */
   it('folds a negative index back into the palette', () => {
     expect(colorForSelectionIndex(-1)).toBe(colorForSelectionIndex(7));
     expect(colorForSelectionIndex(-8)).toBe(colorForSelectionIndex(0));

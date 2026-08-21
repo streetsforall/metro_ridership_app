@@ -7,8 +7,7 @@ import type { StopSeriesPoint } from '../utils/stopSeries';
 import type { StopMeasure } from '../@types/stops.types';
 
 /**
- * The selected stops' boardings and alightings across the stop view's month axis, drawing
- * only.
+ * Draws the selected stops' boardings and alightings across the stop view's month axis.
  */
 
 /** One `(stop, line)` pair's line on the chart, since the pair is what has a series. */
@@ -25,7 +24,7 @@ export interface DrawnStopSeries {
 export interface StopSeriesChartProps {
   /** In selection order, which is what keeps a re-sort from recolouring the chart. */
   drawn: readonly DrawnStopSeries[];
-  /** Which of the two series to draw. `both` draws them together. */
+  /** Which of the two series to draw, or `both` for the two together. */
   measure: StopMeasure;
 }
 
