@@ -121,7 +121,7 @@ test('stop map — unticking Stop Ridership removes the circles', async ({
   await waitForMapIdle(page);
   expect(await renderedStopKeys(page)).toEqual([]);
 
-  // And back again, without a second fetch — the layer is reused, not rebuilt.
+  // Back on again, without a second fetch — the layer is reused, not rebuilt.
   await page.locator('#stop-ridership').click();
   await expect(page.locator('#stop-panel')).toBeVisible();
   await waitForMapIdle(page);
