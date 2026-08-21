@@ -32,7 +32,7 @@ async function gotoStopPanel(page: Page, search: string): Promise<void> {
   });
 }
 
-/** Wait for the ranked table — the panel's own "data has landed" signal. */
+/** Waits for the ranked table, the panel's own signal that the data has landed. */
 async function waitForStopTable(page: Page): Promise<void> {
   await expect(
     page.locator('[data-qa="stop-table"] tbody tr').first(),
@@ -42,7 +42,7 @@ async function waitForStopTable(page: Page): Promise<void> {
   });
 }
 
-/** Shoot the panel pane on its own, at the tolerance element crops use. */
+/** Shoots the panel pane on its own, at the tolerance element crops use. */
 async function shootPanel(page: Page, name: string): Promise<void> {
   await page.mouse.move(0, 0);
   await expect(page.locator('#stop-panel')).toHaveScreenshot(name, {
@@ -73,7 +73,7 @@ test('stop panel — the ranked table is the primary readout', async ({
   await shootPanel(page, 'stop-panel-table.png');
 });
 
-/** The way back out, without which the selection would be a one-way door. */
+/** `Clear All` is the way out, without which the selection would be a one-way door. */
 test('stop panel — Clear All empties the selection, and the URL follows', async ({
   page,
 }) => {
@@ -239,7 +239,7 @@ test('stop panel — the covered-period button moves the pickers and the chart',
   await expect(page.locator('#end-year')).toHaveValue('2026');
   await expect(page.locator('#end-month')).toHaveValue('5');
 
-  // And the panel now has data, which is what the button was for.
+  // The panel now has data, which is what the button was for.
   await waitForStopTable(page);
 });
 

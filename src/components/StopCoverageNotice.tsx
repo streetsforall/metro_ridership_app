@@ -23,7 +23,7 @@ export interface StopCoverageNoticeProps {
   state: StopCoverageState;
   /** The stop view's month axis, for the partial-coverage label. */
   months: readonly string[];
-  /** Set the month window to the coverage window. `YYYY-MM` both ends. */
+  /** Sets the month window to the coverage window, `YYYY-MM` at both ends. */
   onUseCoverageWindow: (from: string, to: string) => void;
 }
 

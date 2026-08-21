@@ -21,7 +21,6 @@ type SortDirection = 'asc' | 'desc';
 interface ColumnBase {
   label: string;
   align: 'left' | 'right';
-  /** Hover copy on the header. */
   title?: string;
 }
 
@@ -34,7 +33,7 @@ type Column = ColumnBase &
     | {
         kind: 'sortable';
         key: SortKey;
-        /** Which way a first click sorts. Figures rank high-first. */
+        /** Which way a first click sorts, with figures ranking high-first. */
         initialDirection: SortDirection;
       }
     | { kind: 'presentational'; key: 'ridershipOverTime' }
@@ -112,7 +111,7 @@ const columns: Column[] = [
 
 export interface StopTableProps {
   readouts: readonly StopReadout[];
-  /** Line display names, by id. The readout carries the numeric id only. */
+  /** Line display names by id, because the readout carries the numeric id only. */
   lines: readonly LineReadout[];
   /** Every row whose key is in it is checked and highlighted. */
   selectedStopKeys: readonly string[];
