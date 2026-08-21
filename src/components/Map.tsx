@@ -185,7 +185,6 @@ export default function Map({
   const selectedStopKeysRef = useRef(selectedStopKeys);
   selectedStopKeysRef.current = selectedStopKeys;
 
-  // Initialize map once
   useEffect(() => {
     if (map.current != null) return;
 
@@ -199,9 +198,8 @@ export default function Map({
       maxZoom: 16,
     });
 
-    // Test seam for e2e/map.spec.ts: MapLibre renders into a WebGL canvas, so a test has no
-    // way to wait on it or inspect it from the DOM. Publishing the instance lets the spec
-    // await the `idle` event and call queryRenderedFeatures(). Inert in the app itself.
+    // Test seam for e2e/map.spec.ts: MapLibre draws into a WebGL canvas, so publishing the
+    // instance is the only handle a spec has on it.
     window.__metroMap = map.current;
 
     map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
@@ -215,7 +213,7 @@ export default function Map({
         generateId: true,
       });
 
-      // All lines dimmed — rendered below the selected layer
+      // Every line, dimmed, below the selected layer.
       map.current!.addLayer({
         id: 'lines-all',
         type: 'line',
@@ -228,7 +226,7 @@ export default function Map({
         },
       });
 
-      // Selected lines rendered on top with brand colors
+      // The selected lines draw on top, in their brand colours.
       map.current!.addLayer({
         id: 'lines-selected',
         type: 'line',
@@ -247,7 +245,6 @@ export default function Map({
         },
       });
 
-      // Hover popup
       const popup = new Popup({
         closeButton: false,
         closeOnClick: false,
@@ -338,7 +335,6 @@ export default function Map({
         onToggleStopRef.current?.(stopKey);
       });
 
-      // Apply initial selection state
       const selectedIds = selectedLineIds(linesRef.current);
       map.current!.setFilter('lines-selected', selectedFilter(selectedIds));
       syncStopLayer(map.current!, {
