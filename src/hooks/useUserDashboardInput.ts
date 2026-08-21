@@ -179,7 +179,6 @@ const useUserDashboardInput = (): UserDashboardInputState => {
     if (isAggregateVisible) params.set('aggregate', '1');
     if (showContextLogs) params.set('logs', '1');
     if (showStops) params.set('stops', '1');
-    // Written only when non-default, like every optional param above.
     if (stopMeasure !== 'ons') params.set('measure', stopMeasure);
     if (selectedStopKeys.length > 0)
       params.set('stop', selectedStopKeys.join(','));
@@ -252,7 +251,8 @@ const useUserDashboardInput = (): UserDashboardInputState => {
   const selectAllListedStops = useCallback((keys: string[]): void => {
     setSelectedStopKeys((prevKeys) => {
       const selected = new Set(prevKeys);
-      // Appended, because inserting in the middle would recolour the series already drawn.
+      // New keys go on the end, because inserting one in the middle would recolour the
+      // series already drawn.
       return [...prevKeys, ...keys.filter((key) => !selected.has(key))];
     });
   }, []);

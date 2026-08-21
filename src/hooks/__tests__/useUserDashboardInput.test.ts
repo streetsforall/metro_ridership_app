@@ -497,7 +497,7 @@ describe('the Stop Selection', () => {
     expect(result.current.selectedStopKeys).toEqual(['bus:vermont-wilshire']);
   });
 
-  /** Order is the colour assignment, so a stop added later has to land at the end. */
+  /** Position picks the colour, so a stop added later has to land at the end. */
   it('appends a newly selected stop rather than reordering', () => {
     window.history.replaceState({}, '', '?stop=rail:union-station');
     const { result } = renderHook(() => useUserDashboardInput());
