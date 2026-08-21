@@ -169,7 +169,7 @@ describe('useStopView', () => {
     expect(
       requested.filter((url) => url === '/stop-ridership.rail.json'),
     ).toHaveLength(1);
-    // And it is drawable again, not merely cached.
+    // The view draws the stop again, rather than merely holding it in cache.
     expect(result.current.view.readouts).toHaveLength(1);
   });
 
