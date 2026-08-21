@@ -50,6 +50,7 @@ Then read whichever guide matches what you're about to do. Don't read them all.
 | [0010](adr/0010-the-event-gutter-hit-tests-itself.md) | The Event Gutter hit-tests itself, because Chart.js will not | accepted |
 | [0011](adr/0011-a-pin-marks-it-never-moves-a-view.md) | A pin marks what is read; it never moves what is shown — release before taking, and no auto-move | accepted, fully landed — #200 removed the auto-move, #199 made the pin release first |
 | [0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) | Colour in the stop series chart means which stop, and nowhere else does — the palette stops at the figure | accepted |
+| [0015](adr/0015-the-chart-and-map-instances-outlive-the-layout.md) | The chart and map instances outlive every layout change — hidden not unmounted, one unbranched JSX position, `min-w-0` on the grid item | accepted |
 
 ## Not for humans
 
