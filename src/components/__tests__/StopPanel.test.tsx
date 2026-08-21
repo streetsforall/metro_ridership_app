@@ -487,7 +487,7 @@ describe('StopPanel drawing one stop on two lines', () => {
     expect(caption).not.toContain('2 stops');
   });
 
-  /** And says how many series, since one stop drawing two lines would otherwise puzzle. */
+  /** The caption also names the series count, since one stop can draw two lines. */
   it('names the series count when it differs from the stop count', () => {
     renderPanel(sharedStop);
     expect(
@@ -502,7 +502,7 @@ describe('StopPanel drawing one stop on two lines', () => {
     ).not.toContain('series');
   });
 
-  /* Both rows check, because selection is by stop and both rows are that stop. */
+  /** Both rows check, because selection is by stop and both rows are that stop. */
   it('checks every row the stop occupies', () => {
     renderPanel(sharedStop);
     const checked = document.querySelectorAll(
