@@ -156,6 +156,74 @@ window is absent from the table rather than shown with blanks. The map and the s
 filtered this way; they read every Line Readout and select on the user's own selection.
 _Avoid_: visible line, filtered line, matching line
 
+### Stop grain
+
+**Boardings** / **Alightings**:
+Riders getting on, and riders getting off, at one stop. The pipeline's wire format calls them
+`ons` and `offs` after Metro's own export columns, and `StopMeasure`'s literals keep those
+spellings because they are URL values — but **no text a reader sees ever says "ons" or "offs"**.
+Alightings are the figure this app has never shown at any grain until now, and half of what stop
+data is for.
+_Avoid_: ons, offs, entries, exits, taps
+
+**Stop Place**:
+A stop or station as a place — its identity, its display name and, where GTFS knew one, its
+coordinate. Identity is the **normalised-name slug** the pipeline mints (`bus:vermont-wilshire`,
+`rail:union-station`), never Metro's row order, which renumbers when a line is extended
+([ADR-0013](docs/adr/0013-a-stops-identity-is-its-normalised-name.md)). A Stop
+Place GTFS had no geometry for is **kept, not dropped**: it still has ridership, so it belongs in
+the ranked table and the series, and is simply absent from the map layer. Its `mode` says which
+export it arrived in, not which filter lists it — G Line and J Line BRT stops are `Bus`.
+_Avoid_: station, marker, point, stop id
+
+**Stop Ridership Record**:
+One Stop Place's Boardings and Alightings for one Line for one Month, carrying a separate pair for
+each Day Of Week. The grain is **stop × line**, direction collapsed — a stop served by three lines
+has three records per month, and there is deliberately no stop-total-across-lines rollup. `null` is
+a Month the stop did not report, never a zero.
+_Avoid_: stop row, stop data point
+
+**Stop View**:
+Everything the stop panel and the stop map layer draw that follows from one set of user choices —
+the stop-grain Month Axis, the Stop Readouts, the map markers and the Stop Coverage Window. The
+stop-grain parallel of a Ridership View, derived by one call and thrown away. It reads **the same**
+Month Window predicate the Ridership View does; there is one rule and it is never restated.
+_Avoid_: stop data, the stop memo
+
+**Stop Readout**:
+One Stop Place together with everything the current Stop View derives about it **for one Line** —
+its average Boardings and Alightings, the **Change** between them, and its share of that Line's
+total. Change is Boardings less Alightings within a Month, never a movement between Months — the
+ranked table's heading sits two columns from *Ridership over time*, so the distinction is worth
+holding onto.
+Derived per Month Window and thrown away, exactly as a Line Readout is
+([ADR-0005](docs/adr/0005-derived-figures-live-on-line-readouts.md)). The ranked table, the map
+markers and the map's hover popup all read the same Stop Readouts.
+_Avoid_: stop with metrics, enriched stop, the marker
+
+**Stop Measure**:
+Which figure a Stop View ranks, sizes and draws by — Boardings, Alightings, or both summed. It
+selects a figure rather than filtering anything, the same way Day Of Week does. On the map it is
+carried by fill and stroke, never by a second colour ramp: colour already means *which line*.
+_Avoid_: metric, mode, stat
+
+**Stop Selection**:
+The Stop Places a reader has picked out of the ranked table to compare — an **ordered** set, because
+the order they were picked in is what fixes each one's colour on the chart. It is a set of Stop
+Places rather than of Stop Readouts: a stop served by two selected Lines is picked once and drawn
+twice, since its figures genuinely differ per Line and there is no stop-total-across-lines rollup.
+Nothing bounds it. Picking a stop, unpicking it and clearing every pick are the only three things
+that change it, and a table row, its checkbox and its map circle all ask for the first two.
+_Avoid_: the selected stop, highlighted stops, active stops
+
+**Stop Coverage Window**:
+The span of Months stop-level data exists for at all — twelve, inside the chart's 2009 → 2026. It
+is a property of the **data**, not of the user's choice, and the panel states it persistently
+rather than only when something is missing. Where it does not reach the Month Window the panel
+offers to move the window; it **never** clamps or widens one, because the window is what the reader
+chose and what a shared link carries.
+_Avoid_: stop date range, available months, the stop window
+
 ### The inputs
 
 **Ridership Record**:
@@ -207,8 +275,8 @@ _Avoid_: grouped records, ridership by line
 
 ## Scope note
 
-`src/ridership/` is the first and, for now, the only domain folder in an otherwise flat `src/`.
-That is deliberate: a folder with an `index.ts` is a sealed module whose index is its entire public
+`src/ridership/` and `src/stops/` are the domain folders in an otherwise flat `src/`. That is
+deliberate: a folder with an `index.ts` is a sealed module whose index is its entire public
 surface, and everything else in `src/` is flat by default — see
 [ADR-0007](docs/adr/0007-a-folder-with-an-index-is-a-sealed-module.md), which supersedes
 [ADR-0003](docs/adr/0003-one-domain-folder-not-a-repo-wide-reorganisation.md).

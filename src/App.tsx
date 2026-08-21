@@ -10,13 +10,11 @@ import { buildLineReadouts, buildRidershipView } from './ridership';
 import { listedReadouts } from './utils/lines';
 import { decodeRidership, type ColumnarRidership } from './utils/ridershipData';
 import type { RidershipRecord } from './@types/metrics.types';
+// From `./chart/months`, not the `./chart` barrel, which registers Chart.js and would
+// undo the lazy load below (ADR-0015).
 import { labelToDate } from './chart/months';
 
-/**
- * OutputArea pulls in Chart.js and MapLibre GL. Lazy-loading it keeps MapLibre (the
- * single largest dependency) out of the entry chunk, so the header and line selector
- * can paint before the chart/map code downloads.
- */
+/** Lazy so MapLibre, the largest dependency, stays out of the entry chunk (ADR-0015). */
 const OutputArea = lazy(() => import('./components/OutputArea'));
 
 function App() {
@@ -24,10 +22,8 @@ function App() {
     useState<boolean>(false);
 
   /**
-   * Ridership records are fetched at runtime from /ridership.json — a minified
-   * columnar blob emitted by the ridership-data Vite plugin — instead of being
-   * bundled into the JS. That keeps ~6.6 MB of data out of the entry chunk's parse
-   * path. `null` until the fetch resolves.
+   * Ridership records, fetched at runtime so ~6.6 MB stays out of the entry chunk —
+   * `null` until the fetch resolves.
    */
   const [ridershipRecords, setRidershipRecords] = useState<
     RidershipRecord[] | null
@@ -63,18 +59,21 @@ function App() {
     toggleShowContextLogs,
     showStops,
     toggleShowStops,
+    stopMeasure,
+    setStopMeasure,
+    selectedStopKeys,
+    onToggleSelectStop,
+    clearStopSelections,
+    selectAllListedStops,
+    stopSearchText,
+    setStopSearchText,
   } = userDashboardInputState;
 
   const isLoading = ridershipRecords === null;
 
   /**
-   * The whole derived view — month axis, per-line datasets, records grouped by
-   * line, and the context-log events — in one pass. Every rule in it (the
-   * deliberately offset month window, the shared axis, the aggregate ordering)
-   * lives in src/ridership/ and is unit-tested there.
-   *
-   * Kept memoised: `metrics` and `coverage` feed the readouts below, whose own memo
-   * keys on their identity, so a fresh view every render would thrash it.
+   * The whole derived view in one pass, memoised because the readouts below key their
+   * own memo on its identity.
    */
   const { months, datasets, consolidated, events, metrics, coverage } = useMemo(
     () =>
@@ -90,12 +89,8 @@ function App() {
   );
 
   /**
-   * Each Line with the figures this window derives for it. Rebuilt whole whenever
-   * the view changes, so a figure from a previous window cannot survive.
-   *
-   * Nothing is stringified into the dependency array: `metrics` and `coverage` come
-   * out of the already-memoised `buildRidershipView` above, so their identity is
-   * stable per view.
+   * Each Line with the figures this window derives, rebuilt whole so no figure outlives
+   * its window (ADR-0005).
    */
   const readouts = useMemo(
     () => buildLineReadouts({ lines, metrics, coverage }),
@@ -108,14 +103,8 @@ function App() {
   );
 
   /**
-   * A drag across the chart is just another way to set the month window, so it
-   * writes to the same two dates the pickers do. Everything downstream — the
-   * `start`/`end` query params, the pickers' displayed values, the rebuilt view —
-   * then follows for free, and the dragged range is as shareable as a typed one.
-   *
-   * Imported from `./chart/months` rather than the `./chart` barrel on purpose:
-   * the barrel registers Chart.js, and pulling that into App would undo the
-   * lazy-loading of OutputArea above.
+   * A chart drag writes the same two dates the pickers do, so the range it sets is as
+   * shareable as a typed one.
    */
   const handleRangeSelect = useCallback(
     (startMonth: string, endMonth: string) => {
@@ -129,7 +118,6 @@ function App() {
   );
 
   return (
-    /* Stretch full height */
     <div className="flex flex-col min-h-screen mx-4">
       <Header />
 
@@ -168,24 +156,8 @@ function App() {
           />
         </div>
 
-        {/**
-         * The right side is hidden while the line selector is expanded, not unmounted.
-         *
-         * Unmounting it tore down the Chart.js canvas and the MapLibre instance, so every
-         * collapse paid for a fresh map — new WebGL context, basemap style and tiles fetched
-         * again — plus a chart rebuilt from scratch. Both are ready to draw already; the only
-         * thing that changed is whether they are on screen.
-         *
-         * `contents` on the wrapper makes OutputArea's own root the grid item, exactly as it
-         * was when this was conditionally rendered, so the visible layout is unchanged. When
-         * expanded the wrapper is `display: none`, which takes it out of the grid entirely —
-         * the `grid-cols-[1fr]` above then has a single column with a single item in it, as
-         * before.
-         *
-         * Coming back is safe without a manual re-measure: Chart.js's responsive mode and
-         * MapLibre's `trackResize` both watch their container with a ResizeObserver, which
-         * fires again when the box goes from zero back to its real size.
-         */}
+        {/* Hidden, not unmounted — a fresh MapLibre instance per collapse is the cost
+            being avoided (ADR-0015). */}
         <div className={isLineSelectorExpanded ? 'hidden' : 'contents'}>
           <Suspense
             fallback={
@@ -204,6 +176,20 @@ function App() {
               showContextLogs={showContextLogs}
               isLoading={isLoading}
               onRangeSelect={handleRangeSelect}
+              /* Threaded through rather than read in `OutputArea`, because this state is
+                 URL-synced and `useUserDashboardInput` owns the URL. */
+              showStops={showStops}
+              stopMeasure={stopMeasure}
+              onStopMeasureChange={setStopMeasure}
+              selectedStopKeys={selectedStopKeys}
+              onToggleStop={onToggleSelectStop}
+              onClearStops={clearStopSelections}
+              onSelectAllStops={selectAllListedStops}
+              stopSearchText={stopSearchText}
+              onStopSearchTextChange={setStopSearchText}
+              startDate={startDate}
+              endDate={endDate}
+              dayOfWeek={dayOfWeek}
             />
           </Suspense>
         </div>

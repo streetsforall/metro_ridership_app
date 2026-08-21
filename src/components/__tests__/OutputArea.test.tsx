@@ -4,13 +4,12 @@ import OutputArea from '../OutputArea';
 import type { LineReadout } from '../../ridership';
 import { makeLineReadout, makeTransitEvent } from '../../test/builders';
 import type { TransitEvent } from '../../@types/events.types';
+import { daysOfWeek } from '../../@types/metrics.types';
 import type { RidershipChartProps } from '../RidershipChart';
 
 /**
- * The chart's own behaviour lives in `RidershipChart.test.tsx`. Here it is a
- * props sink, because what OutputArea is responsible for is the state the chart
- * and the context log share — which of them owns it, and that each sees the
- * other's changes.
+ * The chart is a props sink here, because what OutputArea owns is the state it and the
+ * context log share.
  */
 let chartProps: RidershipChartProps | undefined;
 
@@ -27,12 +26,20 @@ vi.mock('../Map', () => ({
   ),
 }));
 
+/** The Month Window and Day Of Week are required props, though inert with the panel off. */
+const stopWindowProps = {
+  startDate: new Date(2023, 0),
+  endDate: new Date(2023, 11),
+  dayOfWeek: daysOfWeek.Weekday,
+};
+
 const emptyProps = {
   chartDatasets: [],
   months: [],
   lines: [],
   transitEvents: [] as TransitEvent[],
   showContextLogs: false,
+  ...stopWindowProps,
 };
 
 const transitEventFixture = makeTransitEvent({
@@ -60,6 +67,7 @@ const renderWithEvents = (props = {}) =>
       lines={[]}
       transitEvents={[transitEventFixture]}
       showContextLogs={true}
+      {...stopWindowProps}
       {...props}
     />,
   );
@@ -171,11 +179,7 @@ describe('context log panel visibility', () => {
   });
 });
 
-/**
- * The pinned and hovered months live in OutputArea precisely so these two
- * children stay in agreement. Each direction is one assertion that the state
- * crossed from one child to the other.
- */
+/** Each direction is one assertion that the state crossed from one child to the other. */
 describe('chart ↔ context log', () => {
   const logRow = () => screen.getByRole('button', { name: /Regional Connector/ });
 
@@ -220,9 +224,8 @@ describe('chart ↔ context log', () => {
   });
 
   /**
-   * A pin marks; it does not move. Pinning from the chart leaves the panel where
-   * the reader left it, collapsed included — so the row it marks may not be on
-   * screen at all. The tooltip carries the event content, so that costs nothing.
+   * A pin marks and does not move, so the row it marks may not be on screen at all
+   * (ADR-0011).
    */
   it('leaves the panel collapsed when the chart pins a month', () => {
     renderWithEvents();
@@ -235,10 +238,8 @@ describe('chart ↔ context log', () => {
 });
 
 /**
- * The release-first rule, asserted here rather than in either child, because
- * here is the only seam that can see it hold across *both* of them. A rule that
- * held on the chart and not in the log would be two rules and a reader would
- * have to learn which surface they were on.
+ * The release-first rule is asserted here, the only seam that can watch it hold across
+ * both children (ADR-0011).
  */
 describe('a pinned month is released before another is taken', () => {
   const logRow = () => screen.getByRole('button', { name: /Regional Connector/ });
@@ -299,10 +300,8 @@ describe('a pinned month is released before another is taken', () => {
 });
 
 /**
- * The pin is released by a press outside the chart *and* the log together. A
- * listener scoped to the chart alone would fire on the press half of a log row
- * click, unpin, and then watch the click re-pin — so the pin could never be
- * released from the panel at all.
+ * A press outside the chart and the log together releases the pin, because a listener
+ * scoped to the chart alone would unpin on the press and re-pin on the click (ADR-0011).
  */
 describe('releasing the pin by pressing outside', () => {
   const logRow = () => screen.getByRole('button', { name: /Regional Connector/ });

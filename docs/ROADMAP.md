@@ -28,9 +28,9 @@ PRs update it rather than restating their own scope.
 | **2** | `fetch_stop_locations.py`, `src/data/stop_locations.json`, `scripts/README.md`, tests | Match rate reported; unmatched reviewed and aliases extended | ☑ [#179](https://github.com/streetsforall/metro_ridership_app/pull/179) — bus 6,756/6,785 · rail 110/110 |
 | **3** | `stop_ridership.py`, `update_ridership.py` wiring, the two data files, `DATA_RELEASE_NOTES.md` | Reconciliation within tolerance; two runs byte-identical | ☑ [#190](https://github.com/streetsforall/metro_ridership_app/pull/190) — 107,454 stop rows · two runs byte-identical · reconciliation median 0.06%, max 5.10% (see below) |
 | **4** | Vite plugin, manifest, `src/stops/`, `stops.types.ts`, the `isInMonthWindow` extraction, vitest specs. **No visible UI.** | `ANALYZE=1 npm run build` — entry chunk unchanged; no visual baseline moves | ☑ [#180](https://github.com/streetsforall/metro_ridership_app/pull/180) — entry +36 B (the extracted predicate, nothing else) · 0 of 80 baselines moved |
-| **5a** | The URL contract — `stops`, `measure`, `stop`, `stopq` — and the Stop Ridership checkbox | The checkbox round-trips through the URL; **the eight full-page baselines the checkbox moves are regenerated here and nowhere else** | ☐ this PR |
+| **5a** | The URL contract — `stops`, `measure`, `stop`, `stopq` — and the Stop Ridership checkbox | The checkbox round-trips through the URL; **the eight full-page baselines the checkbox moves are regenerated here and nowhere else** | ☐ |
 | **5b** | `useStopView`: the two payloads' fetch gate and their independent fates. **No UI.** | `ANALYZE=1 npm run build` — entry chunk unchanged; the hook has no importer yet | ☐ |
-| **5c** | `#stop-panel`, the ranked table, the coverage notice, the `OutputArea` wiring | New `stop-panel` baselines only; the eight 5a regenerated must **not** move again | ☐ |
+| **5c** | `#stop-panel`, the ranked table, the coverage notice, the `OutputArea` wiring | New `stop-panel` baselines only; the eight 5a regenerated must **not** move again | ☐ this PR |
 | **5d** | The ridership-over-time column: `stopSeries`, `useVisibleRows`, the row sparkline | No new payloads; the trend column is the only baseline move | ☐ |
 | **5e** | The stop series chart and its colour rule | [ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) written | ☐ |
 | **5f** | The map's circle layer and the `mapPopup` addition | Circles leave the map when the panel is unticked | ☐ |
@@ -242,6 +242,43 @@ the end, since inserting anywhere else would recolour every series already drawn
 **Diagram 10 is now four parameters behind.** `10-url-contract.mmd` is titled "The nine parameters"
 and enumerates them; this batch added `stops`, `measure`, `stop` and `stopq`, so the count and the
 boxes are both wrong. It is the same file #181 and #182 are rewriting, which is why it was left alone.
+
+**`stop_locations.json` is 1.6 MB, and `stops.types.ts` calls it "small".** A static import would have
+put it in `OutputArea`'s chunk, which every reader downloads, so the panel `import()`s it into its own
+chunk, fetched with the rail payload when the panel opens. Worth correcting the comment; worth more
+not bundling it.
+
+**The stop table is a multi-select, and the two ranked tables now match.** The line selector had a
+checkbox per row, a search bar and a `Select All` / `Clear All` pair; the stop table had none in the
+first draft. It has all three now, laid out as `LineFilters` lays them out — search in a row of its
+own closed by a rule, then the two actions under it, both above the table they act on.
+
+**Nothing caps the selection, and `Select All` is scoped by the search instead.** Strict analogy with
+the line selector, which caps nothing either and relies on its own search. The exposure is real and
+recorded rather than fixed: press `Select All` on an unsearched five-line table and you pick ~800
+stops, all of which the chart will try to draw. `Select All` adds only the listed rows and `Clear All`
+clears globally — the line pair's asymmetry, copied deliberately, because two ranked tables under one
+dashboard should not answer the same two words differently.
+
+**A stop row is identified by its line and its stop together, because a stop key alone does not
+identify one.** A stop serving two selected lines occupies two rows. `stop-row-`, `stop-select-` and
+`stop-sparkline-` all carry the row key — the identity React already keys on — rather than the stop
+key, and a unit case renders one stop on lines 204 and 801 to hold it there. No fixture puts one stop
+on two lines, so nothing failed; the trap was that an e2e locator would have matched two elements and
+failed strict mode the moment one did, and `document.querySelector` in a unit spec would have
+silently taken the first. The e2e half goes through `stopQa`, so the shape is written once.
+
+**The PR body carries four mermaid diagrams, and the committed diagram set does not.** A data flow of
+the stop grain with the new modules accented, a sequence for the payload intent gate, a sequence for
+picking a stop, and a small picture of the stop × line grain. They live in the pull request rather
+than in `docs/architecture/mermaid/` for the reason nothing else here touches that directory:
+`diagrams.md` is one generated file, and regenerating it would put this PR back in the path of #181
+and #182. That reasoning expires when those land, so **#228** holds the decision about which of the
+four earn a stem of their own — the data flow being the strongest candidate, since `05` covers line
+grain and the set has no stop-grain counterpart. Each fence was rendered against the pinned mermaid
+before publishing; GitHub renders with its own build, so parsing locally is necessary rather than
+sufficient. `07`, `08` and `10` are all being edited by the two open panel PRs, so regenerating them
+here would guarantee conflicts for no gain.
 
 ## The contract PR 1 freezes
 
