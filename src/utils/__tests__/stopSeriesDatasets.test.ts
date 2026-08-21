@@ -60,7 +60,6 @@ describe('stopSeriesDatasets', () => {
     expect(datasets[1].data).toEqual([90, null, 110]);
   });
 
-  /* A month the stop did not report stays a gap. Nothing here turns a null into a zero. */
   it('keeps an unreported month null rather than zero', () => {
     const datasets = stopSeriesDatasets({
       series,

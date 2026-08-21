@@ -100,9 +100,8 @@ export default function StopPanel({
   );
 
   /**
-   * One index for the whole panel, not one build per row. `records` is memoised upstream,
-   * so this rebuilds only when a payload lands, the window moves or the day of week
-   * changes — never on a re-sort, a selection or a measure change.
+   * The whole panel shares one index, rebuilt only when a payload lands, the window moves
+   * or the day of week changes, because `records` is memoised upstream.
    */
   const seriesIndex = useMemo(
     () =>

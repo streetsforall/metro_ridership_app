@@ -65,7 +65,7 @@ const readouts: StopReadout[] = Array.from({ length: 20 }, (_, index) => ({
 const renderedRows = (): (string | undefined)[] =>
   rowSpy.mock.calls.map(([label]) => label);
 
-/** Drive the observer by hand: nothing scrolls in jsdom. */
+/** The handle for driving the observer by hand, since nothing scrolls in jsdom. */
 let notify: IntersectionObserverCallback;
 
 const withObserver = (): void => {

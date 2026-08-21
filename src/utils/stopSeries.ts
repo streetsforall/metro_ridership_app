@@ -32,7 +32,6 @@ export interface StopSeriesIndex {
   seriesFor(stopKey: string, lineId: number): StopSeriesPoint[];
 }
 
-/** Get the entry, creating it on first ask. */
 function getOrCreate<K, V>(map: Map<K, V>, key: K, make: () => V): V {
   const hit = map.get(key);
   if (hit !== undefined) return hit;
