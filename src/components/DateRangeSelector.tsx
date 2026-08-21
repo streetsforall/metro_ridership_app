@@ -93,10 +93,8 @@ export default function DateRangeSelector({
   };
 
   const updateMonth = (title: IntervalEndpoint, newMonth: string) => {
-    // Update month state
     const setDate = getDateSetter(title);
 
-    // Requires updater function
     setDate((prevDate: Date) => {
       const newDate: Date = new Date(prevDate);
       newDate.setMonth(Number(newMonth));
@@ -108,10 +106,8 @@ export default function DateRangeSelector({
   const updateYear = (title: IntervalEndpoint, newYear: string) => {
     // TODO: Add filter to make sure from is not larger than the "to" date
 
-    // Update year state
     const setDate = getDateSetter(title);
 
-    // Requires updater function
     setDate((prevDate: Date) => {
       const newDate: Date = new Date(prevDate);
       newDate.setFullYear(Number(newYear));
