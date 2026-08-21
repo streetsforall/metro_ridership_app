@@ -101,6 +101,9 @@ There is no CI check for this. Renaming or deleting an exported symbol means gre
   [docs/agents/triage-labels.md](docs/agents/triage-labels.md).
 - **Domain docs** — single-context: one `CONTEXT.md` plus `docs/adr/` at the repo root, both of
   which exist. See [docs/agents/domain.md](docs/agents/domain.md).
+- **Orchestration** — multi-session batches run in `wave` mode via the `/orchestrate` skill, and
+  **Michael merges every PR himself** in this repo. See
+  [docs/agents/orchestration.md](docs/agents/orchestration.md).
 
 ## Styling
 
