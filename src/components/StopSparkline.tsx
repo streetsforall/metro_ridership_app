@@ -14,7 +14,8 @@ export interface StopSparklineProps {
   lineId: number;
 }
 
-// Module-level, because at this row count a fresh options object per render makes Chart.js reconfigure.
+// The options live at module level, because at this row count a fresh object per render
+// makes Chart.js reconfigure.
 const options: ChartOptions<'line'> = {
   responsive: true,
   maintainAspectRatio: false,

@@ -447,7 +447,7 @@ describe('StopTable ridership-over-time column', () => {
 });
 
 describe('StopTable lazy sparklines', () => {
-  /** Drive the observer by hand: nothing scrolls in jsdom. */
+  /** The handle for driving the observer by hand, since nothing scrolls in jsdom. */
   let notify: IntersectionObserverCallback;
 
   const withObserver = (): void => {

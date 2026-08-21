@@ -92,7 +92,7 @@ describe('buildStopSeriesIndex', () => {
     expect(index.seriesFor('bus:elsewhere', 204)[0].boardings).toBe(9999);
   });
 
-  /** It is handed the derivation's axis, so it never decides what is in the window. */
+  /** The index is handed the derivation's axis, so it never decides what the window holds. */
   it('drops a record whose month is not on the axis it was given', () => {
     expect(series(['2025-09']).map((p) => p.boardings)).toEqual([300]);
   });
