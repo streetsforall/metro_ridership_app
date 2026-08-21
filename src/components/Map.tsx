@@ -87,7 +87,6 @@ function ensureStopLayer(
   return true;
 }
 
-/** Push a new marker set at the existing source. */
 function applyStopMarkers(
   map: maplibregl.Map,
   markers: StopView['markers'],
@@ -95,7 +94,7 @@ function applyStopMarkers(
   map.getSource<maplibregl.GeoJSONSource>('stop-ridership')?.setData(markers);
 }
 
-/** Fill, ring and selection marks — everything the measure and selection drive. */
+/** Sets fill, ring and selection marks — everything the measure and selection drive. */
 function applyStopPaint(
   map: maplibregl.Map,
   measure: StopMeasure,
@@ -359,7 +358,7 @@ export default function Map({
     // Deliberately empty: the map is initialised once and later renders arrive by ref.
   }, []);
 
-  // Sync selected lines with the route layer's filter whenever selection changes.
+  // The route layer's filter follows the selected lines whenever the selection changes.
   useEffect(() => {
     if (!isStyleLoaded.current) return;
     map.current?.setFilter(
