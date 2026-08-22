@@ -4,7 +4,6 @@ import useUserDashboardInput, { daysOfWeek } from '../useUserDashboardInput';
 import { dataDefaultEndDate } from '../../utils/dataDateRange';
 import { formatMonthParam } from '../../utils/queryParams';
 
-// Reset URL and replaceState spy before each test
 beforeEach(() => {
   window.history.replaceState({}, '', '/');
   vi.restoreAllMocks();
@@ -130,14 +129,83 @@ describe('initial state from URL params', () => {
     const { result } = renderHook(() => useUserDashboardInput());
     expect(result.current.showContextLogs).toBe(false);
   });
+
+  it('sets showStops to true when stops=1 in URL', () => {
+    window.history.replaceState({}, '', '?stops=1');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.showStops).toBe(true);
+  });
+
+  it('leaves the stop panel off when stops is absent', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.showStops).toBe(false);
+  });
+
+  it('reads the stop measure from URL', () => {
+    window.history.replaceState({}, '', '?measure=offs');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.stopMeasure).toBe('offs');
+  });
+
+  it('falls back to boardings for an unrecognised measure', () => {
+    window.history.replaceState({}, '', '?measure=sideways');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.stopMeasure).toBe('ons');
+  });
+
+  it('reads the selected stop key from URL', () => {
+    window.history.replaceState({}, '', '?stop=rail:union-station');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.selectedStopKeys).toEqual(['rail:union-station']);
+  });
+
+  /** One key or many share the `stop=` param, so older shared links still work. */
+  it('reads several selected stop keys from one stop param', () => {
+    window.history.replaceState(
+      {},
+      '',
+      '?stop=rail:union-station,bus:vermont-wilshire',
+    );
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.selectedStopKeys).toEqual([
+      'rail:union-station',
+      'bus:vermont-wilshire',
+    ]);
+  });
+
+  it('ignores a stop param that is not a stop key', () => {
+    window.history.replaceState({}, '', '?stop=<script>');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.selectedStopKeys).toEqual([]);
+  });
+
+  it('keeps the valid keys when one part of the stop param is malformed', () => {
+    window.history.replaceState(
+      {},
+      '',
+      '?stop=rail:union-station,<script>,bus:vermont-wilshire',
+    );
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.selectedStopKeys).toEqual([
+      'rail:union-station',
+      'bus:vermont-wilshire',
+    ]);
+  });
+
+  it('reads the stop search text from URL', () => {
+    window.history.replaceState({}, '', '?stopq=vermont');
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.stopSearchText).toBe('vermont');
+  });
+
+  it('defaults the stop search text to empty', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+    expect(result.current.stopSearchText).toBe('');
+  });
 });
 
 describe('modes → mode filter state', () => {
-  /**
-   * These asserted on `Line.visible` until the write-back went. The mode clause now
-   * lives in `listedReadouts`, which is tested in `src/utils/lines.test.ts`; what is
-   * left here is the hook's own half — the URL contract onto `modes`.
-   */
+  /** What is left here is the hook's own half, the URL contract onto `modes`. */
   it('switches bus off when buses=0 is in URL', () => {
     window.history.replaceState({}, '', '?buses=0');
     const { result } = renderHook(() => useUserDashboardInput());
@@ -302,6 +370,204 @@ describe('URL sync', () => {
     renderHook(() => useUserDashboardInput());
     expect(window.location.search).not.toContain('logs=');
   });
+
+  it('adds stops=1 to URL when toggleShowStops is called', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.toggleShowStops();
+    });
+
+    expect(window.location.search).toContain('stops=1');
+  });
+
+  it('omits every stop param at its default', () => {
+    renderHook(() => useUserDashboardInput());
+    expect(window.location.search).not.toContain('stops=');
+    expect(window.location.search).not.toContain('measure=');
+    expect(window.location.search).not.toContain('stop=');
+    expect(window.location.search).not.toContain('stopq=');
+  });
+
+  it('writes a non-default stop measure to URL', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.setStopMeasure('both');
+    });
+
+    expect(window.location.search).toContain('measure=both');
+  });
+
+  /**
+   * A stop key survives the round trip whole, even though `toString()` percent-encodes
+   * its `:`.
+   */
+  it('round-trips the selected stop key through the URL', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.onToggleSelectStop('bus:vermont-wilshire');
+    });
+
+    expect(
+      new URLSearchParams(window.location.search).get('stop'),
+    ).toBe('bus:vermont-wilshire');
+  });
+
+  /** The joining comma survives `toString()` unescaped, so the param stays readable. */
+  it('round-trips several selected stop keys through the one param', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.onToggleSelectStop('bus:vermont-wilshire');
+    });
+    act(() => {
+      result.current.onToggleSelectStop('rail:union-station');
+    });
+
+    expect(new URLSearchParams(window.location.search).get('stop')).toBe(
+      'bus:vermont-wilshire,rail:union-station',
+    );
+  });
+
+  it('drops the stop param when the selection is cleared', () => {
+    window.history.replaceState({}, '', '?stop=bus:vermont-wilshire');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.clearStopSelections();
+    });
+
+    expect(window.location.search).not.toContain('stop=');
+  });
+
+  it('writes the stop search text to URL', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.setStopSearchText('vermont');
+    });
+
+    expect(new URLSearchParams(window.location.search).get('stopq')).toBe(
+      'vermont',
+    );
+  });
+});
+
+describe('the Stop Selection', () => {
+  it('selects a stop that was not selected', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.onToggleSelectStop('rail:union-station');
+    });
+
+    expect(result.current.selectedStopKeys).toEqual(['rail:union-station']);
+  });
+
+  it('deselects a stop that was selected', () => {
+    window.history.replaceState({}, '', '?stop=rail:union-station');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.onToggleSelectStop('rail:union-station');
+    });
+
+    expect(result.current.selectedStopKeys).toEqual([]);
+  });
+
+  it('leaves the other selected stops alone when one is deselected', () => {
+    window.history.replaceState(
+      {},
+      '',
+      '?stop=rail:union-station,bus:vermont-wilshire',
+    );
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.onToggleSelectStop('rail:union-station');
+    });
+
+    expect(result.current.selectedStopKeys).toEqual(['bus:vermont-wilshire']);
+  });
+
+  /** Position picks the colour, so a stop added later has to land at the end. */
+  it('appends a newly selected stop rather than reordering', () => {
+    window.history.replaceState({}, '', '?stop=rail:union-station');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.onToggleSelectStop('bus:vermont-wilshire');
+    });
+
+    expect(result.current.selectedStopKeys).toEqual([
+      'rail:union-station',
+      'bus:vermont-wilshire',
+    ]);
+  });
+
+  it('adds every listed stop on top of what is already selected', () => {
+    window.history.replaceState({}, '', '?stop=rail:union-station');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.selectAllListedStops([
+        'bus:vermont-wilshire',
+        'bus:vermont-santa-monica',
+      ]);
+    });
+
+    expect(result.current.selectedStopKeys).toEqual([
+      'rail:union-station',
+      'bus:vermont-wilshire',
+      'bus:vermont-santa-monica',
+    ]);
+  });
+
+  it('does not duplicate a listed stop that was already selected', () => {
+    window.history.replaceState({}, '', '?stop=rail:union-station');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.selectAllListedStops([
+        'rail:union-station',
+        'bus:vermont-wilshire',
+      ]);
+    });
+
+    expect(result.current.selectedStopKeys).toEqual([
+      'rail:union-station',
+      'bus:vermont-wilshire',
+    ]);
+  });
+
+  /** `Clear All` is global, unlike `Select All`, which reaches only the listed rows. */
+  it('clears every selected stop, including ones no search would list', () => {
+    window.history.replaceState(
+      {},
+      '',
+      '?stop=rail:union-station,bus:vermont-wilshire',
+    );
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.clearStopSelections();
+    });
+
+    expect(result.current.selectedStopKeys).toEqual([]);
+  });
+
+  it('leaves the search text alone when the selection is cleared', () => {
+    window.history.replaceState({}, '', '?stop=rail:union-station&stopq=union');
+    const { result } = renderHook(() => useUserDashboardInput());
+
+    act(() => {
+      result.current.clearStopSelections();
+    });
+
+    expect(result.current.stopSearchText).toBe('union');
+  });
 });
 
 describe('line initialisation', () => {
@@ -314,9 +580,7 @@ describe('line initialisation', () => {
 
 describe('selectAllListedLines', () => {
   it('selects a listed line', () => {
-    // Was `selectAllVisibleLines selects a zero-change line too`: the hook no longer
-    // re-derives which rows are listed, so the ids are passed in. That a zero-change
-    // line is among them is `listedReadouts`' assertion now.
+    // The ids are passed in now, so which rows are listed is `listedReadouts`' assertion.
     const { result } = renderHook(() => useUserDashboardInput());
 
     act(() => {
@@ -345,5 +609,45 @@ describe('selectAllListedLines', () => {
     });
 
     expect(result.current.lines.find((l) => l.id === 802)?.selected).toBe(true);
+  });
+});
+
+/** Mutator identity must hold still, because the ~800-row stop table memoises on it. */
+describe('mutator identity', () => {
+  const mutators = [
+    'onToggleSelectLine',
+    'clearSelections',
+    'selectAllListedLines',
+    'onToggleSelectStop',
+    'clearStopSelections',
+    'selectAllListedStops',
+    'toggleIsAggregateVisible',
+    'toggleShowContextLogs',
+    'toggleShowStops',
+  ] as const;
+
+  it('hands back the same function across a re-render', () => {
+    const { result, rerender } = renderHook(() => useUserDashboardInput());
+    const before = result.current;
+
+    rerender();
+
+    for (const name of mutators)
+      expect(result.current[name], name).toBe(before[name]);
+  });
+
+  it('hands back the same function after the state it sets has changed', () => {
+    const { result } = renderHook(() => useUserDashboardInput());
+    const before = result.current;
+
+    act(() => {
+      result.current.onToggleSelectStop('bus:vermont-wilshire');
+    });
+    act(() => {
+      result.current.toggleShowStops();
+    });
+
+    for (const name of mutators)
+      expect(result.current[name], name).toBe(before[name]);
   });
 });
