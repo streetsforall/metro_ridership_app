@@ -2,6 +2,38 @@
 
 Start with [`README.md`](README.md) and [`docs/README.md`](docs/README.md) if you haven't.
 
+## Write so the next reader can skim
+
+These apply to everything that lands in the repo — code, comments, docs, commit bodies and PR
+descriptions — and they apply the same whether a person or an agent wrote it.
+
+- **Every fact lives in exactly one place.** The docs rule below is that principle applied to
+  `docs/`; it is why a document links rather than repeats.
+- **Headings and ADR titles are assertions, not labels.** "Push neither creates nor drops what its
+  schema does not describe" tells the reader whether to keep reading. "Push notes" does not.
+- **Say it plainly, once.** Short words, short sentences. Cut a sentence whose only job is to
+  introduce the next one.
+- **Keep the causal connective.** A *because* or *so that* stays whole, because dropping it turns
+  one explanation into two unrelated facts and leaves the reader to re-derive the link.
+- **Length is a cost, not proof of effort.** A long description is read less carefully than a short
+  one, so padding a section to look thorough makes review worse rather than better.
+
+## Open the PR with the template filled in
+
+[`.github/pull_request_template.md`](.github/pull_request_template.md) has four sections — where
+the change sits, what it changes, what to check, and the pre-merge checklist.
+
+- **One paragraph per section, maximum.** If a section needs more than that, the PR is
+  probably two PRs, or the explanation belongs in an ADR the description can cite.
+- **Where this sits** is optional. Delete it when the PR touches one obvious place.
+- **What to check** is for the reviewer, not the author. One bullet per behaviour to verify, with
+  `file:line` pointers. It is not a file inventory — the Files changed tab already has that.
+- **If the PR does two things, say why they are in one PR.** Better still, split before you start:
+  deciding that up front is far cheaper than unpicking a branch afterwards.
+
+Agents opening PRs with `gh pr create --body` bypass the template entirely, so copy its sections
+across by hand.
+
 ## Before you open a PR
 
 ```bash
