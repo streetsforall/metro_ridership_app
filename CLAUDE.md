@@ -84,6 +84,10 @@ Each one has cost someone real time. The reasoning is in `docs/`; this is the sh
   sync effect in `src/hooks/useUserDashboardInput.ts`, or the view stops being shareable.
 - **Bumping `@playwright/test` means regenerating the Linux baselines in the same PR.** A new
   browser build re-renders text.
+- **`gh pr create --body` bypasses the PR template silently.** A repository template only
+  pre-fills the web UI textarea, so `--body` and `--body-file` replace it outright and still exit
+  0. Copy the sections out of [.github/pull_request_template.md](.github/pull_request_template.md)
+  by hand and write them to the standard in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## When you change code, check the docs
 
