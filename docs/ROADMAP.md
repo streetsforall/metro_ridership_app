@@ -28,11 +28,24 @@ PRs update it rather than restating their own scope.
 | **2** | `fetch_stop_locations.py`, `src/data/stop_locations.json`, `scripts/README.md`, tests | Match rate reported; unmatched reviewed and aliases extended | ☑ [#179](https://github.com/streetsforall/metro_ridership_app/pull/179) — bus 6,756/6,785 · rail 110/110 |
 | **3** | `stop_ridership.py`, `update_ridership.py` wiring, the two data files, `DATA_RELEASE_NOTES.md` | Reconciliation within tolerance; two runs byte-identical | ☑ [#190](https://github.com/streetsforall/metro_ridership_app/pull/190) — 107,454 stop rows · two runs byte-identical · reconciliation median 0.06%, max 5.10% (see below) |
 | **4** | Vite plugin, manifest, `src/stops/`, `stops.types.ts`, the `isInMonthWindow` extraction, vitest specs. **No visible UI.** | `ANALYZE=1 npm run build` — entry chunk unchanged; no visual baseline moves | ☑ [#180](https://github.com/streetsforall/metro_ridership_app/pull/180) — entry +36 B (the extracted predicate, nothing else) · 0 of 80 baselines moved |
-| **5** | Map layer, `#stop-panel`, URL state, `mapPopup` addition, Playwright baselines | New baselines only; `visual.spec.ts`'s six must **not** move | ☐ |
+| **5a** | The URL contract — `stops`, `measure`, `stop`, `stopq` — and the Stop Ridership checkbox | The checkbox round-trips through the URL; **the eight full-page baselines the checkbox moves are regenerated here and nowhere else** | ☐ this PR |
+| **5b** | `useStopView`: the two payloads' fetch gate and their independent fates. **No UI.** | `ANALYZE=1 npm run build` — entry chunk unchanged; the hook has no importer yet | ☐ |
+| **5c** | `#stop-panel`, the ranked table, the coverage notice, the `OutputArea` wiring | New `stop-panel` baselines only; the eight 5a regenerated must **not** move again | ☐ |
+| **5d** | The ridership-over-time column: `stopSeries`, `useVisibleRows`, the row sparkline | No new payloads; the trend column is the only baseline move | ☐ |
+| **5e** | The stop series chart and its colour rule | [ADR-0014](adr/0014-colour-in-the-stop-series-chart-means-which-stop.md) written | ☐ |
+| **5f** | The map's circle layer and the `mapPopup` addition | Circles leave the map when the panel is unticked | ☐ |
 
 1 → 2 → 3 are pipeline-serial. 4 can start once PR 1's schema is fixed. PR 3 carries
 the multi-megabyte data diff alone, so its review is "is the data right", not "is the
-code right"; the 4/5 split means exactly one PR touches visual baselines.
+code right".
+
+PR 5 was authored whole and then split for review — first four ways, then 5a again into
+three, because the first slice was still 4,000 lines. The six run in a stack, each adding
+to what the one below ships. Exactly two of them touch visual baselines and they touch
+disjoint sets: 5a regenerates the eight full-page shots the filter-bar checkbox displaces,
+5c adds the four `stop-panel` shots, and 5d moves one of those four. The two ADRs the batch
+owed (0012, 0013) went out separately, off `main`, since both record decisions PRs 1 and 3
+already made.
 
 ### About PR 1's gate
 
@@ -181,6 +194,54 @@ in `fetch_stop_locations.py` and noted it belongs beside `convert_zip`. PR 3 imp
 from there rather than copying it — a second copy of the archive-layout rule is what
 `extract_leaf_rows` exists to prevent — so the merge step now imports from the geometry
 fetcher. Worth moving, in a PR that is allowed to touch both.
+
+## What PR 5 found
+
+**The panel's visibility control was deferred, then added.** The panel opens with `stops=1`, and the
+hook has always exposed `showStops` / `toggleShowStops`. No checkbox was added at first, for two
+reasons pointing the same way: new chrome in the filter bar moves the full-page baselines, which this
+PR's original gate forbade, and
+[#181](https://github.com/streetsforall/metro_ridership_app/pull/181) and
+[#182](https://github.com/streetsforall/metro_ridership_app/pull/182) are both open, both rewriting
+`DateRangeSelector` into a Panel Settings section, and both regenerating those baselines.
+
+It was added anyway, on request: a second checkbox in `DateRangeSelector`'s existing **Panel
+Visibility** fieldset, beside Context Logs, labelled *Stop Ridership*. `App` threads `showStops` and
+`toggleShowStops` down explicitly, because `DateRangeSelector` takes named props rather than the
+`{...userDashboardInputState}` spread `LineSelector` gets.
+
+**This trades the gate away, and the cost was eight baselines, not nine and not six.** Three specs
+screenshot `fullPage` with the filter bar in frame: `visual.spec.ts` (6), `responsive-tablet.spec.ts`
+(2 — its comment at `:45` names the `sm:flex-row` date range selector as a branch under test), and
+`chart-tooltip.spec.ts`'s `chart-tooltip-strip-mobile` (1). **Eight moved and are regenerated here**;
+the ninth did not move at all.
+
+`chart-tooltip-strip-mobile` is the exception, and the reason is worth keeping: it shoots
+`fullPage: true` with a `clip` computed from `#ridership-chart`'s own document rect
+(`e2e/chart-tooltip.spec.ts:237-265`), so a taller filter bar shifts the pane and the clip by the same
+amount and the captured pixels are unchanged. Do not regenerate it looking for a diff that is not
+there.
+
+Where the movement was real it was layout displacement rather than sub-threshold jitter, so it could
+not have hidden inside `maxDiffPixelRatio`. Whoever regenerates these must reconcile with #181/#182,
+which are editing the same component.
+
+**`stop=<key>` needs no encoding, and gets some anyway.** The key is a URL-safe slug, but
+`URLSearchParams.toString()` percent-encodes `:` regardless, so the written form is `bus%3A…`. It
+decodes back to the same key, so a shared link still selects the stop it named; only the plan's claim
+about the literal spelling was wrong.
+
+**`selectedStopKey: string | null` became `selectedStopKeys: string[]`**, comma-joined into the same
+`stop=` param. A comma cannot occur inside a key, whose charset is `^(bus|rail):[a-z0-9-]+$`, so
+splitting is unambiguous — and every link shared before this carries one key and still works. The
+search is its own param, `stopq=`, wired through both the lazy initialiser and the URL-sync effect.
+
+Selection order is load-bearing: the chart takes a hue by position, so a stop added later must land at
+the end, since inserting anywhere else would recolour every series already drawn.
+
+**Diagram 10 is now four parameters behind.** `10-url-contract.mmd` is titled "The nine parameters"
+and enumerates them; this batch added `stops`, `measure`, `stop` and `stopq`, so the count and the
+boxes are both wrong. It is the same file #181 and #182 are rewriting, which is why it was left alone.
 
 ## The contract PR 1 freezes
 

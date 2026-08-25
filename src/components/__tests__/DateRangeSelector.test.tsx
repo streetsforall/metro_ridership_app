@@ -12,6 +12,8 @@ const defaultProps = {
   setDayOfWeek: vi.fn(),
   showContextLogs: false,
   toggleShowContextLogs: vi.fn(),
+  showStops: false,
+  toggleShowStops: vi.fn(),
 };
 
 beforeEach(() => {
@@ -152,5 +154,44 @@ describe('DateRangeSelector context logs checkbox', () => {
     );
     fireEvent.click(screen.getByRole('checkbox', { name: 'Context Logs' }));
     expect(toggleShowContextLogs).toHaveBeenCalledOnce();
+  });
+});
+
+describe('DateRangeSelector stop ridership checkbox', () => {
+  it('renders the Stop Ridership checkbox', () => {
+    render(<DateRangeSelector {...defaultProps} />);
+    expect(
+      screen.getByRole('checkbox', { name: 'Stop Ridership' }),
+    ).toBeTruthy();
+  });
+
+  it('is unchecked when showStops is false', () => {
+    render(<DateRangeSelector {...defaultProps} showStops={false} />);
+    const checkbox = screen.getByRole('checkbox', { name: 'Stop Ridership' });
+    expect(checkbox.getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('is checked when showStops is true', () => {
+    render(<DateRangeSelector {...defaultProps} showStops={true} />);
+    const checkbox = screen.getByRole('checkbox', { name: 'Stop Ridership' });
+    expect(checkbox.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('calls toggleShowStops when clicked', () => {
+    const toggleShowStops = vi.fn();
+    render(
+      <DateRangeSelector {...defaultProps} toggleShowStops={toggleShowStops} />,
+    );
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Stop Ridership' }));
+    expect(toggleShowStops).toHaveBeenCalledOnce();
+  });
+
+  it('leaves the Context Logs checkbox alone when only showStops is set', () => {
+    render(<DateRangeSelector {...defaultProps} showStops={true} />);
+    expect(
+      screen
+        .getByRole('checkbox', { name: 'Context Logs' })
+        .getAttribute('aria-checked'),
+    ).toBe('false');
   });
 });

@@ -21,9 +21,50 @@ export interface DateRangeSelectorProps {
 
   showContextLogs: boolean;
   toggleShowContextLogs: () => void;
+
+  showStops: boolean;
+  toggleShowStops: () => void;
 }
 
 type IntervalEndpoint = 'start' | 'end';
+
+/** Renders one panel's on/off checkbox, shared so every panel toggle looks alike. */
+function PanelToggle({
+  id,
+  label,
+  checked,
+  onToggle,
+}: {
+  id: string;
+  label: string;
+  checked: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="flex items-center">
+      <Checkbox.Root
+        id={id}
+        onClick={onToggle}
+        checked={checked}
+        className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
+      >
+        <Checkbox.Indicator>
+          <img
+            src={checkIcon}
+            height={20}
+            width={20}
+            alt="Check"
+            className="recolor-white"
+          />
+        </Checkbox.Indicator>
+      </Checkbox.Root>
+
+      <label className="pl-2" htmlFor={id}>
+        {label}
+      </label>
+    </div>
+  );
+}
 
 export default function DateRangeSelector({
   startDate,
@@ -34,6 +75,8 @@ export default function DateRangeSelector({
   setDayOfWeek,
   showContextLogs,
   toggleShowContextLogs,
+  showStops,
+  toggleShowStops,
 }: DateRangeSelectorProps) {
   const getDateSetter = (
     intervalEndpoint: IntervalEndpoint,
@@ -50,10 +93,8 @@ export default function DateRangeSelector({
   };
 
   const updateMonth = (title: IntervalEndpoint, newMonth: string) => {
-    // Update month state
     const setDate = getDateSetter(title);
 
-    // Requires updater function
     setDate((prevDate: Date) => {
       const newDate: Date = new Date(prevDate);
       newDate.setMonth(Number(newMonth));
@@ -65,10 +106,8 @@ export default function DateRangeSelector({
   const updateYear = (title: IntervalEndpoint, newYear: string) => {
     // TODO: Add filter to make sure from is not larger than the "to" date
 
-    // Update year state
     const setDate = getDateSetter(title);
 
-    // Requires updater function
     setDate((prevDate: Date) => {
       const newDate: Date = new Date(prevDate);
       newDate.setFullYear(Number(newYear));
@@ -174,27 +213,19 @@ export default function DateRangeSelector({
       <fieldset>
         <legend>Panel Visibility</legend>
 
-        <div className="flex items-center">
-          <Checkbox.Root
+        <div className="flex flex-col sm:flex-row gap-4">
+          <PanelToggle
             id="context-logs"
-            onClick={toggleShowContextLogs}
+            label="Context Logs"
             checked={showContextLogs}
-            className="flex items-center justify-center bg-white cursor-default data-[state=checked]:bg-[#033056] p-0 rounded size-[20px]"
-          >
-            <Checkbox.Indicator>
-              <img
-                src={checkIcon}
-                height={20}
-                width={20}
-                alt="Check"
-                className="recolor-white"
-              />
-            </Checkbox.Indicator>
-          </Checkbox.Root>
-
-          <label className="pl-2" htmlFor="context-logs">
-            Context Logs
-          </label>
+            onToggle={toggleShowContextLogs}
+          />
+          <PanelToggle
+            id="stop-ridership"
+            label="Stop Ridership"
+            checked={showStops}
+            onToggle={toggleShowStops}
+          />
         </div>
       </fieldset>
     </div>

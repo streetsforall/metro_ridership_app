@@ -61,6 +61,8 @@ function App() {
     isAggregateVisible,
     showContextLogs,
     toggleShowContextLogs,
+    showStops,
+    toggleShowStops,
   } = userDashboardInputState;
 
   const isLoading = ridershipRecords === null;
@@ -142,6 +144,8 @@ function App() {
           setDayOfWeek={setDayOfWeek}
           showContextLogs={showContextLogs}
           toggleShowContextLogs={toggleShowContextLogs}
+          showStops={showStops}
+          toggleShowStops={toggleShowStops}
         />
       </div>
 
