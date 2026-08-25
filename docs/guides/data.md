@@ -21,6 +21,49 @@ append-only unless you pass `--overwrite`. To see what it would do without writi
 python scripts/update_ridership.py --dry-run
 ```
 
+## The plausibility guard
+
+Before writing, `update_ridership.py` checks every month it is about to add against the month
+before it and **refuses the merge (exit 2)** if a whole mode has shifted implausibly. Metro's June
+2026 bus export was inflated ×2.4 across all 108 lines and merged unnoticed because no such check
+existed — see [`../data-quality/2026-06-bus-export-defect.md`](../data-quality/2026-06-bus-export-defect.md).
+
+The test is on the **median** per-line change, not the total, so it does not fire on real events:
+one line moving a long way cannot shift a median, and neither can a few lines being restructured
+at once. Both happen in this dataset — the D Line fell 40% in June 2026 as its opening surge
+faded, and the Regional Connector moved three of six rail routes in July 2023. Those show up in an
+informational per-line list instead.
+
+If a month genuinely did move that far, override it deliberately:
+
+```bash
+python scripts/update_ridership.py --allow-anomalies
+```
+
+The override is recorded in `DATA_RELEASE_NOTES.md`, not just printed to a console.
+
+## Withdrawing bad data
+
+Ingest only ever adds or restates. To take records back out — a delivery that turned out to be
+wrong in one mode but not the other:
+
+```bash
+python scripts/remove_ridership_records.py --year 2026 --month 6 --mode Bus --reason "..."
+```
+
+`--mode` and/or `--lines` is required; it will not silently drop a whole month. Records are
+deleted, never zeroed: a zero row claims the line ran and carried nobody, which the chart draws as
+a real point. Withdrawn records are ordinary new keys again, so a corrected export appends without
+`--overwrite`.
+
+**It removes both grains.** Line records and the matching stop-month rows go together, because
+withdrawing one and leaving the other publishes two different answers for the same month. That is
+not hypothetical: reverting the June 2026 ingest took the line records out but left
+`stop_ridership.bus.json` serving the inflated figures, since the payloads were committed by a
+later PR built while the bad workbook was still in `data/raw/`.
+
+Keep the bad source file as evidence in `data/raw/quarantine/`, which is outside the ingest glob.
+
 To force-ingest one specific file, call the merge engine directly:
 
 ```bash

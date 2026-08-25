@@ -291,8 +291,13 @@ python scripts/update_ridership.py --dry-run     # report what's new, write noth
 python scripts/update_ridership.py --overwrite    # let newer numbers replace existing months
 python scripts/update_ridership.py --no-release-notes
 python scripts/update_ridership.py --no-stops     # line grain only
+python scripts/update_ridership.py --allow-anomalies   # override the plausibility guard
 python scripts/update_ridership.py data/raw/2026-04_2026-05.zip   # limit to given paths
 ```
+
+**Exit codes:** `0` wrote (or had nothing to do), `1` found no input files or hit
+the rename guard, `2` refused because
+[`ridership_anomalies`](#ridership_anomalies) failed the month.
 
 The stop step runs **before** the "no new data" return, because the payloads can be
 behind — or absent, as on a fresh clone — while `ridership.json` is already current.
@@ -300,6 +305,61 @@ It fails the run on a suspected rename; see [the rename guard](#the-rename-guard
 
 Under the hood it reuses `process_ridership` (below) for parsing and merging.
 Use `process_ridership` directly when you want to force-ingest one specific file.
+
+---
+
+## `ridership_anomalies`
+
+The plausibility guard `update_ridership` runs before writing. For each
+`(mode, day type)` it compares the month being added against the month before it
+and fails when the **median** per-line change leaves a band — ±0.25 for bus,
+±0.30 for rail — or when nearly every line in a wide mode moves the same way at
+once. A second, informational pass lists individual lines that moved a long way
+without blocking anything.
+
+The median is the whole design. A total-based test cannot tell Metro's inflated
+June 2026 bus export from the Regional Connector opening in July 2023, when rail
+summed to 1.22× the prior month while its median sat at 1.019. Thresholds are
+calibrated against all 42,633 committed records: the worst clean month in
+seventeen years deviates 0.187 (bus) and 0.214 (rail), while June 2026 bus
+deviates 1.410. The `n_lines >= 20` gate on the uniformity test is load-bearing —
+rail reaches 100% unanimity in 31 clean historical observations purely because it
+has four to six lines.
+
+Not a standalone entry point — `import ridership_anomalies` and call
+`check_anomalies(...)`, or run `update_ridership --dry-run` to see its report.
+The month it was written for is written up in
+[`docs/data-quality/2026-06-bus-export-defect.md`](../docs/data-quality/2026-06-bus-export-defect.md).
+
+---
+
+## `remove_ridership_records`
+
+Takes records back out, which the append-only ingest cannot do. Written for June
+2026, whose bus half was defective while its rail half was sound.
+
+```bash
+python scripts/remove_ridership_records.py --year 2026 --month 6 --mode Bus \
+    --reason "inflated source export"
+python scripts/remove_ridership_records.py --year 2026 --month 6 --lines 2 4 720
+python scripts/remove_ridership_records.py --year 2026 --month 6 --mode Bus --dry-run
+```
+
+`--mode` and/or `--lines` is required; it will not silently drop a whole month.
+Mode is resolved through `metro_line_metadata_current.json`, the same map the
+guard uses, because `ridership.json` carries no mode column of its own.
+
+**Both grains go together.** Line records and the matching stop-month rows are
+removed in one pass (`--no-stops` opts out). Withdrawing one and leaving the
+other publishes two different answers for the same month — which is exactly what
+reverting the June 2026 ingest did, leaving `stop_ridership.bus.json` serving
+figures whose line records no longer existed.
+
+Records are deleted, never zeroed: a zero row asserts the line ran and carried
+nobody, which the chart draws as a real point and `averageRidership` divides by.
+Withdrawn records become new keys again, so a corrected export appends normally
+without `--overwrite`. An entry is prepended to
+[`DATA_RELEASE_NOTES.md`](../DATA_RELEASE_NOTES.md).
 
 ---
 

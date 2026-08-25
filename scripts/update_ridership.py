@@ -21,6 +21,11 @@ Usage:
 
 When new data is added, a matching entry is prepended to DATA_RELEASE_NOTES.md
 (disable with --no-release-notes).
+
+Every month about to be written is checked by ridership_anomalies first.  A
+month that fails is refused with exit code 2 (distinct from 1, "no input
+files"); --allow-anomalies writes it anyway and records the override in the
+release notes.
 """
 
 import argparse
@@ -32,6 +37,7 @@ from pathlib import Path
 import pandas as pd
 
 import process_ridership as pr
+import ridership_anomalies as ra
 import stop_ridership
 from process_ridership import (
     compute_ridership,
@@ -103,13 +109,17 @@ def load_and_compute(
     return new_df, raw_df, coverage
 
 
-def diff_against_current(new_df: pd.DataFrame, overwrite: bool) -> dict:
+def diff_against_current(
+    new_df: pd.DataFrame, overwrite: bool, current: pd.DataFrame | None = None
+) -> dict:
     """Compare new_df against the existing ridership.json.
 
-    Returns counts and the set of genuinely new (year, month) periods.
+    Returns counts, the set of genuinely new (year, month) periods, and the set
+    of existing periods --overwrite would restate.  The anomaly guard judges
+    both, so it needs them named apart rather than summed into a count.
     """
-    with open(pr.RIDERSHIP_PATH) as f:
-        current = pd.read_json(f)
+    if current is None:
+        current = pr.load_current_ridership()
 
     merged = new_df.merge(
         current, on=KEYS, how="left", indicator=True, suffixes=("_new", "_old")
@@ -124,6 +134,9 @@ def diff_against_current(new_df: pd.DataFrame, overwrite: bool) -> dict:
         # backfills it from the existing record, so it is never a correction.
         changed |= new_vals.notna() & (new_vals != both[f"{col}_old"].astype(float))
     updated_count = int(changed.sum()) if overwrite else 0
+    updated_months = set(
+        map(tuple, both.loc[changed, ["year", "month"]].drop_duplicates().to_numpy())
+    ) if overwrite else set()
 
     return {
         "new_records": int(new_mask.sum()),
@@ -132,6 +145,7 @@ def diff_against_current(new_df: pd.DataFrame, overwrite: bool) -> dict:
             map(tuple, merged.loc[new_mask, ["year", "month"]].drop_duplicates().to_numpy())
         ),
         "updated_records": updated_count,
+        "updated_months": updated_months,
     }
 
 
@@ -179,8 +193,14 @@ def stop_bullet(stop_summary: dict[str, dict] | None) -> str:
 def build_release_entry(
     new_months: set, coverage: dict[Path, set], raw_df: pd.DataFrame,
     added: int, lines: int, stop_summary: dict[str, dict] | None = None,
+    anomaly_note: str | None = None,
 ) -> str:
-    """Compose a DATA_RELEASE_NOTES.md entry matching the existing format."""
+    """Compose a DATA_RELEASE_NOTES.md entry matching the existing format.
+
+    ``anomaly_note`` records that the guard was overridden, so a month ingested
+    over a plausibility failure says so in the log rather than only in a console
+    the reviewer never saw.
+    """
     sources = sorted(
         f.name for f, months in coverage.items() if months & new_months
     )
@@ -193,7 +213,8 @@ def build_release_entry(
         f"- **Modes:** {modes}\n"
         f"- **Added:** {added} records across {lines} lines\n"
         f"{stop_bullet(stop_summary)}"
-        f"- Ingested via `update_ridership.py` on {date.today().isoformat()}.\n\n"
+        f"- Ingested via `update_ridership.py` on {date.today().isoformat()}.\n"
+        f"{anomaly_note or ''}\n"
     )
 
 
@@ -257,6 +278,10 @@ def main(argv: list[str] | None = None) -> int:
         help="skip the stop grain (src/data/stop_ridership.{bus,rail}.json)",
     )
     parser.add_argument(
+        "--allow-anomalies", action="store_true",
+        help="write even if the new month fails the plausibility guard",
+    )
+    parser.add_argument(
         "--allow-new-stops", action="store_true",
         help="accept a month that both gained and lost a stop key as genuinely new "
              "stops rather than a rename (see stop_ridership.detect_renames)",
@@ -273,7 +298,8 @@ def main(argv: list[str] | None = None) -> int:
 
     new_df, raw_df, coverage = load_and_compute(files)
 
-    diff = diff_against_current(new_df, args.overwrite)
+    current = pr.load_current_ridership()
+    diff = diff_against_current(new_df, args.overwrite, current=current)
     added, lines = diff["new_records"], diff["new_lines"]
 
     # Before the no-new-data return below, not after it: the stop payloads can be
@@ -305,6 +331,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.overwrite and diff["updated_records"]:
         print(f"corrections: {diff['updated_records']} existing records will be updated")
 
+    # Guard before the dry-run return, so --dry-run previews the report and a CI
+    # wrapper gets the refusal either way.
+    report = ra.check_anomalies(
+        new_df, current, raw_df, diff["new_months"] | diff["updated_months"]
+    )
+    print(ra.format_report(report))
+    if not report.ok and not args.allow_anomalies:
+        print("refusing to write — rerun with --allow-anomalies to override")
+        return 2
+
     if args.dry_run:
         print("dry run — no files written")
         return 0
@@ -332,7 +368,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if added and not args.no_release_notes:
         entry = build_release_entry(
-            diff["new_months"], coverage, raw_df, added, lines, stop_summary
+            diff["new_months"], coverage, raw_df, added, lines, stop_summary,
+            anomaly_note=ra.release_note_line(report),
         )
         if prepend_release_entry(entry):
             print(f"release note added: {month_label(list(diff['new_months']))}")

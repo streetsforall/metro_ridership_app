@@ -18,6 +18,69 @@ Entries are newest first.
 
 ---
 
+## Jun 2026 — rail restored, bus withdrawn
+
+June 2026 was ingested whole in #176, then reverted whole in #225. Only the bus half was
+ever wrong. This entry puts the sound half back and finishes withdrawing the bad half.
+
+**Bus — withdrawn, and it was still live at the stop grain.**
+
+- **Stop-level:** Bus −8,856 stop-month rows.
+- The revert of #176 took the June bus *line* records out, but the stop payloads were
+  committed by #190, which was built while the defective workbook was still in
+  `data/raw/`. `stop_ridership.bus.json` therefore kept serving June at 1,829,438 weekday
+  boardings — 2.41× May — against a line grain that had no June at all. That is now gone;
+  the bus stop payload ends at May 2026, matching the line grain.
+- **Why:** Metro's `06-2026-Bus.xlsx` is inflated across **every** bus line — weekday
+  ×2.41, Saturday ×2.37, Sunday ×1.49 against May, with per-line ratios spanning only
+  1.83–2.62 and **not one line falling**. Row counts match May's and
+  `Avg Ons + Avg Offs == Avg Stop Activity` holds for 100% of rows, so the workbook's
+  structure is sound and only its values are wrong. Evidence and the ask sent to Metro:
+  [`docs/data-quality/2026-06-bus-export-defect.md`](docs/data-quality/2026-06-bus-export-defect.md).
+- The defective workbook is preserved out of the ingest path at
+  [`data/raw/quarantine/2026-06-bus-defective.zip`](data/raw/quarantine/2026-06-bus-defective.zip).
+  Records were deleted rather than zeroed, so a corrected export appends normally without
+  `--overwrite`.
+
+**Rail — restored.**
+
+- **Source:** `data/raw/2026-06_2026-06.zip`, now holding `06-2026-Rail.xlsx` only.
+- **Added:** 6 records across 6 lines (801–805, 807). The stop grain already had them.
+- The new plausibility guard passes all three rail day types (median ratios 1.006 / 1.034
+  / 1.085) and flags the D Line drop as informational only, which is exactly the split it
+  was designed for.
+
+**The D Line drop is real. May is the outlier, not June.**
+
+Line 805 (D/Purple) weekday boardings fall 39,626 → 23,787. That is not a disruption —
+**D Line Section 1 opened 8 May 2026**, adding Wilshire/La Brea, Fairfax and La Cienega,
+and May carries the opening surge:
+
+| | Mar | Apr | **May** | Jun |
+| --- | ---: | ---: | ---: | ---: |
+| stations | 8 | 8 | **11** | 11 |
+| weekday boardings | 15,713 | 15,140 | **39,626** | 23,787 |
+
+June is the post-surge level, still **+57% on the pre-extension April baseline**. The
+per-station split is the giveaway: the eight original stations fall 41–52%, which is where
+surge riders boarded to go and see the new stations, while the three new stations hold
+flat on boardings and drop ~20% on *alightings* as the sightseers stop arriving.
+`Ons/Offs` balance is 1.000 in March, April, May and June, and every other rail route
+moves within ±9%. Read May as inflated, not June as depressed.
+
+- Ingested and withdrawn on 2026-08-16.
+
+## Jun 2026 (#176, reverted by #225)
+
+- **Months:** June 2026
+- **Source:** `data/raw/2026-06_2026-06.zip`
+- **Modes:** Bus + Rail
+- **Added:** 114 records across 114 lines
+- Ingested via `update_ridership.py` on 2026-08-15.
+- **Superseded.** Reverted in full by #225 because the bus half was inflated; the rail
+  half was sound and is restored by the entry above. An earlier version of this entry
+  attributed the D Line drop to a service disruption — that was wrong, see above.
+
 ## Stop-level ridership — Jul 2025 – Jun 2026 (backfill)
 
 - **Type:** new dataset — **no change to `ridership.json`**, whose 17 years of line

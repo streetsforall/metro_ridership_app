@@ -341062,5 +341062,53 @@
     "est_wkday_ridership":15155.0,
     "est_sat_ridership":8577.0,
     "est_sun_ridership":7207.0
+  },
+  {
+    "year":2026,
+    "month":6,
+    "line_name":801,
+    "est_wkday_ridership":75508.0,
+    "est_sat_ridership":64112.0,
+    "est_sun_ridership":52995.0
+  },
+  {
+    "year":2026,
+    "month":6,
+    "line_name":802,
+    "est_wkday_ridership":48059.0,
+    "est_sat_ridership":39513.0,
+    "est_sun_ridership":36834.0
+  },
+  {
+    "year":2026,
+    "month":6,
+    "line_name":803,
+    "est_wkday_ridership":20761.0,
+    "est_sat_ridership":13843.0,
+    "est_sun_ridership":14461.0
+  },
+  {
+    "year":2026,
+    "month":6,
+    "line_name":804,
+    "est_wkday_ridership":54331.0,
+    "est_sat_ridership":45937.0,
+    "est_sun_ridership":40551.0
+  },
+  {
+    "year":2026,
+    "month":6,
+    "line_name":805,
+    "est_wkday_ridership":23787.0,
+    "est_sat_ridership":22822.0,
+    "est_sun_ridership":18649.0
+  },
+  {
+    "year":2026,
+    "month":6,
+    "line_name":807,
+    "est_wkday_ridership":9434.0,
+    "est_sat_ridership":7529.0,
+    "est_sun_ridership":7110.0
   }
 ]

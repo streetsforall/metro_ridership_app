@@ -38,6 +38,20 @@ RIDERSHIP_COLS = [
 ]
 
 
+def load_current_ridership() -> pd.DataFrame:
+    """Read the committed ridership.json into a frame.
+
+    Shared so every caller parses the file the same way.  An empty file yields a
+    column-less frame from pandas, which then KeyErrors on the first merge, so
+    the columns are asserted here instead.
+    """
+    with open(RIDERSHIP_PATH) as f:
+        current = pd.DataFrame(json.load(f))
+    if current.empty:
+        return pd.DataFrame(columns=RIDERSHIP_COLS)
+    return current
+
+
 def load_raw_csv(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
     df.columns = df.columns.str.lower()
@@ -157,8 +171,7 @@ def merge_ridership(
       No backfill is needed since existing rows are kept verbatim; pads that land
       on a new key become 0.
     """
-    with open(RIDERSHIP_PATH) as f:
-        current = pd.DataFrame(json.load(f))
+    current = load_current_ridership()
 
     keys = ["year", "month", "line_name"]
     value_cols = ["est_wkday_ridership", "est_sat_ridership", "est_sun_ridership"]
