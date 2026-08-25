@@ -49,6 +49,8 @@ Then read whichever guide matches what you're about to do. Don't read them all.
 | [0009](adr/0009-the-two-window-rules-are-one-rule.md) | One window rule, inclusive on both ends — the chart's two-month offset is gone | accepted, **supersedes 0001** |
 | [0010](adr/0010-the-event-gutter-hit-tests-itself.md) | The Event Gutter hit-tests itself, because Chart.js will not | accepted |
 | [0011](adr/0011-a-pin-marks-it-never-moves-a-view.md) | A pin marks what is read; it never moves what is shown — release before taking, and no auto-move | accepted, fully landed — #200 removed the auto-move, #199 made the pin release first |
+| [0012](adr/0012-the-stop-payload-is-columnar-dictionary-encoded-and-versioned.md) | The stop payload is columnar, dictionary-encoded and versioned, one file per mode — columns by name, unknown schema rejected | accepted |
+| [0013](adr/0013-a-stops-identity-is-its-normalised-name.md) | A stop's identity is its normalised name, not a number — `station_order` is an ordering attribute only | accepted |
 
 ## Not for humans
 
