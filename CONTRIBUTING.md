@@ -75,7 +75,7 @@ git grep -n 'theSymbolYouRemoved' -- '*.md'
 ```
 
 `git grep` searches tracked files only, which is exactly the set that has to stay true. That is
-`README.md`, this file, `scripts/README.md` and `DATA_RELEASE_NOTES.md`.
+`README.md`, this file and `DATA_RELEASE_NOTES.md`.
 
 This rule exists because it got skipped. A PR deleted `updateLinesWithLineMetrics` and four
 documents went on describing it — including two that told the next reader it was still running.

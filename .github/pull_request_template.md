@@ -19,11 +19,7 @@
 
 - [ ] `npm run lint`, `npm run test` and `npm run build` pass
 - [ ] Issue linked above
-- [ ] Renamed or deleted an exported symbol? Grepped the tracked docs for it —
-      `git grep -n 'theSymbol' -- '*.md'`
 - [ ] Changed the UI? Ran `npm run test:e2e` locally, screenshot below. Say so if you skipped it.
-- [ ] Made a decision that looks wrong without the reasoning? Said why here, and put the durable
-      part in `README.md`
 
 <!--
 CI runs lint, the tracked vitest suites and the build. Playwright is gitignored and runs only on

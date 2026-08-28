@@ -46,11 +46,13 @@ data/raw/*.xlsx
 # the tracked vitest suites, and the build. Nothing here is needed to build or
 # run the app.
 
-# Docs and agent files
+# Docs and agent files. README.md is the one committed README; scripts/README.md was
+# folded into its data-pipeline section and kept here only as a local archive copy.
 docs/
 CLAUDE.md
 CONTEXT.md
 RELEASE_NOTES.md
+scripts/README.md
 perf/
 .claude/
 
