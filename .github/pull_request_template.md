@@ -15,18 +15,18 @@
 
 ## Before you merge
 
-<!-- Commands were current on 2026-08-22; CONTRIBUTING.md is authoritative if they have drifted. -->
+<!-- Commands were current on 2026-08-28; CONTRIBUTING.md is authoritative if they have drifted. -->
 
 - [ ] `npm run lint`, `npm run test` and `npm run build` pass
 - [ ] Issue linked above
-- [ ] Renamed or deleted an exported symbol? Grepped `README.md`, `CONTEXT.md`, `CLAUDE.md` and
-      `docs/` for it — including `docs/architecture/mermaid/` and `captions.md`
-- [ ] Changed a diagram source? Ran `npm run docs:architecture` and committed `diagrams.md`
-- [ ] Changed the UI? Screenshot below, and Linux baselines regenerated with
-      `npm run test:e2e:update:linux`
-- [ ] Made a decision that looks wrong without the reasoning? Wrote an ADR in `docs/adr/`
+- [ ] Renamed or deleted an exported symbol? Grepped the tracked docs for it —
+      `git grep -n 'theSymbol' -- '*.md'`
+- [ ] Changed the UI? Ran `npm run test:e2e` locally, screenshot below. Say so if you skipped it.
+- [ ] Made a decision that looks wrong without the reasoning? Said why here, and put the durable
+      part in `README.md`
 
 <!--
-Baselines: only the -linux.png set is committed and it is what gates CI.
-Never regenerate baselines to silence a diff you can't explain — see docs/guides/testing.md.
+CI runs lint, the tracked vitest suites and the build. Playwright is gitignored and runs only on
+your machine, so nothing but you catches a visual regression.
+Never regenerate baselines to silence a diff you can't explain — that deletes the evidence.
 -->
