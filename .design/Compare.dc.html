@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    table { border-collapse: collapse; width: 100%; }
+  </style>
+</helmet>
+<div style="width:1420px;height:1000px;padding:36px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px;background:#f3eee2">
+
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">THE DECISION</span>
+    <span style="font-size:26px;font-weight:700;color:#033056;line-height:1.2;text-wrap:balance">Six ways to show ridership at a stop, and what each one costs</span>
+    <span style="font-size:13px;color:#78716c;max-width:96ch;line-height:1.6">Each draft answers the same four open questions differently. The grain, the gap rule, the vocabulary and the URL contract hold in all six, so the choice is about which reading the panel makes primary &mdash; not about what the data means.</span>
+  </div>
+
+  <div style="background:#f8f6f1;border-radius:8px;padding:22px 26px;flex:1;overflow:hidden">
+    <table style="font-size:12px">
+      <thead>
+        <tr style="border-bottom:2px solid #d6d3d1">
+          <th style="width:30px;text-align:left;padding:0 10px 10px 0;font-weight:700;color:#78716c"></th>
+          <th style="width:190px;text-align:left;padding:0 12px 10px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">Draft</th>
+          <th style="width:270px;text-align:left;padding:0 12px 10px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">What it makes primary</th>
+          <th style="width:280px;text-align:left;padding:0 12px 10px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">What it buys</th>
+          <th style="width:280px;text-align:left;padding:0 12px 10px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">What it costs</th>
+          <th style="text-align:left;padding:0 0 10px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">Which document it has to argue with</th>
+        </tr>
+      </thead>
+      <tbody>
+        <sc-for list="{{rows}}" as="row" hint-placeholder-count="6">
+          <tr style="border-bottom:1px solid #e7e5e4;background:{{row.rowFill}}">
+            <td style="padding:14px 10px 14px 0;vertical-align:top;font-size:13px;font-weight:700;color:#0fada8">{{row.letter}}</td>
+            <td style="padding:14px 12px 14px 0;vertical-align:top">
+              <span style="font-size:13px;font-weight:700;color:#033056;line-height:1.4">{{row.name}}</span>
+            </td>
+            <td style="padding:14px 12px 14px 0;vertical-align:top;line-height:1.6;color:#44403c">{{row.primary}}</td>
+            <td style="padding:14px 12px 14px 0;vertical-align:top;line-height:1.6;color:#44403c">{{row.buys}}</td>
+            <td style="padding:14px 12px 14px 0;vertical-align:top;line-height:1.6;color:#44403c">{{row.costs}}</td>
+            <td style="padding:14px 0;vertical-align:top;line-height:1.6;color:#78716c">{{row.argues}}</td>
+          </tr>
+        </sc-for>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display:flex;gap:20px">
+    <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#0fada8">RECOMMENDATION</span>
+      <span style="font-size:14px;font-weight:700;color:#033056;line-height:1.4">D covers the most ground, because it answers two of the four open questions and argues with nothing.</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.7">The flow table stops hiding alightings behind a control and puts Change next to the two figures it is derived from, which is exactly the confusion CONTEXT.md flags. It keeps the ranking, the row budget and the rule that colour means which line, so it needs no new ADR &mdash; only a note that the measure control now chooses a sort. If the panel needs a bigger change than that, E is the next most contained: it argues only about a second colour ramp, and it makes the gap rule visible rather than merely obeyed.</span>
+    </div>
+    <div style="width:420px;flex-shrink:0;background:#f8f6f1;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#9a3412">FIX THIS WHICHEVER YOU PICK</span>
+      <span style="font-size:14px;font-weight:700;color:#033056;line-height:1.4">Two of the eight selection hues are indistinguishable to a deuteranope.</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.7">Slots 3 and 4 of <span style="color:#78716c">stopSelectionColors.ts</span> &mdash; emerald and rose &mdash; separate by &Delta;E 5.8, below the 8.0 floor. Reordering the same eight hues to blue, orange, emerald, fuchsia, amber, cyan, rose, violet passes every check at &Delta;E 10.1, and changes one array.</span>
+      <div style="display:flex;gap:14px;margin-top:2px">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span style="font-size:10px;color:#78716c">Today</span>
+          <div style="display:flex;gap:2px">
+            <sc-for list="{{before}}" as="c" hint-placeholder-count="8">
+              <span style="width:22px;height:16px;border-radius:2px;background:{{c.fill}}"></span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span style="font-size:10px;color:#78716c">Reordered</span>
+          <div style="display:flex;gap:2px">
+            <sc-for list="{{after}}" as="c" hint-placeholder-count="8">
+              <span style="width:22px;height:16px;border-radius:2px;background:{{c.fill}}"></span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const rows = [
+      {
+        letter: 'A',
+        name: 'Ranked table — as built',
+        primary: 'The ranking. A reader arrives at a sorted list of every stop and picks from it.',
+        buys: 'It already exists, it is reviewed and green, and the ranking answers the question most readers arrive with.',
+        costs: 'Alightings sit behind a toggle, and Change stands two columns from a sparkline that means something else entirely.',
+        argues: 'Nothing. This is what the six PRs describe.',
+      },
+      {
+        letter: 'B',
+        name: 'Card deck — one stop, one card',
+        primary: 'The search. A reader names a stop and gets a card carrying both measures and its own chart.',
+        buys: 'Colour goes back to meaning which line everywhere, so ADR-0014 stops needing its exception.',
+        costs: 'Roughly 14rem of height per stop, which is what forced the cap ADR-0014 rejected small multiples over. Ranking survives only as a shortlist.',
+        argues: 'ADR-0014, from the other side — it withdraws the exception rather than extending it.',
+      },
+      {
+        letter: 'C',
+        name: 'Corridor profile — route order',
+        primary: 'The line. Stops sit in the order a rider passes them, boardings above the axis and alightings below.',
+        buys: 'Where riders join and leave a corridor becomes one shape, which no ranked list shows.',
+        costs: 'A 154-stop bus line scrolls sideways, and rank has to be read off the shape rather than counted down a column.',
+        argues: 'The settled decision that selection, not zoom, is the clutter control — this needs route order the client does not hold.',
+      },
+      {
+        letter: 'D',
+        name: 'Flow table — both measures, always',
+        primary: 'The ranking still, but every row shows boardings and alightings as one diverging bar.',
+        buys: 'Alightings stop being optional, and Change reads as the gap between the two bars rather than as a trend.',
+        costs: 'The measure control changes meaning from "what is drawn" to "what is ranked", so a shared link means something new.',
+        argues: 'Nothing new. Both bars are tints of one line colour, so hue still says which line.',
+      },
+      {
+        letter: 'E',
+        name: 'Month matrix — the whole window per row',
+        primary: 'Time, for every row at once, without mounting eight hundred charts.',
+        buys: 'A month with no report is visibly a gap rather than merely not a zero, and the row budget drops to plain cells.',
+        costs: 'A sequential ramp is a second thing colour means, and a cell carries less precision than a line does.',
+        argues: 'CONTEXT.md on Stop Measure — colour on the map is forbidden a second ramp; this proposes one in the panel.',
+      },
+      {
+        letter: 'F',
+        name: 'Map-led — geography carries the ranking',
+        primary: 'The map. The table shrinks to a rail and the selected stop opens an inspector.',
+        buys: 'Corridor and neighbourhood questions answer themselves, and the three views collapse into one.',
+        costs: 'The sixteen stops with no coordinate fall out of the primary view, and a rail cannot rank eight hundred rows legibly.',
+        argues: 'ADR-0013 on keeping a stop that GTFS had no geometry for — it stays in the data but loses the frame.',
+      },
+    ];
+    return {
+      rows: rows.map((r) => ({
+        letter: r.letter,
+        name: r.name,
+        primary: r.primary,
+        buys: r.buys,
+        costs: r.costs,
+        argues: r.argues,
+        rowFill: r.letter === 'D' ? '#efece4' : 'transparent',
+      })),
+      before: ['#2563eb', '#ea580c', '#059669', '#e11d48', '#7c3aed', '#d97706', '#0891b2', '#c026d3'].map((f) => ({ fill: f })),
+      after: ['#2563eb', '#ea580c', '#059669', '#c026d3', '#d97706', '#0891b2', '#e11d48', '#7c3aed'].map((f) => ({ fill: f })),
+    };
+  }
+}
+</script>
+</body>
+</html>

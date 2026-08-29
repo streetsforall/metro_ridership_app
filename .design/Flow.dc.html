@@ -1,0 +1,146 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    table { border-collapse: collapse; width: 100%; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">D</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Flow table — both measures, always</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">The measure toggle stops hiding a column and starts choosing a sort.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:#a8a29e">Rank by</span>
+        <div style="display:flex;gap:2px">
+          <span style="background:#033056;color:#fff;font-size:12px;font-weight:700;padding:8px 12px;border-radius:4px 0 0 4px">Boardings</span>
+          <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px">Alightings</span>
+          <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px">Change</span>
+          <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px;border-radius:0 4px 4px 0">Total</span>
+        </div>
+      </div>
+    </div>
+
+    <span style="font-size:12px;color:#78716c">Every row shows both figures. Change is the gap between the two bars, within each month.</span>
+
+    <div style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:4px;padding:10px 12px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a8a29e" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16" y1="16" x2="21" y2="21"></line></svg>
+      <span style="font-size:13px;color:#a8a29e">Search stops</span>
+      <span style="flex-grow:1"></span>
+      <span style="font-size:12px;color:#0fada8;font-weight:600">Select All</span>
+      <span style="font-size:12px;color:#0fada8;font-weight:600">Clear All</span>
+    </div>
+
+    <div style="flex:1;overflow:hidden">
+      <table style="font-size:12px">
+        <thead>
+          <tr style="background:#e7e5e4">
+            <th style="width:30px;padding:9px 8px"></th>
+            <th style="text-align:left;padding:9px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Stop</th>
+            <th style="text-align:left;padding:9px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Line</th>
+            <th style="padding:9px 8px">
+              <div style="display:flex;justify-content:space-between;font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:10px">
+                <span>&#9664; Alightings</span>
+                <span>Boardings &#9654;</span>
+              </div>
+            </th>
+            <th style="text-align:right;padding:9px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Change</th>
+            <th style="text-align:right;padding:9px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{rows}}" as="row" hint-placeholder-count="9">
+            <tr style="border-bottom:1px solid #ede9e2">
+              <td style="padding:8px">
+                <div style="width:15px;height:15px;border-radius:3px;background:{{row.boxFill}};border:1px solid {{row.boxEdge}}"></div>
+              </td>
+              <td style="padding:8px;color:#44403c;white-space:nowrap">{{row.name}}</td>
+              <td style="padding:8px;color:#78716c">A Line</td>
+              <td style="padding:4px 8px">
+                <svg viewBox="0 0 360 22" width="100%" height="22" preserveAspectRatio="none">
+                  <rect x="{{row.aX}}" y="4" width="{{row.aW}}" height="14" fill="#8ec4e6" rx="3"></rect>
+                  <rect x="182" y="4" width="{{row.bW}}" height="14" fill="#0072bc" rx="3"></rect>
+                  <line x1="180" y1="0" x2="180" y2="22" stroke="#d6d3d1" stroke-width="1"></line>
+                </svg>
+              </td>
+              <td style="padding:8px;text-align:right;font-variant-numeric:tabular-nums;color:{{row.changeInk}};white-space:nowrap">{{row.change}}</td>
+              <td style="padding:8px;text-align:right;font-variant-numeric:tabular-nums">{{row.share}}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:16px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="width:14px;height:10px;border-radius:2px;background:#0072bc"></span>
+        <span style="font-size:11px;color:#78716c">Boardings</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="width:14px;height:10px;border-radius:2px;background:#8ec4e6"></span>
+        <span style="font-size:11px;color:#78716c">Alightings</span>
+      </div>
+      <span style="font-size:11px;color:#a8a29e">Both tints belong to the A Line, so hue still says which line and length says how many.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const peak = 10500;
+    const half = 176;
+    const data = [
+      ['Union Station', 10125, 9113, '21.4%', true],
+      ['7th Street / Metro Center Station', 6750, 6075, '14.3%', true],
+      ['Willowbrook / Rosa Parks Station', 4320, 4610, '9.1%', false],
+      ['Downtown Long Beach Station', 3980, 3610, '8.4%', false],
+      ['Little Tokyo / Arts District Station', 3210, 3480, '6.8%', false],
+      ['Pico Station', 2940, 3180, '6.2%', false],
+      ['Florence Station', 2210, 2004, '4.7%', false],
+      ['Grand / LATTC Station', 1910, 1845, '4.0%', false],
+      ['Vernon Station', 1142, 1205, '2.4%', false],
+    ];
+    return {
+      rows: data.map((row) => {
+        const aW = (row[2] / peak) * half;
+        const bW = (row[1] / peak) * half;
+        const change = row[1] - row[2];
+        return {
+          name: row[0],
+          aX: 178 - aW,
+          aW: aW,
+          bW: bW,
+          change: (change < 0 ? '−' : '+') + Math.abs(change).toLocaleString('en-US'),
+          changeInk: change < 0 ? '#9a3412' : '#166534',
+          share: row[3],
+          boxFill: row[4] ? '#033056' : '#ffffff',
+          boxEdge: row[4] ? '#033056' : '#d6d3d1',
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

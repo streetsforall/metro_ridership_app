@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">K</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Spike height &mdash; the strongest channel still unspent</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Length decodes better than area, and spikes overlap sideways rather than swallowing each other.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership &middot; map</span>
+      <div style="display:flex;gap:2px">
+        <span style="background:#033056;color:#fff;font-size:12px;font-weight:700;padding:8px 12px;border-radius:4px 0 0 4px">Boardings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px">Alightings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px;border-radius:0 4px 4px 0">Both</span>
+      </div>
+    </div>
+
+    <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+      <svg viewBox="0 0 900 560" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map with a vertical bar rising from each station, its height showing average boardings">
+        <rect x="0" y="0" width="900" height="560" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="20">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+        <polyline points="760,140 760,210 680,265 610,265 560,300 560,492" fill="none" stroke="#0072bc" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <polyline points="560,300 470,255 360,215 250,190" fill="none" stroke="#eb131b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <sc-for list="{{spikes}}" as="s" hint-placeholder-count="12">
+          <g>
+            <sc-if value="{{s.reported}}" hint-placeholder-val="{{ true }}">
+              <rect x="{{s.x}}" y="{{s.y}}" width="7" height="{{s.h}}" rx="3.5" fill="{{s.color}}"></rect>
+            </sc-if>
+            <sc-if value="{{s.missing}}" hint-placeholder-val="{{ false }}">
+              <circle cx="{{s.cx}}" cy="{{s.cy}}" r="6" fill="none" stroke="#78716c" stroke-width="1.6" stroke-dasharray="3 2.5"></circle>
+            </sc-if>
+            <circle cx="{{s.cx}}" cy="{{s.cy}}" r="2.6" fill="{{s.baseFill}}"></circle>
+          </g>
+        </sc-for>
+      </svg>
+
+      <div style="position:absolute;left:14px;bottom:14px;background:#f8f6f1;border-radius:5px;padding:12px 14px;display:flex;flex-direction:column;gap:9px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Height &mdash; avg. boardings</span>
+        <svg width="196" height="76" viewBox="0 0 196 76">
+          <rect x="10" y="60" width="7" height="10" rx="3.5" fill="#0072bc"></rect>
+          <rect x="52" y="32" width="7" height="38" rx="3.5" fill="#0072bc"></rect>
+          <rect x="94" y="4" width="7" height="66" rx="3.5" fill="#0072bc"></rect>
+          <circle cx="150" cy="64" r="6" fill="none" stroke="#78716c" stroke-width="1.6" stroke-dasharray="3 2.5"></circle>
+          <line x1="6" y1="72" x2="110" y2="72" stroke="#d6d3d1" stroke-width="1"></line>
+          <text x="6" y="18" font-size="9" fill="#78716c">10,125</text>
+          <text x="130" y="40" font-size="9" fill="#78716c">not</text>
+          <text x="130" y="51" font-size="9" fill="#78716c">reported</text>
+        </svg>
+        <span style="font-size:9px;color:#a8a29e;line-height:1.5">A reported stop never draws shorter than four pixels, so &quot;almost nobody&quot;<br>can never be mistaken for &quot;no report&quot;.</span>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:#166534;letter-spacing:.06em;text-transform:uppercase">What it buys, and what it costs</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.7">People read length far more accurately than area, so a spike map answers &quot;how much busier&quot; where circles only answer &quot;busier&quot;. Hue stays free to mean which line. The cost is upward occlusion &mdash; a tall spike crosses whatever sits north of it, which is why 7th Street reaches into Historic Broadway here &mdash; and MapLibre draws no bars natively, so this is a symbol layer with a generated sprite per height or a canvas overlay.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const grid = [];
+    for (let i = 1; i < 13; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 560 });
+    for (let i = 1; i < 8; i++) grid.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+    const stations = [
+      [760, 140, 10125, 'a'], [760, 210, 3210, 'a'], [680, 265, 2640, 'a'],
+      [560, 300, 6750, 'a'], [560, 338, null, 'a'], [560, 378, 1910, 'a'],
+      [560, 418, 1142, 'a'], [560, 455, 2210, 'a'], [560, 492, 4320, 'a'],
+      [470, 255, 5480, 'b'], [360, 215, 2870, 'b'], [250, 190, 1640, 'b'],
+    ];
+    const peak = 10125;
+    return {
+      grid: grid,
+      spikes: stations.map((s) => {
+        const color = s[3] === 'a' ? '#0072bc' : '#eb131b';
+        const h = s[2] === null ? 0 : 4 + (s[2] / peak) * 116;
+        return {
+          cx: s[0], cy: s[1], x: s[0] - 3.5, y: s[1] - h, h: h,
+          color: color,
+          baseFill: s[2] === null ? '#78716c' : color,
+          reported: s[2] !== null,
+          missing: s[2] === null,
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

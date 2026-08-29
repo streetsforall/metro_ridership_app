@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">I</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Segment load &mdash; the line thickens with the riders on it</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">A running sum of boardings less alightings, in route order.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership &middot; map</span>
+      <div style="display:flex;gap:2px">
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px;border-radius:4px 0 0 4px">Stops</span>
+        <span style="background:#033056;color:#fff;font-size:12px;font-weight:700;padding:8px 12px">Segment load</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px;border-radius:0 4px 4px 0">Density</span>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:14px;flex:1;min-height:0">
+      <div style="width:430px;flex-shrink:0;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1">
+        <svg viewBox="0 0 430 430" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map of the A Line drawn with a width proportional to the riders on board along each segment">
+          <rect x="0" y="0" width="430" height="430" fill="#e8e6e1"></rect>
+          <g stroke="#dcd9d3" stroke-width="1">
+            <sc-for list="{{grid}}" as="g" hint-placeholder-count="12">
+              <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+            </sc-for>
+          </g>
+          <sc-for list="{{segments}}" as="seg" hint-placeholder-count="19">
+            <line x1="{{seg.x1}}" y1="{{seg.y1}}" x2="{{seg.x2}}" y2="{{seg.y2}}" stroke="#0072bc" stroke-opacity=".8" stroke-width="{{seg.w}}" stroke-linecap="round"></line>
+          </sc-for>
+          <sc-for list="{{ticks}}" as="t" hint-placeholder-count="20">
+            <circle cx="{{t.x}}" cy="{{t.y}}" r="3" fill="#f8f6f1" stroke="#033056" stroke-width="1.2"></circle>
+          </sc-for>
+          <text x="326" y="34" font-size="10" fill="#44403c">Union Station</text>
+          <text x="270" y="412" font-size="10" fill="#44403c">Downtown Long Beach</text>
+        </svg>
+        <div style="position:absolute;left:12px;bottom:12px;background:#f8f6f1;border-radius:5px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+          <svg width="60" height="30" viewBox="0 0 60 30">
+            <line x1="6" y1="15" x2="18" y2="15" stroke="#0072bc" stroke-opacity=".8" stroke-width="3" stroke-linecap="round"></line>
+            <line x1="26" y1="15" x2="38" y2="15" stroke="#0072bc" stroke-opacity=".8" stroke-width="12" stroke-linecap="round"></line>
+            <line x1="46" y1="15" x2="56" y2="15" stroke="#0072bc" stroke-opacity=".8" stroke-width="24" stroke-linecap="round"></line>
+          </svg>
+          <span style="font-size:10px;color:#78716c;line-height:1.5">Width is riders<br>on board</span>
+        </div>
+      </div>
+
+      <div style="flex-grow:1;display:flex;flex-direction:column;gap:10px;min-width:0">
+        <div style="background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:11px;color:#78716c">Riders on board, A Line, southbound, average weekday</span>
+          <svg viewBox="0 0 470 190" width="100%" height="180">
+            <polygon points="{{profile}}" fill="#0072bc" fill-opacity=".16"></polygon>
+            <polyline points="{{profileLine}}" fill="none" stroke="#0072bc" stroke-width="2" stroke-linejoin="round"></polyline>
+            <line x1="34" y1="150" x2="462" y2="150" stroke="#d6d3d1" stroke-width="1"></line>
+            <g font-size="9" fill="#a8a29e" text-anchor="end">
+              <text x="28" y="26">14,000</text>
+              <text x="28" y="90">7,000</text>
+              <text x="28" y="153">0</text>
+            </g>
+            <g font-size="9" fill="#78716c">
+              <text x="34" y="166">Union Stn</text>
+              <text x="222" y="166" text-anchor="middle">Willowbrook</text>
+              <text x="462" y="166" text-anchor="end">Long Beach</text>
+            </g>
+            <line x1="124" y1="18" x2="124" y2="150" stroke="#78716c" stroke-width="1" stroke-dasharray="3 3"></line>
+            <text x="130" y="26" font-size="9" fill="#44403c">peak 13,120 after 7th St / Metro Center</text>
+          </svg>
+        </div>
+
+        <div style="background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;flex:1">
+          <span style="font-size:11px;font-weight:700;color:#9a3412;letter-spacing:.06em;text-transform:uppercase">What this needs that the app does not have</span>
+          <span style="font-size:11px;color:#44403c;line-height:1.65">A running sum needs the stops in <b>route order</b>, and a stop's identity is deliberately its normalised name rather than Metro's row order (ADR-0013), so nothing in the payload says which stop comes next. Recovering it means joining <span style="color:#78716c">stop_times.txt</span>, which the roadmap already names as the way direction could come back.</span>
+          <span style="font-size:11px;color:#44403c;line-height:1.65"><b>Direction is collapsed</b>, so one width per segment is both directions added together, not a train's load. Drawing it as a single band claims more than the data says unless the label says so.</span>
+          <span style="font-size:11px;color:#44403c;line-height:1.65"><b>The profile should close at zero</b> and will not. Stop sums miss line totals by a median 0.06% and up to 5.10%, one-sided upward, so whatever the sum has left at the terminus is the accumulated error &mdash; which makes this chart a useful data check as well as a picture.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const grid = [];
+    for (let i = 1; i < 7; i++) {
+      grid.push({ x1: i * 62, y1: 0, x2: i * 62, y2: 430 });
+      grid.push({ x1: 0, y1: i * 62, x2: 430, y2: i * 62 });
+    }
+    const flows = [
+      [10125, 2100], [3210, 1480], [2640, 1810], [2980, 2120], [6750, 5075],
+      [2940, 3180], [1910, 2845], [1204, 2352], [1688, 2519], [1142, 2205],
+      [1505, 2388], [2210, 3004], [1860, 2932], [1688, 2519], [4320, 5610],
+      [1740, 2690], [1520, 2602], [980, 1544], [860, 1402], [3980, 4875],
+    ];
+    const loads = [];
+    let running = 0;
+    flows.forEach((f) => {
+      running += f[0] - f[1];
+      loads.push(running);
+    });
+    const peak = 13120;
+
+    const pts = [[330, 40], [330, 96], [292, 128], [258, 148], [222, 168]];
+    for (let i = 5; i < 20; i++) pts.push([222, 168 + (i - 4) * 15.2]);
+
+    const segments = [];
+    for (let i = 0; i < pts.length - 1; i++) {
+      segments.push({
+        x1: pts[i][0], y1: pts[i][1], x2: pts[i + 1][0], y2: pts[i + 1][1],
+        w: 2 + (loads[i] / peak) * 24,
+      });
+    }
+    const ticks = pts.map((p) => ({ x: p[0], y: p[1] }));
+
+    const px = (i) => 34 + (i / 19) * 428;
+    const py = (v) => 150 - (v / 14000) * 132;
+    const line = loads.map((v, i) => String(px(i)) + ',' + String(py(v))).join(' ');
+
+    return {
+      grid: grid,
+      segments: segments,
+      ticks: ticks,
+      profileLine: line,
+      profile: '34,150 ' + line + ' 462,150',
+    };
+  }
+}
+</script>
+</body>
+</html>

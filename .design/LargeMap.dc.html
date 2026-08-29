@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">J</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Large map &mdash; one surface, three layers you can turn off</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Every control here is a URL parameter, so the view a reader shares is the view they built.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Map</span>
+        <div style="display:flex;gap:2px">
+          <span style="background:#fff;color:#44403c;font-size:11px;font-weight:700;padding:6px 10px;border-radius:4px 0 0 4px">Panel</span>
+          <span style="background:#033056;color:#fff;font-size:11px;font-weight:700;padding:6px 10px">Large</span>
+          <span style="background:#fff;color:#44403c;font-size:11px;font-weight:700;padding:6px 10px;border-radius:0 4px 4px 0">Full width</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:2px">
+        <span style="background:#033056;color:#fff;font-size:12px;font-weight:700;padding:8px 12px;border-radius:4px 0 0 4px">Boardings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px">Alightings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px;border-radius:0 4px 4px 0">Both</span>
+      </div>
+    </div>
+
+    <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+      <svg viewBox="0 0 900 560" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Large map with a hex-bin density layer behind the route lines and a circle at each station">
+        <rect x="0" y="0" width="900" height="560" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="20">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+        <sc-for list="{{hexes}}" as="h" hint-placeholder-count="60">
+          <polygon points="{{h.points}}" fill="{{h.fill}}" stroke="#e8e6e1" stroke-width="1"></polygon>
+        </sc-for>
+        <polyline points="700,60 700,140 610,200 545,200 512,235 512,500" fill="none" stroke="#0072bc" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <polyline points="512,235 430,190 330,150 240,128" fill="none" stroke="#eb131b" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <sc-for list="{{stops}}" as="s" hint-placeholder-count="11">
+          <circle cx="{{s.cx}}" cy="{{s.cy}}" r="{{s.r}}" fill="{{s.stroke}}" fill-opacity=".5" stroke="#ffffff" stroke-width="2"></circle>
+        </sc-for>
+      </svg>
+
+      <div style="position:absolute;left:14px;top:14px;width:216px;background:#f8f6f1;border-radius:5px;padding:14px;display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Layers</span>
+
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:15px;height:15px;border-radius:3px;background:#033056;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="4"><polyline points="4,13 9,18 20,6"></polyline></svg>
+            </div>
+            <span style="font-size:11px;color:#44403c">Stop ridership</span>
+          </div>
+          <div style="display:flex;gap:2px;margin-left:23px">
+            <span style="background:#033056;color:#fff;font-size:9px;font-weight:700;padding:4px 6px;border-radius:3px 0 0 3px">Size</span>
+            <span style="background:#fff;color:#44403c;font-size:9px;font-weight:700;padding:4px 6px">Shade</span>
+            <span style="background:#fff;color:#44403c;font-size:9px;font-weight:700;padding:4px 6px;border-radius:0 3px 3px 0">Hatch</span>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:15px;height:15px;border-radius:3px;background:#033056;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="4"><polyline points="4,13 9,18 20,6"></polyline></svg>
+          </div>
+          <span style="font-size:11px;color:#44403c">Ridership density</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:15px;height:15px;border-radius:3px;background:#efece6;border:1px solid #d6d3d1;flex-shrink:0"></div>
+            <span style="font-size:11px;color:#a8a29e">Segment load</span>
+          </div>
+          <span style="font-size:9px;color:#a8a29e;margin-left:23px;line-height:1.5">Unavailable until the pipeline carries route order.</span>
+        </div>
+      </div>
+
+      <div style="position:absolute;left:14px;bottom:14px;background:#f8f6f1;border-radius:5px;padding:12px 14px;display:flex;flex-direction:column;gap:9px">
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Density &mdash; boardings per bin</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <sc-for list="{{ramp}}" as="step" hint-placeholder-count="5">
+              <span style="width:24px;height:12px;background:{{step.fill}}"></span>
+            </sc-for>
+            <span style="font-size:10px;color:#78716c;margin-left:2px">more</span>
+          </div>
+          <span style="font-size:9px;color:#a8a29e">A bin with no reporting stop is left unpainted rather than shaded lightest.</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <svg width="58" height="26" viewBox="0 0 58 26">
+            <circle cx="9" cy="17" r="5" fill="#0072bc" fill-opacity=".5" stroke="#fff" stroke-width="1.5"></circle>
+            <circle cx="27" cy="15" r="8" fill="#0072bc" fill-opacity=".5" stroke="#fff" stroke-width="1.5"></circle>
+            <circle cx="47" cy="13" r="11" fill="#0072bc" fill-opacity=".5" stroke="#fff" stroke-width="1.5"></circle>
+          </svg>
+          <span style="font-size:10px;color:#78716c;line-height:1.5">Circle area is<br>avg. boardings</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:5px">
+      <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What the address bar carries</span>
+      <span style="font-size:11px;color:#44403c;word-break:break-all">?stops=1&amp;measure=ons&amp;map=large&amp;layers=stops,density&amp;stopfill=size</span>
+      <span style="font-size:11px;color:#78716c;line-height:1.6">Three new keys, each with a default that reproduces today's view when it is absent, so an old link still opens the map it opened before.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const grid = [];
+    for (let i = 1; i < 13; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 560 });
+    for (let i = 1; i < 8; i++) grid.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+
+    const route = [];
+    const legs = [
+      [700, 60, 700, 140], [700, 140, 610, 200], [610, 200, 545, 200],
+      [545, 200, 512, 235], [512, 235, 512, 500],
+      [512, 235, 430, 190], [430, 190, 330, 150], [330, 150, 240, 128],
+    ];
+    legs.forEach((l) => {
+      const steps = 24;
+      for (let i = 0; i <= steps; i++) {
+        route.push([l[0] + ((l[2] - l[0]) * i) / steps, l[1] + ((l[3] - l[1]) * i) / steps]);
+      }
+    });
+
+    const ramp = ['#cfd8e0', '#a3b6c6', '#6f90ab', '#3f6b8e', '#12456d'];
+    const R = 26;
+    const hw = Math.sqrt(3) * R;
+    const hexes = [];
+    for (let row = 0; row < 16; row++) {
+      for (let col = 0; col < 22; col++) {
+        const cx = col * hw + (row % 2 === 1 ? hw / 2 : 0);
+        const cy = row * R * 1.5;
+        if (cx < -20 || cx > 920 || cy > 580) continue;
+        let best = 1e9;
+        route.forEach((p) => {
+          const d = Math.sqrt((p[0] - cx) * (p[0] - cx) + (p[1] - cy) * (p[1] - cy));
+          if (d < best) best = d;
+        });
+        if (best > 74) continue;
+        const downtown = Math.sqrt((cx - 512) * (cx - 512) + (cy - 235) * (cy - 235));
+        const value = Math.exp(-best / 46) + 0.85 * Math.exp(-downtown / 150);
+        const step = Math.min(ramp.length - 1, Math.floor((value / 1.75) * ramp.length));
+        const points = [];
+        for (let k = 0; k < 6; k++) {
+          const angle = (Math.PI / 180) * (60 * k - 30);
+          points.push(String(cx + R * Math.cos(angle)) + ',' + String(cy + R * Math.sin(angle)));
+        }
+        hexes.push({ points: points.join(' '), fill: ramp[step] });
+      }
+    }
+
+    const peak = 10500;
+    const raw = [
+      [700, 60, 10125, '#0072bc'], [700, 140, 3210, '#0072bc'], [610, 200, 2640, '#0072bc'],
+      [512, 235, 6750, '#0072bc'], [512, 310, 1910, '#0072bc'], [512, 375, 1142, '#0072bc'],
+      [512, 440, 2210, '#0072bc'], [512, 500, 4320, '#0072bc'],
+      [430, 190, 5480, '#eb131b'], [330, 150, 2870, '#eb131b'], [240, 128, 1640, '#eb131b'],
+    ];
+
+    return {
+      grid: grid,
+      hexes: hexes,
+      ramp: ramp.map((f) => ({ fill: f })),
+      stops: raw.map((s) => ({
+        cx: s[0], cy: s[1], stroke: s[3],
+        r: 5 + Math.sqrt(s[2] / peak) * 15,
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

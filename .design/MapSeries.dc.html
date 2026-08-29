@@ -1,0 +1,236 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">V</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Sparklines on the map &mdash; the only draft that puts time on it</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click the two scales. The choice between them is the whole design.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership &middot; map</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:#a8a29e">Each line is drawn</span>
+        <div style="display:flex;gap:2px">
+          <span class="hit" onClick="{{ pickOwn }}" style="background:{{ ownBg }};color:{{ ownInk }};font-size:12px;font-weight:700;padding:8px 12px;border-radius:4px 0 0 4px">to its own scale</span>
+          <span class="hit" onClick="{{ pickShared }}" style="background:{{ sharedBg }};color:{{ sharedInk }};font-size:12px;font-weight:700;padding:8px 12px;border-radius:0 4px 4px 0">to one shared scale</span>
+        </div>
+      </div>
+    </div>
+
+    <span style="font-size:12px;color:#78716c">{{ blurb }}</span>
+
+    <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+      <svg viewBox="0 0 900 500" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map where each station carries a twelve-month sparkline beside its circle">
+        <rect x="0" y="0" width="900" height="500" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="18">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+        <polyline points="700,70 700,150 620,200 520,250 520,450" fill="none" stroke="#0072bc" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <polyline points="520,250 390,196 250,158 120,140" fill="none" stroke="#a05da5" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+
+        <sc-for list="{{stops}}" as="s" hint-placeholder-count="10">
+          <g>
+            <circle cx="{{s.cx}}" cy="{{s.cy}}" r="{{s.r}}" fill="{{s.color}}" fill-opacity=".45" stroke="#fff" stroke-width="1.5"></circle>
+            <sc-if value="{{s.charted}}" hint-placeholder-val="{{ true }}">
+              <g>
+                <rect x="{{s.boxX}}" y="{{s.boxY}}" width="76" height="34" rx="4" fill="#f8f6f1" fill-opacity=".93"></rect>
+                <text x="{{s.textX}}" y="{{s.textY}}" font-size="8" fill="#78716c">{{s.name}}</text>
+                <line x1="{{s.baseX1}}" y1="{{s.baseY}}" x2="{{s.baseX2}}" y2="{{s.baseY}}" stroke="#e0dcd4" stroke-width="1"></line>
+                <sc-for list="{{s.segments}}" as="p" hint-placeholder-count="2">
+                  <polyline points="{{p}}" fill="none" stroke="{{s.color}}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></polyline>
+                </sc-for>
+                <sc-if value="{{s.hasGap}}" hint-placeholder-val="{{ false }}">
+                  <rect x="{{s.gapX}}" y="{{s.gapY}}" width="{{s.gapW}}" height="14" fill="none" stroke="#a8a29e" stroke-width="1" stroke-dasharray="2 2"></rect>
+                </sc-if>
+                <circle cx="{{s.endX}}" cy="{{s.endY}}" r="1.8" fill="{{s.color}}"></circle>
+              </g>
+            </sc-if>
+            <sc-if value="{{s.plain}}" hint-placeholder-val="{{ false }}">
+              <text x="{{s.plainX}}" y="{{s.plainY}}" font-size="8.5" fill="#78716c">{{s.name}}</text>
+            </sc-if>
+          </g>
+        </sc-for>
+      </svg>
+
+      <div style="position:absolute;left:14px;bottom:14px;background:#f8f6f1;border-radius:5px;padding:12px 14px;display:flex;align-items:flex-start;gap:16px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">One mark, enlarged</span>
+          <svg width="180" height="76" viewBox="0 0 180 76">
+            <rect x="2" y="2" width="152" height="68" rx="5" fill="#ffffff"></rect>
+            <text x="10" y="16" font-size="9" fill="#78716c">Willowbrook</text>
+            <line x1="10" y1="62" x2="146" y2="62" stroke="#e0dcd4" stroke-width="1"></line>
+            <polyline points="{{ demoA }}" fill="none" stroke="#0072bc" stroke-width="2" stroke-linejoin="round"></polyline>
+            <polyline points="{{ demoB }}" fill="none" stroke="#0072bc" stroke-width="2" stroke-linejoin="round"></polyline>
+            <rect x="{{ demoGapX }}" y="24" width="{{ demoGapW }}" height="34" fill="none" stroke="#a8a29e" stroke-width="1" stroke-dasharray="2 2"></rect>
+            <text x="{{ demoGapTextX }}" y="21" font-size="7.5" fill="#a8a29e" text-anchor="middle">no report</text>
+            <text x="10" y="74" font-size="7.5" fill="#a8a29e">Jul</text>
+            <text x="146" y="74" font-size="7.5" fill="#a8a29e" text-anchor="end">Jun</text>
+          </svg>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px;padding-top:18px">
+          <span style="font-size:9.5px;color:#44403c;line-height:1.5">Two months a stop did not<br>report break the line in two.</span>
+          <span style="font-size:9.5px;color:#a8a29e;line-height:1.5">spanGaps stays off here as<br>it does everywhere else.</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { scale: 'own' };
+  }
+
+  renderVals() {
+    const self = this;
+    const scale = this.state.scale;
+
+    const grid = [];
+    for (let i = 1; i < 13; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 500 });
+    for (let i = 1; i < 8; i++) grid.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+
+    // name, x, y, line, charted, twelve monthly boardings (null = no report)
+    const raw = [
+      ['Union Station', 700, 70, 'a', true, [9280, 9420, 9610, 9880, 10150, 10310, 10420, 10380, 10510, 10620, 10740, 10880]],
+      ['Chinatown', 700, 150, 'a', false, [1900, 1930, 1950, 1980, 2010, 2040, 2050, 2060, 2080, 2100, 2120, 2150]],
+      ['Historic Broadway', 620, 200, 'a', false, [2560, 2600, 2630, 2670, 2710, 2740, 2760, 2780, 2800, 2830, 2860, 2890]],
+      ['7th St / Metro Ctr', 520, 250, 'a', true, [6180, 6260, 6340, 6510, 6690, 6810, 6880, 6920, 7010, 7080, 7160, 7240]],
+      ['Grand / LATTC', 520, 320, 'a', false, [1840, 1860, 1880, 1900, 1920, 1940, 1950, 1960, 1980, 2000, 2020, 2040]],
+      ['Vernon', 520, 385, 'a', true, [1180, 1160, 1140, 1120, 1105, 1090, 1080, 1070, 1060, 1050, 1040, 1030]],
+      ['Willowbrook', 520, 450, 'a', true, [4010, 4080, 4150, 4240, 4310, 4380, 4420, null, null, 4510, 4560, 4620]],
+      ['Wilshire / Vermont', 390, 196, 'd', true, [5090, 5150, 5210, 5300, 5400, 5480, 5530, 5510, 5560, 5620, 5690, 5760]],
+      ['Westlake / MacArthur', 250, 158, 'd', false, [2810, 2840, 2870, 2900, 2930, 2960, 2980, 2990, 3010, 3040, 3070, 3100]],
+      ['Wilshire / Normandie', 120, 140, 'd', true, [1600, 1615, 1628, 1642, 1655, 1668, 1676, 1684, 1695, 1706, 1718, 1730]],
+    ];
+
+    const allValues = [];
+    raw.forEach((s) => s[5].forEach((v) => { if (v !== null) allValues.push(v); }));
+    const globalLo = 0;
+    const globalHi = Math.max.apply(null, allValues);
+
+    // Twelve months across 66px, drawn as one polyline per unbroken run so a gap is a break.
+    const runs = (series, lo, hi, x0, y0, w, h) => {
+      const out = [];
+      let cur = [];
+      series.forEach((v, i) => {
+        if (v === null) { if (cur.length > 1) out.push(cur.join(' ')); cur = []; return; }
+        const t = (v - lo) / (hi - lo || 1);
+        cur.push(String(Math.round((x0 + (i / 11) * w) * 10) / 10) + ',' + String(Math.round((y0 + h - t * h) * 10) / 10));
+      });
+      if (cur.length > 1) out.push(cur.join(' '));
+      return out;
+    };
+
+    const stops = raw.map((s) => {
+      const series = s[5];
+      const present = series.filter((v) => v !== null);
+      const lo = scale === 'own' ? Math.min.apply(null, present) : globalLo;
+      const hi = scale === 'own' ? Math.max.apply(null, present) : globalHi;
+      const color = s[3] === 'a' ? '#0072bc' : '#a05da5';
+      const mean = present.reduce((a, b) => a + b, 0) / present.length;
+      const r = 4 + Math.sqrt(mean / globalHi) * 10;
+
+      const boxX = s[1] + 12;
+      const boxY = s[2] - 17;
+      const plotX = boxX + 5;
+      const plotY = boxY + 12;
+      const plotW = 66;
+      const plotH = 17;
+
+      const firstGap = series.indexOf(null);
+      const gapCount = series.filter((v) => v === null).length;
+      const lastValue = present[present.length - 1];
+      const lastIndex = series.length - 1 - [].concat(series).reverse().findIndex((v) => v !== null);
+
+      return {
+        name: s[0],
+        cx: s[1], cy: s[2], r: r, color: color,
+        charted: s[4],
+        plain: !s[4],
+        plainX: s[1] + r + 6, plainY: s[2] + 3,
+        boxX: boxX, boxY: boxY,
+        textX: boxX + 5, textY: boxY + 9,
+        baseX1: plotX, baseX2: plotX + plotW, baseY: plotY + plotH + 2,
+        segments: runs(series, lo, hi, plotX, plotY, plotW, plotH),
+        hasGap: gapCount > 0,
+        gapX: plotX + (firstGap / 11) * plotW - 2,
+        gapY: plotY - 1,
+        gapW: (gapCount / 11) * plotW + 4,
+        endX: plotX + (lastIndex / 11) * plotW,
+        endY: plotY + plotH - ((lastValue - lo) / (hi - lo || 1)) * plotH,
+      };
+    });
+
+    const demoSeries = raw[6][5];
+    const demoRuns = runs(demoSeries, Math.min.apply(null, demoSeries.filter((v) => v !== null)),
+      Math.max.apply(null, demoSeries.filter((v) => v !== null)), 10, 24, 136, 34);
+
+    const copy = scale === 'own'
+      ? {
+          blurb: 'Every stop’s line fills its own box, so a quiet stop and a busy one both show their shape. Circle size is still the only thing carrying how many.',
+          head: 'Scaling each stop to itself shows every shape and compares none of them',
+          ink: '#033056',
+          body: 'This is what a sparkline is for: a reader traces ten shapes at once and sees that Vernon is sliding while everything around it climbs, which no single-month encoding on this canvas can tell them. The trap is that the marks invite comparison they cannot support — Vernon’s fall and Union Station’s rise are drawn at the same height though one is a hundred riders and the other is sixteen hundred. Circle size is the only thing left saying how many, and a reader has to remember to look at it.',
+        }
+      : {
+          blurb: 'Every line is drawn against the busiest stop on the map, so heights are comparable and most stops sit near the floor.',
+          head: 'One shared scale compares honestly and shows almost nothing',
+          ink: '#9a3412',
+          body: 'Now the marks mean what they look like: a taller line really is a busier stop, and the sparkline carries magnitude so the circle no longer has to. The cost is that the ranking is steep — the busiest stop is roughly ten times the quietest here, and eighty times at the full ~800-stop scale — so every stop below the top few flattens into a line near the floor with no visible shape at all. That is the same reason the ranked table caps its height rather than showing the tail.',
+        };
+
+    return {
+      grid: grid,
+      stops: stops,
+      demoA: demoRuns[0] || '',
+      demoB: demoRuns[1] || '',
+      demoGapX: 10 + (7 / 11) * 136 - 3,
+      demoGapW: (2 / 11) * 136 + 6,
+      demoGapTextX: 10 + (8 / 11) * 136,
+      pickOwn: () => self.setState({ scale: 'own' }),
+      pickShared: () => self.setState({ scale: 'shared' }),
+      ownBg: scale === 'own' ? '#033056' : '#ffffff',
+      ownInk: scale === 'own' ? '#ffffff' : '#44403c',
+      sharedBg: scale === 'shared' ? '#033056' : '#ffffff',
+      sharedInk: scale === 'shared' ? '#ffffff' : '#44403c',
+      blurb: copy.blurb,
+      noteHead: copy.head,
+      noteInk: copy.ink,
+      noteBody: copy.body,
+    };
+  }
+}
+</script>
+</body>
+</html>

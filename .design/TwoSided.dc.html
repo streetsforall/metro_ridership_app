@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">L</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Two-sided spikes &mdash; Change reads as the asymmetry</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">The only encoding here that retires the measure toggle instead of obeying it.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership &middot; map</span>
+      <span style="font-size:11px;color:#a8a29e">No measure toggle &mdash; both figures are always drawn</span>
+    </div>
+
+    <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+      <svg viewBox="0 0 900 560" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map with a bar rising for boardings and falling for alightings at each station">
+        <rect x="0" y="0" width="900" height="560" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="20">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+        <polyline points="760,140 760,210 680,265 610,265 560,300 560,492" fill="none" stroke="#0072bc" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <polyline points="560,300 470,255 360,215 250,190" fill="none" stroke="#eb131b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <sc-for list="{{marks}}" as="m" hint-placeholder-count="12">
+          <g>
+            <sc-if value="{{m.reported}}" hint-placeholder-val="{{ true }}">
+              <rect x="{{m.x}}" y="{{m.upY}}" width="7" height="{{m.upH}}" rx="3.5" fill="{{m.color}}"></rect>
+              <rect x="{{m.x}}" y="{{m.cy}}" width="7" height="{{m.downH}}" rx="3.5" fill="{{m.tint}}"></rect>
+            </sc-if>
+            <sc-if value="{{m.missing}}" hint-placeholder-val="{{ false }}">
+              <circle cx="{{m.cx}}" cy="{{m.cy}}" r="6" fill="none" stroke="#78716c" stroke-width="1.6" stroke-dasharray="3 2.5"></circle>
+            </sc-if>
+            <line x1="{{m.tickX1}}" y1="{{m.cy}}" x2="{{m.tickX2}}" y2="{{m.cy}}" stroke="#44403c" stroke-width="1.2"></line>
+          </g>
+        </sc-for>
+      </svg>
+
+      <div style="position:absolute;left:14px;bottom:14px;background:#f8f6f1;border-radius:5px;padding:12px 14px;display:flex;flex-direction:column;gap:9px">
+        <svg width="216" height="92" viewBox="0 0 216 92">
+          <rect x="18" y="8" width="7" height="38" rx="3.5" fill="#0072bc"></rect>
+          <rect x="18" y="48" width="7" height="26" rx="3.5" fill="#8ec4e6"></rect>
+          <line x1="10" y1="47" x2="33" y2="47" stroke="#44403c" stroke-width="1.2"></line>
+          <text x="42" y="22" font-size="9" fill="#78716c">Boardings up</text>
+          <text x="42" y="36" font-size="9" fill="#78716c">Alightings down</text>
+          <text x="42" y="58" font-size="9" fill="#44403c">Longer up than down</text>
+          <text x="42" y="70" font-size="9" fill="#78716c">means riders join here</text>
+          <circle cx="21" cy="84" r="6" fill="none" stroke="#78716c" stroke-width="1.6" stroke-dasharray="3 2.5"></circle>
+          <text x="42" y="87" font-size="9" fill="#78716c">not reported</text>
+        </svg>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:#166534;letter-spacing:.06em;text-transform:uppercase">Why this covers the most ground</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.7">Both figures sit on the map at once, so Change stops being a column a reader has to trust and becomes the difference between two lengths they can see. That is the gap CONTEXT.md and the roadmap keep naming, answered by the geometry rather than by a control. Both bars are tints of one line colour, so hue still says which line. The costs are real: two bars per stop is twice the ink at ~800 stops, and a stop whose two figures nearly match reads as a symmetrical smudge at low zoom.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const grid = [];
+    for (let i = 1; i < 13; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 560 });
+    for (let i = 1; i < 8; i++) grid.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+    const stations = [
+      [760, 140, 10125, 9113, 'a'], [760, 210, 3210, 3480, 'a'], [680, 265, 2640, 2810, 'a'],
+      [560, 300, 6750, 6075, 'a'], [560, 338, null, null, 'a'], [560, 378, 1910, 1845, 'a'],
+      [560, 418, 1142, 1205, 'a'], [560, 455, 2210, 2004, 'a'], [560, 492, 4320, 4610, 'a'],
+      [470, 255, 5480, 5120, 'b'], [360, 215, 2870, 3040, 'b'], [250, 190, 1640, 1580, 'b'],
+    ];
+    const peak = 10125;
+    return {
+      grid: grid,
+      marks: stations.map((s) => {
+        const isA = s[4] === 'a';
+        const upH = s[2] === null ? 0 : 3 + (s[2] / peak) * 59;
+        const downH = s[3] === null ? 0 : 3 + (s[3] / peak) * 59;
+        return {
+          cx: s[0], cy: s[1], x: s[0] - 3.5,
+          upY: s[1] - upH, upH: upH, downH: downH,
+          color: isA ? '#0072bc' : '#eb131b',
+          tint: isA ? '#8ec4e6' : '#f5878b',
+          tickX1: s[0] - 8, tickX2: s[0] + 8,
+          reported: s[2] !== null,
+          missing: s[2] === null,
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

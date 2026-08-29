@@ -1,0 +1,201 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    table { border-collapse: collapse; width: 100%; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">X</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Accessibility &mdash; the layer that looks free and is not</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Both Metro feeds checked. Neither carries the field.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">Accessibility looks like the cheapest layer on the list, because the ingest already opens <span style="color:#033056;font-weight:700">stops.txt</span> and the GTFS spec has a <span style="color:#033056;font-weight:700">wheelchair_boarding</span> column sitting right there. Metro does not publish it. The map below is what this layer would draw today, and the design above it is what it should draw once a source is found.</span>
+
+    <div style="display:flex;gap:20px;flex:1;min-height:0">
+
+      <div style="flex:1;display:flex;flex-direction:column;gap:10px;min-width:0">
+        <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+          <svg viewBox="0 0 560 420" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="The rail schematic with an accessibility badge on every station, all of them in the no-information state">
+            <rect x="0" y="0" width="560" height="420" fill="#e8e6e1"></rect>
+            <g stroke="#dcd9d3" stroke-width="1">
+              <sc-for list="{{grid}}" as="g" hint-placeholder-count="14">
+                <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+              </sc-for>
+            </g>
+            <sc-for list="{{paths}}" as="p" hint-placeholder-count="4">
+              <polyline points="{{p.points}}" fill="none" stroke="{{p.color}}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" stroke-opacity=".5"></polyline>
+            </sc-for>
+            <sc-for list="{{stations}}" as="s" hint-placeholder-count="10">
+              <g>
+                <circle cx="{{s.cx}}" cy="{{s.cy}}" r="{{s.r}}" fill="{{s.fill}}" fill-opacity=".7" stroke="#f8f6f1" stroke-width="1"></circle>
+                <circle cx="{{s.bx}}" cy="{{s.by}}" r="6.4" fill="#f8f6f1" stroke="#a8a29e" stroke-width="1.4" stroke-dasharray="2.4 2"></circle>
+                <text x="{{s.bx}}" y="{{s.by}}" font-size="8" font-weight="700" fill="#a8a29e" text-anchor="middle" dominant-baseline="central">?</text>
+              </g>
+            </sc-for>
+            <text x="280" y="404" font-size="10" fill="#78716c" text-anchor="middle">Every station, no information &mdash; the honest rendering of what Metro publishes</text>
+          </svg>
+        </div>
+      </div>
+
+      <div style="width:396px;display:flex;flex-direction:column;gap:12px">
+
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">The badge, in the three states the spec defines</span>
+          <div style="background:#fff;border-radius:6px;padding:14px">
+            <svg width="360" height="96" viewBox="0 0 360 96" role="img" aria-label="Three accessibility badge designs, each with its own glyph as well as its own ink">
+              <sc-for list="{{specimen}}" as="s" hint-placeholder-count="3">
+                <g>
+                  <circle cx="{{s.cx}}" cy="30" r="15" fill="#0072bc" fill-opacity=".7"></circle>
+                  <circle cx="{{s.bx}}" cy="19" r="8.6" fill="#ffffff" stroke="{{s.ink}}" stroke-width="1.8" stroke-dasharray="{{s.dash}}"></circle>
+                  <sc-if value="{{s.tick}}" hint-placeholder-val="{{ false }}">
+                    <path d="M {{s.p1}} l 2.6 2.9 l 5.2 -6" fill="none" stroke="{{s.ink}}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path>
+                  </sc-if>
+                  <sc-if value="{{s.bar}}" hint-placeholder-val="{{ false }}">
+                    <line x1="{{s.bx1}}" y1="19" x2="{{s.bx2}}" y2="19" stroke="{{s.ink}}" stroke-width="2.1" stroke-linecap="round"></line>
+                  </sc-if>
+                  <sc-if value="{{s.query}}" hint-placeholder-val="{{ false }}">
+                    <text x="{{s.bx}}" y="19" font-size="10" font-weight="700" fill="{{s.ink}}" text-anchor="middle" dominant-baseline="central">?</text>
+                  </sc-if>
+                  <text x="{{s.cx}}" y="66" font-size="9.5" font-weight="700" fill="#44403c" text-anchor="middle">{{s.head}}</text>
+                  <text x="{{s.cx}}" y="80" font-size="8.5" fill="#78716c" text-anchor="middle">{{s.sub}}</text>
+                </g>
+              </sc-for>
+            </svg>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What each candidate source would cost</span>
+          <sc-for list="{{sources}}" as="s" hint-placeholder-count="4">
+            <div style="background:#fff;border-radius:5px;padding:9px 11px;display:flex;flex-direction:column;gap:3px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+                <span style="font-size:11px;font-weight:700;color:#033056">{{s.name}}</span>
+                <span style="font-size:9.5px;color:{{s.ink}};font-weight:700">{{s.verdict}}</span>
+              </div>
+              <span style="font-size:10.5px;color:#78716c;line-height:1.55">{{s.body}}</span>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:#9a3412;letter-spacing:.06em;text-transform:uppercase">The badge is a glyph channel because the fill channel is spoken for</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">Painting a station by its accessibility would take the one channel ADR-0014 reserves for line identity, so the state rides a badge whose shape carries the distinction and whose ink only reinforces it. The two inks separate by &Delta;E&nbsp;20.1 for a deuteranope, and the badge would still read with no colour at all. The three states also follow the app's existing discipline about missing data: <span style="color:#033056;font-weight:700">no information</span> is its own state and never collapses into <span style="color:#033056;font-weight:700">not accessible</span>, exactly as a month a stop did not report is a gap and never a zero.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const VMAX = 8430;
+    const radius = (v) => 3 + 12 * Math.sqrt(v / VMAX);
+    const color = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#fdb913' };
+
+    const grid = [];
+    for (let i = 1; i < 8; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 420 });
+    for (let i = 1; i < 6; i++) grid.push({ x1: 0, y1: i * 70, x2: 560, y2: i * 70 });
+
+    // One circle per station, at its busiest calling line, since the mark question is
+    // drawn on the next page and this artboard is about the layer above it.
+    const stations = [
+      ['Chinatown', 430, 44, 'A', 1305],
+      ['Union Station', 400, 92, 'A', 4818],
+      ['Civic Center', 344, 92, 'B', 1310],
+      ['Pershing Square', 312, 146, 'B', 2979],
+      ['Little Tokyo', 430, 146, 'E', 2333],
+      ['Historic Broadway', 400, 196, 'A', 913],
+      ['7th St / Metro Center', 300, 258, 'B', 8430],
+      ['Pico', 300, 320, 'A', 2943],
+      ['Westlake', 208, 216, 'B', 3211],
+      ['Wilshire / Vermont', 118, 180, 'B', 3538],
+    ];
+
+    const drawn = stations.map((s) => {
+      const r = radius(s[4]);
+      return {
+        cx: s[1], cy: s[2], r: r, fill: color[s[3]],
+        bx: s[1] + r * 0.78 + 4, by: s[2] - r * 0.78 - 3,
+      };
+    });
+
+    const specimen = [
+      { cx: 58, head: 'Accessible', sub: 'wheelchair_boarding 1', ink: '#0891b2', dash: 'none', tick: true, bar: false, query: false },
+      { cx: 180, head: 'Not accessible', sub: 'wheelchair_boarding 2', ink: '#c2410c', dash: 'none', tick: false, bar: true, query: false },
+      { cx: 302, head: 'No information', sub: 'wheelchair_boarding 0 or absent', ink: '#a8a29e', dash: '2.4 2', tick: false, bar: false, query: true },
+    ];
+    const withGeom = specimen.map((s) => {
+      const bx = s.cx + 14;
+      return Object.assign({}, s, {
+        bx: bx,
+        p1: String(bx - 4) + ' ' + String(19),
+        bx1: bx - 4.4,
+        bx2: bx + 4.4,
+      });
+    });
+
+    const sources = [
+      {
+        name: 'Metro GTFS · stops.txt',
+        verdict: 'not there',
+        ink: '#9a3412',
+        body: 'The rail and bus feeds both ship a ten-column stops.txt with no wheelchair_boarding, and neither carries pathways.txt or levels.txt. trips.txt has no wheelchair_accessible either.',
+      },
+      {
+        name: 'Metro station amenities',
+        verdict: 'the likely answer',
+        ink: '#166534',
+        body: 'Metro publishes elevator and escalator status and a station-facilities list outside the GTFS. It is per station rather than per stop, which suits rail and says nothing about the 800-odd bus stops.',
+      },
+      {
+        name: 'OpenStreetMap',
+        verdict: 'complete, unevenly',
+        ink: '#78716c',
+        body: 'Stations carry wheelchair and elevator tags, and coverage of LA rail is good. It is crowd-sourced, so the layer would have to say where its answer comes from rather than presenting it as Metro’s.',
+      },
+      {
+        name: 'Bus stops, any source',
+        verdict: 'unsolved',
+        ink: '#9a3412',
+        body: 'The grain problem bites hardest here. Bus stops in this app are name-keyed and centroided across both sides of a street, and the two sides need not be equally accessible.',
+      },
+    ];
+
+    return {
+      grid: grid,
+      paths: [
+        { color: '#0072bc', points: '430,44 400,92 430,146 400,196 300,258 300,320 300,364' },
+        { color: '#fdb913', points: '500,146 430,146 400,196 300,258 300,320 230,352' },
+        { color: '#eb131b', points: '400,92 344,92 312,146 300,258 208,216 118,180 96,130' },
+        { color: '#a05da5', points: '400,92 344,92 312,146 300,258 208,216 118,180 40,180' },
+      ],
+      stations: drawn,
+      specimen: withGeom,
+      sources: sources,
+    };
+  }
+}
+</script>
+</body>
+</html>

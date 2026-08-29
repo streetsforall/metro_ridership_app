@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">H</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Cross-hatch density &mdash; texture carries the measure</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Hue stays free to mean which line, because magnitude rides a channel nothing else uses.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership &middot; map</span>
+      <div style="display:flex;gap:2px">
+        <span style="background:#033056;color:#fff;font-size:12px;font-weight:700;padding:8px 12px;border-radius:4px 0 0 4px">Boardings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px">Alightings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px;border-radius:0 4px 4px 0">Both</span>
+      </div>
+    </div>
+
+    <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+      <svg viewBox="0 0 900 520" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map with a circle at each station, the tightness of its hatching showing average boardings">
+        <defs>
+          <pattern id="ha1" patternUnits="userSpaceOnUse" width="11" height="11" patternTransform="rotate(45)"><rect width="11" height="11" fill="#ffffff"></rect><line x1="0" y1="0" x2="0" y2="11" stroke="#0072bc" stroke-width="1.8"></line></pattern>
+          <pattern id="ha2" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)"><rect width="8" height="8" fill="#ffffff"></rect><line x1="0" y1="0" x2="0" y2="8" stroke="#0072bc" stroke-width="1.8"></line></pattern>
+          <pattern id="ha3" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)"><rect width="6" height="6" fill="#ffffff"></rect><line x1="0" y1="0" x2="0" y2="6" stroke="#0072bc" stroke-width="1.8"></line></pattern>
+          <pattern id="ha4" patternUnits="userSpaceOnUse" width="4.5" height="4.5" patternTransform="rotate(45)"><rect width="4.5" height="4.5" fill="#ffffff"></rect><line x1="0" y1="0" x2="0" y2="4.5" stroke="#0072bc" stroke-width="1.8"></line></pattern>
+          <pattern id="ha5" patternUnits="userSpaceOnUse" width="3.2" height="3.2" patternTransform="rotate(45)"><rect width="3.2" height="3.2" fill="#ffffff"></rect><line x1="0" y1="0" x2="0" y2="3.2" stroke="#0072bc" stroke-width="1.8"></line></pattern>
+          <pattern id="hb1" patternUnits="userSpaceOnUse" width="11" height="11" patternTransform="rotate(45)"><rect width="11" height="11" fill="#ffffff"></rect><line x1="0" y1="0" x2="0" y2="11" stroke="#eb131b" stroke-width="1.8"></line></pattern>
+          <pattern id="hb2" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)"><rect width="8" height="8" fill="#ffffff"></rect><line x1="0" y1="0" x2="0" y2="8" stroke="#eb131b" stroke-width="1.8"></line></pattern>
+          <pattern id="hb3" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)"><rect width="6" height="6" fill="#ffffff"></rect><line x1="0" y1="0" x2="0" y2="6" stroke="#eb131b" stroke-width="1.8"></line></pattern>
+          <pattern id="hb4" patternUnits="userSpaceOnUse" width="4.5" height="4.5" patternTransform="rotate(45)"><rect width="4.5" height="4.5" fill="#ffffff"></rect><line x1="0" y1="0" x2="0" y2="4.5" stroke="#eb131b" stroke-width="1.8"></line></pattern>
+          <pattern id="hb5" patternUnits="userSpaceOnUse" width="3.2" height="3.2" patternTransform="rotate(45)"><rect width="3.2" height="3.2" fill="#ffffff"></rect><line x1="0" y1="0" x2="0" y2="3.2" stroke="#eb131b" stroke-width="1.8"></line></pattern>
+        </defs>
+        <rect x="0" y="0" width="900" height="520" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="20">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+        <polyline points="700,50 700,130 610,190 545,190 512,225 512,470" fill="none" stroke="#0072bc" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <polyline points="512,225 430,180 330,140 240,118" fill="none" stroke="#eb131b" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <sc-for list="{{stops}}" as="s" hint-placeholder-count="11">
+          <circle cx="{{s.cx}}" cy="{{s.cy}}" r="15" fill="{{s.fill}}" stroke="{{s.stroke}}" stroke-width="2"></circle>
+        </sc-for>
+      </svg>
+
+      <div style="position:absolute;left:14px;bottom:14px;background:#f8f6f1;border-radius:5px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Hatching &mdash; avg. boardings</span>
+        <svg width="230" height="40" viewBox="0 0 230 40">
+          <circle cx="20" cy="18" r="15" fill="url(#ha1)" stroke="#0072bc" stroke-width="2"></circle>
+          <circle cx="65" cy="18" r="15" fill="url(#ha2)" stroke="#0072bc" stroke-width="2"></circle>
+          <circle cx="110" cy="18" r="15" fill="url(#ha3)" stroke="#0072bc" stroke-width="2"></circle>
+          <circle cx="155" cy="18" r="15" fill="url(#ha4)" stroke="#0072bc" stroke-width="2"></circle>
+          <circle cx="200" cy="18" r="15" fill="url(#ha5)" stroke="#0072bc" stroke-width="2"></circle>
+          <text x="5" y="40" font-size="9" fill="#78716c">quiet</text>
+          <text x="225" y="40" font-size="9" fill="#78716c" text-anchor="end">busiest</text>
+        </svg>
+        <span style="font-size:10px;color:#78716c">Every circle is one size, so texture alone carries the figure.</span>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:#166534;letter-spacing:.06em;text-transform:uppercase">Why this one argues with nothing</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.7">Hue keeps meaning which line, exactly as CONTEXT.md requires, because the measure moves onto a channel the dashboard has never used. Texture also survives what colour does not &mdash; greyscale printing, forced-colours mode, and a reader who cannot separate the ramp's middle steps. The cost is resolution: five hatch steps is about as many as a fifteen-pixel circle can hold, so this reads bands rather than values, and a dense bus corridor at low zoom fills with rules until the circles merge.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const grid = [];
+    for (let i = 1; i < 13; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 520 });
+    for (let i = 1; i < 8; i++) grid.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+    const peak = 10500;
+    const raw = [
+      [700, 50, 10125, 'a'],
+      [700, 130, 3210, 'a'],
+      [610, 190, 2640, 'a'],
+      [512, 225, 6750, 'a'],
+      [512, 300, 1910, 'a'],
+      [512, 360, 1142, 'a'],
+      [512, 415, 2210, 'a'],
+      [512, 470, 4320, 'a'],
+      [430, 180, 5480, 'b'],
+      [330, 140, 2870, 'b'],
+      [240, 118, 1640, 'b'],
+    ];
+    return {
+      grid: grid,
+      stops: raw.map((s) => {
+        const step = Math.min(5, 1 + Math.floor((s[2] / peak) * 5));
+        return {
+          cx: s[0],
+          cy: s[1],
+          fill: 'url(#h' + s[3] + String(step) + ')',
+          stroke: s[3] === 'a' ? '#0072bc' : '#eb131b',
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

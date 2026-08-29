@@ -1,0 +1,351 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+    table { border-collapse: collapse; width: 100%; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">U</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Pivot sidebar &mdash; the reader chooses what the grid is about</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click a field to move it into Columns, or a measure to fill the cells.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership &middot; pivot</span>
+      <span style="font-size:11px;color:#a8a29e">Jul 2025 &rarr; Jun 2026 &middot; 47 stops &middot; average weekday</span>
+    </div>
+
+    <div style="display:flex;gap:14px;flex:1;min-height:0">
+
+      <div style="width:212px;flex-shrink:0;display:flex;flex-direction:column;gap:11px;min-height:0">
+
+        <div style="background:#fff;border-radius:6px;padding:11px 12px;display:flex;flex-direction:column;gap:7px">
+          <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.08em">Fields</span>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">
+            <sc-for list="{{fields}}" as="f" hint-placeholder-count="8">
+              <span class="hit" onClick="{{ f.pick }}" style="font-size:10.5px;padding:5px 8px;border-radius:3px;background:{{f.bg}};color:{{f.ink}};border:1px solid {{f.edge}}">{{f.label}}</span>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:#fff;border-radius:6px;padding:11px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.08em">Rows</span>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;min-height:26px;border-radius:3px;border:1px dashed #ddd9d2;padding:4px">
+            <sc-for list="{{rowFields}}" as="c" hint-placeholder-count="2">
+              <span style="font-size:10.5px;padding:4px 8px;border-radius:3px;background:#033056;color:#fff">{{c}}</span>
+            </sc-for>
+          </div>
+          <span style="font-size:9px;color:#a8a29e;line-height:1.5">{{ rowsNote }}</span>
+        </div>
+
+        <div style="background:#fff;border-radius:6px;padding:11px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.08em">Columns</span>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;min-height:26px;border-radius:3px;border:1px dashed #ddd9d2;padding:4px">
+            <span style="font-size:10.5px;padding:4px 8px;border-radius:3px;background:#0fada8;color:#fff">{{ colField }}</span>
+          </div>
+        </div>
+
+        <div style="background:#fff;border-radius:6px;padding:11px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.08em">Values</span>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;min-height:26px;border-radius:3px;border:1px dashed #ddd9d2;padding:4px">
+            <span style="font-size:10.5px;padding:4px 8px;border-radius:3px;background:#0fada8;color:#fff">Avg. {{ measure }}</span>
+          </div>
+        </div>
+
+        <div style="background:#fff;border-radius:6px;padding:11px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.08em">Filters</span>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;min-height:26px;border-radius:3px;border:1px dashed #ddd9d2;padding:4px">
+            <span style="font-size:10.5px;padding:4px 8px;border-radius:3px;background:#ece9e2;color:#44403c;border:1px solid #ddd9d2">Rail only</span>
+            <span style="font-size:10.5px;padding:4px 8px;border-radius:3px;background:#ece9e2;color:#44403c;border:1px solid #ddd9d2">Weekday</span>
+          </div>
+        </div>
+
+        <span style="flex-grow:1"></span>
+        <span style="font-size:9px;color:#a8a29e;line-height:1.55">Every chip here is a URL parameter, so a pivot a reader builds is a link they can send.</span>
+      </div>
+
+      <div style="flex-grow:1;display:flex;flex-direction:column;gap:9px;min-width:0">
+
+        <div style="background:#fff;border-radius:6px;padding:12px 13px;flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:8px">
+          <table style="font-size:11px">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:5px 7px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#78716c;font-size:9.5px">{{ rowHeader }}</th>
+                <sc-for list="{{cols}}" as="c" hint-placeholder-count="12">
+                  <th style="padding:5px 2px;font-weight:400;color:#78716c;font-size:9.5px">{{c}}</th>
+                </sc-for>
+                <th style="text-align:right;padding:5px 7px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#78716c;font-size:9.5px">{{ marginHeader }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{grid}}" as="r" hint-placeholder-count="9">
+                <tr style="border-bottom:1px solid #f4f1ea">
+                  <td style="padding:2px 7px;white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis">
+                    <span style="font-size:10.5px;color:#44403c">{{r.label}}</span>
+                    <span style="font-size:9px;color:#a8a29e"> {{r.sub}}</span>
+                  </td>
+                  <sc-for list="{{r.cells}}" as="c" hint-placeholder-count="12">
+                    <td style="padding:1.5px">
+                      <div style="height:24px;border-radius:2px;background:{{c.fill}};border:{{c.edge}};box-sizing:border-box;display:flex;align-items:center;justify-content:center">
+                        <span style="font-size:9px;font-variant-numeric:tabular-nums;color:{{c.ink}}">{{c.text}}</span>
+                      </div>
+                    </td>
+                  </sc-for>
+                  <td style="padding:2px 7px;text-align:right;font-variant-numeric:tabular-nums;font-size:10.5px;color:{{r.marginInk}};text-decoration:{{r.marginLine}}">{{r.margin}}</td>
+                </tr>
+              </sc-for>
+              <tr style="border-top:1.5px solid #e7e5e4">
+                <td style="padding:6px 7px;font-size:9.5px;color:#78716c;text-transform:uppercase;letter-spacing:.04em;font-weight:700">{{ footHeader }}</td>
+                <sc-for list="{{foot}}" as="f" hint-placeholder-count="12">
+                  <td style="padding:6px 1.5px;text-align:center;font-size:9px;font-variant-numeric:tabular-nums;color:#78716c">{{f}}</td>
+                </sc-for>
+                <td style="padding:6px 7px"></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <span style="flex-grow:1"></span>
+          <div style="display:flex;align-items:center;gap:16px">
+            <div style="display:flex;align-items:center;gap:5px">
+              <span style="font-size:9.5px;color:#a8a29e">{{ rampLow }}</span>
+              <sc-for list="{{ramp}}" as="s" hint-placeholder-count="5">
+                <span style="width:22px;height:11px;border-radius:2px;background:{{s}}"></span>
+              </sc-for>
+              <span style="font-size:9.5px;color:#a8a29e">{{ rampHigh }}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="width:22px;height:11px;border-radius:2px;background:#f3eee2;border:1px dashed #a8a29e;box-sizing:border-box"></span>
+              <span style="font-size:9.5px;color:#78716c">not reported</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="width:22px;height:11px;border-radius:2px;background:#efeae1"></span>
+              <span style="font-size:9.5px;color:#78716c">line does not serve this stop</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+          <span style="font-size:11px;color:#44403c;line-height:1.65">{{ noteBody }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { col: 'Month', measure: 'Boardings' };
+  }
+
+  // Boardings and Alightings each get one hue light to dark; Change gets two poles and a grey middle.
+  ramp(measure) {
+    if (measure === 'Change') return ['#9a3412', '#cf8f5f', '#e3e0da', '#5fb5b1', '#0c8b87'];
+    if (measure === 'Alightings') return ['#d9efee', '#a9dcd9', '#71c5c1', '#3aa9a4', '#0c8b87'];
+    return ['#dbeaf4', '#b3d3e9', '#7fb3d8', '#4a90c4', '#0072bc'];
+  }
+
+  renderVals() {
+    const self = this;
+    const col = this.state.col;
+    const measure = this.state.measure;
+    const ramp = this.ramp(measure);
+
+    const months = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const lines = ['A', 'B', 'C', 'D', 'E', 'K'];
+
+    // stop, line, boardings, alightings, twelve monthly boardings (null = no report)
+    const pairs = [
+      ['Union Station', 'A', 10125, 9113, [9280, 9420, 9610, 9880, 10150, 10310, 10420, 10380, 10510, 10620, 10740, 10880]],
+      ['Union Station', 'B', 4820, 4510, [4480, 4530, 4590, 4670, 4760, 4830, 4880, 4860, 4900, 4950, 5010, 5080]],
+      ['7th St / Metro Center', 'A', 6750, 6075, [6180, 6260, 6340, 6510, 6690, 6810, 6880, 6920, 7010, 7080, 7160, 7240]],
+      ['7th St / Metro Center', 'D', 4480, 4210, [4120, 4180, 4240, 4310, 4390, 4460, 4500, 4520, 4570, 4610, 4660, 4720]],
+      ['7th St / Metro Center', 'E', 3120, 3340, [2910, 2950, 3000, 3060, 3110, 3160, 3190, 3200, 3240, 3270, 3310, 3350]],
+      ['Wilshire / Vermont', 'D', 5480, 5120, [5090, 5150, 5210, 5300, 5400, 5480, 5530, 5510, 5560, 5620, 5690, 5760]],
+      ['Willowbrook / Rosa Parks', 'A', 4320, 4610, [4010, 4080, 4150, 4240, 4310, 4380, 4420, null, null, 4510, 4560, 4620]],
+      ['Willowbrook / Rosa Parks', 'C', 1740, 1690, [1620, 1650, 1670, 1700, 1730, 1760, 1780, null, null, 1810, 1830, 1850]],
+      ['Downtown Long Beach', 'A', 3980, 3610, [3720, 3780, 3840, 3900, 3960, 4010, 4040, 4060, 4110, 4150, 4200, 4250]],
+    ];
+
+    const value = (p, monthIndex) => {
+      if (measure === 'Boardings') return monthIndex === null ? p[2] : p[4][monthIndex];
+      if (measure === 'Alightings') {
+        const ratio = p[3] / p[2];
+        const b = monthIndex === null ? p[2] : p[4][monthIndex];
+        return b === null ? null : Math.round(b * ratio);
+      }
+      const b = monthIndex === null ? p[2] : p[4][monthIndex];
+      if (b === null) return null;
+      const ratio = p[3] / p[2];
+      return Math.round(b - b * ratio);
+    };
+
+    const fmt = (v) => {
+      if (v === null) return '—';
+      if (measure === 'Change') return (v < 0 ? '−' : '+') + String(Math.round(Math.abs(v) / 100) / 10) + 'k';
+      return String(Math.round(v / 100) / 10) + 'k';
+    };
+
+    // A diverging ramp has to be centred on zero; a sequential one spans the data.
+    const step = (v, lo, hi, span) => {
+      if (measure === 'Change') {
+        const t = (v / (span || 1) + 1) / 2;
+        return Math.max(0, Math.min(4, Math.floor(t * 5)));
+      }
+      return Math.min(4, Math.floor(((v - lo) / (hi - lo || 1)) * 5));
+    };
+
+    // The dark end of each ramp needs light text on it, and a diverging ramp has two dark ends.
+    const inkFor = (s) => {
+      if (measure === 'Change') return s === 0 || s === 4 ? '#ffffff' : '#44403c';
+      return s > 2 ? '#ffffff' : '#44403c';
+    };
+
+    let grid, cols, foot, rowHeader, marginHeader, footHeader, rowFields, rowsNote;
+
+    if (col === 'Month') {
+      cols = months;
+      rowHeader = 'Stop · Line';
+      marginHeader = 'Avg';
+      footHeader = 'Stop sums';
+      rowFields = ['Stop', 'Line'];
+      rowsNote = 'Stop and Line together are the grain, so a row is always one stop on one line.';
+
+      const all = [];
+      pairs.forEach((p) => months.forEach((m, i) => { const v = value(p, i); if (v !== null) all.push(v); }));
+      const lo = Math.min.apply(null, all);
+      const hi = Math.max.apply(null, all);
+      const span = Math.max.apply(null, all.map(Math.abs));
+
+      grid = pairs.map((p) => ({
+        label: p[0],
+        sub: p[1],
+        margin: fmt(value(p, null)),
+        marginInk: '#44403c',
+        marginLine: 'none',
+        cells: months.map((m, i) => {
+          const v = value(p, i);
+          if (v === null) return { fill: '#f3eee2', edge: '1px dashed #a8a29e', ink: '#a8a29e', text: '—' };
+          const s = step(v, lo, hi, span);
+          return { fill: ramp[s], edge: 'none', ink: inkFor(s), text: fmt(v) };
+        }),
+      }));
+
+      foot = months.map((m, i) => {
+        let sum = 0;
+        pairs.forEach((p) => { const v = value(p, i); if (v !== null) sum += v; });
+        return String(Math.round(sum / 100) / 10) + 'k';
+      });
+    } else {
+      cols = lines;
+      rowHeader = 'Stop';
+      marginHeader = 'All lines';
+      footHeader = 'Line total';
+      rowFields = ['Stop'];
+      rowsNote = 'Line has moved to Columns, so a row is now a stop — which is where the grain starts to strain.';
+
+      const stops = [];
+      pairs.forEach((p) => { if (stops.indexOf(p[0]) === -1) stops.push(p[0]); });
+
+      const all = [];
+      pairs.forEach((p) => { const v = value(p, null); if (v !== null) all.push(v); });
+      const lo = Math.min.apply(null, all);
+      const hi = Math.max.apply(null, all);
+      const span = Math.max.apply(null, all.map(Math.abs));
+
+      grid = stops.map((stop) => ({
+        label: stop,
+        sub: '',
+        margin: 'no rollup',
+        marginInk: '#a8a29e',
+        marginLine: 'line-through',
+        cells: lines.map((ln) => {
+          const p = pairs.filter((q) => q[0] === stop && q[1] === ln)[0];
+          if (!p) return { fill: '#efeae1', edge: 'none', ink: 'transparent', text: '' };
+          const v = value(p, null);
+          if (v === null) return { fill: '#f3eee2', edge: '1px dashed #a8a29e', ink: '#a8a29e', text: '—' };
+          const s = step(v, lo, hi, span);
+          return { fill: ramp[s], edge: 'none', ink: inkFor(s), text: fmt(v) };
+        }),
+      }));
+
+      foot = lines.map((ln) => {
+        let sum = 0;
+        let any = false;
+        pairs.forEach((p) => { if (p[1] === ln) { const v = value(p, null); if (v !== null) { sum += v; any = true; } } });
+        return any ? String(Math.round(sum / 100) / 10) + 'k' : '—';
+      });
+    }
+
+    const fields = ['Stop', 'Line', 'Month', 'Boardings', 'Alightings', 'Change'].map((f) => {
+      const isDimension = f === 'Stop' || f === 'Line' || f === 'Month';
+      const active = isDimension ? col === f : measure === f;
+      return {
+        label: f,
+        bg: active ? '#0fada8' : '#ffffff',
+        ink: active ? '#ffffff' : '#44403c',
+        edge: active ? '#0fada8' : '#ddd9d2',
+        pick: isDimension
+          ? () => { if (f !== 'Stop') self.setState({ col: f }); }
+          : () => self.setState({ measure: f }),
+      };
+    });
+
+    const copy = col === 'Month'
+      ? {
+          head: 'Months across the top turn the bottom row into a data check',
+          ink: '#166534',
+          body: 'Stop by month is the pivot the data was shaped for: the row keeps the grain, the cells hold twelve figures where the table held one, and a month a stop did not report is a dashed cell rather than a low number. The margin along the bottom adds the stops up, and because stop sums miss the published line totals by a median 0.06% and as much as 5.10%, always upward, that row is worth printing beside the published figure rather than instead of it.',
+        }
+      : {
+          head: 'Lines across the top puts the forbidden rollup where a reader expects a total',
+          ink: '#9a3412',
+          body: 'Moving Line into Columns is the pivot a reader will reach for first, because it answers which line brings the riders to an interchange. It also leaves an empty corner at the end of every row where a pivot table normally prints a total, and that total is the stop-total-across-lines rollup the grain rules out. Striking it through and saying “no rollup” is the honest fill, though a shaded cell no reader can click is not much of an explanation — the alternative is to refuse the pivot and keep Line in Rows.',
+        };
+
+    return {
+      fields: fields,
+      rowFields: rowFields,
+      rowsNote: rowsNote,
+      colField: col,
+      measure: measure,
+      cols: cols,
+      grid: grid,
+      foot: foot,
+      ramp: ramp,
+      rampLow: measure === 'Change' ? 'losing riders' : 'low',
+      rampHigh: measure === 'Change' ? 'gaining riders' : 'high',
+      rowHeader: rowHeader,
+      marginHeader: marginHeader,
+      footHeader: footHeader,
+      noteHead: copy.head,
+      noteInk: copy.ink,
+      noteBody: copy.body,
+    };
+  }
+}
+</script>
+</body>
+</html>

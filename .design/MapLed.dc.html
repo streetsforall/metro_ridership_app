@@ -1,0 +1,185 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">F</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Map-led — the geography carries the ranking</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">The table becomes a rail; the map becomes the thing you read.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership</span>
+      <div style="display:flex;gap:2px">
+        <span style="background:#033056;color:#fff;font-size:12px;font-weight:700;padding:8px 12px;border-radius:4px 0 0 4px">Boardings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px">Alightings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px;border-radius:0 4px 4px 0">Both</span>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:16px;flex:1;min-height:0">
+
+      <div style="width:238px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;min-height:0">
+        <div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:4px;padding:9px 11px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a8a29e" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16" y1="16" x2="21" y2="21"></line></svg>
+          <span style="font-size:12px;color:#a8a29e">Search stops</span>
+        </div>
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">47 stops &middot; ranked</span>
+        <div style="flex:1;display:flex;flex-direction:column;gap:1px;overflow:hidden">
+          <sc-for list="{{rank}}" as="r" hint-placeholder-count="14">
+            <div style="display:flex;align-items:center;gap:7px;padding:5px 6px;border-radius:3px;background:{{r.rowFill}}">
+              <div style="width:13px;height:13px;border-radius:3px;background:{{r.boxFill}};border:1px solid {{r.boxEdge}};flex-shrink:0"></div>
+              <div style="flex-grow:1;display:flex;flex-direction:column;gap:3px;min-width:0">
+                <span style="font-size:10px;color:#44403c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{r.name}}</span>
+                <span style="height:4px;border-radius:2px;background:#0072bc;width:{{r.barWidth}}"></span>
+              </div>
+              <span style="font-size:10px;color:#78716c;font-variant-numeric:tabular-nums">{{r.value}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex-grow:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-width:0">
+        <svg viewBox="0 0 620 620" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Placeholder map of the A Line with a circle at each station, sized by average boardings">
+          <rect x="0" y="0" width="620" height="620" fill="#e8e6e1"></rect>
+          <g stroke="#dcd9d3" stroke-width="1">
+            <sc-for list="{{grid}}" as="g" hint-placeholder-count="18">
+              <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+            </sc-for>
+          </g>
+          <polyline points="470,60 470,150 390,215 330,215 300,250 300,560" fill="none" stroke="#0072bc" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"></polyline>
+          <sc-for list="{{circles}}" as="c" hint-placeholder-count="9">
+            <g>
+              <circle cx="{{c.cx}}" cy="{{c.cy}}" r="{{c.r}}" fill="#0072bc" fill-opacity=".55" stroke="#ffffff" stroke-width="2"></circle>
+              <sc-if value="{{c.selected}}" hint-placeholder-val="{{ false }}">
+                <circle cx="{{c.cx}}" cy="{{c.cy}}" r="{{c.ring}}" fill="none" stroke="#033056" stroke-width="2.5"></circle>
+              </sc-if>
+            </g>
+          </sc-for>
+        </svg>
+
+        <div style="position:absolute;left:12px;bottom:12px;background:#f8f6f1;border-radius:5px;padding:9px 11px;display:flex;align-items:center;gap:10px">
+          <svg width="66" height="30" viewBox="0 0 66 30">
+            <circle cx="10" cy="20" r="5" fill="#0072bc" fill-opacity=".55" stroke="#fff" stroke-width="1.5"></circle>
+            <circle cx="30" cy="17" r="8" fill="#0072bc" fill-opacity=".55" stroke="#fff" stroke-width="1.5"></circle>
+            <circle cx="53" cy="14" r="12" fill="#0072bc" fill-opacity=".55" stroke="#fff" stroke-width="1.5"></circle>
+          </svg>
+          <span style="font-size:10px;color:#78716c;line-height:1.5">Circle area is<br>average boardings</span>
+        </div>
+
+        <div style="position:absolute;right:12px;top:12px;width:240px;background:#f8f6f1;border-radius:5px;padding:14px;display:flex;flex-direction:column;gap:9px">
+          <span style="font-size:12px;font-weight:700;color:#033056;line-height:1.3">Union Station</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="width:9px;height:9px;border-radius:2px;background:#0072bc"></span>
+            <span style="font-size:10px;color:#78716c">A Line &middot; also served by B, D</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:8px">
+            <div style="display:flex;flex-direction:column;gap:1px">
+              <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em">Boardings</span>
+              <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">10,125</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:1px">
+              <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em">Alightings</span>
+              <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">9,113</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:1px">
+              <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em">Change</span>
+              <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:#166534">+1,013</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:1px">
+              <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em">Share</span>
+              <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">21.4%</span>
+            </div>
+          </div>
+          <svg viewBox="0 0 212 60" width="100%" height="56">
+            <line x1="4" y1="50" x2="208" y2="50" stroke="#e7e5e4" stroke-width="1"></line>
+            <polyline points="4,34 45,31 86,28 127,25 168,22 208,19" fill="none" stroke="#0072bc" stroke-width="2"></polyline>
+            <polyline points="4,40 45,37 86,35 127,32 168,30 208,27" fill="none" stroke="#0072bc" stroke-width="2" stroke-dasharray="4 3"></polyline>
+            <text x="4" y="60" font-size="9" fill="#a8a29e">Jul 2025</text>
+            <text x="208" y="60" font-size="9" fill="#a8a29e" text-anchor="end">Dec 2025</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <span style="font-size:11px;color:#a8a29e">16 bus stops have no coordinate, so the map cannot show them &mdash; the rail lists them and marks them as off-map.</span>
+    <span style="font-size:11px;color:#a8a29e">The map is drawn here as a placeholder; the real one is MapLibre with the committed route geometry.</span>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const grid = [];
+    for (let i = 1; i < 9; i++) {
+      grid.push({ x1: 0, y1: i * 70, x2: 620, y2: i * 70 });
+      grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 620 });
+    }
+    const stations = [
+      ['Union Station', 470, 60, 10125, true],
+      ['Little Tokyo / Arts District', 470, 150, 3210, false],
+      ['Historic Broadway', 390, 215, 2640, false],
+      ['7th Street / Metro Center', 300, 250, 6750, false],
+      ['Grand / LATTC', 300, 320, 1910, false],
+      ['Vernon', 300, 385, 1142, false],
+      ['Florence', 300, 440, 2210, false],
+      ['Willowbrook / Rosa Parks', 300, 500, 4320, false],
+      ['Downtown Long Beach', 300, 560, 3980, false],
+    ];
+    const peak = 10125;
+    const circles = stations.map((s) => {
+      const r = 5 + Math.sqrt(s[3] / peak) * 17;
+      return { cx: s[1], cy: s[2], r: r, ring: r + 5, selected: s[4] };
+    });
+    const listed = [
+      ['Union Station', 10125, true],
+      ['7th Street / Metro Center', 6750, false],
+      ['Willowbrook / Rosa Parks', 4320, false],
+      ['Downtown Long Beach', 3980, false],
+      ['Little Tokyo / Arts District', 3210, false],
+      ['Pico', 2940, false],
+      ['Historic Broadway', 2640, false],
+      ['Florence', 2210, false],
+      ['Grand / LATTC', 1910, false],
+      ['Firestone', 1860, false],
+      ['103rd Street / Watts Towers', 1688, false],
+      ['Compton', 1740, false],
+      ['Slauson', 1505, false],
+      ['Vernon', 1142, false],
+    ];
+    return {
+      grid: grid,
+      circles: circles,
+      rank: listed.map((r) => ({
+        name: r[0],
+        value: r[1].toLocaleString('en-US'),
+        barWidth: String(Math.round((r[1] / peak) * 100)) + '%',
+        rowFill: r[2] ? '#ece9e2' : 'transparent',
+        boxFill: r[2] ? '#033056' : '#ffffff',
+        boxEdge: r[2] ? '#033056' : '#d6d3d1',
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

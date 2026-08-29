@@ -1,0 +1,170 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    table { border-collapse: collapse; width: 100%; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">AA</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">What the map draws at a multi-line station today</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Measured from the committed payload, not sketched.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">Four lines call at 7th Street / Metro Center, so <span style="color:#033056;font-weight:700">buildStopView</span> emits four features at one coordinate and the circle layer paints them in line order at 75% opacity. The station does not draw as four marks. It draws as one bullseye whose every band is a blend.</span>
+
+    <div style="display:flex;gap:22px;flex:1;min-height:0">
+
+      <div style="width:400px;display:flex;flex-direction:column;gap:10px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">The mark, at eight times scale</span>
+        <div style="flex:1;background:#e8e6e1;border-radius:6px;display:flex;align-items:center;justify-content:center;min-height:0">
+          <svg viewBox="0 0 400 400" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="The 7th Street mark enlarged, showing four concentric bands, none of which is a Metro line colour">
+            <rect x="0" y="0" width="400" height="400" fill="#e8e6e1"></rect>
+            <sc-for list="{{discs}}" as="d" hint-placeholder-count="4">
+              <circle cx="200" cy="196" r="{{d.r}}" fill="{{d.fill}}" fill-opacity=".75"></circle>
+            </sc-for>
+            <sc-for list="{{callouts}}" as="c" hint-placeholder-count="4">
+              <g>
+                <line x1="{{c.x1}}" y1="{{c.y1}}" x2="{{c.x2}}" y2="{{c.y2}}" stroke="#78716c" stroke-width="1"></line>
+                <circle cx="{{c.x1}}" cy="{{c.y1}}" r="2" fill="#78716c"></circle>
+                <text x="{{c.tx}}" y="{{c.ty}}" font-size="11" fill="#44403c" text-anchor="{{c.anchor}}">{{c.hex}}</text>
+              </g>
+            </sc-for>
+            <text x="200" y="384" font-size="10.5" fill="#78716c" text-anchor="middle">7th Street / Metro Center &mdash; radii 22.0, 19.4, 19.0 and 16.8 px</text>
+          </svg>
+        </div>
+      </div>
+
+      <div style="flex:1;display:flex;flex-direction:column;gap:12px;min-width:0">
+
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">The four features, and the radius each gets</span>
+          <table>
+            <tr style="border-bottom:1px solid #ddd9d2">
+              <th style="text-align:left;font-size:10px;font-weight:600;color:#78716c;padding:5px 4px">Line</th>
+              <th style="text-align:right;font-size:10px;font-weight:600;color:#78716c;padding:5px 4px">Boardings</th>
+              <th style="text-align:right;font-size:10px;font-weight:600;color:#78716c;padding:5px 4px">Alightings</th>
+              <th style="text-align:right;font-size:10px;font-weight:600;color:#78716c;padding:5px 4px">Radius</th>
+              <th style="text-align:right;font-size:10px;font-weight:600;color:#78716c;padding:5px 4px">What it wins</th>
+            </tr>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+              <tr style="border-bottom:1px solid #efece6">
+                <td style="padding:6px 4px">
+                  <span style="display:inline-flex;align-items:center;gap:7px">
+                    <span style="width:10px;height:10px;border-radius:2px;background:{{r.color}}"></span>
+                    <span style="font-size:11.5px;color:#44403c">{{r.line}}</span>
+                  </span>
+                </td>
+                <td style="text-align:right;font-size:11.5px;color:#44403c;padding:6px 4px">{{r.ons}}</td>
+                <td style="text-align:right;font-size:11.5px;color:#44403c;padding:6px 4px">{{r.offs}}</td>
+                <td style="text-align:right;font-size:11.5px;color:#44403c;padding:6px 4px">{{r.radius}}</td>
+                <td style="text-align:right;font-size:11px;color:{{r.visInk}};padding:6px 4px">{{r.visible}}</td>
+              </tr>
+            </sc-for>
+          </table>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What a reader actually sees</span>
+          <sc-for list="{{bands}}" as="b" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:10px;padding:4px 0">
+              <span style="width:26px;height:16px;border-radius:3px;background:{{b.hex}};flex:none"></span>
+              <span style="font-size:11px;color:#44403c;width:62px;flex:none">{{b.hex}}</span>
+              <span style="font-size:11px;color:#78716c;flex:1">{{b.what}}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Across the whole rail payload</span>
+          <span style="font-size:11.5px;color:#44403c;line-height:1.7">110 rail stops report ridership. 96 are served by one line, 12 by two, Union Station by three and 7th Street by four, so 14 stops &mdash; one in eight &mdash; draw more circles than a reader can count.</span>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:#9a3412;letter-spacing:.06em;text-transform:uppercase">The fill stops meaning which line exactly where the reader most needs it to</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">ADR-0014 reserves colour for line identity everywhere on the map, and at these fourteen stops the reserved channel gives an answer that is false: the core of the 7th Street mark is a dusty pink that belongs to no Metro line, and the two intermediate bands are 0.4&nbsp;px and 2.2&nbsp;px wide. The panel meanwhile lists four rows for this station, so the two views of one selection disagree about how many things are here. Every redesign on this page starts from that disagreement rather than from a preference about shape.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    // Weekday averages over the twelve months the committed rail payload carries, and the
+    // radius each yields under buildStopView's sqrt-of-value scale against the rail maximum.
+    // Listed in the order the layer paints them, which is the order the line list gives.
+    const lines = [
+      { line: 'A Line', color: '#0072bc', ons: 6288, offs: 6457, radius: 19.4,
+        wins: 'nothing of its own', lost: true },
+      { line: 'B Line', color: '#eb131b', ons: 8430, offs: 9179, radius: 22.0,
+        wins: 'a 2.6 px rim', lost: false },
+      { line: 'E Line', color: '#fdb913', ons: 5990, offs: 6514, radius: 19.0,
+        wins: 'a 2.2 px band', lost: false },
+      { line: 'D Line', color: '#a05da5', ons: 4444, offs: 4306, radius: 16.8,
+        wins: 'the core, tinted', lost: false },
+    ];
+
+    const scale = 8;
+    const discs = lines.map((l) => ({ r: l.radius * scale / 2, fill: l.color }));
+
+    const rows = lines.map((l) => ({
+      line: l.line,
+      color: l.color,
+      ons: l.ons.toLocaleString('en-US'),
+      offs: l.offs.toLocaleString('en-US'),
+      radius: l.radius.toFixed(1) + ' px',
+      visible: l.wins,
+      visInk: l.lost ? '#9a3412' : '#78716c',
+    }));
+
+    // Composites of the app's own line hues at the layer's 0.75 opacity over the panel surface.
+    const bands = [
+      { hex: '#ee4c51', what: 'outer 2.6 px — B Line alone, and the only band that resembles its line' },
+      { hex: '#c03347', what: '0.4 px — the only trace the A Line leaves, thinner than a hairline' },
+      { hex: '#ee9820', what: '2.2 px — A, B and E together, reading as a gold that is not the E Line' },
+      { hex: '#b36c84', what: 'the whole core — all four, a pink that names no line at all' },
+    ];
+
+    const cx = 200, cy = 196;
+    const callouts = bands.map((b, i) => {
+      const radii = [20.7, 19.2, 17.9, 8.4];
+      const r = radii[i] * scale / 2;
+      const up = i % 2 === 0;
+      const dx = i < 2 ? -1 : 1;
+      const y = cy + (up ? -1 : 1) * r * 0.72;
+      const x = cx + dx * r * 0.69;
+      return {
+        x1: x, y1: y,
+        x2: cx + dx * 168, y2: y,
+        tx: cx + dx * 172, ty: y + 4,
+        anchor: dx < 0 ? 'end' : 'start',
+        hex: b.hex,
+      };
+    });
+
+    return { discs: discs, rows: rows, bands: bands, callouts: callouts };
+  }
+}
+</script>
+</body>
+</html>

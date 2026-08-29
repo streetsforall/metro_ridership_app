@@ -1,0 +1,224 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">Z</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Isochrones &mdash; where the service reaches, not where the riders are</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click a strategy. The arithmetic is from the committed payloads.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">This is the heaviest layer on the list and the only one that changes what the map is for. Every other draft on this canvas answers <span style="color:#033056;font-weight:700">which stops are busy</span>; a travel-time shed answers <span style="color:#033056;font-weight:700">who can get somewhere</span>, which is the question a transit-advocacy tool is usually being opened to settle.</span>
+
+    <div style="display:flex;gap:18px;flex:1;min-height:0">
+
+      <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+        <svg viewBox="0 0 540 400" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Travel-time bands spreading from 7th Street, with the stop circles drawn over them">
+          <rect x="0" y="0" width="540" height="400" fill="#e8e6e1"></rect>
+          <g stroke="#dcd9d3" stroke-width="1">
+            <sc-for list="{{grid}}" as="g" hint-placeholder-count="12">
+              <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+            </sc-for>
+          </g>
+          <sc-for list="{{bands}}" as="b" hint-placeholder-count="3">
+            <path d="{{b.path}}" fill="{{b.fill}}" fill-opacity=".62" stroke="{{b.stroke}}" stroke-width="1.3"></path>
+          </sc-for>
+          <sc-for list="{{paths}}" as="p" hint-placeholder-count="4">
+            <polyline points="{{p.points}}" fill="none" stroke="{{p.color}}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" stroke-opacity=".8"></polyline>
+          </sc-for>
+          <sc-for list="{{stations}}" as="s" hint-placeholder-count="10">
+            <circle cx="{{s.cx}}" cy="{{s.cy}}" r="{{s.r}}" fill="{{s.fill}}" fill-opacity=".85" stroke="#f8f6f1" stroke-width="1.2"></circle>
+          </sc-for>
+          <circle cx="280" cy="230" r="7" fill="#f8f6f1" stroke="#033056" stroke-width="2.6"></circle>
+          <text x="280" y="256" font-size="10" font-weight="700" fill="#033056" text-anchor="middle">7th St / Metro Center</text>
+          <sc-for list="{{bandLabels}}" as="l" hint-placeholder-count="3">
+            <text x="{{l.x}}" y="{{l.y}}" font-size="9.5" font-weight="700" fill="{{l.ink}}" text-anchor="middle">{{l.text}}</text>
+          </sc-for>
+        </svg>
+
+        <div style="position:absolute;left:12px;bottom:12px;background:#f8f6f1;border-radius:5px;padding:9px 11px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:9.5px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Minutes from the selected stop</span>
+          <div style="display:flex;align-items:center;gap:0">
+            <sc-for list="{{ramp}}" as="r" hint-placeholder-count="3">
+              <span style="width:44px;height:11px;background:{{r.fill}}"></span>
+            </sc-for>
+          </div>
+          <div style="display:flex;justify-content:space-between;width:132px">
+            <span style="font-size:9px;color:#78716c">5</span>
+            <span style="font-size:9px;color:#78716c">15</span>
+            <span style="font-size:9px;color:#78716c">30</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:372px;display:flex;flex-direction:column;gap:10px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">How the polygons get here</span>
+        <sc-for list="{{strategies}}" as="s" hint-placeholder-count="3">
+          <div class="hit" onClick="{{s.pick}}" style="background:{{s.bg}};border-radius:6px;padding:11px 13px;display:flex;flex-direction:column;gap:4px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+              <span style="font-size:11.5px;font-weight:700;color:{{s.head}}">{{s.name}}</span>
+              <span style="font-size:10px;color:{{s.sub}}">{{s.count}}</span>
+            </div>
+            <span style="font-size:10.5px;color:{{s.sub}};line-height:1.55">{{s.body}}</span>
+          </div>
+        </sc-for>
+
+        <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:5px;flex:1">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Counts this is built on</span>
+          <span style="font-size:10.5px;color:#44403c;line-height:1.7">The committed payloads hold 110 rail stops and 6,785 bus stops, and 6,866 of them have a coordinate. Three bands each is 330 polygons for rail and 20,598 for everything, against a bus ridership file that is already 5.3&nbsp;MB and already gated behind a rule.</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { plan: 'rail' };
+  }
+
+  blob(cx, cy, r, seed) {
+    const wobble = [1, 0.82, 1.16, 0.74, 1.08, 0.88, 1.2, 0.79, 1.04, 0.9, 1.14, 0.84];
+    const pts = [];
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * 2 * Math.PI;
+      const rr = r * wobble[(i + seed) % 12];
+      pts.push([cx + rr * Math.cos(a) * 1.18, cy + rr * Math.sin(a) * 0.84]);
+    }
+    const n = (v) => String(Math.round(v * 10) / 10);
+    let d = 'M ' + n(pts[0][0]) + ' ' + n(pts[0][1]);
+    for (let i = 0; i < 12; i++) {
+      const c = pts[i];
+      const p = pts[(i + 1) % 12];
+      d += ' Q ' + n((c[0] + p[0]) / 2 + (c[0] - cx) * 0.12) + ' ' + n((c[1] + p[1]) / 2 + (c[1] - cy) * 0.12) + ' ' + n(p[0]) + ' ' + n(p[1]);
+    }
+    return d + ' Z';
+  }
+
+  renderVals() {
+    const self = this;
+    const plan = this.state.plan;
+
+    const grid = [];
+    for (let i = 1; i < 8; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 400 });
+    for (let i = 1; i < 6; i++) grid.push({ x1: 0, y1: i * 70, x2: 540, y2: i * 70 });
+
+    // One hue, light to dark, so the bands read as more and less of one thing.
+    const bands = [
+      { path: self.blob(280, 230, 168, 0), fill: '#ccfbf1', stroke: '#99f6e4' },
+      { path: self.blob(280, 230, 104, 4), fill: '#5eead4', stroke: '#2dd4bf' },
+      { path: self.blob(280, 230, 52, 8), fill: '#14b8a6', stroke: '#0f766e' },
+    ];
+
+    const color = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#fdb913' };
+    const stations = [
+      [410, 40, 'A', 8.5], [386, 84, 'A', 12.0], [330, 84, 'B', 8.5], [300, 132, 'B', 10.1],
+      [416, 132, 'E', 9.4], [386, 178, 'A', 7.4], [280, 230, 'B', 13.2], [280, 292, 'A', 10.0],
+      [192, 194, 'B', 10.4], [104, 160, 'B', 10.7],
+    ].map((s) => ({ cx: s[0], cy: s[1], r: s[3], fill: color[s[2]] }));
+
+    const specs = [
+      {
+        id: 'rail',
+        name: 'Precompute rail only',
+        count: '330 polygons',
+        body: 'One offline pass over 110 stations, shipped as data beside stop_locations.json. Small enough to sit in the repo and be reviewed in a diff.',
+      },
+      {
+        id: 'all',
+        name: 'Precompute every stop',
+        count: '20,598 polygons',
+        body: 'The same pass over 6,866 stops. A 30-minute transit shed in LA is a large, ragged polygon, so this is the option that has to answer for its megabytes.',
+      },
+      {
+        id: 'demand',
+        name: 'Compute for the selected stop',
+        count: '3 polygons at a time',
+        body: 'A routing service answers for whichever stop the reader has selected. Nothing ships, and the map stops working when the service does.',
+      },
+    ];
+
+    const strategies = specs.map((s) => ({
+      name: s.name,
+      count: s.count,
+      body: s.body,
+      pick: () => self.setState({ plan: s.id }),
+      bg: plan === s.id ? '#033056' : '#ffffff',
+      head: plan === s.id ? '#ffffff' : '#033056',
+      sub: plan === s.id ? '#8fb6d4' : '#78716c',
+    }));
+
+    const notes = {
+      rail: {
+        ink: '#166534',
+        head: 'Rail first is the version that can actually ship',
+        body: 'A hundred and ten stations is a tractable offline pass, the output is small enough to commit and read in a diff, and rail is where a coverage argument is usually being made anyway. It also matches how the app already treats the two modes: rail is the cheap answer that decides whether the expensive one is worth fetching, which is the rule ADR-0009 already states for ridership and would simply extend to geometry.',
+      },
+      all: {
+        ink: '#9a3412',
+        head: 'Six thousand stops is a different project',
+        body: 'The earlier estimate of roughly eight hundred stops was the size of a typical table, not the size of the stop set: the committed bus payload names 6,785 stops. Three bands each is twenty thousand polygons, which is not a file this app can gate behind a window rule and hand to a browser. If every stop is genuinely wanted, the answer is vector tiles served from somewhere, and that is infrastructure rather than a layer.',
+      },
+      demand: {
+        ink: '#b45309',
+        head: 'On demand trades a payload for a dependency',
+        body: 'Asking Valhalla or OpenRouteService for the selected stop keeps the repo unchanged and puts a live service between a reader and a picture. It also breaks the property every other view here has, which is that a URL fully determines what a reader sees: the same link would draw a different shed after the next timetable change, with nothing on screen saying so.',
+      },
+    };
+
+    const cur = notes[plan];
+
+    return {
+      grid: grid,
+      bands: bands,
+      paths: [
+        { color: '#0072bc', points: '410,40 386,84 416,132 386,178 280,230 280,292 280,340' },
+        { color: '#fdb913', points: '480,132 416,132 386,178 280,230 280,292 214,322' },
+        { color: '#eb131b', points: '386,84 330,84 300,132 280,230 192,194 104,160 86,116' },
+        { color: '#a05da5', points: '386,84 330,84 300,132 280,230 192,194 104,160 30,160' },
+      ],
+      stations: stations,
+      bandLabels: [
+        { x: 280, y: 190, text: '5 min', ink: '#f0fdfa' },
+        { x: 280, y: 148, text: '15 min', ink: '#0f766e' },
+        { x: 280, y: 84, text: '30 min', ink: '#0f766e' },
+      ],
+      ramp: [{ fill: '#ccfbf1' }, { fill: '#5eead4' }, { fill: '#14b8a6' }],
+      strategies: strategies,
+      noteInk: cur.ink,
+      noteHead: cur.head,
+      noteBody: cur.body,
+    };
+  }
+}
+</script>
+</body>
+</html>

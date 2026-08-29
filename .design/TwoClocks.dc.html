@@ -1,0 +1,185 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">GG</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Two clocks &mdash; this week&rsquo;s timetable against last year&rsquo;s averages</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click a bridge. The shakeup marks come from the committed shakeups.json.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:13px;overflow:hidden">
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">Ridership arrives as a monthly average and stays fixed once published. A GTFS feed describes the service running now and is replaced at every shakeup. Any frequency layer puts one on top of the other, and the honest question is not whether they disagree but by how much, and what the reader is told.</span>
+
+    <div style="background:#e8e6e1;border-radius:6px;padding:16px 18px 12px">
+      <svg viewBox="0 0 900 200" width="100%" height="200" role="img" aria-label="A timeline showing Metro's shakeup dates, the ridership months on file and the validity window of the current feed">
+        <line x1="40" y1="120" x2="860" y2="120" stroke="#a8a29e" stroke-width="1"></line>
+
+        <rect x="{{ payX }}" y="60" width="{{ payW }}" height="26" rx="3" fill="#0fada8" fill-opacity=".24"></rect>
+        <text x="{{ payTx }}" y="52" font-size="10.5" fill="#0f766e" text-anchor="middle">ridership on file · Jul 2025 – Jun 2026</text>
+
+        <rect x="{{ feedX }}" y="94" width="{{ feedW }}" height="26" rx="3" fill="#a05da5" fill-opacity=".3"></rect>
+        <text x="{{ feedTx }}" y="140" font-size="10.5" fill="#7c3aed" text-anchor="middle">the feed on disk · valid 7 Jun – 12 Dec 2026</text>
+
+        <sc-for list="{{shakeups}}" as="s" hint-placeholder-count="10">
+          <g>
+            <line x1="{{s.x}}" y1="112" x2="{{s.x}}" y2="128" stroke="#57534e" stroke-width="1.4"></line>
+            <text x="{{s.x}}" y="162" font-size="9" fill="#78716c" text-anchor="middle">{{s.label}}</text>
+          </g>
+        </sc-for>
+
+        <text x="40" y="186" font-size="9.5" fill="#a8a29e" text-anchor="start">Each tick is a shakeup. Metro has published 38 of them since 2008, and the timetable changes at every one.</text>
+
+        <sc-if value="{{ showOverlap }}" hint-placeholder-val="{{ true }}">
+          <rect x="{{ overlapX }}" y="54" width="{{ overlapW }}" height="72" rx="3" fill="none" stroke="#166534" stroke-width="1.6" stroke-dasharray="4 3"></rect>
+        </sc-if>
+      </svg>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+      <span style="font-size:11px;color:#a8a29e;margin-right:4px">The app bridges the gap by</span>
+      <sc-for list="{{bridges}}" as="b" hint-placeholder-count="3">
+        <span class="hit" onClick="{{b.pick}}" style="background:{{b.bg}};color:{{b.ink}};font-size:12px;font-weight:700;padding:8px 13px;border-radius:4px">{{b.label}}</span>
+      </sc-for>
+    </div>
+
+    <div style="display:flex;gap:18px;flex:1;min-height:0">
+      <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+        <sc-for list="{{tests}}" as="t" hint-placeholder-count="4">
+          <div style="display:flex;align-items:flex-start;gap:9px;padding:3px 0">
+            <span style="width:15px;height:15px;border-radius:3px;background:{{t.chipBg}};color:{{t.chipInk}};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px">{{t.glyph}}</span>
+            <span style="font-size:11px;color:#44403c;line-height:1.6">{{t.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="width:340px;background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">How far apart the two clocks are</span>
+        <sc-for list="{{facts}}" as="f" hint-placeholder-count="3">
+          <div style="display:flex;align-items:baseline;gap:9px">
+            <span style="font-size:15px;font-weight:700;color:#033056;width:62px;flex:none">{{f.value}}</span>
+            <span style="font-size:10.5px;color:#78716c;line-height:1.55">{{f.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { bridge: 'label' };
+  }
+
+  renderVals() {
+    const self = this;
+    const bridge = this.state.bridge;
+
+    // 2024 through the end of 2026, laid out across the axis.
+    const T0 = 2024.0, T1 = 2027.0, X0 = 40, X1 = 860;
+    const at = (t) => X0 + (X1 - X0) * (t - T0) / (T1 - T0);
+
+    const marks = [
+      [2024.42, 'Jun 24'], [2024.92, 'Dec 24'], [2025.42, 'Jun 25'],
+      [2025.92, 'Dec 25'], [2026.43, 'Jun 26'], [2026.92, 'Dec 26'],
+    ];
+
+    const payFrom = at(2025.5), payTo = at(2026.5);
+    const feedFrom = at(2026.43), feedTo = at(2026.95);
+
+    const yes = { glyph: '✓', chipBg: '#dcf0e2', chipInk: '#166534' };
+    const no = { glyph: '✕', chipBg: '#f7e0d4', chipInk: '#9a3412' };
+    const part = { glyph: '~', chipBg: '#efece6', chipInk: '#78716c' };
+
+    const table = {
+      label: {
+        tests: [
+          [yes, 'Costs nothing and ships with the layer'],
+          [yes, 'The reader is told which clock each figure runs on, once, where they read it'],
+          [part, 'It does not stop anyone comparing a 2019 stop with a 2026 headway'],
+          [no, 'The 9.8% of Boardings with no current service still draw a frequency of zero unless they are excluded'],
+        ],
+        noteHead: 'Say which week the timetable is from, and stop there',
+        noteInk: '#166534',
+        noteBody: 'The layer legend carries the feed date, the stop panel repeats it beside the frequency figure, and a stop the current timetable does not serve reads “not in the current timetable” rather than nought — the same discipline the rest of the app already holds, where a Month a stop did not report is a gap and never a zero. This is the version that can ship with the first frequency layer, and it is honest as long as the sentence is actually there.',
+      },
+      clamp: {
+        tests: [
+          [yes, 'The two figures then describe the same months, so the comparison is real'],
+          [no, 'It throws away eleven of the twelve months of ridership the app has'],
+          [no, 'It couples the Month Window to a data file, which no other control does'],
+          [part, 'It would need a rule for what the chart shows when the window moves outside the feed'],
+        ],
+        noteHead: 'Narrow the months to the ones the feed describes',
+        noteInk: '#9a3412',
+        noteBody: 'Restricting the Month Window to June 2026 onward makes the pairing exact and makes the app almost useless, because the ridership on file starts in July 2025 and the whole point of the chart is the shape across those twelve months. A control that silently shrinks the window when a layer is switched on is also the kind of coupling ADR-0009 spent its argument removing. Worth drawing so it can be ruled out on the record.',
+      },
+      archive: {
+        tests: [
+          [yes, 'Each Month gets the timetable that was actually running in it'],
+          [yes, 'shakeups.json already names the boundaries, so the shape of the archive is decided'],
+          [no, 'Nobody is keeping the archive — the feed URL serves only the current zip'],
+          [part, 'Three shakeups a year at rail scale is small; at bus scale it is a payload problem of its own'],
+        ],
+        noteHead: 'Keep a timetable per shakeup and join on the month',
+        noteInk: '#78716c',
+        noteBody: 'This is the version that is actually correct, and it is the one the project cannot have today: the GitLab feed publishes the current zip and nothing else, so the archive would have to start now and be worth something in a year. What it does deserve is a decision recorded now — if the ingest starts keeping the zip it downloads each month, the honest version becomes possible later at the cost of a few megabytes, and if it does not, that option closes quietly.',
+      },
+    };
+
+    const cur = table[bridge];
+    const order = [['label', 'naming the feed date'], ['clamp', 'clamping the Month Window'], ['archive', 'archiving a feed per shakeup']];
+
+    return {
+      payX: payFrom, payW: payTo - payFrom, payTx: (payFrom + payTo) / 2,
+      feedX: feedFrom, feedW: feedTo - feedFrom, feedTx: (feedFrom + feedTo) / 2,
+      shakeups: marks.map((m) => ({ x: at(m[0]), label: m[1] })),
+      showOverlap: bridge === 'clamp',
+      overlapX: feedFrom, overlapW: payTo - feedFrom,
+      bridges: order.map((o) => ({
+        label: o[1],
+        pick: () => self.setState({ bridge: o[0] }),
+        bg: bridge === o[0] ? '#033056' : '#ffffff',
+        ink: bridge === o[0] ? '#ffffff' : '#44403c',
+      })),
+      tests: cur.tests.map((t) => ({ glyph: t[0].glyph, chipBg: t[0].chipBg, chipInk: t[0].chipInk, text: t[1] })),
+      facts: [
+        { value: '9.8%', text: 'of weekday Boardings sit on a stop-and-line pair the current bus timetable does not serve at all' },
+        { value: '968', text: 'of 8,971 bus pairs with ridership find no trips in the feed; 841 pairs run in the feed and have no ridership' },
+        { value: '38', text: 'shakeups since 2008, so a twelve-month window spans two or three different timetables' },
+      ],
+      noteHead: cur.noteHead,
+      noteInk: cur.noteInk,
+      noteBody: cur.noteBody,
+    };
+  }
+}
+</script>
+</body>
+</html>

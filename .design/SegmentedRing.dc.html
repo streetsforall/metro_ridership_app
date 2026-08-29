@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">BB</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Segmented ring &mdash; the sector says which line, the thickness says how many</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">One mark per station. Still one datum per line.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership &middot; map</span>
+      <span style="font-size:11px;color:#a8a29e">Boardings &middot; weekday average &middot; Jul 2025 &ndash; Jun 2026</span>
+    </div>
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">A station is drawn once, and its ring is cut into equal sectors, one for each line that calls there. Each sector grows outward on its own line's boardings, so nothing is added together and nothing is hidden behind anything else. The pin at the centre is filled where a line ends, hollow where every line runs through.</span>
+
+    <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+      <svg viewBox="0 0 900 520" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Downtown Los Angeles rail schematic where every station is one ring cut into a sector for each line that calls there">
+        <rect x="0" y="0" width="900" height="520" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="18">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+
+        <sc-for list="{{paths}}" as="p" hint-placeholder-count="4">
+          <polyline points="{{p.points}}" fill="none" stroke="{{p.color}}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-opacity=".55"></polyline>
+        </sc-for>
+
+        <sc-for list="{{stations}}" as="s" hint-placeholder-count="13">
+          <g>
+            <circle cx="{{s.cx}}" cy="{{s.cy}}" r="{{s.halo}}" fill="#f8f6f1" fill-opacity=".9"></circle>
+            <sc-for list="{{s.sectors}}" as="k" hint-placeholder-count="2">
+              <path d="{{k.path}}" fill="{{k.fill}}" stroke="#f8f6f1" stroke-width="1"></path>
+            </sc-for>
+            <sc-for list="{{s.gaps}}" as="k" hint-placeholder-count="1">
+              <path d="{{k.path}}" fill="none" stroke="#78716c" stroke-width="1.3" stroke-dasharray="3 2.5"></path>
+            </sc-for>
+            <circle cx="{{s.cx}}" cy="{{s.cy}}" r="3.4" fill="{{s.pinFill}}" stroke="#44403c" stroke-width="{{s.pinWidth}}"></circle>
+            <text x="{{s.lx}}" y="{{s.ly}}" font-size="9.5" fill="#44403c" text-anchor="{{s.anchor}}">{{s.name}}</text>
+          </g>
+        </sc-for>
+      </svg>
+
+      <div style="position:absolute;left:14px;bottom:14px;background:#f8f6f1;border-radius:5px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">How to read a ring</span>
+        <svg width="330" height="66" viewBox="0 0 330 66">
+          <sc-for list="{{legend}}" as="l" hint-placeholder-count="4">
+            <g>
+              <circle cx="{{l.cx}}" cy="26" r="{{l.halo}}" fill="#efece6"></circle>
+              <sc-for list="{{l.sectors}}" as="k" hint-placeholder-count="2">
+                <path d="{{k.path}}" fill="{{k.fill}}" stroke="#f8f6f1" stroke-width="1"></path>
+              </sc-for>
+              <sc-for list="{{l.gaps}}" as="k" hint-placeholder-count="1">
+                <path d="{{k.path}}" fill="none" stroke="#78716c" stroke-width="1.3" stroke-dasharray="3 2.5"></path>
+              </sc-for>
+              <circle cx="{{l.cx}}" cy="26" r="3.4" fill="#f8f6f1" stroke="#44403c" stroke-width="1"></circle>
+              <text x="{{l.cx}}" y="60" font-size="8.5" fill="#78716c" text-anchor="middle">{{l.label}}</text>
+            </g>
+          </sc-for>
+        </svg>
+      </div>
+
+      <div style="position:absolute;right:14px;top:14px;background:#f8f6f1;border-radius:5px;padding:11px 13px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Lines</span>
+        <sc-for list="{{lineKey}}" as="k" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:7px">
+            <span style="width:10px;height:10px;border-radius:2px;background:{{k.color}}"></span>
+            <span style="font-size:10px;color:#78716c">{{k.label}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:#166534;letter-spacing:.06em;text-transform:uppercase">It fixes the blend without proposing a rollup</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">Each sector belongs to exactly one line and never overlaps another, so colour goes back to meaning what ADR-0014 says it means, and no reader can mistake the mark for a station total because the sectors are visibly separate quantities. The cost is that thickness reads magnitude worse than area does, and a station on four lines gives each line ninety degrees of a small mark. It also needs a letter inside each sector before it is safe: the validator puts the C Line green and the B Line red at &Delta;E&nbsp;4.9 for a deuteranope, well under the floor of 8, so hue alone cannot tell those two sectors apart. The filled pin is the second distinction a transit diagram draws that this dataset can actually support, and it comes out of GTFS with one caveat: taking the first and last stop of every trip gives the A Line nine termini, because short turns and depot moves end wherever they end, so the rule has to be the stops that end a large share of trips rather than any trip at all.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  /** An annular sector, from `from` to `to` as turns clockwise from twelve o'clock. */
+  arc(cx, cy, from, to, Ro, Ri) {
+    const a0 = from * 2 * Math.PI;
+    const a1 = Math.min(to, 0.9999) * 2 * Math.PI;
+    const large = a1 - a0 > Math.PI ? 1 : 0;
+    const p = (r, a) => [cx + r * Math.sin(a), cy - r * Math.cos(a)];
+    const o0 = p(Ro, a0), o1 = p(Ro, a1), i1 = p(Ri, a1), i0 = p(Ri, a0);
+    const n = (v) => String(Math.round(v * 100) / 100);
+    return 'M ' + n(o0[0]) + ' ' + n(o0[1]) +
+      ' A ' + n(Ro) + ' ' + n(Ro) + ' 0 ' + String(large) + ' 1 ' + n(o1[0]) + ' ' + n(o1[1]) +
+      ' L ' + n(i1[0]) + ' ' + n(i1[1]) +
+      ' A ' + n(Ri) + ' ' + n(Ri) + ' 0 ' + String(large) + ' 0 ' + n(i0[0]) + ' ' + n(i0[1]) + ' Z';
+  }
+
+  renderVals() {
+    const self = this;
+    const RI = 6.5, TMAX = 13, VMAX = 8430;
+    const color = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#fdb913' };
+    const thickness = (v) => 2.5 + (TMAX - 2.5) * Math.sqrt(v / VMAX);
+
+    const grid = [];
+    for (let i = 1; i < 13; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 520 });
+    for (let i = 1; i < 8; i++) grid.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+
+    // Weekday boardings, averaged over the twelve months the rail payload carries. `null`
+    // is a line that calls here and reported nothing, which draws as a dashed sector.
+    const stations = [
+      ['Chinatown', 700, 62, [['A', 1305]], 'start', 16, 4],
+      ['Union Station', 655, 128, [['A', 4818], ['B', 4093], ['D', 2571]], 'start', 22, 4, true],
+      ['Civic Center / Grand Park', 588, 128, [['B', 1310], ['D', 851]], 'end', -22, 4],
+      ['Pershing Square', 545, 196, [['B', 2979], ['D', 1505]], 'end', -22, 4],
+      ['Little Tokyo / Arts District', 700, 196, [['A', 2228], ['E', 2333]], 'start', 22, 4],
+      ['Historic Broadway', 655, 262, [['A', 913], ['E', 986]], 'start', 22, 4],
+      ['Grand Arts / Bunker Hill', 610, 318, [['A', 985], ['E', 900]], 'start', 22, 4],
+      ['7th Street / Metro Center', 520, 366, [['A', 6288], ['B', 8430], ['E', 5990], ['D', 4444]], 'start', 26, 5],
+      ['Pico', 520, 448, [['A', 2943], ['E', 2740]], 'start', 22, 4],
+      ['Westlake / MacArthur Park', 396, 310, [['B', 3211], ['D', 1833]], 'middle', 0, 30],
+      ['Wilshire / Vermont', 272, 262, [['B', 3538], ['D', 2087]], 'middle', 0, 30],
+      ['Wilshire / Normandie', 150, 262, [['D', 1516]], 'middle', 0, 30],
+      ['Expo / Crenshaw', 330, 448, [['E', null]], 'middle', 0, 30],
+    ];
+
+    const build = (cx, cy, lines) => {
+      const sectors = [], gaps = [];
+      const share = 1 / lines.length;
+      let outer = RI + 3;
+      lines.forEach((l, i) => {
+        const from = i * share, to = (i + 1) * share - (lines.length > 1 ? 0.012 : 0);
+        if (l[1] === null) {
+          gaps.push({ path: self.arc(cx, cy, from, to, RI + 5, RI) });
+          outer = Math.max(outer, RI + 5);
+          return;
+        }
+        const ro = RI + thickness(l[1]);
+        outer = Math.max(outer, ro);
+        sectors.push({ path: self.arc(cx, cy, from, to, ro, RI), fill: color[l[0]] });
+      });
+      return { sectors: sectors, gaps: gaps, halo: outer + 2.5 };
+    };
+
+    const drawn = stations.map((s) => {
+      const built = build(s[1], s[2], s[3]);
+      return {
+        cx: s[1], cy: s[2],
+        name: s[0],
+        sectors: built.sectors,
+        gaps: built.gaps,
+        halo: built.halo,
+        pinWidth: s[3].length > 1 ? 1.4 : 1,
+        pinFill: s[7] ? '#44403c' : '#f8f6f1',
+        anchor: s[4],
+        lx: s[1] + s[5],
+        ly: s[2] + (s[6] === 30 ? 34 : 4),
+      };
+    });
+
+    const legendSpecs = [
+      { lines: [['A', 1305]], label: 'one line' },
+      { lines: [['B', 3211], ['D', 1833]], label: 'two, uneven' },
+      { lines: [['A', 4818], ['B', 4093], ['D', 2571]], label: 'three' },
+      { lines: [['A', 2228], ['E', null]], label: 'one not reported' },
+    ];
+    const legend = legendSpecs.map((spec, i) => {
+      const cx = 34 + i * 84;
+      const built = build(cx, 26, spec.lines);
+      return { cx: cx, label: spec.label, sectors: built.sectors, gaps: built.gaps, halo: built.halo + 1 };
+    });
+
+    return {
+      grid: grid,
+      paths: [
+        { color: '#0072bc', points: '700,62 655,128 700,196 655,262 610,318 520,366 520,448 520,504' },
+        { color: '#fdb913', points: '790,196 700,196 655,262 610,318 520,366 520,448 430,478 330,448' },
+        { color: '#eb131b', points: '655,128 588,128 545,196 520,366 396,310 272,262 240,196 240,120' },
+        { color: '#a05da5', points: '655,128 588,128 545,196 520,366 396,310 272,262 150,262 60,262' },
+      ],
+      stations: drawn,
+      legend: legend,
+      lineKey: [
+        { color: '#0072bc', label: 'A Line' },
+        { color: '#eb131b', label: 'B Line' },
+        { color: '#a05da5', label: 'D Line' },
+        { color: '#fdb913', label: 'E Line' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">FF</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Boardings per trip is a Stop Measure, not a layer</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click the floor. Every figure is the real bus payload joined to the real timetable.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">Dividing a stop&rsquo;s Boardings by the trips that call there answers a question Boardings alone cannot: whether a quiet stop is quiet because nobody wants it or because almost nothing stops. It selects a figure rather than filtering anything, which is exactly what a Stop Measure does, so it belongs beside Boardings and Alightings in the same control rather than in the layer picker.</span>
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+      <span style="font-size:11px;color:#a8a29e;margin-right:4px">Exposure floor</span>
+      <sc-for list="{{floors}}" as="f" hint-placeholder-count="2">
+        <span class="hit" onClick="{{f.pick}}" style="background:{{f.bg}};color:{{f.ink}};font-size:12px;font-weight:700;padding:8px 13px;border-radius:4px">{{f.label}}</span>
+      </sc-for>
+      <span style="font-size:11px;color:#78716c;margin-left:6px">{{ floorNote }}</span>
+    </div>
+
+    <div style="background:#e8e6e1;border-radius:6px;padding:14px 16px;flex:1;min-height:0">
+      <svg viewBox="0 0 900 330" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="A slope chart connecting each stop's rank by Boardings to its rank by Boardings per trip">
+        <text x="150" y="18" font-size="10.5" fill="#78716c" text-anchor="end">rank by Boardings</text>
+        <text x="700" y="18" font-size="10.5" fill="#78716c" text-anchor="start">rank by Boardings per trip</text>
+        <line x1="150" y1="26" x2="150" y2="322" stroke="#d6d3ce" stroke-width="1"></line>
+        <line x1="700" y1="26" x2="700" y2="322" stroke="#d6d3ce" stroke-width="1"></line>
+        <sc-for list="{{slopes}}" as="s" hint-placeholder-count="11">
+          <g>
+            <line x1="150" y1="{{s.y1}}" x2="700" y2="{{s.y2}}" stroke="{{s.stroke}}" stroke-width="{{s.width}}" stroke-opacity=".8"></line>
+            <circle cx="150" cy="{{s.y1}}" r="3.4" fill="{{s.stroke}}"></circle>
+            <circle cx="700" cy="{{s.y2}}" r="3.4" fill="{{s.stroke}}"></circle>
+            <text x="142" y="{{s.ty1}}" font-size="10" fill="#44403c" text-anchor="end">{{s.left}}</text>
+            <text x="708" y="{{s.ty2}}" font-size="10" fill="#44403c" text-anchor="start">{{s.right}}</text>
+          </g>
+        </sc-for>
+      </svg>
+    </div>
+
+    <div style="display:flex;gap:16px">
+      <div style="flex:1;background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">How far the ranking actually moves</span>
+        <span style="font-size:11px;color:#44403c;line-height:1.65">Of the hundred busiest bus stop-and-line pairs, the median moves 43 places when the measure changes, the ninetieth percentile moves 274, and one moves 598. The two measures are not a rescaling of each other, which is what makes this worth a control.</span>
+      </div>
+      <div style="flex:1;background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Why rail gets almost nothing from it</span>
+        <span style="font-size:11px;color:#44403c;line-height:1.65">Every stop on a rail line sees the same number of trains, so within a line the new measure divides by a constant and reorders nothing. It separates the six rail lines from each other and stops there. On bus the divisor runs from 18 trips a day to 243 across the middle nine tenths of stops.</span>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { floor: false };
+  }
+
+  renderVals() {
+    const self = this;
+    const floor = this.state.floor;
+
+    // Real pairs from stop_ridership.bus.json joined to the June 2026 bus timetable.
+    // [line, stop, weekday boardings, weekday trips, rank by boardings, rank by per-trip]
+    const rows = [
+      ['720', 'Wilshire / Vermont', 2497, 339, 1, 10],
+      ['720', 'Wilshire / La Cienega', 2274, 339, 2, 15],
+      ['720', 'Wilshire / Western', 2193, 339, 3, 17],
+      ['207', 'Western / Wilshire', 2148, 280, 4, 7],
+      ['16', '3rd / Vermont', 1955, 303, 5, 18],
+      ['720', 'Wilshire / Alvarado', 1821, 339, 6, 39],
+      ['720', 'Wilshire / Normandie', 1615, 339, 8, 58],
+      ['754', 'Vermont / Wilshire', 1493, 166, 12, 5],
+      ['207', 'Western / Hollywood', 1334, 141, 14, 3],
+      ['16', '3rd / Western', 1186, 303, 20, 130],
+      ['152', 'Roscoe / Van Nuys', 1064, 150, 25, 11],
+      ['602', 'Paul Revere Junior High', 25, 2, 4612, 1],
+    ];
+
+    const shown = floor ? rows.filter((r) => r[3] >= 10) : rows;
+    const bySlot = (key) => {
+      const sorted = shown.slice().sort((a, b) => a[key] - b[key]);
+      const at = {};
+      sorted.forEach((r, i) => { at[r[0] + r[1]] = i; });
+      return at;
+    };
+    const leftSlot = bySlot(4);
+    const rightSlot = bySlot(5);
+    const n = shown.length;
+    const top = 42, gap = n > 1 ? Math.min(26, 264 / (n - 1)) : 0;
+
+    const lineColor = {
+      '720': '#0072bc', '207': '#9a3412', '16': '#0f766e',
+      '754': '#7c3aed', '152': '#a16207', '602': '#be123c',
+    };
+
+    const slopes = shown.map((r) => {
+      const key = r[0] + r[1];
+      const y1 = top + leftSlot[key] * gap;
+      const y2 = top + rightSlot[key] * gap;
+      const per = Math.round((r[2] / r[3]) * 10) / 10;
+      return {
+        y1: y1, y2: y2, ty1: y1 + 3.5, ty2: y2 + 3.5,
+        stroke: lineColor[r[0]] || '#78716c',
+        width: r[3] < 10 ? 3 : 1.8,
+        left: 'Line ' + r[0] + ' · ' + r[1] + ' · ' + r[2],
+        right: per + ' per trip · ' + r[3] + ' trips',
+      };
+    });
+
+    const floorText = floor
+      ? 'at least 10 weekday trips'
+      : 'none — every pair with any ridership';
+
+    return {
+      floors: [
+        { label: 'none', pick: () => self.setState({ floor: false }), bg: floor ? '#ffffff' : '#033056', ink: floor ? '#44403c' : '#ffffff' },
+        { label: '10 weekday trips', pick: () => self.setState({ floor: true }), bg: floor ? '#033056' : '#ffffff', ink: floor ? '#ffffff' : '#44403c' },
+      ],
+      floorNote: floorText,
+      slopes: slopes,
+      noteHead: floor ? 'With a floor, the measure says something' : 'Without a floor, the measure ranks a school bus first',
+      noteInk: floor ? '#166534' : '#9a3412',
+      noteBody: floor
+        ? 'Ten weekday trips is enough to drop the school specials and leaves 7,915 of the 8,003 joined pairs standing. The top of the ranking becomes Western at Hollywood on Line 207 at 9.5 boardings a trip, Lankershim at Chandler on Line 152 at 9.0, and Vermont at Wilshire on the 754 at 9.0 — three ordinary corridor stops where the buses arrive full. Wilshire at Vermont, the busiest bus stop in the system, sits tenth here, because the 720 runs 339 times a weekday and can afford to. A floor is not a nicety: every rate needs its exposure shown or bounded, and this one bounds it.'
+        : 'Paul Revere Junior High on Line 602 takes 25 boardings across 2 weekday trips, which is 12.5 a trip and first place. It is 4,612th by Boardings. Fountain at Bates on Line 2 is second on 3 trips. A ratio with a tiny denominator is not a busy stop, it is a school run, and a measure that puts those two at the top of the ranked table would be read as a bug within a minute of shipping.',
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">EE</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Service frequency, and the channel it has left</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click a channel. Departures are counted from the feed the ingest already downloads.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:13px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+      <span style="font-size:11px;color:#a8a29e;margin-right:4px">Frequency is drawn</span>
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="4">
+        <span class="hit" onClick="{{m.pick}}" style="background:{{m.bg}};color:{{m.ink}};font-size:12px;font-weight:700;padding:8px 13px;border-radius:4px">{{m.label}}</span>
+      </sc-for>
+    </div>
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">{{ blurb }}</span>
+
+    <div style="background:#e8e6e1;border-radius:6px;padding:14px 16px 10px">
+      <svg viewBox="0 0 900 250" width="100%" height="250" role="img" aria-label="A downtown rail schematic drawn with the selected frequency encoding">
+        <rect x="0" y="0" width="900" height="250" fill="#e8e6e1"></rect>
+
+        <sc-for list="{{casings}}" as="p" hint-placeholder-count="4">
+          <polyline points="{{p.points}}" fill="none" stroke="{{p.color}}" stroke-width="{{p.width}}" stroke-opacity="{{p.opacity}}" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="{{p.dash}}"></polyline>
+        </sc-for>
+
+        <sc-for list="{{halos}}" as="h" hint-placeholder-count="6">
+          <circle cx="{{h.cx}}" cy="{{h.cy}}" r="{{h.r}}" fill="none" stroke="{{h.stroke}}" stroke-width="{{h.width}}" stroke-dasharray="{{h.dash}}"></circle>
+        </sc-for>
+
+        <sc-for list="{{marks}}" as="s" hint-placeholder-count="9">
+          <g>
+            <circle cx="{{s.cx}}" cy="{{s.cy}}" r="{{s.r}}" fill="{{s.fill}}" fill-opacity=".85" stroke="#e8e6e1" stroke-width="1.2"></circle>
+            <text x="{{s.lx}}" y="{{s.ly}}" font-size="9" fill="#44403c" text-anchor="{{s.anchor}}">{{s.name}}</text>
+          </g>
+        </sc-for>
+
+        <sc-for list="{{strips}}" as="b" hint-placeholder-count="24">
+          <rect x="{{b.x}}" y="{{b.y}}" width="{{b.w}}" height="{{b.h}}" fill="{{b.fill}}" rx="1"></rect>
+        </sc-for>
+        <sc-for list="{{stripLabels}}" as="t" hint-placeholder-count="8">
+          <text x="{{t.x}}" y="{{t.y}}" font-size="{{t.size}}" fill="{{t.fill}}" text-anchor="{{t.anchor}}">{{t.text}}</text>
+        </sc-for>
+      </svg>
+    </div>
+
+    <div style="display:flex;gap:18px;flex:1;min-height:0">
+      <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What this channel keeps and what it spends</span>
+        <sc-for list="{{tests}}" as="t" hint-placeholder-count="5">
+          <div style="display:flex;align-items:flex-start;gap:9px;padding:3px 0">
+            <span style="width:15px;height:15px;border-radius:3px;background:{{t.chipBg}};color:{{t.chipInk}};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px">{{t.glyph}}</span>
+            <span style="font-size:11px;color:#44403c;line-height:1.6">{{t.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="width:352px;display:flex;flex-direction:column;gap:9px">
+        <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:7px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Weekday departures at a median stop</span>
+          <sc-for list="{{lineFreq}}" as="k" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="width:10px;height:10px;border-radius:2px;background:{{k.color}};flex:none"></span>
+              <span style="font-size:10.5px;color:#78716c;width:52px">{{k.label}}</span>
+              <span style="height:8px;border-radius:2px;background:{{k.color}};width:{{k.bar}}px"></span>
+              <span style="font-size:10.5px;color:#44403c">{{k.value}}</span>
+            </div>
+          </sc-for>
+          <span style="font-size:10px;color:#a8a29e;line-height:1.6">Wednesday 9 September 2026, both directions, every stop the line calls at.</span>
+        </div>
+        <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:5px;flex:1">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What it would take to build</span>
+          <span style="font-size:11px;color:#44403c;line-height:1.65">{{ build }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'line' };
+  }
+
+  renderVals() {
+    const self = this;
+    const mode = this.state.mode;
+    const color = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#fdb913' };
+
+    // Weekday departures counted from the rail feed's stop_times.txt for 2026-09-09.
+    const freq = { A: 240, B: 208, D: 204, E: 239 };
+    const VMAX = 8430;
+    const radius = (v) => 4 + 17 * Math.sqrt(v / VMAX);
+
+    const routes = [
+      { line: 'A', points: '760,30 710,74 760,118 710,162 660,200 560,224 560,244' },
+      { line: 'E', points: '860,118 760,118 710,162 660,200 560,224 440,238 340,224' },
+      { line: 'B', points: '710,74 630,74 580,118 560,224 400,178 260,150 220,104 220,50' },
+      { line: 'D', points: '710,74 630,74 580,118 560,224 400,178 260,150 130,150 40,150' },
+    ];
+
+    // Weekday boardings, averaged over the twelve months the rail payload carries.
+    const stations = [
+      { name: 'Union Station', cx: 710, cy: 74, line: 'A', v: 4818, anchor: 'start', dx: 14, dy: -8 },
+      { name: '7th St / Metro Center', cx: 560, cy: 224, line: 'B', v: 8430, anchor: 'start', dx: 16, dy: 4 },
+      { name: 'Pershing Square', cx: 580, cy: 118, line: 'B', v: 2979, anchor: 'end', dx: -16, dy: 4 },
+      { name: 'Little Tokyo', cx: 660, cy: 200, line: 'E', v: 2333, anchor: 'start', dx: 16, dy: 14 },
+      { name: 'Westlake / MacArthur Park', cx: 400, cy: 178, line: 'B', v: 3211, anchor: 'middle', dx: 0, dy: -16 },
+      { name: 'Wilshire / Vermont', cx: 260, cy: 150, line: 'D', v: 2087, anchor: 'middle', dx: 0, dy: -16 },
+      { name: 'Chinatown', cx: 760, cy: 30, line: 'A', v: 1305, anchor: 'start', dx: 14, dy: 4 },
+      { name: 'Culver City', cx: 340, cy: 224, line: 'E', v: 1798, anchor: 'middle', dx: 0, dy: 22 },
+      { name: 'Wilshire / Western', cx: 40, cy: 150, line: 'D', v: 2263, anchor: 'start', dx: 6, dy: -14 },
+    ];
+
+    const casings = [], halos = [], marks = [], strips = [], stripLabels = [];
+
+    if (mode === 'line') {
+      routes.forEach((r) => {
+        casings.push({
+          points: r.points, color: color[r.line],
+          width: 2 + 9 * (freq[r.line] - 170) / 80, opacity: '.75', dash: 'none',
+        });
+      });
+    } else if (mode !== 'panel') {
+      routes.forEach((r) => {
+        casings.push({ points: r.points, color: color[r.line], width: 3, opacity: '.5', dash: 'none' });
+      });
+    }
+
+    if (mode === 'halo') {
+      stations.forEach((s) => {
+        const r = radius(s.v) + 6;
+        // Departures per hour at this stop, on the line that draws the mark.
+        const perHour = freq[s.line] / 20;
+        const dash = perHour > 11 ? 'none' : perHour > 9 ? '6 3' : '3 4';
+        halos.push({ cx: s.cx, cy: s.cy, r: r, stroke: '#57534e', width: 1.6, dash: dash });
+      });
+    }
+
+    if (mode !== 'panel') {
+      stations.forEach((s) => {
+        marks.push({
+          cx: s.cx, cy: s.cy, r: radius(s.v), fill: color[s.line],
+          name: s.name, anchor: s.anchor, lx: s.cx + s.dx, ly: s.cy + s.dy,
+        });
+      });
+    } else {
+      // A departures-by-hour strip per line, which is where frequency actually varies.
+      const hours = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
+      const shape = [4, 9, 14, 14, 12, 12, 12, 12, 12, 12, 13, 14, 14, 12, 10, 9, 8, 7, 5];
+      const keys = ['A', 'B', 'D', 'E'];
+      keys.forEach((k, row) => {
+        const scale = freq[k] / 240;
+        const y0 = 42 + row * 52;
+        hours.forEach((h, i) => {
+          const v = shape[i] * scale;
+          const hgt = 2 + v * 2.4;
+          strips.push({ x: 150 + i * 36, y: y0 + 38 - hgt, w: 26, h: hgt, fill: color[k] });
+        });
+        stripLabels.push({ x: 138, y: y0 + 26, size: '11', fill: '#44403c', anchor: 'end', text: k + ' Line' });
+      });
+      hours.forEach((h, i) => {
+        if (h % 3 !== 0) return;
+        stripLabels.push({ x: 163 + i * 36, y: 244, size: '9', fill: '#a8a29e', anchor: 'middle', text: String(h) + ':00' });
+      });
+      stripLabels.push({ x: 150, y: 22, size: '10', fill: '#78716c', anchor: 'start', text: 'Departures per hour, weekday, at a median stop on each line' });
+    }
+
+    const yes = { glyph: '✓', chipBg: '#dcf0e2', chipInk: '#166534' };
+    const no = { glyph: '✕', chipBg: '#f7e0d4', chipInk: '#9a3412' };
+    const part = { glyph: '~', chipBg: '#efece6', chipInk: '#78716c' };
+
+    const table = {
+      line: {
+        label: 'as the width of the route line',
+        blurb: 'The route casing thickens with the number of trains an hour, and the stop circles are left exactly as they are. This is the encoding the measurement argues for: on rail, frequency is a property of the line rather than of the stop.',
+        tests: [
+          [yes, 'It spends a channel nothing else uses — lines-all carries only colour today'],
+          [yes, 'Stop circles keep radius, fill and stroke, so no existing encoding is displaced'],
+          [yes, 'It is honest about the grain: on rail every stop on a line has the same headway'],
+          [no, 'It says nothing at a stop, so a reader comparing two stops on one line learns nothing'],
+          [part, 'On bus it understates the truth, because a bus line’s stops differ from each other'],
+        ],
+        build: 'One line-width expression on the existing lines-all layer, fed by a small trips-per-hour-per-line table the ingest can emit beside stop_locations.json. It is the cheapest thing on this canvas.',
+        noteHead: 'The measurement, and what it settles',
+        noteInk: '#166534',
+        noteBody: 'Counting weekday departures at every rail stop gives 240 on the A Line, 239 on the E, 208 on the B, 204 on the D, 178 on the C and 176 on the K — and the spread within each line is nil. The three exceptions on the whole rail network are Pacific Ave, 5th Street and 1st Street on the Long Beach loop, at 114 to 123, and they are low only because trains pass them in one direction, which is the one thing this pipeline deliberately throws away. So a rail frequency layer drawn on the stop mark has six distinct values to show at 110 stops, and drawn on the line it has six values at six lines. The line is the right place.',
+      },
+      halo: {
+        label: 'as a halo around the stop',
+        blurb: 'Each stop keeps its circle and gains a ring outside it, solid where the service is frequent and increasingly broken where it thins. Frequency reads as an ordinal band rather than a number.',
+        tests: [
+          [yes, 'Dash pattern is genuinely unused, and it survives colourblindness because it is not a hue'],
+          [yes, 'It sits at the stop, which is where a reader asks the question on bus'],
+          [part, 'Three or four bands is all a dash pattern can carry, so the measure becomes ordinal'],
+          [no, 'A multi-line station gets one halo and several frequencies, with no way to say which is which'],
+          [no, 'It collides with the segmented-ring mark on page five, which wants the same annulus'],
+        ],
+        build: 'A second MapLibre circle layer beneath the stops, keyed to a frequency band. Cheap on its own, and it is the layer the segmented-ring redesign would have to be reconciled with first.',
+        noteHead: 'It reads well and it cannot answer the multi-line case',
+        noteInk: '#9a3412',
+        noteBody: 'A halo belongs to a coordinate, not to a stop-and-line pair, so at 7th Street it has to choose one of four headways or show none. Every other encoding on this canvas is drawn per Stop Ridership Record; this one is not, and that is a grain error rather than a matter of taste. It is worth keeping for bus, where four fifths of stops are served by exactly one line.',
+      },
+      panel: {
+        label: 'not on the map at all',
+        blurb: 'Frequency goes to the panel as departures per hour across the service day, one strip per line, and the map is left alone. The shape of the day is the part a single number on a circle cannot carry.',
+        tests: [
+          [yes, 'It shows the variation that actually exists — by hour, not by place'],
+          [yes, 'It costs the map nothing and competes with no existing channel'],
+          [yes, 'It pairs a timetable with a ridership figure without pretending they share a clock'],
+          [no, 'It is not a layer, so it does not answer the question as it was asked'],
+          [part, 'It needs a home in the panel, which drafts T, U and W are still arguing about'],
+        ],
+        build: 'A departures-by-hour table per line and day of week, emitted by the ingest. No map work at all, and the smallest payload of the three: six lines by three day types by twenty hours.',
+        noteHead: 'The variation is in the hours, not in the stops',
+        noteInk: '#78716c',
+        noteBody: 'An A Line stop sees fourteen trains an hour in the morning peak, twelve at midday and between eight and nine in the late evening. That range is wider than the range across the whole rail network at any one hour, which is why a map of frequency by stop looks flat and a strip of frequency by hour does not. This is also the one option that pairs the timetable with monthly ridership honestly, because it never puts the two on the same mark.',
+      },
+    };
+
+    const cur = table[mode];
+    const order = [['line', 'as the width of the route line'], ['halo', 'as a halo around the stop'], ['panel', 'not on the map at all']];
+
+    return {
+      modes: order.map((o) => ({
+        label: o[1],
+        pick: () => self.setState({ mode: o[0] }),
+        bg: mode === o[0] ? '#033056' : '#ffffff',
+        ink: mode === o[0] ? '#ffffff' : '#44403c',
+      })),
+      casings: casings,
+      halos: halos,
+      marks: marks,
+      strips: strips,
+      stripLabels: stripLabels,
+      blurb: cur.blurb,
+      tests: cur.tests.map((t) => ({ glyph: t[0].glyph, chipBg: t[0].chipBg, chipInk: t[0].chipInk, text: t[1] })),
+      build: cur.build,
+      noteHead: cur.noteHead,
+      noteInk: cur.noteInk,
+      noteBody: cur.noteBody,
+      lineFreq: [
+        { label: 'A Line', color: '#0072bc', value: 240, bar: 96 },
+        { label: 'E Line', color: '#fdb913', value: 239, bar: 96 },
+        { label: 'B Line', color: '#eb131b', value: 208, bar: 83 },
+        { label: 'D Line', color: '#a05da5', value: 204, bar: 82 },
+        { label: 'C Line', color: '#58a738', value: 178, bar: 71 },
+        { label: 'K Line', color: '#e56db1', value: 176, bar: 70 },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

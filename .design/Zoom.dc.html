@@ -1,0 +1,287 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">KK</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">The segmented ring at four zooms</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click a strategy. Station spacing is measured from the 110 committed rail coordinates.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:13px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+      <span style="font-size:11px;color:#a8a29e;margin-right:4px">Below the zoom where the ring fits, the mark</span>
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="3">
+        <span class="hit" onClick="{{m.pick}}" style="background:{{m.bg}};color:{{m.ink}};font-size:12px;font-weight:700;padding:8px 13px;border-radius:4px">{{m.label}}</span>
+      </sc-for>
+    </div>
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">{{ blurb }}</span>
+
+    <div style="background:#e8e6e1;border-radius:6px;padding:16px 16px 12px;flex:1;min-height:0">
+      <svg viewBox="0 0 900 330" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Four panels showing the same six downtown stations at zoom 10, 12, 14 and 16 under the selected strategy">
+        <sc-for list="{{panels}}" as="p" hint-placeholder-count="4">
+          <g>
+            <rect x="{{p.x}}" y="26" width="204" height="238" rx="4" fill="#f8f6f1"></rect>
+            <text x="{{p.tx}}" y="18" font-size="11" font-weight="700" fill="#033056" text-anchor="middle">{{p.title}}</text>
+            <text x="{{p.tx}}" y="284" font-size="9.5" fill="#78716c" text-anchor="middle">{{p.scale}}</text>
+            <text x="{{p.tx}}" y="298" font-size="9.5" fill="#a8a29e" text-anchor="middle">{{p.gap}}</text>
+            <text x="{{p.tx}}" y="316" font-size="9.5" fill="{{p.verdictInk}}" text-anchor="middle">{{p.verdict}}</text>
+
+            <sc-for list="{{p.links}}" as="l" hint-placeholder-count="5">
+              <line x1="{{l.x1}}" y1="{{l.y1}}" x2="{{l.x2}}" y2="{{l.y2}}" stroke="#c9c5be" stroke-width="1.4"></line>
+            </sc-for>
+            <sc-for list="{{p.marks}}" as="m" hint-placeholder-count="6">
+              <g>
+                <sc-for list="{{m.sectors}}" as="k" hint-placeholder-count="3">
+                  <path d="{{k.path}}" fill="{{k.fill}}" stroke="#f8f6f1" stroke-width=".8"></path>
+                </sc-for>
+                <sc-if value="{{m.dot}}" hint-placeholder-val="{{ true }}">
+                  <circle cx="{{m.cx}}" cy="{{m.cy}}" r="{{m.dotR}}" fill="{{m.dotFill}}" stroke="#f8f6f1" stroke-width="{{m.dotStroke}}"></circle>
+                </sc-if>
+                <sc-if value="{{m.count}}" hint-placeholder-val="{{ true }}">
+                  <text x="{{m.cx}}" y="{{m.ty}}" font-size="9" font-weight="700" fill="#f8f6f1" text-anchor="middle">{{m.label}}</text>
+                </sc-if>
+              </g>
+            </sc-for>
+          </g>
+        </sc-for>
+      </svg>
+    </div>
+
+    <div style="display:flex;gap:18px">
+      <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+        <sc-for list="{{tests}}" as="t" hint-placeholder-count="4">
+          <div style="display:flex;align-items:flex-start;gap:9px;padding:2px 0">
+            <span style="width:15px;height:15px;border-radius:3px;background:{{t.chipBg}};color:{{t.chipInk}};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px">{{t.glyph}}</span>
+            <span style="font-size:11px;color:#44403c;line-height:1.6">{{t.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="width:330px;background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:7px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">How far apart rail stations really are</span>
+        <sc-for list="{{facts}}" as="f" hint-placeholder-count="3">
+          <div style="display:flex;align-items:baseline;gap:9px">
+            <span style="font-size:14px;font-weight:700;color:#033056;width:62px;flex:none">{{f.value}}</span>
+            <span style="font-size:10.5px;color:#78716c;line-height:1.55">{{f.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'collapse' };
+  }
+
+  arc(cx, cy, from, to, Ro, Ri) {
+    const a0 = from * 2 * Math.PI;
+    const a1 = Math.min(to, 0.9999) * 2 * Math.PI;
+    const large = a1 - a0 > Math.PI ? 1 : 0;
+    const p = (r, a) => [cx + r * Math.sin(a), cy - r * Math.cos(a)];
+    const o0 = p(Ro, a0), o1 = p(Ro, a1), i1 = p(Ri, a1), i0 = p(Ri, a0);
+    const n = (v) => String(Math.round(v * 100) / 100);
+    return 'M ' + n(o0[0]) + ' ' + n(o0[1]) +
+      ' A ' + n(Ro) + ' ' + n(Ro) + ' 0 ' + String(large) + ' 1 ' + n(o1[0]) + ' ' + n(o1[1]) +
+      ' L ' + n(i1[0]) + ' ' + n(i1[1]) +
+      ' A ' + n(Ri) + ' ' + n(Ri) + ' 0 ' + String(large) + ' 0 ' + n(i0[0]) + ' ' + n(i0[1]) + ' Z';
+  }
+
+  renderVals() {
+    const self = this;
+    const mode = this.state.mode;
+    const color = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#fdb913' };
+
+    // Six downtown stations, positioned in metres from 7th Street and drawn at each zoom's scale.
+    const stations = [
+      { name: '7th St', mx: 0, my: 0, lines: [['B', 8430], ['A', 6288], ['E', 5990], ['D', 4444]] },
+      { name: 'Pershing Sq', mx: 480, my: -640, lines: [['B', 2979], ['D', 1505]] },
+      { name: 'Civic Center', mx: 900, my: -1180, lines: [['B', 1310], ['D', 851]] },
+      { name: 'Union Station', mx: 1900, my: -1500, lines: [['A', 4818], ['B', 4093], ['D', 2571]] },
+      { name: 'Historic Bwy', mx: 980, my: -880, lines: [['A', 913], ['E', 986]] },
+      { name: 'Pico', mx: -180, my: 760, lines: [['A', 2943], ['E', 2740]] },
+    ];
+
+    const zooms = [
+      { z: 10, mpp: 126.7, gap: '9.8 px between neighbouring stations' },
+      { z: 12, mpp: 31.7, gap: '39 px between neighbouring stations' },
+      { z: 14, mpp: 7.9, gap: '157 px between neighbouring stations' },
+      { z: 16, mpp: 2.0, gap: '626 px between neighbouring stations' },
+    ];
+
+    // The ring is legible from zoom 13 up; below that each strategy differs.
+    const RING_OK = 13;
+    const VMAX = 8430;
+
+    const panels = zooms.map((zz, pi) => {
+      const px = 12 + pi * 224;
+      const cx0 = px + 102, cy0 = 148;
+      // Panel scale: real metres per pixel at that zoom, capped so the widest panel still fits.
+      const shrink = zz.z >= 14 ? (zz.z === 14 ? 3.2 : 12) : 1;
+      const toPx = (m) => m / zz.mpp / shrink;
+
+      const marks = [], links = [];
+      const ringFits = zz.z >= RING_OK;
+
+      stations.forEach((s) => {
+        const cx = cx0 + toPx(s.mx);
+        const cy = cy0 + toPx(s.my);
+        const m = { cx: cx, cy: cy, sectors: [], dot: false, count: false, ty: cy + 3.2, label: '' };
+
+        if (ringFits) {
+          const RI = 7, share = 1 / s.lines.length;
+          s.lines.forEach((l, k) => {
+            const ro = RI + 2.5 + 9 * Math.sqrt(l[1] / VMAX);
+            m.sectors.push({ path: self.arc(cx, cy, k * share, (k + 1) * share - 0.014, ro, RI), fill: color[l[0]] });
+          });
+        } else if (mode === 'shrink') {
+          const RI = 3.2, share = 1 / s.lines.length;
+          s.lines.forEach((l, k) => {
+            const ro = RI + 1.2 + 3.4 * Math.sqrt(l[1] / VMAX);
+            m.sectors.push({ path: self.arc(cx, cy, k * share, (k + 1) * share, ro, RI), fill: color[l[0]] });
+          });
+        } else if (mode === 'collapse') {
+          m.dot = true;
+          m.dotR = s.lines.length > 1 ? 5.2 : 3.6;
+          m.dotFill = s.lines.length > 1 ? '#44403c' : color[s.lines[0][0]];
+          m.dotStroke = 1.2;
+        } else {
+          m.dot = true;
+          m.dotR = 8.5;
+          m.dotFill = '#57534e';
+          m.dotStroke = 1.4;
+          m.count = true;
+          m.label = String(s.lines.length);
+        }
+        marks.push(m);
+      });
+
+      if (mode === 'cluster' && !ringFits) {
+        // One mark for the whole downtown group, rather than six overlapping ones.
+        marks.length = 0;
+        marks.push({ cx: cx0 + toPx(700), cy: cy0 + toPx(-700), sectors: [], dot: true, dotR: 15,
+          dotFill: '#57534e', dotStroke: 1.6, count: true, label: '6', ty: cy0 + toPx(-700) + 4 });
+      }
+
+      const verdicts = {
+        10: ringFits ? '' : (mode === 'shrink' ? 'unreadable' : mode === 'collapse' ? 'legible, less said' : 'one mark, six stations'),
+        12: ringFits ? '' : (mode === 'shrink' ? 'sectors under 3 px' : mode === 'collapse' ? 'legible, less said' : 'one mark, six stations'),
+        14: 'the ring as designed',
+        16: 'the ring as designed',
+      };
+      const v = verdicts[zz.z];
+
+      return {
+        x: px, tx: cx0,
+        title: 'zoom ' + zz.z,
+        scale: zz.mpp + ' m per pixel',
+        gap: zz.gap,
+        verdict: v,
+        verdictInk: zz.z >= RING_OK ? '#166534' : (mode === 'shrink' ? '#9a3412' : '#78716c'),
+        marks: marks,
+        links: links,
+      };
+    });
+
+    const yes = { glyph: '✓', chipBg: '#dcf0e2', chipInk: '#166534' };
+    const no = { glyph: '✕', chipBg: '#f7e0d4', chipInk: '#9a3412' };
+    const part = { glyph: '~', chipBg: '#efece6', chipInk: '#78716c' };
+
+    const table = {
+      shrink: {
+        label: 'shrinks with the map',
+        blurb: 'The ring keeps its design and simply gets smaller, which is what a naive radius expression does.',
+        tests: [
+          [no, 'At zoom 12 a four-line ring gives each sector under three pixels of arc'],
+          [no, 'Neighbouring stations overlap, so the blend the redesign removed comes straight back'],
+          [yes, 'One expression, no state, nothing new to decide'],
+          [part, 'It is honest in the sense that a small mark looks small'],
+        ],
+        noteHead: 'The failure the redesign was supposed to fix, returning at low zoom',
+        noteInk: '#9a3412',
+        noteBody: 'Sectors have a floor below which they are not sectors. At the median rail spacing a zoom-12 map puts thirty-nine pixels between neighbours, and the tenth percentile is seventeen — so a ring wide enough to show four lines is already touching the station next door. Shrinking to fit produces marks that are neither readable nor separate.',
+      },
+      collapse: {
+        label: 'collapses to a dot',
+        blurb: 'Below the zoom where sectors are legible, the mark drops to a plain dot: the line colour where one line calls, and a dark dot where several do.',
+        tests: [
+          [yes, 'It never draws a sector too small to read, so the mark is honest at every scale'],
+          [yes, 'The one bit that survives — several lines call here — is the bit the reader needs at that scale'],
+          [part, 'Magnitude leaves the map at low zoom, and the reader is not told it has'],
+          [yes, 'A zoom-driven step is ordinary MapLibre, and the dot layer already exists'],
+        ],
+        noteHead: 'Say less rather than say it smaller',
+        noteInk: '#166534',
+        noteBody: 'A design that changes what it encodes with scale is not a compromise; it is the normal behaviour of every good transit map, which shows the network at a distance and the platforms up close. The one thing this owes the reader is a legend that changes with it, because a dark dot means “more than one line” and nothing else, and a reader who scrolled down from zoom 14 will otherwise read it as a stop with no ridership.',
+      },
+      cluster: {
+        label: 'clusters into one mark',
+        blurb: 'Stations closer together than the mark is wide are merged into a single numbered mark, in the way a point cluster usually works.',
+        tests: [
+          [yes, 'Nothing overlaps at any zoom, which is the only strategy here that can promise that'],
+          [no, 'A cluster is a count of stations, which is the stop-total-across-lines rollup by another name'],
+          [no, 'Clicking a cluster has no meaning in a URL made of selected stops'],
+          [part, 'It is the standard answer, and it is standard because most maps have no grain to protect'],
+        ],
+        noteHead: 'The standard answer, and the one this app cannot take',
+        noteInk: '#9a3412',
+        noteBody: 'Clustering invents an object the data model does not have. Six downtown stations become one mark labelled six, and that mark has no Stop Ridership Record, no place in the ranked table, and nothing to put in the URL. It is drawn here so that it is rejected on the record rather than by omission.',
+      },
+    };
+
+    const cur = table[mode];
+    const order = [['collapse', 'collapses to a dot'], ['shrink', 'shrinks with the map'], ['cluster', 'clusters into one mark']];
+
+    return {
+      panels: panels,
+      modes: order.map((o) => ({
+        label: o[1],
+        pick: () => self.setState({ mode: o[0] }),
+        bg: mode === o[0] ? '#033056' : '#ffffff',
+        ink: mode === o[0] ? '#ffffff' : '#44403c',
+      })),
+      blurb: cur.blurb,
+      tests: cur.tests.map((t) => ({ glyph: t[0].glyph, chipBg: t[0].chipBg, chipInk: t[0].chipInk, text: t[1] })),
+      noteHead: cur.noteHead,
+      noteInk: cur.noteInk,
+      noteBody: cur.noteBody,
+      facts: [
+        { value: '9.8 px', text: 'is the median gap between neighbouring rail stations at zoom 10, where the whole county fits on screen' },
+        { value: '306 m', text: 'separates the closest pair, Civic Center and Historic Broadway — 39 px at zoom 12' },
+        { value: 'zoom 13', text: 'is where a four-sector ring first has enough arc per line to be read' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

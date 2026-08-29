@@ -1,0 +1,170 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1420px;height:1000px;padding:30px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">LL</span>
+      <span style="font-size:16px;font-weight:700;color:#033056">What a bus stop is, and what &ldquo;how many lines call here&rdquo; means there</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Every figure measured from the committed bus payload, its stop locations and the June 2026 feed.</span>
+  </div>
+
+  <span style="font-size:12.5px;color:#78716c;line-height:1.7;max-width:1180px">The four marks on this page were drawn on rail, where a station is a building with a name and a platform. A bus stop in this app is none of those things: it is a normalised name that several kerbside poles were averaged into, and the same crossroads often appears twice under two names. Every design here has to survive that, and the multi-line case is both commoner and larger on bus than on rail.</span>
+
+  <div style="display:flex;gap:18px;flex:1;min-height:0">
+
+    <div style="width:430px;background:#f8f6f1;border-radius:8px;padding:18px 20px;display:flex;flex-direction:column;gap:10px">
+      <span style="font-size:11px;font-weight:700;color:#033056">One crossroads, four poles, two keys</span>
+      <span style="font-size:11px;color:#78716c;line-height:1.65">The pipeline mints a Stop Place from a normalised name and averages the coordinates of every GTFS stop that carries it. At a two-way crossroads that usually merges the two poles on one street into one key, and leaves the other street&rsquo;s poles under a second key whose name is the same two streets in the other order.</span>
+      <div style="background:#e8e6e1;border-radius:6px;padding:12px;flex:1;display:flex;align-items:center">
+        <svg viewBox="0 0 380 300" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="A schematic crossroads showing four kerbside poles collapsing into two normalised stop keys">
+          <rect x="0" y="126" width="380" height="48" fill="#dcd9d3"></rect>
+          <rect x="166" y="0" width="48" height="300" fill="#dcd9d3"></rect>
+          <text x="12" y="120" font-size="10" fill="#78716c">103rd Street</text>
+          <text x="222" y="22" font-size="10" fill="#78716c">Avalon Boulevard</text>
+
+          <sc-for list="{{poles}}" as="p" hint-placeholder-count="4">
+            <g>
+              <circle cx="{{p.x}}" cy="{{p.y}}" r="5" fill="{{p.fill}}"></circle>
+              <text x="{{p.tx}}" y="{{p.ty}}" font-size="9" fill="#57534e" text-anchor="{{p.anchor}}">{{p.label}}</text>
+            </g>
+          </sc-for>
+
+          <sc-for list="{{leaders}}" as="l" hint-placeholder-count="4">
+            <line x1="{{l.x1}}" y1="{{l.y1}}" x2="{{l.x2}}" y2="{{l.y2}}" stroke="#a8a29e" stroke-width="1" stroke-dasharray="3 3"></line>
+          </sc-for>
+
+          <circle cx="120" cy="150" r="8" fill="none" stroke="#0f766e" stroke-width="2"></circle>
+          <text x="120" y="196" font-size="9.5" fill="#0f766e" text-anchor="middle">bus:103rd-avalon</text>
+          <circle cx="262" cy="150" r="8" fill="none" stroke="#7c3aed" stroke-width="2"></circle>
+          <text x="262" y="112" font-size="9.5" fill="#7c3aed" text-anchor="middle">bus:avalon-103rd</text>
+          <line x1="128" y1="150" x2="254" y2="150" stroke="#57534e" stroke-width="1" stroke-dasharray="2 3"></line>
+          <text x="191" y="166" font-size="9.5" fill="#44403c" text-anchor="middle">46 m apart</text>
+        </svg>
+      </div>
+      <div style="background:#fff;border-radius:6px;padding:11px 13px;display:flex;flex-direction:column;gap:5px">
+        <span style="font-size:10.5px;color:#44403c;line-height:1.65">776 pairs of bus Stop Places are the same two streets in the opposite order. They are separate rows in the ranked table, separate marks on the map, and, to a rider, one place with a road between the halves.</span>
+      </div>
+    </div>
+
+    <div style="width:430px;background:#f8f6f1;border-radius:8px;padding:18px 20px;display:flex;flex-direction:column;gap:10px">
+      <span style="font-size:11px;font-weight:700;color:#033056">The multi-line case is commoner and larger</span>
+      <span style="font-size:11px;color:#78716c;line-height:1.65">On rail, 14 of 110 stops are served by more than one line and the worst case is four. On bus, 1,497 of 6,785 are, and the worst case is ten. A mark built for four lines has to say what it does at ten.</span>
+      <div style="background:#e8e6e1;border-radius:6px;padding:14px 12px;flex:1;display:flex;align-items:center">
+        <svg viewBox="0 0 380 300" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="A bar chart of bus stops by the number of lines that call there, from one to ten">
+          <sc-for list="{{bars}}" as="b" hint-placeholder-count="10">
+            <g>
+              <rect x="58" y="{{b.y}}" width="{{b.w}}" height="16" rx="2" fill="{{b.fill}}"></rect>
+              <text x="50" y="{{b.ty}}" font-size="10" fill="#57534e" text-anchor="end">{{b.label}}</text>
+              <text x="{{b.vx}}" y="{{b.ty}}" font-size="9.5" fill="#78716c" text-anchor="start">{{b.value}}</text>
+            </g>
+          </sc-for>
+          <text x="58" y="292" font-size="9.5" fill="#a8a29e">Bus Stop Places by the number of lines calling, log-scaled bars</text>
+        </svg>
+      </div>
+      <div style="background:#fff;border-radius:6px;padding:11px 13px;display:flex;flex-direction:column;gap:5px">
+        <span style="font-size:10.5px;color:#44403c;line-height:1.65">Grand at 3rd and 6th at Grand each carry ten lines. A ring cut into ten sectors gives each line thirty-six degrees; a fan of ten circles spans a city block; ten bars are a chart, not a stop. Only the badge row survives, and only because it wraps.</span>
+      </div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;gap:14px">
+      <div style="background:#f8f6f1;border-radius:8px;padding:18px 20px;display:flex;flex-direction:column;gap:9px">
+        <span style="font-size:11px;font-weight:700;color:#033056">What the merge does to the coordinate</span>
+        <sc-for list="{{facts}}" as="f" hint-placeholder-count="4">
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-size:15px;font-weight:700;color:#033056;width:70px;flex:none">{{f.value}}</span>
+            <span style="font-size:11px;color:#78716c;line-height:1.6">{{f.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="background:#f8f6f1;border-radius:8px;padding:18px 20px;display:flex;flex-direction:column;gap:9px;flex:1">
+        <span style="font-size:11px;font-weight:700;color:#033056">What each mark on this page does on bus</span>
+        <sc-for list="{{marks}}" as="m" hint-placeholder-count="4">
+          <div style="display:flex;align-items:flex-start;gap:9px;padding:2px 0">
+            <span style="width:15px;height:15px;border-radius:3px;background:{{m.chipBg}};color:{{m.chipInk}};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px">{{m.glyph}}</span>
+            <span style="font-size:11px;color:#44403c;line-height:1.6">{{m.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:11px;font-weight:700;color:#9a3412;letter-spacing:.06em;text-transform:uppercase">The identity question comes before the mark question</span>
+        <span style="font-size:11.5px;color:#44403c;line-height:1.7">Every design on this page assumes a station is a place a reader can point at. On bus that assumption is a choice the pipeline already made and ADR-0013 already defends: a stop&rsquo;s identity is its normalised name, because Metro&rsquo;s row order renumbers whenever a line is extended. The consequences are visible above — two keys for one crossroads, a coordinate that is the average of poles up to nine hundred metres apart, and a stop named &ldquo;Do Not Announce This Stop!&rdquo; that carries seven lines. None of that is a reason to reopen the ADR, and all of it is a reason to draw bus stops with a mark that never implies a platform.</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const counts = [
+      [1, 5288], [2, 1086], [3, 265], [4, 88], [5, 19],
+      [6, 18], [7, 12], [8, 6], [9, 1], [10, 2],
+    ];
+    const bars = counts.map((c, i) => {
+      const y = 22 + i * 26;
+      const w = 20 + 250 * Math.log(c[1]) / Math.log(5288);
+      return {
+        y: y, ty: y + 12, w: w, vx: 64 + w,
+        label: c[0] === 1 ? '1 line' : String(c[0]) + ' lines',
+        value: String(c[1]),
+        fill: c[0] === 1 ? '#c9c5be' : '#0f766e',
+      };
+    });
+
+    const yes = { glyph: '✓', chipBg: '#dcf0e2', chipInk: '#166534' };
+    const no = { glyph: '✕', chipBg: '#f7e0d4', chipInk: '#9a3412' };
+    const part = { glyph: '~', chipBg: '#efece6', chipInk: '#78716c' };
+
+    const marks = [
+      [no, 'BB, the segmented ring — ten sectors of thirty-six degrees each, on a mark that is small because bus stops are dense'],
+      [no, 'CC, the fan — the offset already lies about position, and ten circles spread it across the block'],
+      [part, 'DD&rsquo;s bars — they do not degrade with line count, and ten of them is a chart sitting on a crossroads'],
+      [yes, 'JJ&rsquo;s badge row — it wraps to two rows of five, it stays legible, and it says nothing about magnitude'],
+    ];
+
+    return {
+      poles: [
+        { x: 152, y: 118, fill: '#0f766e', tx: 148, ty: 110, anchor: 'end', label: '103rd westbound' },
+        { x: 228, y: 182, fill: '#0f766e', tx: 232, ty: 196, anchor: 'start', label: '103rd eastbound' },
+        { x: 190, y: 96, fill: '#7c3aed', tx: 196, ty: 88, anchor: 'start', label: 'Avalon northbound' },
+        { x: 190, y: 210, fill: '#7c3aed', tx: 196, ty: 224, anchor: 'start', label: 'Avalon southbound' },
+      ],
+      leaders: [
+        { x1: 152, y1: 118, x2: 120, y2: 150 },
+        { x1: 228, y1: 182, x2: 120, y2: 150 },
+        { x1: 190, y1: 96, x2: 262, y2: 150 },
+        { x1: 190, y1: 210, x2: 262, y2: 150 },
+      ],
+      bars: bars,
+      facts: [
+        { value: '4,928', text: 'of 6,756 bus Stop Places merge two or more GTFS poles into one coordinate' },
+        { value: '32 m', text: 'is the median distance those poles are spread across; the ninety-fifth percentile is 79 m' },
+        { value: '900 m', text: 'is the worst case, where one name is reused far enough apart to be two different places' },
+        { value: '22%', text: 'of bus Stop Places are served by more than one line, against 13% of rail stations' },
+      ],
+      marks: marks.map((m) => ({ glyph: m[0].glyph, chipBg: m[0].chipBg, chipInk: m[0].chipInk, text: m[1] })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">M</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Hex extrusion &mdash; height without a sprite</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">A native MapLibre layer, and the only length encoding here that needs no custom drawing.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership &middot; map</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:#a8a29e">Pitch</span>
+        <div style="display:flex;gap:2px">
+          <span style="background:#fff;color:#44403c;font-size:11px;font-weight:700;padding:6px 10px;border-radius:4px 0 0 4px">0&deg;</span>
+          <span style="background:#033056;color:#fff;font-size:11px;font-weight:700;padding:6px 10px">45&deg;</span>
+          <span style="background:#fff;color:#44403c;font-size:11px;font-weight:700;padding:6px 10px;border-radius:0 4px 4px 0">60&deg;</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+      <svg viewBox="0 0 900 560" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map with hexagonal bins extruded upward, height showing binned boardings">
+        <rect x="0" y="0" width="900" height="560" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="20">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+        <polyline points="760,140 760,210 680,265 610,265 560,300 560,492" fill="none" stroke="#0072bc" stroke-width="2.5" stroke-opacity=".45" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <polyline points="560,300 470,255 360,215 250,190" fill="none" stroke="#eb131b" stroke-width="2.5" stroke-opacity=".45" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <sc-for list="{{prisms}}" as="p" hint-placeholder-count="40">
+          <g>
+            <polygon points="{{p.rightFace}}" fill="{{p.rightFill}}"></polygon>
+            <polygon points="{{p.leftFace}}" fill="{{p.leftFill}}"></polygon>
+            <polygon points="{{p.top}}" fill="{{p.topFill}}"></polygon>
+          </g>
+        </sc-for>
+        <sc-for list="{{missing}}" as="m" hint-placeholder-count="2">
+          <polygon points="{{m.points}}" fill="none" stroke="#78716c" stroke-width="1.4" stroke-dasharray="4 3"></polygon>
+        </sc-for>
+      </svg>
+
+      <div style="position:absolute;left:14px;bottom:14px;background:#f8f6f1;border-radius:5px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Height &mdash; boardings per bin</span>
+        <svg width="180" height="60" viewBox="0 0 180 60">
+          <polygon points="14,50 24,44 34,50 34,54 24,60 14,54" fill="#0072bc"></polygon>
+          <polygon points="58,30 68,24 78,30 78,54 68,60 58,54" fill="#005b96"></polygon>
+          <polygon points="58,30 68,24 78,30 78,34 68,40 58,34" fill="#0072bc"></polygon>
+          <polygon points="112,6 122,0 132,6 132,54 122,60 112,54" fill="#005b96"></polygon>
+          <polygon points="112,6 122,0 132,6 132,10 122,16 112,10" fill="#0072bc"></polygon>
+          <polygon points="152,48 162,42 172,48 172,52 162,58 152,52" fill="none" stroke="#78716c" stroke-width="1.4" stroke-dasharray="4 3"></polygon>
+        </svg>
+        <span style="font-size:9px;color:#a8a29e;line-height:1.5">A hollow, unextruded bin means no stop in it reported.</span>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:#9a3412;letter-spacing:.06em;text-transform:uppercase">What tilting the map costs you</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.7">A tilted view puts near bins in front of far ones at a larger apparent size, so two equal figures stop looking equal and a tall bin hides whatever stands behind it. Pitch and bearing also become part of what a reader sees, which means the URL has to carry them or a shared link opens a different picture. Set against that, <span style="color:#78716c">fill-extrusion</span> is a real MapLibre layer, so this is the one length encoding that needs no sprite sheet and no canvas overlay.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const grid = [];
+    for (let i = 1; i < 13; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 560 });
+    for (let i = 1; i < 8; i++) grid.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+
+    const route = [];
+    const legs = [
+      [760, 140, 760, 210], [760, 210, 680, 265], [680, 265, 610, 265],
+      [610, 265, 560, 300], [560, 300, 560, 492],
+      [560, 300, 470, 255], [470, 255, 360, 215], [360, 215, 250, 190],
+    ];
+    legs.forEach((l) => {
+      for (let i = 0; i <= 20; i++) {
+        route.push([l[0] + ((l[2] - l[0]) * i) / 20, l[1] + ((l[3] - l[1]) * i) / 20]);
+      }
+    });
+
+    const R = 22;
+    const hw = Math.sqrt(3) * R;
+    const hexPoints = (cx, cy) => {
+      const out = [];
+      for (let k = 0; k < 6; k++) {
+        const a = (Math.PI / 180) * (60 * k - 30);
+        out.push([cx + R * Math.cos(a), cy + R * Math.sin(a)]);
+      }
+      return out;
+    };
+    const asPoly = (pts) => pts.map((p) => String(p[0]) + ',' + String(p[1])).join(' ');
+
+    const cells = [];
+    for (let row = 0; row < 20; row++) {
+      for (let col = 0; col < 26; col++) {
+        const cx = col * hw + (row % 2 === 1 ? hw / 2 : 0);
+        const cy = row * R * 1.5;
+        if (cx < 60 || cx > 880 || cy < 40 || cy > 545) continue;
+        let best = 1e9;
+        route.forEach((p) => {
+          const d = Math.sqrt((p[0] - cx) * (p[0] - cx) + (p[1] - cy) * (p[1] - cy));
+          if (d < best) best = d;
+        });
+        if (best > 46) continue;
+        const downtown = Math.sqrt((cx - 620) * (cx - 620) + (cy - 250) * (cy - 250));
+        const value = Math.exp(-best / 30) + 0.9 * Math.exp(-downtown / 170);
+        const onB = cy < 300 && cx < 560;
+        cells.push({ cx: cx, cy: cy, value: value, isB: onB });
+      }
+    }
+
+    const holes = cells.filter((c, i) => i % 17 === 5).slice(0, 2);
+    const holeKeys = holes.map((h) => String(h.cx) + ':' + String(h.cy));
+
+    const drawn = cells
+      .filter((c) => holeKeys.indexOf(String(c.cx) + ':' + String(c.cy)) === -1)
+      .sort((a, b) => a.cy - b.cy)
+      .map((c) => {
+        const h = 4 + (c.value / 1.9) * 92;
+        const base = hexPoints(c.cx, c.cy);
+        const top = base.map((p) => [p[0], p[1] - h]);
+        return {
+          top: asPoly(top),
+          rightFace: asPoly([top[1], top[2], base[2], base[1]]),
+          leftFace: asPoly([top[2], top[3], base[3], base[2]]),
+          topFill: c.isB ? '#eb131b' : '#0072bc',
+          rightFill: c.isB ? '#bc0f16' : '#005b96',
+          leftFill: c.isB ? '#8f0b11' : '#004570',
+        };
+      });
+
+    return {
+      grid: grid,
+      prisms: drawn,
+      missing: holes.map((h) => ({ points: asPoly(hexPoints(h.cx, h.cy)) })),
+    };
+  }
+}
+</script>
+</body>
+</html>

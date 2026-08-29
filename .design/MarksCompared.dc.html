@@ -1,0 +1,297 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">DD</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Four marks for one station, against the same five stations</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click a mark. The figures never change; only the drawing does.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+      <span style="font-size:11px;color:#a8a29e;margin-right:4px">The station mark is</span>
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="4">
+        <span class="hit" onClick="{{m.pick}}" style="background:{{m.bg}};color:{{m.ink}};font-size:12px;font-weight:700;padding:8px 13px;border-radius:4px">{{m.label}}</span>
+      </sc-for>
+    </div>
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">{{ blurb }}</span>
+
+    <div style="background:#e8e6e1;border-radius:6px;padding:18px 16px 12px">
+      <svg viewBox="0 0 900 230" width="100%" height="230" role="img" aria-label="Five stations drawn under the selected mark design, from a one-line stop to a four-line interchange">
+        <sc-for list="{{cells}}" as="c" hint-placeholder-count="5">
+          <g>
+            <sc-for list="{{c.discs}}" as="d" hint-placeholder-count="4">
+              <circle cx="{{d.cx}}" cy="{{d.cy}}" r="{{d.r}}" fill="{{d.fill}}" fill-opacity="{{d.op}}" stroke="{{d.stroke}}" stroke-width="{{d.sw}}"></circle>
+            </sc-for>
+            <sc-for list="{{c.leaders}}" as="l" hint-placeholder-count="4">
+              <line x1="{{l.x1}}" y1="{{l.y1}}" x2="{{l.x2}}" y2="{{l.y2}}" stroke="#78716c" stroke-width="1"></line>
+            </sc-for>
+            <sc-for list="{{c.sectors}}" as="s" hint-placeholder-count="4">
+              <path d="{{s.path}}" fill="{{s.fill}}" stroke="#e8e6e1" stroke-width="1.2"></path>
+            </sc-for>
+            <sc-for list="{{c.bars}}" as="b" hint-placeholder-count="4">
+              <rect x="{{b.x}}" y="{{b.y}}" width="{{b.w}}" height="{{b.h}}" rx="2" fill="{{b.fill}}"></rect>
+            </sc-for>
+            <sc-if value="{{c.showPin}}" hint-placeholder-val="{{ true }}">
+              <circle cx="{{c.cx}}" cy="{{c.cy}}" r="3" fill="#e8e6e1" stroke="#44403c" stroke-width="1.2"></circle>
+            </sc-if>
+            <text x="{{c.cx}}" y="212" font-size="10" fill="#44403c" text-anchor="middle">{{c.name}}</text>
+            <text x="{{c.cx}}" y="225" font-size="9" fill="#a8a29e" text-anchor="middle">{{c.sub}}</text>
+          </g>
+        </sc-for>
+      </svg>
+    </div>
+
+    <div style="display:flex;gap:20px;flex:1;min-height:0">
+      <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What this mark keeps and what it spends</span>
+        <sc-for list="{{tests}}" as="t" hint-placeholder-count="6">
+          <div style="display:flex;align-items:flex-start;gap:9px;padding:3px 0">
+            <span style="width:15px;height:15px;border-radius:3px;background:{{t.chipBg}};color:{{t.chipInk}};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px">{{t.glyph}}</span>
+            <span style="font-size:11px;color:#44403c;line-height:1.6">{{t.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="width:330px;display:flex;flex-direction:column;gap:10px">
+        <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Lines drawn</span>
+          <sc-for list="{{lineKey}}" as="k" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span style="width:10px;height:10px;border-radius:2px;background:{{k.color}}"></span>
+              <span style="font-size:10.5px;color:#78716c">{{k.label}}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:5px;flex:1">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Where it would land</span>
+          <span style="font-size:11px;color:#44403c;line-height:1.65">{{ build }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'today' };
+  }
+
+  arc(cx, cy, from, to, Ro, Ri) {
+    const a0 = from * 2 * Math.PI;
+    const a1 = Math.min(to, 0.9999) * 2 * Math.PI;
+    const large = a1 - a0 > Math.PI ? 1 : 0;
+    const p = (r, a) => [cx + r * Math.sin(a), cy - r * Math.cos(a)];
+    const o0 = p(Ro, a0), o1 = p(Ro, a1), i1 = p(Ri, a1), i0 = p(Ri, a0);
+    const n = (v) => String(Math.round(v * 100) / 100);
+    return 'M ' + n(o0[0]) + ' ' + n(o0[1]) +
+      ' A ' + n(Ro) + ' ' + n(Ro) + ' 0 ' + String(large) + ' 1 ' + n(o1[0]) + ' ' + n(o1[1]) +
+      ' L ' + n(i1[0]) + ' ' + n(i1[1]) +
+      ' A ' + n(Ri) + ' ' + n(Ri) + ' 0 ' + String(large) + ' 0 ' + n(i0[0]) + ' ' + n(i0[1]) + ' Z';
+  }
+
+  renderVals() {
+    const self = this;
+    const mode = this.state.mode;
+    const color = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#fdb913' };
+    const VMAX = 8430;
+    const radius = (v) => 3 + 19 * Math.sqrt(v / VMAX);
+
+    // Weekday boardings, averaged over the twelve months the rail payload carries.
+    const stations = [
+      { name: 'Chinatown', sub: 'one line', lines: [['A', 1305]] },
+      { name: 'Little Tokyo', sub: 'two, even', lines: [['A', 2228], ['E', 2333]] },
+      { name: 'Pershing Square', sub: 'two, uneven', lines: [['B', 2979], ['D', 1505]] },
+      { name: 'Union Station', sub: 'three', lines: [['A', 4818], ['B', 4093], ['D', 2571]] },
+      { name: '7th St / Metro Center', sub: 'four', lines: [['A', 6288], ['B', 8430], ['E', 5990], ['D', 4444]] },
+    ];
+
+    const SCALE = 1.9;
+    const cells = stations.map((s, i) => {
+      const cx = 108 + i * 172;
+      const cy = 104;
+      const discs = [], leaders = [], sectors = [], bars = [];
+      let showPin = false;
+
+      if (mode === 'today') {
+        // Painted in line order at the layer's own opacity, which is what makes the blend.
+        s.lines.forEach((l) => {
+          discs.push({ cx: cx, cy: cy, r: radius(l[1]) * SCALE, fill: color[l[0]], op: '.75', stroke: 'none', sw: 0 });
+        });
+      } else if (mode === 'ring') {
+        const RI = 9 * SCALE / 1.9;
+        const share = 1 / s.lines.length;
+        s.lines.forEach((l, k) => {
+          const ro = RI + (4 + 20 * Math.sqrt(l[1] / VMAX)) * SCALE / 1.4;
+          const gap = s.lines.length > 1 ? 0.012 : 0;
+          sectors.push({ path: self.arc(cx, cy, k * share, (k + 1) * share - gap, ro, RI), fill: color[l[0]] });
+        });
+        showPin = true;
+      } else if (mode === 'fan') {
+        const spread = s.lines.length > 1
+          ? Math.max.apply(null, s.lines.map((l) => radius(l[1]))) * 0.95 * SCALE
+          : 0;
+        s.lines.forEach((l, k) => {
+          const a = (k / s.lines.length) * 2 * Math.PI;
+          const x = cx + spread * Math.sin(a);
+          const y = cy - spread * Math.cos(a);
+          if (spread > 0) leaders.push({ x1: cx, y1: cy, x2: x, y2: y });
+          discs.push({ cx: x, cy: y, r: radius(l[1]) * SCALE, fill: color[l[0]], op: '.85', stroke: '#e8e6e1', sw: 1.2 });
+        });
+        showPin = true;
+      } else {
+        // One bar per line, upward from a shared baseline pinned at the coordinate.
+        const w = 11, gap = 3;
+        const total = s.lines.length * w + (s.lines.length - 1) * gap;
+        s.lines.forEach((l, k) => {
+          const h = 12 + 62 * Math.sqrt(l[1] / VMAX);
+          bars.push({
+            x: cx - total / 2 + k * (w + gap),
+            y: cy + 40 - h,
+            w: w,
+            h: h,
+            fill: color[l[0]],
+          });
+        });
+        discs.push({ cx: cx, cy: cy + 40, r: 0.01, fill: 'none', op: '0', stroke: 'none', sw: 0 });
+      }
+
+      // Biggest first, so today's mode reproduces the layer's own painting order faithfully.
+      return {
+        cx: cx, cy: cy, name: s.name, sub: s.sub,
+        discs: discs, leaders: leaders, sectors: sectors, bars: bars,
+        showPin: showPin,
+      };
+    });
+
+    const yes = { glyph: '✓', chipBg: '#dcf0e2', chipInk: '#166534' };
+    const no = { glyph: '✕', chipBg: '#f7e0d4', chipInk: '#9a3412' };
+    const part = { glyph: '~', chipBg: '#efece6', chipInk: '#78716c' };
+
+    const table = {
+      today: {
+        label: 'as built',
+        blurb: 'Four features at one coordinate, painted in line order at 75% opacity. This is what the app draws now, and it is here so the other three have something to beat.',
+        tests: [
+          [no, 'Colour means which line — the core is a blend of all four and matches none of them'],
+          [no, 'Magnitude reads per line — three of the four circles never show their own edge'],
+          [yes, 'No stop-total-across-lines rollup, because nothing is summed'],
+          [yes, 'Every mark sits on its own coordinate'],
+          [no, 'At four lines it is one bullseye with two bands under a pixel wide'],
+          [part, 'A stop that reported nothing draws as a dashed ring, and then vanishes under its neighbours'],
+        ],
+        build: 'Nothing to build. Worth knowing that the blend only appears once a reader selects more than one line, since the layer filters markers to the selected lines — so the failure is exactly in the comparative case the app is for.',
+        noteHead: 'The baseline, and the reason for the other three',
+        noteInk: '#9a3412',
+        noteBody: 'A reader comparing the B and D Lines sees Pershing Square as a single mark whose colour is neither red nor purple, and has no way to tell that two lines call there. The panel beside it lists two rows. Whichever redesign wins has to close that gap first; everything else is preference.',
+      },
+      ring: {
+        label: 'a segmented ring',
+        blurb: 'One ring per station, cut into equal sectors, one for each line that calls there, and each sector grows outward on its own line’s boardings.',
+        tests: [
+          [yes, 'Colour means which line, and no two sectors ever overlap'],
+          [part, 'Magnitude reads per line, but on thickness, which decodes worse than area'],
+          [yes, 'No rollup — the sectors are visibly separate quantities, not slices of a whole'],
+          [yes, 'Every mark sits on its own coordinate'],
+          [part, 'At four lines each sector gets ninety degrees of a mark under forty pixels across'],
+          [yes, 'A line that reported nothing draws as a dashed sector, still in its own place'],
+        ],
+        build: 'A second MapLibre layer. Circles take no sector fill, so the sectors are a symbol layer with a generated icon per line-count, or a canvas overlay. Sizing has to be recomputed on zoom either way.',
+        noteHead: 'The most faithful to what the app already argues',
+        noteInk: '#166534',
+        noteBody: 'This is the only one of the four that keeps every rule intact: colour is line identity, nothing is summed, nothing moves off its coordinate, and a gap stays a gap. It buys that by demoting magnitude from area to thickness, which is a real loss on a map whose whole present job is showing which stops are big. It also needs a letter in each sector before it is safe, because the C Line green and the B Line red separate by only ΔE 4.9 for a deuteranope.',
+      },
+      fan: {
+        label: 'a fan of circles',
+        blurb: 'The circles are untouched and simply step off the coordinate onto a small ring, each tied back to a station pin by a leader.',
+        tests: [
+          [yes, 'Colour means which line, once the circles no longer sit on top of each other'],
+          [yes, 'Magnitude reads per line, on exactly the area scale already shipped'],
+          [yes, 'No rollup — these are the same four features, moved'],
+          [no, 'Every mark is displaced, by up to 22 px, which is about 150 m at zoom 12'],
+          [no, 'At four lines the fan spans 86 px and overruns the next station'],
+          [yes, 'A line that reported nothing keeps its dashed ring and its own slot'],
+        ],
+        build: 'Cheapest of the three: the offset can be precomputed into each feature’s coordinates in buildStopView, so the layer itself does not change. Making the fan open only on the selected station is the part that costs.',
+        noteHead: 'It asks the reader to learn nothing, and lies about where things are',
+        noteInk: '#9a3412',
+        noteBody: 'Every encoding survives, which is why this is the cheapest honest fix and the right first thing to try. What it spends is position, and position is the one channel a map has that a table does not. There is no displacement that is both small enough to stay truthful and large enough to separate four 20-pixel circles, so the four-line case forces the fan to become an interaction — it opens for the station a reader selects and stays closed otherwise.',
+      },
+      bars: {
+        label: 'a bar per line',
+        blurb: 'The station draws a small column chart pinned at its coordinate, one bar per calling line, each bar as tall as that line’s boardings.',
+        tests: [
+          [yes, 'Colour means which line, with a bar each and no overlap at all'],
+          [yes, 'Magnitude reads per line, on length, which decodes better than either area or angle'],
+          [yes, 'No rollup — the bars sit side by side and never stack'],
+          [part, 'The bars straddle the coordinate, so the pin is exact and the group is a few pixels wide'],
+          [yes, 'At four lines it is four bars, which is the one design here that does not degrade'],
+          [yes, 'A line that reported nothing draws as an empty slot with a dashed baseline'],
+        ],
+        build: 'A canvas or DOM overlay keyed to projected coordinates, redrawn on move. It is the furthest from the current layer and the only one that cannot be expressed as MapLibre paint at all.',
+        noteHead: 'The best decoding, and the least like a map',
+        noteInk: '#78716c',
+        noteBody: 'Length beats both area and angle for reading a quantity, and the design does not get worse as lines are added, which no other option here can say. The price is that a row of bars is a chart rather than a place: it has a footprint that grows sideways, it collides with its neighbours long before the circles would, and at the zoom where the whole network fits it stops reading as stations at all. It belongs to a map-led layout with far fewer stops on screen, which makes it a bet on draft F or W rather than on the map alone.',
+      },
+    };
+
+    const cur = table[mode];
+    const order = [['today', 'as built'], ['ring', 'a segmented ring'], ['fan', 'a fan of circles'], ['bars', 'a bar per line']];
+
+    return {
+      modes: order.map((o) => ({
+        label: o[1],
+        pick: () => self.setState({ mode: o[0] }),
+        bg: mode === o[0] ? '#033056' : '#ffffff',
+        ink: mode === o[0] ? '#ffffff' : '#44403c',
+      })),
+      cells: cells,
+      blurb: cur.blurb,
+      tests: cur.tests.map((t) => ({
+        glyph: t[0].glyph, chipBg: t[0].chipBg, chipInk: t[0].chipInk, text: t[1],
+      })),
+      build: cur.build,
+      noteHead: cur.noteHead,
+      noteInk: cur.noteInk,
+      noteBody: cur.noteBody,
+      lineKey: [
+        { color: '#0072bc', label: 'A Line' },
+        { color: '#eb131b', label: 'B Line' },
+        { color: '#a05da5', label: 'D Line' },
+        { color: '#fdb913', label: 'E Line' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

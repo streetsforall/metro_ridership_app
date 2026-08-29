@@ -1,0 +1,339 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    table { border-collapse: collapse; width: 100%; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">T</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Layout switcher &mdash; one panel, four densities</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click the views. Same eight rows, same selection, four ways of reading them.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 26px;box-sizing:border-box;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership</span>
+      <div style="display:flex;gap:2px">
+        <span style="background:#033056;color:#fff;font-size:12px;font-weight:700;padding:7px 11px;border-radius:4px 0 0 4px">Boardings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:7px 11px">Alightings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:7px 11px;border-radius:0 4px 4px 0">Both</span>
+      </div>
+    </div>
+
+    <span style="font-size:11px;color:#a8a29e">Stop-level data covers Jul 2025 &ndash; Jun 2026 (12 months). The chart above covers 2009 &ndash; 2026.</span>
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding-top:2px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:#a8a29e">View</span>
+        <div style="display:flex;gap:2px">
+          <sc-for list="{{views}}" as="v" hint-placeholder-count="4">
+            <span class="hit" onClick="{{ v.pick }}" style="background:{{v.bg}};color:{{v.ink}};font-size:12px;font-weight:700;padding:7px 12px;border-radius:{{v.radius}}">{{v.label}}</span>
+          </sc-for>
+        </div>
+      </div>
+      <span style="font-size:11px;color:#78716c">{{ viewNote }}</span>
+    </div>
+
+    <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column">
+
+      <sc-if value="{{ isTable }}" hint-placeholder-val="{{ true }}">
+        <table style="font-size:12px">
+          <thead>
+            <tr style="background:#e7e5e4">
+              <th style="width:30px;padding:9px 8px"></th>
+              <th style="text-align:left;padding:9px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Stop</th>
+              <th style="text-align:left;padding:9px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Line</th>
+              <th style="text-align:right;padding:9px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Avg. Boardings &#9660;</th>
+              <th style="text-align:right;padding:9px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Avg. Alightings</th>
+              <th style="text-align:right;padding:9px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Change</th>
+              <th style="text-align:right;padding:9px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Share of Line</th>
+              <th style="text-align:left;padding:9px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Ridership over time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+              <tr style="border-bottom:1px solid #ede9e2">
+                <td style="padding:9px 8px"><div style="width:15px;height:15px;border-radius:3px;background:{{r.boxFill}};border:1px solid {{r.boxEdge}}"></div></td>
+                <td style="padding:9px 8px;color:{{r.ink}}">{{r.name}}</td>
+                <td style="padding:9px 8px;color:#78716c">{{r.line}}</td>
+                <td style="padding:9px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{{r.ink}}">{{r.boardings}}</td>
+                <td style="padding:9px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{{r.ink}}">{{r.alightings}}</td>
+                <td style="padding:9px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{{r.changeInk}}">{{r.change}}</td>
+                <td style="padding:9px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{{r.ink}}">{{r.share}}</td>
+                <td style="padding:5px 8px">
+                  <svg viewBox="0 0 150 22" width="150" height="22" preserveAspectRatio="none">
+                    <polyline points="{{r.spark}}" fill="none" stroke="{{r.lineColor}}" stroke-width="2"></polyline>
+                  </svg>
+                </td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </sc-if>
+
+      <sc-if value="{{ isCards }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:12px">
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+            <div style="background:#fff;border-radius:6px;padding:13px 14px;display:flex;flex-direction:column;gap:9px;border:1.5px solid {{r.cardEdge}}">
+              <div style="display:flex;align-items:flex-start;gap:8px">
+                <div style="width:14px;height:14px;border-radius:3px;background:{{r.boxFill}};border:1px solid {{r.boxEdge}};flex-shrink:0;margin-top:2px"></div>
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <span style="font-size:11.5px;font-weight:700;color:#033056;line-height:1.35">{{r.name}}</span>
+                  <span style="font-size:10px;color:#78716c">{{r.line}} &middot; {{r.share}} of line</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:10px">
+                <div style="display:flex;flex-direction:column;gap:1px">
+                  <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em">Board</span>
+                  <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">{{r.boardings}}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:1px">
+                  <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em">Alight</span>
+                  <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:#78716c">{{r.alightings}}</span>
+                </div>
+                <span style="flex-grow:1"></span>
+                <span style="font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:{{r.changeInk}}">{{r.change}}</span>
+              </div>
+              <svg viewBox="0 0 200 34" width="100%" height="34" preserveAspectRatio="none">
+                <polyline points="{{r.cardSpark}}" fill="none" stroke="{{r.lineColor}}" stroke-width="2.5"></polyline>
+              </svg>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isMatrix }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <table style="font-size:11px">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:6px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#78716c">Stop &middot; Line</th>
+                <sc-for list="{{months}}" as="m" hint-placeholder-count="12">
+                  <th style="padding:6px 2px;font-weight:400;color:#a8a29e;font-size:9px">{{m}}</th>
+                </sc-for>
+                <th style="text-align:right;padding:6px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#78716c">Avg</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+                <tr>
+                  <td style="padding:3px 8px;white-space:nowrap;color:{{r.ink}}">
+                    <span style="font-size:11px">{{r.short}}</span>
+                    <span style="font-size:9px;color:#a8a29e"> {{r.line}}</span>
+                  </td>
+                  <sc-for list="{{r.cells}}" as="c" hint-placeholder-count="12">
+                    <td style="padding:2px">
+                      <div style="height:26px;border-radius:2px;background:{{c.fill}};border:{{c.edge}};display:flex;align-items:center;justify-content:center">
+                        <span style="font-size:9px;color:{{c.ink}}">{{c.mark}}</span>
+                      </div>
+                    </td>
+                  </sc-for>
+                  <td style="padding:3px 8px;text-align:right;font-variant-numeric:tabular-nums;font-size:11px">{{r.boardings}}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="display:flex;align-items:center;gap:5px">
+              <span style="font-size:10px;color:#a8a29e">low</span>
+              <sc-for list="{{ramp}}" as="s" hint-placeholder-count="5">
+                <span style="width:20px;height:11px;border-radius:2px;background:{{s}}"></span>
+              </sc-for>
+              <span style="font-size:10px;color:#a8a29e">high</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="width:20px;height:11px;border-radius:2px;background:#f3eee2;border:1px dashed #a8a29e;box-sizing:border-box"></span>
+              <span style="font-size:10px;color:#78716c">not reported &mdash; a gap, never a zero</span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isCompact }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:0px">
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+            <div style="display:flex;align-items:center;gap:9px;padding:4px 6px;border-bottom:1px solid #ede9e2;background:{{r.rowFill}}">
+              <div style="width:12px;height:12px;border-radius:3px;background:{{r.boxFill}};border:1px solid {{r.boxEdge}};flex-shrink:0"></div>
+              <span style="width:9px;height:9px;border-radius:2px;background:{{r.lineColor}};flex-shrink:0"></span>
+              <span style="width:210px;font-size:11px;color:{{r.ink}};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{r.name}}</span>
+              <svg viewBox="0 0 360 14" width="100%" height="14" preserveAspectRatio="none" style="flex-grow:1">
+                <rect x="{{r.aX}}" y="1" width="{{r.aW}}" height="12" rx="2.5" fill="#8ec4e6"></rect>
+                <rect x="182" y="1" width="{{r.bW}}" height="12" rx="2.5" fill="#0072bc"></rect>
+                <line x1="180" y1="0" x2="180" y2="14" stroke="#d6d3d1" stroke-width="1"></line>
+              </svg>
+              <span style="width:56px;text-align:right;font-size:11px;font-variant-numeric:tabular-nums;color:{{r.ink}}">{{r.boardings}}</span>
+              <span style="width:52px;text-align:right;font-size:11px;font-variant-numeric:tabular-nums;color:{{r.changeInk}}">{{r.change}}</span>
+            </div>
+          </sc-for>
+          <span style="font-size:10px;color:#a8a29e;padding-top:8px">At this row height the ~800-row list shows thirty-odd stops in the same space the table gives eight, and the sparkline column goes because there is no room for it.</span>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:12px 15px;display:flex;flex-direction:column;gap:5px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11px;color:#44403c;line-height:1.65">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { view: 'table' };
+  }
+
+  renderVals() {
+    const self = this;
+    const view = this.state.view;
+
+    const months = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const ramp = ['#dbeaf4', '#b3d3e9', '#7fb3d8', '#4a90c4', '#0072bc'];
+
+    // name, short, line, boardings, alightings, share, selected, twelve monthly values (null = no report)
+    const data = [
+      ['Union Station', 'Union Stn', 'A Line', 10125, 9113, '21.4%', true,
+        [9280, 9420, 9610, 9880, 10150, 10310, 10420, 10380, 10510, 10620, 10740, 10880]],
+      ['7th Street / Metro Center Station', '7th St / Metro Ctr', 'A Line', 6750, 6075, '14.3%', true,
+        [6180, 6260, 6340, 6510, 6690, 6810, 6880, 6920, 7010, 7080, 7160, 7240]],
+      ['Willowbrook / Rosa Parks Station', 'Willowbrook', 'A Line', 4320, 4610, '9.1%', false,
+        [4010, 4080, 4150, 4240, 4310, 4380, 4420, null, null, 4510, 4560, 4620]],
+      ['Downtown Long Beach Station', 'Long Beach', 'A Line', 3980, 3610, '8.4%', false,
+        [3720, 3780, 3840, 3900, 3960, 4010, 4040, 4060, 4110, 4150, 4200, 4250]],
+      ['Little Tokyo / Arts District Station', 'Little Tokyo', 'A Line', 3210, 3480, '6.8%', false,
+        [2980, 3040, 3090, 3160, 3210, 3260, 3290, 3310, 3350, 3390, 3430, 3470]],
+      ['Pico Station', 'Pico', 'A Line', 2940, 3180, '6.2%', false,
+        [2760, 2800, 2840, 2890, 2940, 2980, 3000, 3020, 3050, 3080, 3110, 3150]],
+      ['Florence Station', 'Florence', 'A Line', 2210, 2004, '4.7%', false,
+        [2080, 2110, 2140, 2180, 2210, 2240, 2260, 2270, 2290, 2310, 2330, 2360]],
+      ['103rd Street / Watts Towers Station', '103rd St / Watts', 'A Line', 1688, 1519, '3.6%', false,
+        [1580, 1600, 1620, 1650, 1680, 1700, 1720, 1730, 1750, 1760, 1780, 1800]],
+    ];
+
+    const peak = 10880;
+    const half = 176;
+
+    const rows = data.map((d) => {
+      const series = d[7];
+      const lo = Math.min.apply(null, series.filter((v) => v !== null));
+      const hi = Math.max.apply(null, series.filter((v) => v !== null));
+      const change = d[3] - d[4];
+
+      const spark = [];
+      const cardSpark = [];
+      series.forEach((v, i) => {
+        if (v === null) return;
+        const t = (v - lo) / (hi - lo || 1);
+        spark.push(String(Math.round((i / 11) * 150)) + ',' + String(Math.round((19 - t * 16) * 10) / 10));
+        cardSpark.push(String(Math.round((i / 11) * 200)) + ',' + String(Math.round((30 - t * 26) * 10) / 10));
+      });
+
+      const cells = series.map((v) => {
+        if (v === null) {
+          return { fill: '#f3eee2', edge: '1px dashed #a8a29e', ink: '#a8a29e', mark: '—' };
+        }
+        const t = (v - lo) / (hi - lo || 1);
+        return { fill: ramp[Math.min(4, Math.floor(t * 5))], edge: 'none', ink: 'transparent', mark: '' };
+      });
+
+      const aW = (d[4] / peak) * half;
+      const bW = (d[3] / peak) * half;
+
+      return {
+        name: d[0], short: d[1], line: d[2],
+        boardings: d[3].toLocaleString('en-US'),
+        alightings: d[4].toLocaleString('en-US'),
+        change: (change < 0 ? '−' : '+') + Math.abs(change).toLocaleString('en-US'),
+        changeInk: change < 0 ? '#9a3412' : '#166534',
+        share: d[5],
+        ink: '#44403c',
+        lineColor: '#0072bc',
+        spark: spark.join(' '),
+        cardSpark: cardSpark.join(' '),
+        cells: cells,
+        aX: 178 - aW, aW: aW, bW: bW,
+        rowFill: d[6] ? '#ece9e2' : 'transparent',
+        boxFill: d[6] ? '#033056' : '#ffffff',
+        boxEdge: d[6] ? '#033056' : '#d6d3d1',
+        cardEdge: d[6] ? '#033056' : '#f0ede6',
+      };
+    });
+
+    const views = [
+      { key: 'table', label: 'Table', radius: '4px 0 0 4px' },
+      { key: 'cards', label: 'Cards', radius: '0' },
+      { key: 'matrix', label: 'Matrix', radius: '0' },
+      { key: 'compact', label: 'Compact', radius: '0 4px 4px 0' },
+    ].map((v) => ({
+      label: v.label,
+      radius: v.radius,
+      bg: view === v.key ? '#033056' : '#ffffff',
+      ink: view === v.key ? '#ffffff' : '#44403c',
+      pick: () => self.setState({ view: v.key }),
+    }));
+
+    const copy = {
+      table: {
+        note: 'Eight rows fit. Sorting is the whole interaction.',
+        head: 'The table answers “which stop is biggest”, and only that',
+        ink: '#033056',
+        body: 'Every figure is exact and every column sorts, which is why it is the right default. Its limit is vertical: eight rows of a ranking eight hundred long, so a reader sees the head of the list and infers the rest. It is also where Change sits two columns away from Ridership over time, which CONTEXT.md names as a live confusion risk — those are two different senses of the word, and putting a switcher here does not fix that.',
+      },
+      cards: {
+        note: 'Three across. Six stops, in the space eight rows took.',
+        head: 'Cards trade ranking for one stop being legible',
+        ink: '#78716c',
+        body: 'A card holds a stop’s whole story at once — both measures, the change, the share and the shape over twelve months — so it reads well when a reader has already narrowed to a handful. It is the wrong frame for eight hundred, because a grid has no first place: rank survives only as reading order, which a reader has to be told about rather than see.',
+      },
+      matrix: {
+        note: 'Twelve months across, so a gap is a hole you can point at.',
+        head: 'The matrix is the only view where a missing month is visible',
+        ink: '#166534',
+        body: 'Everywhere else a stop that did not report shows as a shorter line or a smaller number, and the reader has to know to look. Here the gap is a dashed cell in a wall of filled ones. It is also the only view that shows seasonality across stops at once. The cost is that colour now carries a magnitude rather than which line, so the row needs its line printed beside the name and the map’s meaning of colour no longer holds inside this table.',
+      },
+      compact: {
+        note: 'Thirty-odd rows fit here. The sparkline column is what pays for them.',
+        head: 'Compact is the only view that shows the ranking is long',
+        ink: '#033056',
+        body: 'At this row height a reader can see the distribution fall away, which is the honest picture of eight hundred stops and the one thing the table hides. Both measures stay on screen as one two-sided bar, the same mark the map draws, so the two views teach each other. What goes is the exact figure at a glance and the twelve-month shape; both come back in the readout when a row is picked.',
+      },
+    }[view];
+
+    return {
+      rows: rows,
+      months: months,
+      ramp: ramp,
+      views: views,
+      isTable: view === 'table',
+      isCards: view === 'cards',
+      isMatrix: view === 'matrix',
+      isCompact: view === 'compact',
+      viewNote: copy.note,
+      noteHead: copy.head,
+      noteInk: copy.ink,
+      noteBody: copy.body,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">C</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Corridor profile — stops in route order</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">The line is the frame. Rank is something you read off the shape.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership</span>
+      <div style="display:flex;gap:2px">
+        <span style="background:#033056;color:#fff;font-size:12px;font-weight:700;padding:8px 12px;border-radius:4px 0 0 4px">A Line</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px;border-radius:0 4px 4px 0">Line 204</span>
+      </div>
+    </div>
+
+    <span style="font-size:12px;color:#78716c">Average weekday riders at each stop, Jul 2025 &ndash; Dec 2025, read north to south.</span>
+
+    <div style="background:#fff;border-radius:6px;padding:14px 12px 8px 12px">
+      <svg viewBox="0 0 900 330" width="100%" height="330" role="img" aria-label="Boardings above and alightings below the line, for every A Line station in route order">
+        <g font-size="10" fill="#a8a29e" text-anchor="end">
+          <text x="52" y="52">10,000</text>
+          <text x="52" y="100">5,000</text>
+          <text x="52" y="146">0</text>
+          <text x="52" y="192">5,000</text>
+        </g>
+        <line x1="58" y1="46" x2="884" y2="46" stroke="#f0eee9" stroke-width="1"></line>
+        <line x1="58" y1="96" x2="884" y2="96" stroke="#f0eee9" stroke-width="1"></line>
+        <line x1="58" y1="188" x2="884" y2="188" stroke="#f0eee9" stroke-width="1"></line>
+
+        <sc-for list="{{stops}}" as="s" hint-placeholder-count="20">
+          <g>
+            <rect x="{{s.x}}" width="16" y="{{s.bY}}" height="{{s.bH}}" fill="#0072bc" rx="3"></rect>
+            <rect x="{{s.x}}" width="16" y="144" height="{{s.aH}}" fill="#8ec4e6" rx="3"></rect>
+            <text x="{{s.labelX}}" y="{{s.labelY}}" font-size="10" fill="{{s.labelInk}}" text-anchor="end" transform="{{s.labelRotate}}">{{s.name}}</text>
+            <sc-if value="{{s.selected}}" hint-placeholder-val="{{ false }}">
+              <rect x="{{s.ringX}}" width="24" y="{{s.ringY}}" height="{{s.ringH}}" fill="none" stroke="#033056" stroke-width="2" rx="5"></rect>
+            </sc-if>
+          </g>
+        </sc-for>
+
+        <line x1="58" y1="141" x2="884" y2="141" stroke="#44403c" stroke-width="1.5"></line>
+        <text x="58" y="26" font-size="10" fill="#78716c">Boardings</text>
+        <text x="58" y="212" font-size="10" fill="#78716c">Alightings</text>
+      </svg>
+    </div>
+
+    <div style="display:flex;gap:16px;flex:1;min-height:0">
+      <div style="flex-grow:1;background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:12px;color:#78716c">Willowbrook / Rosa Parks Station &middot; A Line &middot; over time</span>
+        <svg viewBox="0 0 560 130" width="100%" height="120">
+          <line x1="10" y1="108" x2="550" y2="108" stroke="#e7e5e4" stroke-width="1"></line>
+          <polyline points="10,54 118,50 226,47 334,43 442,40 550,36" fill="none" stroke="#0072bc" stroke-width="2" stroke-linejoin="round"></polyline>
+          <polyline points="10,44 118,41 226,38 334,34 442,31 550,28" fill="none" stroke="#0072bc" stroke-width="2" stroke-dasharray="4 3" stroke-linejoin="round"></polyline>
+          <g font-size="10" fill="#a8a29e">
+            <text x="10" y="124">Jul 2025</text>
+            <text x="550" y="124" text-anchor="end">Dec 2025</text>
+          </g>
+          <text x="550" y="18" font-size="10" fill="#78716c" text-anchor="end">solid boardings &middot; dashed alightings</text>
+        </svg>
+      </div>
+
+      <div style="width:250px;flex-shrink:0;background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Willowbrook / Rosa Parks</span>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+            <span style="font-size:11px;color:#78716c">Avg. Boardings</span>
+            <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">4,320</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+            <span style="font-size:11px;color:#78716c">Avg. Alightings</span>
+            <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">4,610</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+            <span style="font-size:11px;color:#78716c">Change</span>
+            <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:#9a3412">&minus;290</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+            <span style="font-size:11px;color:#78716c">Share of Line</span>
+            <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">9.1%</span>
+          </div>
+        </div>
+        <span style="font-size:10px;color:#a8a29e;line-height:1.5">More riders get off here than on, every month in the window.</span>
+      </div>
+    </div>
+
+    <span style="font-size:11px;color:#a8a29e">A 154-stop bus line scrolls sideways here; the rail lines fit whole.</span>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const data = [
+      ['Union Station', 10125, 9113],
+      ['Little Tokyo / Arts District', 3210, 3480],
+      ['Historic Broadway', 2640, 2810],
+      ['Grand Av Arts / Bunker Hill', 2980, 3120],
+      ['7th Street / Metro Center', 6750, 6075],
+      ['Pico', 2940, 3180],
+      ['Grand / LATTC', 1910, 1845],
+      ['San Pedro Street', 1204, 1352],
+      ['Washington', 1688, 1519],
+      ['Vernon', 1142, 1205],
+      ['Slauson', 1505, 1388],
+      ['Florence', 2210, 2004],
+      ['Firestone', 1860, 1932],
+      ['103rd Street / Watts Towers', 1688, 1519],
+      ['Willowbrook / Rosa Parks', 4320, 4610],
+      ['Compton', 1740, 1690],
+      ['Artesia', 1520, 1602],
+      ['Del Amo', 980, 1044],
+      ['Wardlow', 860, 902],
+      ['Downtown Long Beach', 3980, 3610],
+    ];
+    const peak = 10500;
+    const selected = 'Willowbrook / Rosa Parks';
+    const stops = data.map((row, i) => {
+      const x = 62 + i * 41.5;
+      const bH = (row[1] / peak) * 94;
+      const aH = (row[2] / peak) * 94;
+      const labelX = x + 14;
+      const labelY = 246;
+      return {
+        name: row[0],
+        x: x,
+        bY: 139 - bH,
+        bH: bH,
+        aH: aH,
+        labelX: labelX,
+        labelY: labelY,
+        labelInk: row[0] === selected ? '#033056' : '#78716c',
+        labelRotate: 'rotate(-55 ' + String(labelX) + ' ' + String(labelY) + ')',
+        selected: row[0] === selected,
+        ringX: x - 4,
+        ringY: 135 - bH,
+        ringH: bH + aH + 14,
+      };
+    });
+    return { stops: stops };
+  }
+}
+</script>
+</body>
+</html>

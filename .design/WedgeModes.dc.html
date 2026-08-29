@@ -1,0 +1,258 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">Q&#8322;</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Wedge sweep, two modes &mdash; share of a line, or mix at a station</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click the modes. One ring, two questions, and only one of them is free.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership &middot; map</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:#a8a29e">The sweep means</span>
+        <div style="display:flex;gap:2px">
+          <span class="hit" onClick="{{ pickShare }}" style="background:{{ shareBg }};color:{{ shareInk }};font-size:12px;font-weight:700;padding:8px 12px;border-radius:4px 0 0 4px">share of its line</span>
+          <span class="hit" onClick="{{ pickMix }}" style="background:{{ mixBg }};color:{{ mixInk }};font-size:12px;font-weight:700;padding:8px 12px;border-radius:0 4px 4px 0">mix of lines here</span>
+        </div>
+      </div>
+    </div>
+
+    <span style="font-size:12px;color:#78716c">{{ blurb }}</span>
+
+    <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+      <svg viewBox="0 0 900 520" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map where each station draws a ring whose filled sweep answers the selected question">
+        <rect x="0" y="0" width="900" height="520" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="18">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+        <polyline points="740,90 740,170 660,220 560,270 560,470" fill="none" stroke="#0072bc" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <polyline points="740,90 640,320 560,470" fill="none" stroke="#eb131b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <polyline points="560,270 420,214 280,178 150,160" fill="none" stroke="#a05da5" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <polyline points="560,270 470,360 340,392" fill="none" stroke="#e5a512" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+
+        <sc-for list="{{rings}}" as="r" hint-placeholder-count="10">
+          <g>
+            <circle cx="{{r.cx}}" cy="{{r.cy}}" r="19" fill="#f8f6f1" fill-opacity=".88"></circle>
+            <circle cx="{{r.cx}}" cy="{{r.cy}}" r="14.5" fill="none" stroke="#ddd9d2" stroke-width="9"></circle>
+            <sc-for list="{{r.arcs}}" as="a" hint-placeholder-count="2">
+              <path d="{{a.path}}" fill="{{a.color}}"></path>
+            </sc-for>
+            <sc-if value="{{r.missing}}" hint-placeholder-val="{{ false }}">
+              <circle cx="{{r.cx}}" cy="{{r.cy}}" r="14.5" fill="none" stroke="#78716c" stroke-width="1.6" stroke-dasharray="3 2.5"></circle>
+            </sc-if>
+            <sc-if value="{{r.interchange}}" hint-placeholder-val="{{ false }}">
+              <circle cx="{{r.cx}}" cy="{{r.cy}}" r="4" fill="#f8f6f1" stroke="#78716c" stroke-width="1"></circle>
+            </sc-if>
+            <text x="{{r.lx}}" y="{{r.ly}}" font-size="9.5" fill="#44403c">{{r.name}}</text>
+          </g>
+        </sc-for>
+      </svg>
+
+      <div style="position:absolute;left:14px;bottom:14px;background:#f8f6f1;border-radius:5px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">{{ legendTitle }}</span>
+        <svg width="264" height="58" viewBox="0 0 264 58">
+          <sc-for list="{{legend}}" as="l" hint-placeholder-count="4">
+            <g>
+              <circle cx="{{l.cx}}" cy="22" r="14.5" fill="none" stroke="#ddd9d2" stroke-width="9"></circle>
+              <sc-for list="{{l.arcs}}" as="a" hint-placeholder-count="2">
+                <path d="{{a.path}}" fill="{{a.color}}"></path>
+              </sc-for>
+              <text x="{{l.cx}}" y="52" font-size="9" fill="#78716c" text-anchor="middle">{{l.label}}</text>
+            </g>
+          </sc-for>
+        </svg>
+      </div>
+
+      <div style="position:absolute;right:14px;top:14px;background:#f8f6f1;border-radius:5px;padding:11px 13px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Lines</span>
+        <sc-for list="{{lineKey}}" as="k" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:7px">
+            <span style="width:10px;height:10px;border-radius:2px;background:{{k.color}}"></span>
+            <span style="font-size:10px;color:#78716c">{{k.label}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'share' };
+  }
+
+  arc(cx, cy, from, to, Ro, Ri) {
+    const a0 = from * 2 * Math.PI;
+    const a1 = Math.min(to, 0.9999) * 2 * Math.PI;
+    const large = a1 - a0 > Math.PI ? 1 : 0;
+    const p = (r, a) => [cx + r * Math.sin(a), cy - r * Math.cos(a)];
+    const o0 = p(Ro, a0), o1 = p(Ro, a1), i1 = p(Ri, a1), i0 = p(Ri, a0);
+    const n = (v) => String(Math.round(v * 100) / 100);
+    return 'M ' + n(o0[0]) + ' ' + n(o0[1]) +
+      ' A ' + n(Ro) + ' ' + n(Ro) + ' 0 ' + String(large) + ' 1 ' + n(o1[0]) + ' ' + n(o1[1]) +
+      ' L ' + n(i1[0]) + ' ' + n(i1[1]) +
+      ' A ' + n(Ri) + ' ' + n(Ri) + ' 0 ' + String(large) + ' 0 ' + n(i0[0]) + ' ' + n(i0[1]) + ' Z';
+  }
+
+  color(id) {
+    const map = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#e5a512' };
+    return map[id] || '#78716c';
+  }
+
+  renderVals() {
+    const self = this;
+    const mode = this.state.mode;
+    const Ro = 19, Ri = 10;
+
+    const grid = [];
+    for (let i = 1; i < 13; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 520 });
+    for (let i = 1; i < 8; i++) grid.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+
+    // name, x, y, label offset, [[line, boardings, share of that line]]
+    const stations = [
+      ['Union Station', 740, 90, [['A', 10125, 0.305], ['B', 4820, 0.161]]],
+      ['Chinatown', 740, 170, [['A', 1980, 0.060]]],
+      ['Historic Broadway', 660, 220, [['A', 2640, 0.079]]],
+      ['7th St / Metro Center', 560, 270, [['A', 6750, 0.203], ['D', 4480, 0.214], ['E', 3120, 0.186]]],
+      ['Pico', 560, 350, [['A', 2940, 0.088]]],
+      ['Grand / LATTC', 560, 410, [['A', 1910, 0.058]]],
+      ['Willowbrook', 560, 470, [['A', 4320, 0.130], ['B', 2610, 0.087]]],
+      ['Wilshire / Vermont', 420, 214, [['D', 5480, 0.262]]],
+      ['Westlake / MacArthur', 280, 178, [['D', 2870, 0.137]]],
+      ['Wilshire / Normandie', 150, 160, [['D', 1640, 0.078]]],
+      ['Expo / Crenshaw', 470, 360, [['E', 2510, 0.150]]],
+      ['Culver City', 340, 392, [['E', null, null]]],
+    ];
+
+    const rings = stations.map((s) => {
+      const lines = s[3];
+      const arcs = [];
+      let missing = false;
+
+      if (mode === 'share') {
+        // One sweep per line, each measured against its own line's total, drawn concentrically outward.
+        lines.forEach((l, i) => {
+          if (l[2] === null) { missing = true; return; }
+          const band = (Ro - Ri) / lines.length;
+          const outer = Ro - i * band;
+          arcs.push({ path: self.arc(s[1], s[2], 0, l[2], outer, outer - band + 0.6), color: self.color(l[0]) });
+        });
+      } else {
+        // One slice per line, measured against the lines drawn at this station.
+        const total = lines.reduce((acc, l) => acc + (l[1] || 0), 0);
+        if (total === 0) missing = true;
+        let cursor = 0;
+        lines.forEach((l) => {
+          if (l[1] === null) return;
+          const frac = l[1] / total;
+          arcs.push({ path: self.arc(s[1], s[2], cursor, cursor + frac, Ro, Ri), color: self.color(l[0]) });
+          cursor += frac;
+        });
+      }
+
+      return {
+        cx: s[1], cy: s[2],
+        name: s[0],
+        lx: s[1] + 24, ly: s[2] + 4,
+        arcs: arcs,
+        missing: missing,
+        interchange: mode === 'mix' && lines.length > 1,
+      };
+    });
+
+    const legend = mode === 'share'
+      ? [0.05, 0.15, 0.3, 0.5].map((v, i) => ({
+          cx: 26 + i * 66,
+          label: String(Math.round(v * 100)) + '%',
+          arcs: [{ path: self.arc(26 + i * 66, 22, 0, v, 14.5 + 4.5, 14.5 - 4.5), color: '#0072bc' }],
+        }))
+      : [
+          { split: [['A', 1]], label: 'one line' },
+          { split: [['A', 0.5], ['D', 0.5]], label: 'even pair' },
+          { split: [['A', 0.7], ['D', 0.3]], label: 'A dominant' },
+          { split: [['A', 0.45], ['D', 0.3], ['E', 0.25]], label: 'three ways' },
+        ].map((e, i) => {
+          const cx = 26 + i * 66;
+          let cursor = 0;
+          const arcs = e.split.map((p) => {
+            const path = self.arc(cx, 22, cursor, cursor + p[1], 19, 10);
+            cursor += p[1];
+            return { path: path, color: self.color(p[0]) };
+          });
+          return { cx: cx, label: e.label, arcs: arcs };
+        });
+
+    const copy = mode === 'share'
+      ? {
+          blurb: 'Each sweep is that stop’s share of its own line’s boardings, so the sweeps on any one line add up to a full turn. Where two lines meet, the station draws a band for each, nested.',
+          legendTitle: 'Sweep — share of line',
+          noteHead: 'The share mode costs nothing the app does not already compute',
+          noteInk: '#166534',
+          noteBody: 'This is the shareOfLine column the table already has, put on the map. Because one line’s shares sum to a whole turn, a reader can see whether a line is one dominant station or a dozen even ones — a question circle size cannot answer, since size only ever says which stop is bigger. The cost is that angle decodes worse than length, every ring is the same overall size, so a busy line and a quiet one look alike, and a station on three lines needs three nested bands that get thin fast.',
+        }
+      : {
+          blurb: 'At a station served by several lines, the ring is divided among them, so the slices show which line brings the riders. A station on one line fills the whole ring, which is why the single-line stops all look alike here.',
+          legendTitle: 'Slices — mix of lines here',
+          noteHead: 'The mix mode needs a denominator CONTEXT.md rules out',
+          noteInk: '#9a3412',
+          noteBody: 'A pie needs a whole, and the whole here is every line’s boardings at one station added together — exactly the stop-total-across-lines rollup the grain forbids. There are two honest ways out. Either the slices are read as a ratio between the lines a reader has selected, never as a station total, which means the label has to say so and the picture changes when the selection does; or the mode is dropped and the same question is answered in the readout panel, where three numbers side by side make the comparison without implying they sum to anything. The second is cheaper and says less that is untrue.',
+        };
+
+    return {
+      grid: grid,
+      rings: rings,
+      legend: legend,
+      lineKey: [
+        { color: '#0072bc', label: 'A Line' },
+        { color: '#eb131b', label: 'B Line' },
+        { color: '#a05da5', label: 'D Line' },
+        { color: '#e5a512', label: 'E Line' },
+      ],
+      pickShare: () => self.setState({ mode: 'share' }),
+      pickMix: () => self.setState({ mode: 'mix' }),
+      shareBg: mode === 'share' ? '#033056' : '#ffffff',
+      shareInk: mode === 'share' ? '#ffffff' : '#44403c',
+      mixBg: mode === 'mix' ? '#033056' : '#ffffff',
+      mixInk: mode === 'mix' ? '#ffffff' : '#44403c',
+      blurb: copy.blurb,
+      legendTitle: copy.legendTitle,
+      noteHead: copy.noteHead,
+      noteInk: copy.noteInk,
+      noteBody: copy.noteBody,
+    };
+  }
+}
+</script>
+</body>
+</html>

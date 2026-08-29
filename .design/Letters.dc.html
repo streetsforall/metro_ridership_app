@@ -1,0 +1,271 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">JJ</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">The letter, because the hues do not separate</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click a strategy. The colour distances come from the palette validator.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">Metro&rsquo;s six line colours are a brand, so the app cannot reorder or re-step them the way it could its own selection palette. Run through the validator they fail three checks, and the failures are between lines that meet at the same stations. A mark that shows several lines at one point therefore needs something that is not a hue, and a letter is the thing every rider already reads.</span>
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+      <span style="font-size:11px;color:#a8a29e;margin-right:4px">The line is named by</span>
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="4">
+        <span class="hit" onClick="{{m.pick}}" style="background:{{m.bg}};color:{{m.ink}};font-size:12px;font-weight:700;padding:8px 13px;border-radius:4px">{{m.label}}</span>
+      </sc-for>
+    </div>
+
+    <div style="background:#e8e6e1;border-radius:6px;padding:16px 16px 10px">
+      <svg viewBox="0 0 900 226" width="100%" height="226" role="img" aria-label="Four stations drawn at map size and at twice map size under the selected labelling strategy">
+        <text x="24" y="30" font-size="10" fill="#78716c" text-anchor="start">at map size</text>
+        <text x="24" y="140" font-size="10" fill="#78716c" text-anchor="start">at twice map size</text>
+        <sc-for list="{{cells}}" as="c" hint-placeholder-count="8">
+          <g>
+            <sc-for list="{{c.sectors}}" as="k" hint-placeholder-count="4">
+              <path d="{{k.path}}" fill="{{k.fill}}" stroke="#e8e6e1" stroke-width="1"></path>
+            </sc-for>
+            <circle cx="{{c.cx}}" cy="{{c.cy}}" r="{{c.pinR}}" fill="#e8e6e1" stroke="#44403c" stroke-width="1.1"></circle>
+            <sc-for list="{{c.glyphs}}" as="g" hint-placeholder-count="4">
+              <text x="{{g.x}}" y="{{g.y}}" font-size="{{g.size}}" font-weight="700" fill="{{g.fill}}" text-anchor="middle">{{g.text}}</text>
+            </sc-for>
+            <sc-for list="{{c.badges}}" as="b" hint-placeholder-count="4">
+              <g>
+                <rect x="{{b.x}}" y="{{b.y}}" width="{{b.w}}" height="{{b.h}}" rx="2.5" fill="{{b.fill}}"></rect>
+                <text x="{{b.tx}}" y="{{b.ty}}" font-size="{{b.size}}" font-weight="700" fill="#ffffff" text-anchor="middle">{{b.text}}</text>
+              </g>
+            </sc-for>
+          </g>
+        </sc-for>
+        <sc-for list="{{captions}}" as="t" hint-placeholder-count="4">
+          <text x="{{t.x}}" y="216" font-size="9.5" fill="#a8a29e" text-anchor="middle">{{t.text}}</text>
+        </sc-for>
+      </svg>
+    </div>
+
+    <div style="display:flex;gap:18px;flex:1;min-height:0">
+      <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What this strategy keeps and what it spends</span>
+        <sc-for list="{{tests}}" as="t" hint-placeholder-count="4">
+          <div style="display:flex;align-items:flex-start;gap:9px;padding:2px 0">
+            <span style="width:15px;height:15px;border-radius:3px;background:{{t.chipBg}};color:{{t.chipInk}};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px">{{t.glyph}}</span>
+            <span style="font-size:11px;color:#44403c;line-height:1.6">{{t.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="width:352px;background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:7px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Pairs the validator flags</span>
+        <sc-for list="{{pairs}}" as="p" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:13px;height:13px;border-radius:2px;background:{{p.a}};flex:none"></span>
+            <span style="width:13px;height:13px;border-radius:2px;background:{{p.b}};flex:none"></span>
+            <span style="font-size:10.5px;color:#44403c;line-height:1.5">{{p.text}}</span>
+          </div>
+        </sc-for>
+        <span style="font-size:10px;color:#a8a29e;line-height:1.6">Delta E is OKLab distance times a hundred. The floor for a categorical palette is 8 under simulated colour vision and 15 under normal vision.</span>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'threshold' };
+  }
+
+  arc(cx, cy, from, to, Ro, Ri) {
+    const a0 = from * 2 * Math.PI;
+    const a1 = Math.min(to, 0.9999) * 2 * Math.PI;
+    const large = a1 - a0 > Math.PI ? 1 : 0;
+    const p = (r, a) => [cx + r * Math.sin(a), cy - r * Math.cos(a)];
+    const o0 = p(Ro, a0), o1 = p(Ro, a1), i1 = p(Ri, a1), i0 = p(Ri, a0);
+    const n = (v) => String(Math.round(v * 100) / 100);
+    return 'M ' + n(o0[0]) + ' ' + n(o0[1]) +
+      ' A ' + n(Ro) + ' ' + n(Ro) + ' 0 ' + String(large) + ' 1 ' + n(o1[0]) + ' ' + n(o1[1]) +
+      ' L ' + n(i1[0]) + ' ' + n(i1[1]) +
+      ' A ' + n(Ri) + ' ' + n(Ri) + ' 0 ' + String(large) + ' 0 ' + n(i0[0]) + ' ' + n(i0[1]) + ' Z';
+  }
+
+  renderVals() {
+    const self = this;
+    const mode = this.state.mode;
+    const color = { A: '#0072bc', B: '#eb131b', C: '#58a738', D: '#a05da5', E: '#fdb913', K: '#e56db1' };
+    const onDark = { A: '#ffffff', B: '#ffffff', C: '#ffffff', D: '#ffffff', E: '#44403c', K: '#44403c' };
+
+    const specs = [
+      { name: 'one line', lines: [['A', 1305]] },
+      { name: 'two lines', lines: [['B', 2979], ['D', 1505]] },
+      { name: 'three lines', lines: [['A', 4818], ['B', 4093], ['D', 2571]] },
+      { name: 'four lines', lines: [['B', 8430], ['A', 6288], ['E', 5990], ['D', 4444]] },
+    ];
+
+    const VMAX = 8430;
+    const cells = [];
+    const captions = [];
+
+    [1, 2].forEach((band, bi) => {
+      const S = band === 1 ? 1 : 2;
+      const cy = band === 1 ? 62 : 158;
+      specs.forEach((spec, si) => {
+        const cx = 190 + si * 178;
+        const RI = 8 * S;
+        const share = 1 / spec.lines.length;
+        const sectors = [], glyphs = [], badges = [];
+        let outer = RI;
+
+        spec.lines.forEach((l, k) => {
+          const ro = RI + (3 + 10 * Math.sqrt(l[1] / VMAX)) * S;
+          outer = Math.max(outer, ro);
+          const gap = spec.lines.length > 1 ? 0.012 : 0;
+          sectors.push({ path: self.arc(cx, cy, k * share, (k + 1) * share - gap, ro, RI), fill: color[l[0]] });
+
+          const mid = (k + 0.5) * share * 2 * Math.PI;
+          const rMid = (RI + ro) / 2;
+          const gx = cx + rMid * Math.sin(mid);
+          const gy = cy - rMid * Math.cos(mid);
+          const bandWidth = ro - RI;
+          const arcWidth = 2 * Math.PI * rMid * share;
+          const fits = bandWidth >= 9 && arcWidth >= 9;
+
+          const wantsInside = mode === 'inside' || (mode === 'threshold' && fits);
+          const wantsBadge = mode === 'badge' || (mode === 'threshold' && !fits);
+
+          if (wantsInside) {
+            glyphs.push({
+              x: gx, y: gy + 3 * S, size: String(Math.max(6, Math.min(11 * S, bandWidth * 0.85))),
+              fill: onDark[l[0]], text: l[0],
+            });
+          }
+          if (wantsBadge && mode !== 'none') {
+            const bw = 11 * S, bh = 11 * S;
+            const bx = cx - (spec.lines.length * (bw + 2 * S)) / 2 + k * (bw + 2 * S);
+            const by = cy + outer + 5 * S;
+            badges.push({
+              x: bx, y: by, w: bw, h: bh, fill: color[l[0]],
+              tx: bx + bw / 2, ty: by + bh * 0.76, size: String(7.5 * S), text: l[0],
+            });
+          }
+        });
+
+        cells.push({ cx: cx, cy: cy, sectors: sectors, glyphs: glyphs, badges: badges, pinR: 2.6 * S });
+        if (bi === 0) captions.push({ x: cx, text: spec.name });
+      });
+    });
+
+    const yes = { glyph: '✓', chipBg: '#dcf0e2', chipInk: '#166534' };
+    const no = { glyph: '✕', chipBg: '#f7e0d4', chipInk: '#9a3412' };
+    const part = { glyph: '~', chipBg: '#efece6', chipInk: '#78716c' };
+
+    const table = {
+      none: {
+        label: 'colour alone',
+        tests: [
+          [no, 'Three of the six brand hues sit under the separation floor against another hue'],
+          [no, 'The failing pairs are A against D and C against B, which share stations'],
+          [yes, 'The mark stays as small as it can be, which matters most at low zoom'],
+          [part, 'A hover popup names the line, which helps one reader at a time and no printout'],
+        ],
+        noteHead: 'The palette cannot be fixed, so the mark has to carry the fix',
+        noteInk: '#9a3412',
+        noteBody: 'When the app&rsquo;s own eight-colour stop selection palette failed the same check, the answer was to reorder it, and that worked. These six are Metro&rsquo;s, they are printed on the trains, and changing them would be worse than the failure. The validator also warns that the E Line yellow sits at 1.7 to 1 against a light surface and the C Line green at 2.9 — under three to one, which obliges a visible label whatever else is decided.',
+      },
+      inside: {
+        label: 'a letter inside every sector',
+        tests: [
+          [yes, 'Identity never depends on hue, which is the whole requirement'],
+          [yes, 'It is the letter riders already use, so nothing new is taught'],
+          [no, 'At map size a four-line sector is about nine pixels of arc and three of band — no letter fits'],
+          [part, 'Two of the six letters need dark ink on their own colour, which is a second rule to hold'],
+        ],
+        noteHead: 'It works at the size the mark is not',
+        noteInk: '#9a3412',
+        noteBody: 'The bottom row shows the design as intended and the top row shows it at the size the map actually draws. Any letter needs roughly nine pixels of band and nine of arc to be read, and a four-line ring at map size gives it neither. Insisting on the letter inside the sector means insisting the mark grows, which spends the space the zoom draft has already shown is not there.',
+      },
+      badge: {
+        label: 'a row of letter badges beneath the mark',
+        tests: [
+          [yes, 'The badge is a fixed size, so it is legible whatever the ring is doing'],
+          [yes, 'It reads left to right in a stable order, which a ring cannot promise'],
+          [no, 'It doubles the footprint of every multi-line station, which is where footprint already hurts'],
+          [part, 'It duplicates the sector colours, so a reader has two things to reconcile'],
+        ],
+        noteHead: 'The most legible and the most expensive in space',
+        noteInk: '#78716c',
+        noteBody: 'Four badges under a mark are unmistakable and are also as wide as the mark itself, which at zoom 12 means one station&rsquo;s badges sit on the next station. It is the right treatment for the selected station and for the panel, and the wrong one for every station at once. Draft N&rsquo;s decluttering is the mechanism that would decide which stations get badges.',
+      },
+      threshold: {
+        label: 'a letter where it fits, a badge where it does not',
+        tests: [
+          [yes, 'Every station names its lines somehow, at every size, with no unlabelled case'],
+          [yes, 'The one-line and two-line stations, which are 108 of 110, keep the compact mark'],
+          [part, 'Two treatments in one layer means two legends, unless the legend shows both'],
+          [part, 'The threshold is a measurement rather than a taste, but it still has to be tuned per zoom'],
+        ],
+        noteHead: 'Let the geometry decide which treatment a station gets',
+        noteInk: '#166534',
+        noteBody: 'The rule is arithmetic: if the sector has nine pixels of band and nine of arc, the letter goes inside; otherwise the station gets a badge row. On the committed rail data that puts letters inside at 96 one-line and 12 two-line stations and badges under Union Station and 7th Street, which is exactly two exceptions in the whole network. It also degrades correctly at low zoom, where the sectors vanish and only the badges are left — and the badge is the part worth keeping.',
+      },
+    };
+
+    const cur = table[mode];
+    const order = [
+      ['none', 'colour alone'],
+      ['inside', 'a letter in every sector'],
+      ['badge', 'a badge row beneath'],
+      ['threshold', 'a letter where it fits'],
+    ];
+
+    return {
+      cells: cells,
+      captions: captions,
+      modes: order.map((o) => ({
+        label: o[1],
+        pick: () => self.setState({ mode: o[0] }),
+        bg: mode === o[0] ? '#033056' : '#ffffff',
+        ink: mode === o[0] ? '#ffffff' : '#44403c',
+      })),
+      tests: cur.tests.map((t) => ({ glyph: t[0].glyph, chipBg: t[0].chipBg, chipInk: t[0].chipInk, text: t[1] })),
+      noteHead: cur.noteHead,
+      noteInk: cur.noteInk,
+      noteBody: cur.noteBody,
+      pairs: [
+        { a: '#a05da5', b: '#0072bc', text: 'D against A — ΔE 3.7 for a protanope, and they share three stations' },
+        { a: '#58a738', b: '#eb131b', text: 'C against B — ΔE 4.9 for a deuteranope, under the floor of 8' },
+        { a: '#e56db1', b: '#a05da5', text: 'K against D — ΔE 13.5 for normal vision, under the hard floor of 15' },
+        { a: '#fdb913', b: '#f8f6f1', text: 'E against the map surface — 1.7 to 1, so the mark needs its own outline' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

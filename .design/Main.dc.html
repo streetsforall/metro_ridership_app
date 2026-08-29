@@ -1,0 +1,170 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 0; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">A</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Ranked table — as built</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Ranking is the frame; the chart and the map follow the selection.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership</span>
+      <div style="display:flex;gap:2px">
+        <span style="background:#033056;color:#fff;font-size:12px;font-weight:700;padding:8px 12px;border-radius:4px 0 0 4px">Boardings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px">Alightings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px;border-radius:0 4px 4px 0">Both</span>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <span style="font-size:12px;color:#78716c">Stop-level data covers Jul 2025 – Jun 2026 (12 months). The chart above covers 2009 – 2026.</span>
+      <span style="font-size:12px;color:#a8a29e">Jul 2025 → Dec 2025</span>
+    </div>
+
+    <figure style="margin:6px 0 0 0;display:flex;flex-direction:column;gap:6px">
+      <figcaption style="font-size:12px;color:#78716c">Ridership over time · 2 stops</figcaption>
+      <svg viewBox="0 0 900 204" width="100%" height="180" role="img" aria-label="Monthly boardings for two selected A Line stops, July to December 2025">
+        <g stroke="#e7e5e4" stroke-width="1">
+          <line x1="56" y1="16" x2="56" y2="152"></line>
+          <line x1="216.8" y1="16" x2="216.8" y2="152"></line>
+          <line x1="377.6" y1="16" x2="377.6" y2="152"></line>
+          <line x1="538.4" y1="16" x2="538.4" y2="152"></line>
+          <line x1="699.2" y1="16" x2="699.2" y2="152"></line>
+          <line x1="860" y1="16" x2="860" y2="152"></line>
+        </g>
+        <line x1="56" y1="152" x2="860" y2="152" stroke="#d6d3d1" stroke-width="1"></line>
+        <g font-size="11" fill="#a8a29e" text-anchor="end">
+          <text x="48" y="20">15,000</text>
+          <text x="48" y="65">10,000</text>
+          <text x="48" y="110">5,000</text>
+          <text x="48" y="156">0</text>
+        </g>
+        <polyline points="56,46 216.8,40.9 377.6,35.8 538.4,30.7 699.2,25.6 860,20.5" fill="none" stroke="#2563eb" stroke-width="2" stroke-linejoin="round"></polyline>
+        <polyline points="56,80 216.8,76.6 377.6,73.2 538.4,69.8 699.2,66.4 860,63" fill="none" stroke="#ea580c" stroke-width="2" stroke-linejoin="round"></polyline>
+        <g font-size="11" fill="#78716c" text-anchor="middle">
+          <text x="56" y="172">Jul 2025</text>
+          <text x="216.8" y="172">Aug 2025</text>
+          <text x="377.6" y="172">Sep 2025</text>
+          <text x="538.4" y="172">Oct 2025</text>
+          <text x="699.2" y="172">Nov 2025</text>
+          <text x="860" y="172">Dec 2025</text>
+        </g>
+        <g font-size="11" fill="#44403c">
+          <line x1="150" y1="194" x2="186" y2="194" stroke="#2563eb" stroke-width="3"></line>
+          <text x="194" y="198">Union Station · A Line</text>
+          <line x1="420" y1="194" x2="456" y2="194" stroke="#ea580c" stroke-width="3"></line>
+          <text x="464" y="198">7th Street / Metro Center Station · A Line</text>
+        </g>
+      </svg>
+    </figure>
+
+    <div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:4px;padding:10px 12px;margin-top:2px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a8a29e" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16" y1="16" x2="21" y2="21"></line></svg>
+      <span style="font-size:13px;color:#a8a29e">Search stops</span>
+    </div>
+
+    <div style="display:flex;gap:14px">
+      <span style="font-size:12px;color:#0fada8;font-weight:600">Select All</span>
+      <span style="font-size:12px;color:#0fada8;font-weight:600">Clear All</span>
+    </div>
+
+    <div style="flex:1;overflow:hidden;border-radius:4px">
+      <table style="font-size:12px">
+        <thead>
+          <tr style="background:#e7e5e4">
+            <th style="width:34px;padding:10px 8px"></th>
+            <th style="text-align:left;padding:10px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#44403c">Stop</th>
+            <th style="text-align:left;padding:10px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#44403c">Line</th>
+            <th style="text-align:right;padding:10px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#44403c">Avg. Boardings &#9662;</th>
+            <th style="text-align:right;padding:10px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#44403c">Avg. Alightings</th>
+            <th style="text-align:right;padding:10px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#44403c">Change</th>
+            <th style="text-align:right;padding:10px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#44403c">Share of Line</th>
+            <th style="text-align:left;padding:10px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#44403c">Ridership over time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{rows}}" as="row" hint-placeholder-count="6">
+            <tr style="border-bottom:1px solid #ede9e2">
+              <td style="padding:9px 8px">
+                <div style="width:16px;height:16px;border-radius:3px;background:{{row.boxFill}};border:1px solid {{row.boxEdge}};display:flex;align-items:center;justify-content:center">
+                  <sc-if value="{{row.picked}}" hint-placeholder-val="{{ true }}">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="4"><polyline points="4,13 9,18 20,6"></polyline></svg>
+                  </sc-if>
+                </div>
+              </td>
+              <td style="padding:9px 8px;color:#44403c">{{row.name}}</td>
+              <td style="padding:9px 8px;color:#78716c">A Line</td>
+              <td style="padding:9px 8px;text-align:right;font-variant-numeric:tabular-nums">{{row.boardings}}</td>
+              <td style="padding:9px 8px;text-align:right;font-variant-numeric:tabular-nums">{{row.alightings}}</td>
+              <td style="padding:9px 8px;text-align:right;font-variant-numeric:tabular-nums;color:{{row.changeInk}}">{{row.change}}</td>
+              <td style="padding:9px 8px;text-align:right;font-variant-numeric:tabular-nums">{{row.share}}</td>
+              <td style="padding:9px 8px">
+                <svg width="150" height="20" viewBox="0 0 150 20"><polyline points="{{row.spark}}" fill="none" stroke="#0072bc" stroke-width="2" stroke-linejoin="round"></polyline></svg>
+              </td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+
+    <span style="font-size:11px;color:#a8a29e">Showing 6 of 47 stops &middot; scroll for the rest</span>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const rise = (a, b) => {
+      const pts = [];
+      for (let i = 0; i < 6; i++) pts.push(String(i * 30) + ',' + String(b - (i * (b - a)) / 5));
+      return pts.join(' ');
+    };
+    const rows = [
+      { name: 'Union Station', boardings: '10,125', alightings: '9,113', change: '1,013', share: '21.4%', picked: true, spark: rise(3, 16) },
+      { name: '7th Street / Metro Center Station', boardings: '6,750', alightings: '6,075', change: '675', share: '14.3%', picked: true, spark: rise(4, 15) },
+      { name: 'Willowbrook / Rosa Parks Station', boardings: '4,320', alightings: '4,610', change: '-290', share: '9.1%', picked: false, spark: rise(9, 13) },
+      { name: 'Pico Station', boardings: '2,940', alightings: '3,180', change: '-240', share: '6.2%', picked: false, spark: rise(11, 14) },
+      { name: 'Florence Station', boardings: '2,210', alightings: '2,004', change: '206', share: '4.7%', picked: false, spark: rise(8, 14) },
+      { name: '103rd Street / Watts Towers Station', boardings: '1,688', alightings: '1,519', change: '169', share: '3.6%', picked: false, spark: rise(6, 15) },
+    ];
+    return {
+      rows: rows.map((r) => ({
+        boxFill: r.picked ? '#033056' : '#ffffff',
+        boxEdge: r.picked ? '#033056' : '#d6d3d1',
+        changeInk: r.change.charAt(0) === '-' ? '#9a3412' : '#44403c',
+        name: r.name,
+        boardings: r.boardings,
+        alightings: r.alightings,
+        change: r.change,
+        share: r.share,
+        picked: r.picked,
+        spark: r.spark,
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">MM</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Squares, and the percentage a square can carry</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click a mark. Shares are each stop&rsquo;s real share of its own line&rsquo;s Boardings.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:13px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+      <span style="font-size:11px;color:#a8a29e;margin-right:4px">The mark is</span>
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="4">
+        <span class="hit" onClick="{{m.pick}}" style="background:{{m.bg}};color:{{m.ink}};font-size:12px;font-weight:700;padding:8px 13px;border-radius:4px">{{m.label}}</span>
+      </sc-for>
+    </div>
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">{{ blurb }}</span>
+
+    <div style="background:#e8e6e1;border-radius:6px;padding:18px 16px 12px">
+      <svg viewBox="0 0 900 250" width="100%" height="250" role="img" aria-label="Eight stop-and-line pairs drawn as the selected mark, each labelled with its Boardings and its share of the line">
+        <sc-for list="{{cells}}" as="c" hint-placeholder-count="8">
+          <g>
+            <sc-if value="{{c.isCircle}}" hint-placeholder-val="{{ true }}">
+              <circle cx="{{c.cx}}" cy="{{c.cy}}" r="{{c.r}}" fill="{{c.color}}" fill-opacity=".85" stroke="#e8e6e1" stroke-width="1.4"></circle>
+            </sc-if>
+            <sc-if value="{{c.isSquare}}" hint-placeholder-val="{{ true }}">
+              <g>
+                <rect x="{{c.x}}" y="{{c.y}}" width="{{c.side}}" height="{{c.side}}" fill="{{c.color}}" fill-opacity="{{c.bgOpacity}}" stroke="{{c.color}}" stroke-width="1.4"></rect>
+                <rect x="{{c.fx}}" y="{{c.fy}}" width="{{c.fw}}" height="{{c.fh}}" fill="{{c.color}}"></rect>
+              </g>
+            </sc-if>
+            <text x="{{c.cx}}" y="206" font-size="10" fill="#44403c" text-anchor="middle">{{c.name}}</text>
+            <text x="{{c.cx}}" y="220" font-size="9.5" fill="#78716c" text-anchor="middle">{{c.figure}}</text>
+            <text x="{{c.cx}}" y="234" font-size="9.5" fill="#a8a29e" text-anchor="middle">{{c.share}}</text>
+          </g>
+        </sc-for>
+      </svg>
+    </div>
+
+    <div style="display:flex;gap:18px;flex:1;min-height:0">
+      <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What this mark keeps and what it spends</span>
+        <sc-for list="{{tests}}" as="t" hint-placeholder-count="5">
+          <div style="display:flex;align-items:flex-start;gap:9px;padding:3px 0">
+            <span style="width:15px;height:15px;border-radius:3px;background:{{t.chipBg}};color:{{t.chipInk}};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px">{{t.glyph}}</span>
+            <span style="font-size:11px;color:#44403c;line-height:1.6">{{t.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="width:330px;display:flex;flex-direction:column;gap:9px">
+        <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Lines drawn</span>
+          <sc-for list="{{lineKey}}" as="k" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span style="width:10px;height:10px;border-radius:2px;background:{{k.color}}"></span>
+              <span style="font-size:10.5px;color:#78716c">{{k.label}}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:5px;flex:1">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What it would take to build</span>
+          <span style="font-size:11px;color:#44403c;line-height:1.65">{{ build }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'both' };
+  }
+
+  renderVals() {
+    const self = this;
+    const mode = this.state.mode;
+    const color = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#fdb913' };
+
+    // Weekday Boardings and share of that line's total, from the committed rail payload.
+    const pairs = [
+      { name: '7th St · B', line: 'B', v: 8430, share: 17.44 },
+      { name: '7th St · A', line: 'A', v: 6288, share: 8.93 },
+      { name: '7th St · E', line: 'E', v: 5990, share: 11.43 },
+      { name: 'Union St · A', line: 'A', v: 4818, share: 6.84 },
+      { name: '7th St · D', line: 'D', v: 4444, share: 19.89 },
+      { name: 'Union St · D', line: 'D', v: 2571, share: 11.51 },
+      { name: 'Little Tokyo · E', line: 'E', v: 2333, share: 4.45 },
+      { name: 'Chinatown · A', line: 'A', v: 1305, share: 1.85 },
+    ];
+
+    const VMAX = 8430, SMAX = 20;
+    const radius = (v) => 8 + 34 * Math.sqrt(v / VMAX);
+    const side = (v) => 2 * radius(v) * 0.886;
+    const FIXED = 62;
+
+    const cells = pairs.map((p, i) => {
+      const cx = 96 + i * 101;
+      const cy = 108;
+      const c = { cx: cx, cy: cy, name: p.name, color: color[p.line],
+        figure: String(p.v) + ' boardings', share: p.share.toFixed(1) + '% of the line' };
+
+      if (mode === 'circle') {
+        c.isCircle = true; c.isSquare = false;
+        c.r = radius(p.v);
+        return c;
+      }
+
+      c.isCircle = false; c.isSquare = true;
+      const s = mode === 'share' ? FIXED : side(p.v);
+      c.side = s;
+      c.x = cx - s / 2;
+      c.y = cy - s / 2;
+
+      if (mode === 'size') {
+        c.bgOpacity = '.85';
+        c.fx = c.x; c.fy = c.y; c.fw = 0; c.fh = 0;
+      } else {
+        const frac = Math.min(1, p.share / SMAX);
+        c.bgOpacity = '.13';
+        c.fx = c.x;
+        c.fh = s * frac;
+        c.fy = c.y + s - c.fh;
+        c.fw = s;
+      }
+      return c;
+    });
+
+    const yes = { glyph: '✓', chipBg: '#dcf0e2', chipInk: '#166534' };
+    const no = { glyph: '✕', chipBg: '#f7e0d4', chipInk: '#9a3412' };
+    const part = { glyph: '~', chipBg: '#efece6', chipInk: '#78716c' };
+
+    const table = {
+      circle: {
+        label: 'a circle, as built',
+        blurb: 'The shipped mark, drawn at the same scale as everything beside it so the comparison is about the shape and not about the numbers.',
+        tests: [
+          [yes, 'One MapLibre paint expression, no icons, no overlay, nothing to build'],
+          [yes, 'A circle collides with its neighbours later than a square of the same area does'],
+          [no, 'Nobody reads a percentage off an area, and a circle offers no edge to read it against'],
+          [part, 'Radius carries Boardings well enough for rank and badly for ratio'],
+          [no, 'It has no second channel left, which is what forces every other draft on this canvas'],
+        ],
+        build: 'Nothing. This is the baseline.',
+        noteHead: 'The baseline, and the reason the other three exist',
+        noteInk: '#78716c',
+        noteBody: 'Comparing two circles tells a reader which stop is busier and roughly by how much. It cannot tell them that 7th Street is a fifth of the whole D Line and a twelfth of the A Line, which is a different and often more useful fact, and which the ranked table already computes and shows as a column.',
+      },
+      size: {
+        label: 'a square sized by Boardings',
+        blurb: 'The same magnitude on a square of equal area. The mark now has a baseline and two parallel edges, which is what a percentage needs in order to be read at all.',
+        tests: [
+          [yes, 'Side length decodes better than area does, because it is a length'],
+          [yes, 'A square gives the mark a top and a bottom, which the fill in the next two modes uses'],
+          [part, 'Squares tile: two adjacent stops touch corner to corner where circles would still be clear'],
+          [no, 'MapLibre circles cannot be squares, so this is a symbol layer with a generated icon'],
+          [yes, 'It still carries nothing but Boardings, so nothing about the grain changes'],
+        ],
+        build: 'A symbol layer with one small icon per line colour, scaled by an expression. Icon scaling is per-zoom rather than continuous, so the sizes step unless the icon is redrawn on zoom.',
+        noteHead: 'A square is the same information in a shape that can hold more',
+        noteInk: '#78716c',
+        noteBody: 'On its own this trades a small amount of collision headroom for nothing, because Boardings alone does not need a baseline. It is worth drawing because it is the step the next two modes stand on: once the mark has straight edges, a fraction of it can be filled and read.',
+      },
+      share: {
+        label: 'a fixed square filled by share',
+        blurb: 'Every station gets the same box, and the box fills from the bottom with that stop&rsquo;s share of its own line&rsquo;s Boardings. Twenty per cent is a full box, so a fifth of the D Line fills it and one fiftieth of the A Line barely marks it.',
+        tests: [
+          [yes, 'A percentage is readable at a glance, which is the whole point of the shape'],
+          [yes, 'Share of the line is already a Stop Readout field, so no new aggregate is proposed'],
+          [yes, 'Every mark is the same size, so a dense corridor stops being a field of blobs'],
+          [no, 'Magnitude leaves the map entirely: a 300-boarding stop on a small line outdraws a 3,000-boarding stop on a large one'],
+          [part, 'The full-box value has to be chosen and shown, or the fill means nothing'],
+        ],
+        build: 'A symbol layer of identical boxes plus a clipped fill, or a canvas overlay. Constant size makes it cheaper than the sized square, because one icon serves every stop and zoom.',
+        noteHead: 'It answers a different question, and it should say so',
+        noteInk: '#9a3412',
+        noteBody: 'Share of the line and Boardings disagree sharply. 7th Street is 19.9% of the D Line and 8.9% of the A Line, on 4,444 and 6,288 boardings — the smaller figure is the larger share, because the D Line is a shorter railway. A map drawn on share is a map of how concentrated each line is, which is a real question for a transit advocate and is not the question the ranked table beside it is answering. If share becomes a mark, it wants to be a Stop Measure the reader chose, not a silent change of meaning.',
+      },
+      both: {
+        label: 'sized by Boardings, filled by share',
+        blurb: 'The box is as big as the stop&rsquo;s Boardings and as full as its share of the line. Two quantities on one mark, on two channels that do not fight: outer size and inner fraction.',
+        tests: [
+          [yes, 'Both figures are on the map at once, and neither is a colour'],
+          [yes, 'Colour is still line identity alone, so ADR-0014 holds'],
+          [part, 'A small square filled to a tenth is a sliver, so the fill fails exactly where the stop is quiet'],
+          [no, 'Two encodings on one mark need two legends, and the map has room for about one'],
+          [part, 'It is the same build as the sized square plus a clip, so the cost is in the reading, not the code'],
+        ],
+        build: 'The sized square with a clipped fill rectangle. A canvas overlay is the honest implementation, because MapLibre cannot vary a fill fraction inside an icon.',
+        noteHead: 'The most ground of the four, and the one to test on a real corridor',
+        noteInk: '#166534',
+        noteBody: 'This is the only mark on the canvas that puts two stop-grain quantities on one symbol without spending colour, and the pairing is a good one: size says how many people, fill says how much of the line they are. What it has not been tested against is density. Eight marks in a row read cleanly; the Wilshire corridor has thirty stops within the same span, and at that spacing the fill line inside a twelve-pixel box is a single pixel. Draft W&rsquo;s space split and draft N&rsquo;s decluttering are the two things that decide whether it survives.',
+      },
+    };
+
+    const cur = table[mode];
+    const order = [
+      ['circle', 'a circle, as built'],
+      ['size', 'a square sized by Boardings'],
+      ['share', 'a fixed square filled by share'],
+      ['both', 'sized and filled'],
+    ];
+
+    return {
+      modes: order.map((o) => ({
+        label: o[1],
+        pick: () => self.setState({ mode: o[0] }),
+        bg: mode === o[0] ? '#033056' : '#ffffff',
+        ink: mode === o[0] ? '#ffffff' : '#44403c',
+      })),
+      cells: cells,
+      blurb: cur.blurb,
+      tests: cur.tests.map((t) => ({ glyph: t[0].glyph, chipBg: t[0].chipBg, chipInk: t[0].chipInk, text: t[1] })),
+      build: cur.build,
+      noteHead: cur.noteHead,
+      noteInk: cur.noteInk,
+      noteBody: cur.noteBody,
+      lineKey: [
+        { color: '#0072bc', label: 'A Line' },
+        { color: '#eb131b', label: 'B Line' },
+        { color: '#a05da5', label: 'D Line' },
+        { color: '#fdb913', label: 'E Line' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

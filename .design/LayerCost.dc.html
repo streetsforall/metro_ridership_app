@@ -1,0 +1,153 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    table { border-collapse: collapse; width: 100%; }
+  </style>
+</helmet>
+<div style="width:1420px;height:1000px;padding:32px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:15px;font-weight:700;color:#033056">Layer cost sheet &mdash; every layer you named, ordered by what it actually takes</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Cheapest at the top. The last two rows are not layers yet.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 26px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">The map holds two sources and three layers today, and its circle layer has no unspent paint channel, so every one of these arrives as a new layer rather than as a new expression. What separates them is not the drawing but the data: three are a fetch away, two need a source nobody has pointed at yet, and one does not exist in the form the question assumes.</span>
+
+    <div style="flex:1;overflow:hidden">
+      <table>
+        <tr style="border-bottom:1.5px solid #ddd9d2">
+          <th style="text-align:left;font-size:10px;font-weight:600;color:#78716c;padding:7px 8px;width:168px">Layer</th>
+          <th style="text-align:left;font-size:10px;font-weight:600;color:#78716c;padding:7px 8px;width:126px">What it needs</th>
+          <th style="text-align:left;font-size:10px;font-weight:600;color:#78716c;padding:7px 8px;width:250px">Where the data is</th>
+          <th style="text-align:left;font-size:10px;font-weight:600;color:#78716c;padding:7px 8px">What it costs the map, and what it buys</th>
+          <th style="text-align:left;font-size:10px;font-weight:600;color:#78716c;padding:7px 8px;width:104px">Verdict</th>
+        </tr>
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
+          <tr style="border-bottom:1px solid #efece6;background:{{r.bg}}">
+            <td style="padding:9px 8px;vertical-align:top">
+              <span style="display:flex;align-items:center;gap:8px">
+                <span style="width:4px;height:22px;border-radius:2px;background:{{r.rail}};flex:none"></span>
+                <span style="font-size:11.5px;font-weight:700;color:#033056">{{r.name}}</span>
+              </span>
+            </td>
+            <td style="padding:9px 8px;vertical-align:top;font-size:10.5px;color:#44403c">{{r.needs}}</td>
+            <td style="padding:9px 8px;vertical-align:top;font-size:10.5px;color:#78716c;line-height:1.6">{{r.where}}</td>
+            <td style="padding:9px 8px;vertical-align:top;font-size:10.5px;color:#44403c;line-height:1.65">{{r.cost}}</td>
+            <td style="padding:9px 8px;vertical-align:top;font-size:10px;font-weight:700;color:{{r.ink}}">{{r.verdict}}</td>
+          </tr>
+        </sc-for>
+      </table>
+    </div>
+
+    <div style="display:flex;gap:18px">
+      <div style="flex:1;background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:11px;font-weight:700;color:#166534;letter-spacing:.06em;text-transform:uppercase">One more worth adding, which you did not name</span>
+        <span style="font-size:11.5px;color:#44403c;line-height:1.7">Service frequency comes straight out of the <span style="color:#033056;font-weight:700">stop_times.txt</span> the ingest already downloads: trips per hour at each stop, by day of week, on the same grain the ridership sits on. It is the cheapest layer on this page by a wide margin and it is the one that changes what a low number means, because a stop with few boardings and four buses an hour is a different argument from a stop with few boardings and one.</span>
+      </div>
+      <div style="flex:1;background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:11px;font-weight:700;color:#9a3412;letter-spacing:.06em;text-transform:uppercase">The constraint every row inherits</span>
+        <span style="font-size:11.5px;color:#44403c;line-height:1.7">Each of these is shareable state and has to survive a URL round-trip through both halves of <span style="color:#033056;font-weight:700">useUserDashboardInput</span>, which draft&nbsp;Y draws. The harder limit is the reader rather than the link: the stop circles are the subject, and every layer beneath them competes for the same paint. One background layer at a time is the honest cap, and a picker that enforces it is a radio rather than a rack of checkboxes.</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const ready = '#166534', work = '#b45309', blocked = '#9a3412';
+
+    const rows = [
+      {
+        name: 'Roads',
+        needs: 'a style change',
+        where: 'Already drawn. Positron and the MapTiler style both carry roads, water and place labels.',
+        cost: 'No source and no layer. The real question is whether the basemap should recede further so the circles carry more of the eye, which is a restyle rather than an addition.',
+        verdict: 'already there',
+        ink: ready,
+      },
+      {
+        name: 'Other operators’ transit',
+        needs: 'a GTFS fetch',
+        where: 'Big Blue Bus, Culver City, Foothill and the rest publish GTFS; the Mobility Database and Transitland index them.',
+        cost: 'Cheap to fetch and hard to place. Another operator’s stops are not on this app’s stop × line grain, so they can be drawn and must never be ranked beside Metro’s or added to anything.',
+        verdict: 'a fetch away',
+        ink: ready,
+      },
+      {
+        name: 'Grade separation',
+        needs: 'an OSM fetch',
+        where: 'OpenStreetMap tags the alignment with bridge, tunnel and railway=subway | light_rail | tram. GTFS says nothing about it.',
+        cost: 'It rides the line geometry rather than the stops, so it competes with nothing. It also explains why some corridors run faster, which makes it the natural companion to the segment-load draft.',
+        verdict: 'a fetch away',
+        ink: ready,
+      },
+      {
+        name: 'Hospitals, schools and venues',
+        needs: 'an OSM fetch',
+        where: 'OSM via Overpass, or the LA County and LA City open-data portals. One row because all three share a source, a licence and a problem.',
+        cost: 'The data is easy and the vocabulary is not: what counts as a venue, how many categories a reader can hold, and whether points near stops can share a map with points that are stops. They cannot, at the same size.',
+        verdict: 'a fetch away',
+        ink: ready,
+      },
+      {
+        name: 'Population density',
+        needs: 'tiles or a pre-join',
+        where: 'Census ACS at block-group level joined to TIGER geometry. Both public domain.',
+        cost: 'LA County block groups as raw GeoJSON runs to tens of megabytes, an order past the bus payload the app already gates. It needs vector tiles or a simplified pre-joined file, and the design has to say which.',
+        verdict: 'a payload plan',
+        ink: work,
+      },
+      {
+        name: 'Accessibility',
+        needs: 'a source',
+        where: 'Not in Metro’s GTFS. Both feeds ship a ten-column stops.txt with no wheelchair_boarding, no pathways.txt, no levels.txt and no wheelchair_accessible in trips.txt.',
+        cost: 'Metro’s station-facilities data or OSM can answer for rail. Nothing answers for bus, where a name-keyed stop is centroided across both sides of a street and the two sides need not match. Draft X draws it.',
+        verdict: 'needs a source',
+        ink: blocked,
+      },
+      {
+        name: 'Isochrones',
+        needs: 'a routing engine',
+        where: 'Valhalla, OSRM or OpenRouteService, run as a service or as an offline pass over the fixed stop set.',
+        cost: 'The most valuable layer here, because it turns the map from where the riders are into where the service reaches. Rail is 330 polygons and tractable; every stop is 20,598 and is not. Draft Z draws the three strategies.',
+        verdict: 'rail is doable',
+        ink: work,
+      },
+      {
+        name: 'Line delay',
+        needs: 'data nobody keeps',
+        where: 'Metro publishes GTFS-realtime, which is this minute rather than a history. Nothing in this repo holds delay in any form.',
+        cost: 'A live feed beside a monthly average is two clocks on one wall. The honest version of this layer is on-time performance by line by month, if Metro publishes it; if not, the layer is a request to Metro rather than a ticket.',
+        verdict: 'no such data',
+        ink: blocked,
+      },
+    ];
+
+    return {
+      rows: rows.map((r, i) => Object.assign({}, r, {
+        bg: i % 2 === 0 ? '#ffffff' : '#fbfaf7',
+        rail: r.ink,
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

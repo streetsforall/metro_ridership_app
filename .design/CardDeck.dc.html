@@ -1,0 +1,171 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">B</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Card deck — one stop, one card</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Search is the frame. Colour goes back to meaning which line, everywhere.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership</span>
+      <span style="font-size:12px;color:#a8a29e">Jul 2025 → Dec 2025 &middot; weekday</span>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:4px;padding:14px 16px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78716c" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16" y1="16" x2="21" y2="21"></line></svg>
+      <span style="font-size:15px;color:#44403c">union</span>
+      <span style="width:1px;height:18px;background:#44403c;opacity:.5"></span>
+      <span style="flex-grow:1"></span>
+      <span style="font-size:12px;color:#a8a29e">3 of 47 stops added</span>
+    </div>
+
+    <div style="display:flex;gap:20px;flex:1;overflow:hidden">
+
+      <div style="flex-grow:1;display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:16px;align-content:start">
+        <sc-for list="{{cards}}" as="card" hint-placeholder-count="3">
+          <div style="background:#fff;border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+              <span style="font-size:13px;font-weight:700;color:#033056;line-height:1.3">{{card.name}}</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a8a29e" stroke-width="2" style="flex-shrink:0;margin-top:2px"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="width:10px;height:10px;border-radius:2px;background:{{card.lineColor}}"></span>
+              <span style="font-size:11px;color:#78716c">{{card.lineName}}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:6px">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.08em">Boardings</span>
+                <span style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:#44403c">{{card.boardings}}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.08em">Alightings</span>
+                <span style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:#44403c">{{card.alightings}}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.08em">Change</span>
+                <span style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:{{card.changeInk}}">{{card.change}}</span>
+              </div>
+            </div>
+            <svg viewBox="0 0 272 92" width="100%" height="82">
+              <line x1="8" y1="78" x2="264" y2="78" stroke="#e7e5e4" stroke-width="1"></line>
+              <sc-for list="{{card.segments}}" as="seg" hint-placeholder-count="1">
+                <polyline points="{{seg.boardings}}" fill="none" stroke="{{card.lineColor}}" stroke-width="2" stroke-linejoin="round"></polyline>
+                <polyline points="{{seg.alightings}}" fill="none" stroke="{{card.lineColor}}" stroke-width="2" stroke-dasharray="4 3" stroke-linejoin="round"></polyline>
+              </sc-for>
+              <sc-if value="{{card.hasGap}}" hint-placeholder-val="{{ true }}">
+                <rect x="93" y="6" width="34" height="72" fill="#e7e5e4" opacity=".55"></rect>
+                <text x="110" y="46" font-size="9" fill="#78716c" text-anchor="middle">no report</text>
+              </sc-if>
+              <text x="8" y="90" font-size="9" fill="#a8a29e">Jul</text>
+              <text x="264" y="90" font-size="9" fill="#a8a29e" text-anchor="end">Dec</text>
+              <text x="264" y="12" font-size="9" fill="#a8a29e" text-anchor="end">{{card.peak}}</text>
+            </svg>
+            <span style="font-size:9px;color:#a8a29e">Solid boardings, dashed alightings. Scaled to this stop.</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="width:230px;flex-shrink:0;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Busiest on the A Line</span>
+        <sc-for list="{{rank}}" as="r" hint-placeholder-count="8">
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #ede9e2">
+            <span style="font-size:10px;color:#a8a29e;width:14px;font-variant-numeric:tabular-nums">{{r.pos}}</span>
+            <span style="font-size:11px;color:#44403c;flex-grow:1;line-height:1.3">{{r.name}}</span>
+            <span style="font-size:11px;color:#78716c;font-variant-numeric:tabular-nums">{{r.value}}</span>
+          </div>
+        </sc-for>
+        <span style="font-size:10px;color:#a8a29e;line-height:1.5">Ranking survives as a shortlist rather than the whole surface.</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const xs = [8, 59.2, 110.4, 161.6, 212.8, 264];
+    const plot = (values, peak) =>
+      values
+        .map((v, i) => (v === null ? null : String(xs[i]) + ',' + String(78 - (v / peak) * 68)))
+        .filter((p) => p !== null)
+        .join(' ');
+    const split = (values, peak) => {
+      const runs = [];
+      let current = [];
+      values.forEach((v, i) => {
+        if (v === null) {
+          if (current.length) runs.push(current);
+          current = [];
+        } else {
+          current.push([i, v]);
+        }
+      });
+      if (current.length) runs.push(current);
+      return runs.map((run) =>
+        run.map((pair) => String(xs[pair[0]]) + ',' + String(78 - (pair[1] / peak) * 68)).join(' '),
+      );
+    };
+    const card = (name, lineName, lineColor, b, a, peak, peakLabel) => {
+      const bRuns = split(b, peak);
+      const aRuns = split(a, peak);
+      const segments = bRuns.map((points, i) => ({ boardings: points, alightings: aRuns[i] }));
+      const last = b[b.length - 1];
+      const lastA = a[a.length - 1];
+      const change = last - lastA;
+      return {
+        name: name,
+        lineName: lineName,
+        lineColor: lineColor,
+        boardings: last.toLocaleString('en-US'),
+        alightings: lastA.toLocaleString('en-US'),
+        change: (change < 0 ? '' : '+') + change.toLocaleString('en-US'),
+        changeInk: change < 0 ? '#9a3412' : '#166534',
+        segments: segments,
+        hasGap: b.indexOf(null) !== -1,
+        peak: peakLabel,
+        plotUnused: plot(b, peak),
+      };
+    };
+    return {
+      cards: [
+        card('Union Station', 'A Line', '#0072bc', [9000, 9450, 9900, 10350, 10800, 11250], [8100, 8505, 8910, 9315, 9720, 10125], 12000, '12,000'),
+        card('7th Street / Metro Center Station', 'A Line', '#0072bc', [6000, 6300, 6600, 6900, 7200, 7500], [5400, 5670, 5940, 6210, 6480, 6750], 8000, '8,000'),
+        card('Vernon Station', 'A Line', '#0072bc', [1100, 1150, null, 1210, 1240, 1280], [1160, 1198, null, 1250, 1272, 1301], 1500, '1,500'),
+      ],
+      rank: [
+        { pos: '1', name: 'Union Station', value: '10,125' },
+        { pos: '2', name: '7th Street / Metro Center', value: '6,750' },
+        { pos: '3', name: 'Willowbrook / Rosa Parks', value: '4,320' },
+        { pos: '4', name: 'Pico', value: '2,940' },
+        { pos: '5', name: 'Florence', value: '2,210' },
+        { pos: '6', name: '103rd Street / Watts Towers', value: '1,688' },
+        { pos: '7', name: 'Slauson', value: '1,505' },
+        { pos: '8', name: 'Vernon', value: '1,142' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

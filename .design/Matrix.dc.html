@@ -1,0 +1,139 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .gap-cell { background-image: repeating-linear-gradient(45deg, #d6d3d1 0 2px, #f5f3ef 2px 6px); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">E</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Month matrix — every row shows its whole window</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">No sparkline to mount, and a month with no report is visibly a gap.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership</span>
+      <div style="display:flex;gap:2px">
+        <span style="background:#033056;color:#fff;font-size:12px;font-weight:700;padding:8px 12px;border-radius:4px 0 0 4px">Boardings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px">Alightings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px;border-radius:0 4px 4px 0">Change</span>
+      </div>
+    </div>
+
+    <span style="font-size:12px;color:#78716c">Average weekday boardings per month, shaded within the A Line. Ranked by the window average.</span>
+
+    <div style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:4px;padding:10px 12px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a8a29e" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16" y1="16" x2="21" y2="21"></line></svg>
+      <span style="font-size:13px;color:#a8a29e">Search stops</span>
+      <span style="flex-grow:1"></span>
+      <span style="font-size:12px;color:#0fada8;font-weight:600">Select All</span>
+      <span style="font-size:12px;color:#0fada8;font-weight:600">Clear All</span>
+    </div>
+
+    <div style="display:flex;align-items:flex-end;gap:8px;padding:0 0 2px 0">
+      <span style="width:22px"></span>
+      <span style="width:246px;font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Stop</span>
+      <span style="width:66px;font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em;text-align:right">Avg.</span>
+      <div style="display:flex;gap:2px;margin-left:10px">
+        <sc-for list="{{months}}" as="m" hint-placeholder-count="12">
+          <span style="width:26px;font-size:9px;color:#a8a29e;text-align:center">{{m.label}}</span>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;gap:3px;overflow:hidden">
+      <sc-for list="{{rows}}" as="row" hint-placeholder-count="12">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:15px;height:15px;border-radius:3px;background:{{row.boxFill}};border:1px solid {{row.boxEdge}};flex-shrink:0"></div>
+          <span style="width:246px;font-size:11px;color:#44403c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{row.name}}</span>
+          <span style="width:66px;font-size:11px;text-align:right;font-variant-numeric:tabular-nums">{{row.avg}}</span>
+          <div style="display:flex;gap:2px;margin-left:10px">
+            <sc-for list="{{row.cells}}" as="cell" hint-placeholder-count="12">
+              <span class="{{cell.klass}}" style="width:26px;height:22px;border-radius:2px;background:{{cell.fill}}"></span>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:10px;color:#78716c">0</span>
+        <sc-for list="{{ramp}}" as="step" hint-placeholder-count="6">
+          <span style="width:24px;height:12px;background:{{step.fill}}"></span>
+        </sc-for>
+        <span style="font-size:10px;color:#78716c">11,250</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="gap-cell" style="width:24px;height:12px;border-radius:2px;display:inline-block"></span>
+        <span style="font-size:11px;color:#78716c">Month not reported &mdash; a gap, never a zero</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const ramp = ['#e8f1f9', '#c2ddf0', '#93c2e3', '#5ba0d2', '#2a7ebc', '#0060a0'];
+    const labels = ['J', 'A', 'S', 'O', 'N', 'D', 'J', 'F', 'M', 'A', 'M', 'J'];
+    const peak = 11250;
+    const shade = (v) => {
+      if (v === null) return { fill: 'transparent', klass: 'gap-cell' };
+      const i = Math.min(ramp.length - 1, Math.floor((v / peak) * ramp.length));
+      return { fill: ramp[i], klass: '' };
+    };
+    const series = (base, drift, gaps) => {
+      const out = [];
+      for (let i = 0; i < 12; i++) {
+        out.push(gaps.indexOf(i) !== -1 ? null : Math.round(base + drift * i));
+      }
+      return out;
+    };
+    const data = [
+      ['Union Station', series(9000, 205, []), '10,125', true],
+      ['7th Street / Metro Center Station', series(6000, 136, []), '6,750', true],
+      ['Willowbrook / Rosa Parks Station', series(4100, 40, []), '4,320', false],
+      ['Downtown Long Beach Station', series(3800, 33, []), '3,980', false],
+      ['Little Tokyo / Arts District Station', series(2400, 148, [0, 1]), '3,210', false],
+      ['Pico Station', series(2800, 26, []), '2,940', false],
+      ['Florence Station', series(2120, 16, []), '2,210', false],
+      ['Grand / LATTC Station', series(1870, 7, []), '1,910', false],
+      ['Firestone Station', series(1810, 9, []), '1,860', false],
+      ['103rd Street / Watts Towers Station', series(1600, 16, []), '1,688', false],
+      ['Slauson Station', series(1470, 6, []), '1,505', false],
+      ['Vernon Station', series(1100, 8, [2]), '1,142', false],
+    ];
+    return {
+      months: labels.map((l) => ({ label: l })),
+      ramp: ramp.map((f) => ({ fill: f })),
+      rows: data.map((row) => ({
+        name: row[0],
+        avg: row[2],
+        cells: row[1].map(shade),
+        boxFill: row[3] ? '#033056' : '#ffffff',
+        boxEdge: row[3] ? '#033056' : '#d6d3d1',
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

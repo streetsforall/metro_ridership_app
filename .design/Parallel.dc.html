@@ -1,0 +1,298 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">NN</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Shared corridors run side by side, not on top of each other</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click a drawing. The overlap figures are measured from the committed geometry.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:13px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+      <span style="font-size:11px;color:#a8a29e;margin-right:4px">A corridor two lines share is drawn</span>
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="3">
+        <span class="hit" onClick="{{m.pick}}" style="background:{{m.bg}};color:{{m.ink}};font-size:12px;font-weight:700;padding:8px 13px;border-radius:4px">{{m.label}}</span>
+      </sc-for>
+    </div>
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">{{ blurb }}</span>
+
+    <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+      <svg viewBox="0 0 900 400" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="A downtown rail schematic in which the shared Wilshire tunnel and the Regional Connector are drawn with the selected treatment">
+        <rect x="0" y="0" width="900" height="400" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="16">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+
+        <sc-for list="{{strokes}}" as="p" hint-placeholder-count="8">
+          <polyline points="{{p.points}}" fill="none" stroke="{{p.color}}" stroke-width="{{p.width}}" stroke-opacity="{{p.opacity}}" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        </sc-for>
+
+        <sc-for list="{{ticks}}" as="t" hint-placeholder-count="10">
+          <line x1="{{t.x1}}" y1="{{t.y1}}" x2="{{t.x2}}" y2="{{t.y2}}" stroke="{{t.color}}" stroke-width="{{t.width}}" stroke-linecap="round"></line>
+        </sc-for>
+
+        <sc-for list="{{stations}}" as="s" hint-placeholder-count="10">
+          <g>
+            <circle cx="{{s.cx}}" cy="{{s.cy}}" r="{{s.r}}" fill="#f8f6f1" stroke="#44403c" stroke-width="{{s.sw}}"></circle>
+            <text x="{{s.lx}}" y="{{s.ly}}" font-size="10" fill="#44403c" text-anchor="{{s.anchor}}">{{s.name}}</text>
+          </g>
+        </sc-for>
+
+        <text x="{{ callX }}" y="{{ callY }}" font-size="10.5" fill="#7c3aed" text-anchor="middle">{{ callout }}</text>
+      </svg>
+
+      <div style="position:absolute;right:14px;top:14px;background:#f8f6f1;border-radius:5px;padding:11px 13px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Lines</span>
+        <sc-for list="{{lineKey}}" as="k" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:7px">
+            <span style="width:10px;height:10px;border-radius:2px;background:{{k.color}}"></span>
+            <span style="font-size:10px;color:#78716c">{{k.label}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:18px">
+      <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+        <sc-for list="{{tests}}" as="t" hint-placeholder-count="5">
+          <div style="display:flex;align-items:flex-start;gap:9px;padding:2px 0">
+            <span style="width:15px;height:15px;border-radius:3px;background:{{t.chipBg}};color:{{t.chipInk}};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px">{{t.glyph}}</span>
+            <span style="font-size:11px;color:#44403c;line-height:1.6">{{t.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="width:330px;background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:7px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">How much of the network is doubled</span>
+        <sc-for list="{{facts}}" as="f" hint-placeholder-count="3">
+          <div style="display:flex;align-items:baseline;gap:9px">
+            <span style="font-size:14px;font-weight:700;color:#033056;width:58px;flex:none">{{f.value}}</span>
+            <span style="font-size:10.5px;color:#78716c;line-height:1.55">{{f.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'stacked' };
+  }
+
+  /** Offset a polyline by `d` px along each segment's left normal, mitred at the joints. */
+  offset(pts, d) {
+    if (d === 0) return pts;
+    const out = [];
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i];
+      const a = pts[i - 1] || pts[i];
+      const b = pts[i + 1] || pts[i];
+      const dx = b[0] - a[0], dy = b[1] - a[1];
+      const len = Math.hypot(dx, dy) || 1;
+      out.push([p[0] + d * (-dy / len), p[1] + d * (dx / len)]);
+    }
+    return out;
+  }
+
+  str(pts) {
+    return pts.map((p) => Math.round(p[0] * 10) / 10 + ',' + Math.round(p[1] * 10) / 10).join(' ');
+  }
+
+  renderVals() {
+    const self = this;
+    const mode = this.state.mode;
+    const color = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#fdb913' };
+
+    const grid = [];
+    for (let i = 1; i < 12; i++) grid.push({ x1: i * 75, y1: 0, x2: i * 75, y2: 400 });
+    for (let i = 1; i < 6; i++) grid.push({ x1: 0, y1: i * 66, x2: 900, y2: i * 66 });
+
+    // Shared corridors: B and D through the Wilshire tunnel, A and E through the connector.
+    const wilshire = [[70, 250], [200, 250], [330, 214], [470, 214], [560, 170], [620, 118], [700, 118]];
+    const dTail = [[70, 250], [40, 250]];
+    const bTail = [[330, 214], [300, 150], [300, 60]];
+    const connector = [[700, 118], [660, 178], [610, 234], [560, 288]];
+    const aTail = [[560, 288], [560, 360], [520, 380]];
+    const aHead = [[700, 118], [760, 60], [800, 40]];
+    const eTail = [[560, 288], [430, 320], [320, 320]];
+    const eHead = [[700, 118], [770, 150], [830, 150]];
+
+    const OFF = mode === 'stacked' ? 0 : 4.6;
+    const W = 5;
+
+    const strokes = [];
+    const push = (pts, line, off) => {
+      strokes.push({ points: self.str(self.offset(pts, off)), color: color[line], width: W, opacity: '.9' });
+    };
+
+    // The B Line paints after the D Line, exactly as the layer order does today.
+    push(wilshire, 'D', OFF);
+    push(dTail, 'D', OFF);
+    push(wilshire, 'B', -OFF);
+    push(bTail, 'B', -OFF);
+
+    push(connector, 'E', OFF);
+    push(eTail, 'E', OFF);
+    push(eHead, 'E', 0);
+    push(connector, 'A', -OFF);
+    push(aTail, 'A', 0);
+    push(aHead, 'A', 0);
+
+    const ticks = [];
+    const stationSpecs = [
+      ['Wilshire / Western', 70, 250, 'start', 4, -14, false],
+      ['Wilshire / Vermont', 330, 214, 'middle', 0, -16, true],
+      ['Westlake / MacArthur Park', 200, 250, 'middle', 0, 24, true],
+      ['7th St / Metro Center', 560, 288, 'start', 16, 4, true],
+      ['Pershing Square', 560, 170, 'end', -16, 4, true],
+      ['Civic Center', 620, 118, 'middle', 0, -16, true],
+      ['Union Station', 700, 118, 'start', 14, -12, true],
+      ['Little Tokyo', 610, 234, 'start', 16, 4, true],
+      ['Chinatown', 800, 40, 'start', 10, 4, false],
+    ];
+
+    const stations = stationSpecs.map((s) => ({
+      cx: s[1], cy: s[2], r: s[6] ? 6 : 4.6, sw: s[6] ? 2 : 1.4,
+      name: s[0], anchor: s[3], lx: s[1] + s[4], ly: s[2] + s[5],
+    }));
+
+    if (mode === 'bar') {
+      // At a shared station the mark becomes a bar across both tracks, one tick per line.
+      const bars = [
+        [330, 214, ['B', 'D'], 0.28],
+        [200, 250, ['B', 'D'], 0],
+        [560, 170, ['B', 'D'], 0.6],
+        [620, 118, ['B', 'D'], 0],
+        [700, 118, ['B', 'D'], 0],
+        [560, 288, ['A', 'E'], 0.75],
+        [610, 234, ['A', 'E'], 0.86],
+      ];
+      bars.forEach((b) => {
+        b[2].forEach((line, i) => {
+          const d = (i === 0 ? -1 : 1) * OFF;
+          ticks.push({
+            x1: b[0] - 9, y1: b[1] + d, x2: b[0] + 9, y2: b[1] + d,
+            color: color[line], width: 7,
+          });
+        });
+      });
+    }
+
+    const yes = { glyph: '✓', chipBg: '#dcf0e2', chipInk: '#166534' };
+    const no = { glyph: '✕', chipBg: '#f7e0d4', chipInk: '#9a3412' };
+    const part = { glyph: '~', chipBg: '#efece6', chipInk: '#78716c' };
+
+    const table = {
+      stacked: {
+        label: 'as built — one on top of the other',
+        blurb: 'Both lines are drawn on their own geometry, and the one painted last covers the one painted first. Where the B and D Lines share the Wilshire tunnel the reader sees a red railway with a purple stub at each end.',
+        tests: [
+          [no, 'A shared corridor shows one colour, so a reader cannot see that two lines run it'],
+          [no, 'Which colour survives depends on layer order, which is a rendering accident'],
+          [yes, 'Every line sits exactly on its own coordinates'],
+          [yes, 'Nothing to build, and no geometry to match'],
+          [part, 'Selecting one line at a time hides the problem, and hides the corridor too'],
+        ],
+        noteHead: 'The line version of the station blend',
+        noteInk: '#9a3412',
+        noteBody: 'Page five showed four circles at one coordinate becoming a colour that belongs to none of them. This is the same failure along a corridor rather than at a point, and it is larger: the whole shared stretch reads as a single railway. A reader comparing the B and D Lines is looking at the exact stretch where the two are most alike and can see only one of them.',
+      },
+      offset: {
+        label: 'side by side, offset in pixels',
+        blurb: 'Each line moves a few pixels perpendicular to the corridor, one to each side, so both are visible along the whole shared stretch and rejoin their own alignment where they separate.',
+        tests: [
+          [yes, 'Both lines are visible for the whole corridor, which is what the reader came to compare'],
+          [yes, 'Colour still means which line, with no blending anywhere'],
+          [no, 'Every offset line is off its true alignment, so the map is drawing a diagram'],
+          [part, 'The offset has to be in screen pixels, so it is recomputed on every zoom change'],
+          [no, 'The committed geometry does not say which segments are shared, so the pairing has to be derived'],
+        ],
+        noteHead: 'The geometry has to be matched before it can be offset',
+        noteInk: '#78716c',
+        noteBody: 'Taking segments that share both endpoints exactly finds only the Regional Connector, where the A and E Lines share 244 segments and 7.6 km, and the C and K Lines, which share 113 and 4.1 km. It finds nothing at all between the B and the D, even though they run the same tunnel for miles, because the two were drawn from different shapes. Matching by proximity instead puts 371 of the D Line&rsquo;s 807 vertices within ten metres of the B Line — nearly half the line. So the honest build is a pre-pass in the ingest that snaps near-coincident alignments into shared corridor segments and records the running order, not an expression in the style.',
+      },
+      bar: {
+        label: 'side by side, with a bar at each station',
+        blurb: 'The offset corridor, and at every station on it the mark becomes a short bar across both tracks with one tick per line, so the station is one place and the lines calling there stay separate.',
+        tests: [
+          [yes, 'It answers the corridor and the station with one idea instead of two'],
+          [yes, 'A tick belongs to exactly one Stop Ridership Record, so the grain is intact'],
+          [part, 'It only works where the lines are already parallel — a station on crossing lines has no bar direction'],
+          [no, 'Ticks along a bar carry order and thickness, not area, so magnitude decodes worse still'],
+          [part, 'It competes with the segmented ring on page five, and the two cannot both be the mark'],
+        ],
+        noteHead: 'The strongest pairing on the canvas, and the narrowest',
+        noteInk: '#166534',
+        noteBody: 'Where lines run together this reads better than anything else drawn here, because it uses the corridor&rsquo;s own direction to separate the lines and needs no new visual language at all. Its limit is that the direction has to exist: at 7th Street four lines meet from three bearings, and at a bus stop on a crossroads there is no shared alignment to lay a bar along. It is therefore a treatment for shared corridors rather than a replacement for the station mark, and the two designs have to agree on which one draws a given station.',
+      },
+    };
+
+    const cur = table[mode];
+    const order = [['stacked', 'as built'], ['offset', 'side by side'], ['bar', 'side by side, with station bars']];
+
+    return {
+      grid: grid,
+      strokes: strokes,
+      ticks: ticks,
+      stations: stations,
+      modes: order.map((o) => ({
+        label: o[1],
+        pick: () => self.setState({ mode: o[0] }),
+        bg: mode === o[0] ? '#033056' : '#ffffff',
+        ink: mode === o[0] ? '#ffffff' : '#44403c',
+      })),
+      blurb: cur.blurb,
+      tests: cur.tests.map((t) => ({ glyph: t[0].glyph, chipBg: t[0].chipBg, chipInk: t[0].chipInk, text: t[1] })),
+      noteHead: cur.noteHead,
+      noteInk: cur.noteInk,
+      noteBody: cur.noteBody,
+      callout: mode === 'stacked' ? 'the D Line is under here' : 'the D Line runs beside the B Line here',
+      callX: 400, callY: 196,
+      facts: [
+        { value: '46%', text: 'of the D Line’s vertices lie within ten metres of the B Line, which is the shared Wilshire tunnel' },
+        { value: '11.7 km', text: 'of the 391 km of rail geometry is covered twice where the segments match exactly' },
+        { value: '2', text: 'is the most lines any one rail segment carries, so a shared corridor is always a pair — on bus it is not' },
+      ],
+      lineKey: [
+        { color: '#0072bc', label: 'A Line' },
+        { color: '#eb131b', label: 'B Line' },
+        { color: '#a05da5', label: 'D Line' },
+        { color: '#fdb913', label: 'E Line' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

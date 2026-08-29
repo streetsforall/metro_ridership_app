@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    table { border-collapse: collapse; width: 100%; }
+  </style>
+</helmet>
+<div style="width:1420px;height:1000px;padding:36px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:18px;background:#f3eee2">
+
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">THE CHANNELS</span>
+    <span style="font-size:26px;font-weight:700;color:#033056;line-height:1.2;text-wrap:balance">Every way a mark can say how many, ranked by how well people read it</span>
+    <span style="font-size:13px;color:#78716c;max-width:104ch;line-height:1.6">Cleveland and McGill ordered these by decoding accuracy: position, then length, then angle, then area, then lightness, then texture and hue. The app encodes ridership as circle area, which is fourth. Length is the strongest channel nobody here has spent.</span>
+  </div>
+
+  <div style="background:#fff;border-radius:8px;padding:16px 20px;display:flex;align-items:flex-start;gap:14px">
+    <div style="width:4px;align-self:stretch;background:#9a3412;border-radius:2px;flex-shrink:0"></div>
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <span style="font-size:13px;font-weight:700;color:#033056">The circle layer has no channel left to give, so every option below is a new layer.</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.7">In <span style="color:#78716c">Map.tsx</span>, radius carries magnitude, fill and stroke colour carry which line and the selection ring, and opacity and stroke width carry <i>which</i> measure through <span style="color:#78716c">MEASURE_PAINT</span>. Only <span style="color:#78716c">circle-blur</span> is unused, and blur reads as uncertainty rather than size.</span>
+    </div>
+  </div>
+
+  <div style="background:#f8f6f1;border-radius:8px;padding:20px 24px;flex:1;overflow:hidden">
+    <table style="font-size:12px">
+      <thead>
+        <tr style="border-bottom:2px solid #d6d3d1">
+          <th style="width:34px;text-align:left;padding:0 8px 9px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">#</th>
+          <th style="width:186px;text-align:left;padding:0 12px 9px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">Channel</th>
+          <th style="width:200px;text-align:left;padding:0 12px 9px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">Draft</th>
+          <th style="width:290px;text-align:left;padding:0 12px 9px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">How it ships in MapLibre</th>
+          <th style="text-align:left;padding:0 0 9px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">How it can break the gap rule</th>
+        </tr>
+      </thead>
+      <tbody>
+        <sc-for list="{{rows}}" as="row" hint-placeholder-count="9">
+          <tr style="border-bottom:1px solid #e7e5e4;background:{{row.rowFill}}">
+            <td style="padding:11px 8px 11px 0;vertical-align:top;font-weight:700;color:{{row.rankInk}}">{{row.rank}}</td>
+            <td style="padding:11px 12px 11px 0;vertical-align:top;line-height:1.5">
+              <span style="font-weight:700;color:#033056">{{row.channel}}</span>
+            </td>
+            <td style="padding:11px 12px 11px 0;vertical-align:top;line-height:1.5;color:#44403c">{{row.draft}}</td>
+            <td style="padding:11px 12px 11px 0;vertical-align:top;line-height:1.6;color:#44403c">{{row.ships}}</td>
+            <td style="padding:11px 0;vertical-align:top;line-height:1.6;color:#78716c">{{row.risk}}</td>
+          </tr>
+        </sc-for>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display:flex;gap:18px">
+    <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:18px 22px;display:flex;flex-direction:column;gap:7px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#9a3412">RULED OUT</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.7"><b>Blur</b> says uncertain, not large. <b>Animation or pulse rate</b> fails <span style="color:#78716c">prefers-reduced-motion</span>, and two marks cannot be compared unless a reader sees them in the same instant. <b>Shape family</b> is a categorical channel and carries no order, so a square never reads as more than a triangle.</span>
+    </div>
+    <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:18px 22px;display:flex;flex-direction:column;gap:7px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#0fada8">THE RULE THAT CUTS ACROSS ALL OF THEM</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.7">Any channel whose smallest step looks like nothing breaks the gap rule &mdash; a one-pixel spike, the palest shade, a zero-degree wedge all make &ldquo;reported almost nobody&rdquo; look like &ldquo;did not report&rdquo;. Whichever wins needs a floor on the smallest drawn value <i>and</i> a separate not-reported mark. Every draft on this page uses the same one: a dashed grey ring.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const rows = [
+      {
+        rank: '1', channel: 'Position on a common scale', draft: 'Not on the map',
+        ships: 'This is what the panel charts already do; a map spends position on geography, so it is unavailable here by definition.',
+        risk: 'n/a',
+        best: false,
+      },
+      {
+        rank: '2', channel: 'Length — spike height', draft: 'K · Spikes, L · Two-sided',
+        ships: 'A symbol layer with a generated sprite per height, or a canvas overlay. MapLibre draws no bars natively.',
+        risk: 'A short bar disappears into the base dot, so the floor has to be about four pixels.',
+        best: true,
+      },
+      {
+        rank: '2', channel: 'Length — extruded height', draft: 'M · Extrusion',
+        ships: 'fill-extrusion, a real MapLibre layer. The only length option needing no sprite sheet.',
+        risk: 'A zero-height prism is a flat hexagon, which is exactly what an unreported bin should look like — so the two must differ some other way.',
+        best: true,
+      },
+      {
+        rank: '2', channel: 'Length — line width', draft: 'I · Segment load',
+        ships: 'line-width on the existing route layer, but the value it needs does not exist yet — see the draft.',
+        risk: 'A thin line and a missing line look alike at low zoom.',
+        best: false,
+      },
+      {
+        rank: '3', channel: 'Angle — wedge sweep', draft: 'Q · Wedge',
+        ships: 'A symbol layer with sprites, one per rounded share step.',
+        risk: 'A near-zero sweep is an empty ring, which is what not-reported looks like in most designs.',
+        best: false,
+      },
+      {
+        rank: '4', channel: 'Area — circle radius', draft: 'Shipped today',
+        ships: 'circle-radius, one paint expression. Already in Map.tsx.',
+        risk: 'The current design has no radius floor, so a very quiet stop is nearly invisible.',
+        best: false,
+      },
+      {
+        rank: '5', channel: 'Lightness — colour ramp', draft: 'G · Colour ramp',
+        ships: 'circle-color, one paint expression — but it displaces which line onto the stroke.',
+        risk: 'The palest step and an unpainted mark are the same thing to a reader.',
+        best: false,
+      },
+      {
+        rank: '6', channel: 'Texture — cross-hatch', draft: 'H · Cross-hatch',
+        ships: 'The dearest of them: circles take no pattern fill, so this needs a sprite per density step per line colour.',
+        risk: 'Sparse hatching approaches an empty circle.',
+        best: false,
+      },
+      {
+        rank: '—', channel: 'Count — rings or dots', draft: 'O · Rings, P · Dot density',
+        ships: 'Rings are one symbol layer of sprites; dots mean generating a point feature per dot, so roughly sixteen thousand features at full scale.',
+        risk: 'Handled well by both: no rings and no dots is visibly a different thing from one ring.',
+        best: false,
+      },
+      {
+        rank: '—', channel: 'Numeral — the value itself', draft: 'N · Labels',
+        ships: 'A symbol layer with symbol-sort-key and collision left on. Nothing to compute per zoom.',
+        risk: 'None. It is the only option that can print the words "no report".',
+        best: true,
+      },
+    ];
+    return {
+      rows: rows.map((r) => ({
+        rank: r.rank,
+        channel: r.channel,
+        draft: r.draft,
+        ships: r.ships,
+        risk: r.risk,
+        rowFill: r.best ? '#efece4' : 'transparent',
+        rankInk: r.best ? '#0fada8' : '#a8a29e',
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">O</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Concentric rings &mdash; a band you count, not a size you judge</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Deliberately discrete, and it survives overlap better than a filled circle.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership &middot; map</span>
+      <div style="display:flex;gap:2px">
+        <span style="background:#033056;color:#fff;font-size:12px;font-weight:700;padding:8px 12px;border-radius:4px 0 0 4px">Boardings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px">Alightings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px;border-radius:0 4px 4px 0">Both</span>
+      </div>
+    </div>
+
+    <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+      <svg viewBox="0 0 900 560" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map where each station draws one ring per band of ridership">
+        <rect x="0" y="0" width="900" height="560" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="20">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+        <polyline points="760,140 760,210 680,265 610,265 560,300 560,492" fill="none" stroke="#0072bc" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <polyline points="560,300 470,255 360,215 250,190" fill="none" stroke="#eb131b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <sc-for list="{{marks}}" as="m" hint-placeholder-count="12">
+          <g>
+            <sc-for list="{{m.rings}}" as="ring" hint-placeholder-count="3">
+              <circle cx="{{m.cx}}" cy="{{m.cy}}" r="{{ring.r}}" fill="none" stroke="{{m.color}}" stroke-width="2"></circle>
+            </sc-for>
+            <circle cx="{{m.cx}}" cy="{{m.cy}}" r="3" fill="{{m.color}}"></circle>
+            <sc-if value="{{m.missing}}" hint-placeholder-val="{{ false }}">
+              <circle cx="{{m.cx}}" cy="{{m.cy}}" r="7" fill="none" stroke="#78716c" stroke-width="1.6" stroke-dasharray="3 2.5"></circle>
+            </sc-if>
+          </g>
+        </sc-for>
+      </svg>
+
+      <div style="position:absolute;left:14px;bottom:14px;background:#f8f6f1;border-radius:5px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Rings &mdash; avg. boardings</span>
+        <svg width="300" height="66" viewBox="0 0 300 66">
+          <sc-for list="{{legend}}" as="l" hint-placeholder-count="5">
+            <g>
+              <sc-for list="{{l.rings}}" as="ring" hint-placeholder-count="3">
+                <circle cx="{{l.cx}}" cy="26" r="{{ring.r}}" fill="none" stroke="#0072bc" stroke-width="2"></circle>
+              </sc-for>
+              <circle cx="{{l.cx}}" cy="26" r="3" fill="#0072bc"></circle>
+              <text x="{{l.cx}}" y="60" font-size="8" fill="#78716c" text-anchor="middle">{{l.label}}</text>
+            </g>
+          </sc-for>
+        </svg>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:#78716c;letter-spacing:.06em;text-transform:uppercase">Where this wins and where it gives up</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.7">Rings are hollow, so two neighbouring stops stay separable where two filled circles would merge into one blob &mdash; the dense-corridor case that defeats every area encoding. Counting three rings against four is also easier than judging one area against another. What it gives up is resolution: five bands is the whole vocabulary, so a stop at 4,100 and a stop at 7,900 can look identical, and a reader who wants an ordering rather than a bucket has to open the table.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const grid = [];
+    for (let i = 1; i < 13; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 560 });
+    for (let i = 1; i < 8; i++) grid.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+
+    const bands = [500, 1500, 4000, 8000];
+    const bandOf = (v) => {
+      let n = 1;
+      bands.forEach((b) => {
+        if (v >= b) n += 1;
+      });
+      return n;
+    };
+    const ringsFor = (n) => {
+      const out = [];
+      for (let i = 0; i < n; i++) out.push({ r: 7 + i * 4.5 });
+      return out;
+    };
+
+    const stations = [
+      [760, 140, 10125, 'a'], [760, 210, 3210, 'a'], [680, 265, 2640, 'a'],
+      [560, 300, 6750, 'a'], [560, 338, null, 'a'], [560, 378, 1910, 'a'],
+      [560, 418, 1142, 'a'], [560, 455, 2210, 'a'], [560, 492, 4320, 'a'],
+      [470, 255, 5480, 'b'], [360, 215, 2870, 'b'], [250, 190, 1640, 'b'],
+    ];
+
+    return {
+      grid: grid,
+      marks: stations.map((s) => ({
+        cx: s[0], cy: s[1],
+        color: s[2] === null ? '#78716c' : s[3] === 'a' ? '#0072bc' : '#eb131b',
+        rings: s[2] === null ? [] : ringsFor(bandOf(s[2])),
+        missing: s[2] === null,
+      })),
+      legend: [
+        { cx: 24, label: 'under 500', rings: ringsFor(1) },
+        { cx: 82, label: '500', rings: ringsFor(2) },
+        { cx: 146, label: '1,500', rings: ringsFor(3) },
+        { cx: 216, label: '4,000', rings: ringsFor(4) },
+        { cx: 274, label: '8,000+', rings: ringsFor(5) },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">CC</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Fan the coincident circles &mdash; keep the encoding, move the marks</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Drawn at true scale, including where it breaks.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">Nothing about the circle changes. Where several lines call at one coordinate, the circles step off the point onto a small ring and a leader ties each back to the station pin, so a reader still reads area as boardings and still reads fill as which line.</span>
+
+    <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+      <svg viewBox="0 0 900 520" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="The same schematic with each multi-line station's circles fanned off the station pin, and the four-line station visibly overrunning its neighbours">
+        <rect x="0" y="0" width="900" height="520" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="18">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+
+        <sc-for list="{{paths}}" as="p" hint-placeholder-count="4">
+          <polyline points="{{p.points}}" fill="none" stroke="{{p.color}}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-opacity=".55"></polyline>
+        </sc-for>
+
+        <sc-for list="{{leaders}}" as="l" hint-placeholder-count="20">
+          <line x1="{{l.x1}}" y1="{{l.y1}}" x2="{{l.x2}}" y2="{{l.y2}}" stroke="#78716c" stroke-width="0.9" stroke-opacity=".8"></line>
+        </sc-for>
+
+        <sc-for list="{{discs}}" as="d" hint-placeholder-count="22">
+          <circle cx="{{d.cx}}" cy="{{d.cy}}" r="{{d.r}}" fill="{{d.fill}}" fill-opacity=".8" stroke="#f8f6f1" stroke-width="1.2"></circle>
+        </sc-for>
+
+        <sc-for list="{{absent}}" as="a" hint-placeholder-count="1">
+          <circle cx="{{a.cx}}" cy="{{a.cy}}" r="{{a.r}}" fill="none" stroke="#78716c" stroke-width="1.4" stroke-dasharray="3 2.5"></circle>
+        </sc-for>
+
+        <sc-for list="{{pins}}" as="p" hint-placeholder-count="13">
+          <g>
+            <circle cx="{{p.cx}}" cy="{{p.cy}}" r="2.6" fill="#f8f6f1" stroke="#44403c" stroke-width="1.2"></circle>
+            <text x="{{p.lx}}" y="{{p.ly}}" font-size="9.5" fill="#44403c" text-anchor="{{p.anchor}}">{{p.name}}</text>
+          </g>
+        </sc-for>
+      </svg>
+
+      <div style="position:absolute;right:14px;top:14px;background:#f8f6f1;border-radius:5px;padding:11px 13px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Lines</span>
+        <sc-for list="{{lineKey}}" as="k" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:7px">
+            <span style="width:10px;height:10px;border-radius:2px;background:{{k.color}}"></span>
+            <span style="font-size:10px;color:#78716c">{{k.label}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="position:absolute;left:14px;bottom:14px;background:#f8f6f1;border-radius:5px;padding:11px 13px;display:flex;flex-direction:column;gap:5px;max-width:300px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">The pin, not the circle, is the station</span>
+        <span style="font-size:10px;color:#78716c;line-height:1.6">Each circle sits about one radius off the true coordinate. At 7th Street that displacement is 22&nbsp;px, which is roughly 150&nbsp;m at zoom&nbsp;12.</span>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:#9a3412;letter-spacing:.06em;text-transform:uppercase">It costs the one thing a map is for</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">A fan keeps every encoding the app already argues for and asks the reader to learn nothing, which is why it is worth drawing first. What it spends is position, and position is the only channel a map has that a table does not. The four-line case above shows the limit: 7th Street's fan spans 86&nbsp;px and reaches Pershing Square, so a displacement small enough to stay honest is too small to separate the circles, and one large enough to separate them puts a mark on the wrong block. Fixing that means the fan opens only for the station a reader has selected, which makes it an interaction rather than an encoding.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    // buildStopView's own scale: radius floors at 3 px and reaches 22 px at the rail maximum.
+    const RMIN = 3, RMAX = 22, VMAX = 8430;
+    const radius = (v) => RMIN + (RMAX - RMIN) * Math.sqrt(v / VMAX);
+    const color = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#fdb913' };
+
+    const grid = [];
+    for (let i = 1; i < 13; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 520 });
+    for (let i = 1; i < 8; i++) grid.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+
+    const stations = [
+      ['Chinatown', 700, 62, [['A', 1305]], 'start', 16, 4],
+      ['Union Station', 655, 128, [['A', 4818], ['B', 4093], ['D', 2571]], 'start', 30, 4],
+      ['Civic Center / Grand Park', 588, 128, [['B', 1310], ['D', 851]], 'end', -22, 4],
+      ['Pershing Square', 545, 196, [['B', 2979], ['D', 1505]], 'end', -26, 4],
+      ['Little Tokyo / Arts District', 700, 196, [['A', 2228], ['E', 2333]], 'start', 28, 4],
+      ['Historic Broadway', 655, 262, [['A', 913], ['E', 986]], 'start', 24, 4],
+      ['Grand Arts / Bunker Hill', 610, 318, [['A', 985], ['E', 900]], 'start', 24, 4],
+      ['7th Street / Metro Center', 520, 366, [['A', 6288], ['B', 8430], ['E', 5990], ['D', 4444]], 'start', 40, 4],
+      ['Pico', 520, 448, [['A', 2943], ['E', 2740]], 'start', 28, 4],
+      ['Westlake / MacArthur Park', 396, 310, [['B', 3211], ['D', 1833]], 'middle', 0, 44],
+      ['Wilshire / Vermont', 272, 262, [['B', 3538], ['D', 2087]], 'middle', 0, 44],
+      ['Wilshire / Normandie', 150, 262, [['D', 1516]], 'middle', 0, 30],
+      ['Expo / Crenshaw', 330, 448, [['E', null]], 'middle', 0, 30],
+    ];
+
+    const discs = [], leaders = [], absent = [], pins = [];
+
+    for (const s of stations) {
+      const cx = s[1], cy = s[2], lines = s[3];
+      const reported = lines.filter((l) => l[1] !== null);
+      const spread = reported.length > 1
+        ? Math.max.apply(null, reported.map((l) => radius(l[1]))) * 0.95
+        : 0;
+
+      lines.forEach((l, i) => {
+        const angle = (i / lines.length) * 2 * Math.PI;
+        const x = cx + spread * Math.sin(angle);
+        const y = cy - spread * Math.cos(angle);
+        if (l[1] === null) {
+          absent.push({ cx: x, cy: y, r: 7 });
+          return;
+        }
+        if (spread > 0) leaders.push({ x1: cx, y1: cy, x2: x, y2: y });
+        discs.push({ cx: x, cy: y, r: radius(l[1]), fill: color[l[0]] });
+      });
+
+      pins.push({
+        cx: cx, cy: cy, name: s[0], anchor: s[4],
+        lx: cx + s[5],
+        ly: cy + (s[6] > 20 ? s[6] : 4),
+      });
+    }
+
+    // Biggest circles last, so a small one is never buried by a neighbour's fan.
+    discs.sort((a, b) => b.r - a.r);
+
+    return {
+      grid: grid,
+      paths: [
+        { color: '#0072bc', points: '700,62 655,128 700,196 655,262 610,318 520,366 520,448 520,504' },
+        { color: '#fdb913', points: '790,196 700,196 655,262 610,318 520,366 520,448 430,478 330,448' },
+        { color: '#eb131b', points: '655,128 588,128 545,196 520,366 396,310 272,262 240,196 240,120' },
+        { color: '#a05da5', points: '655,128 588,128 545,196 520,366 396,310 272,262 150,262 60,262' },
+      ],
+      discs: discs,
+      leaders: leaders,
+      absent: absent,
+      pins: pins,
+      lineKey: [
+        { color: '#0072bc', label: 'A Line' },
+        { color: '#eb131b', label: 'B Line' },
+        { color: '#a05da5', label: 'D Line' },
+        { color: '#fdb913', label: 'E Line' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { background: #f0ede6 !important; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">S</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Selection &mdash; does a click pick a stop, or a stop on a line?</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Working controls. Click the rows and the two modes.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:#a8a29e">A click selects</span>
+        <div style="display:flex;gap:2px">
+          <span class="hit" onClick="{{ pickStop }}" style="background:{{ stopChipBg }};color:{{ stopChipInk }};font-size:12px;font-weight:700;padding:8px 12px;border-radius:4px 0 0 4px">the stop</span>
+          <span class="hit" onClick="{{ pickPair }}" style="background:{{ pairChipBg }};color:{{ pairChipInk }};font-size:12px;font-weight:700;padding:8px 12px;border-radius:0 4px 4px 0">the stop on one line</span>
+        </div>
+      </div>
+      <span class="hit" onClick="{{ clearAll }}" style="font-size:12px;color:#0fada8;font-weight:600;padding:8px 10px;border-radius:4px">Clear All</span>
+    </div>
+
+    <div style="display:flex;gap:16px;flex:1;min-height:0">
+
+      <div style="width:430px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;min-height:0">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">{{ listCaption }}</span>
+        <div style="flex:1;display:flex;flex-direction:column;gap:2px;overflow:hidden">
+          <sc-for list="{{rows}}" as="row" hint-placeholder-count="14">
+            <div class="hit" onClick="{{ row.pick }}" style="display:flex;align-items:center;gap:9px;padding:{{row.pad}};border-radius:3px;background:{{row.fill}};margin-left:{{row.indent}}">
+              <div style="width:13px;height:13px;border-radius:3px;background:{{row.boxFill}};border:1.5px solid {{row.boxEdge}};flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="width:5px;height:5px;border-radius:1px;background:{{row.boxDot}}"></span>
+              </div>
+              <span style="width:9px;height:9px;border-radius:2px;background:{{row.lineColor}};flex-shrink:0"></span>
+              <span style="flex-grow:1;font-size:{{row.size}};font-weight:{{row.weight}};color:{{row.ink}};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{row.name}}</span>
+              <span style="font-size:11px;color:#78716c;font-variant-numeric:tabular-nums">{{row.value}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex-grow:1;display:flex;flex-direction:column;gap:10px;min-width:0">
+
+        <div style="position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;height:266px;flex-shrink:0">
+          <svg viewBox="0 0 480 266" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map where each station circle shows whether all of its lines are selected, some of them, or none">
+            <rect x="0" y="0" width="480" height="266" fill="#e8e6e1"></rect>
+            <g stroke="#dcd9d3" stroke-width="1">
+              <sc-for list="{{grid}}" as="g" hint-placeholder-count="10">
+                <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+              </sc-for>
+            </g>
+            <polyline points="390,44 300,96 200,140 110,196" fill="none" stroke="#0072bc" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+            <polyline points="390,44 330,150 300,222" fill="none" stroke="#eb131b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+            <polyline points="300,96 240,60 150,52" fill="none" stroke="#e5a512" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+            <sc-for list="{{pins}}" as="p" hint-placeholder-count="5">
+              <g class="hit" onClick="{{ p.pick }}">
+                <circle cx="{{p.cx}}" cy="{{p.cy}}" r="{{p.r}}" fill="#0072bc" fill-opacity=".45" stroke="#fff" stroke-width="2"></circle>
+                <sc-if value="{{p.full}}" hint-placeholder-val="{{ false }}">
+                  <circle cx="{{p.cx}}" cy="{{p.cy}}" r="{{p.ring}}" fill="none" stroke="#033056" stroke-width="2.5"></circle>
+                </sc-if>
+                <sc-if value="{{p.partial}}" hint-placeholder-val="{{ false }}">
+                  <circle cx="{{p.cx}}" cy="{{p.cy}}" r="{{p.ring}}" fill="none" stroke="#033056" stroke-width="2.5" stroke-dasharray="5 4"></circle>
+                </sc-if>
+                <text x="{{p.lx}}" y="{{p.ly}}" font-size="9" fill="#44403c">{{p.short}}</text>
+              </g>
+            </sc-for>
+          </svg>
+          <div style="position:absolute;left:10px;bottom:10px;background:#f8f6f1;border-radius:5px;padding:9px 11px;display:flex;align-items:center;gap:14px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" fill="none" stroke="#033056" stroke-width="2.5"></circle></svg>
+              <span style="font-size:9px;color:#78716c">every line here</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" fill="none" stroke="#033056" stroke-width="2.5" stroke-dasharray="5 4"></circle></svg>
+              <span style="font-size:9px;color:#78716c">some of them</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:9px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What the chart above the table would draw</span>
+          <span style="font-size:16px;font-weight:700;color:#033056">{{ caption }}</span>
+          <svg viewBox="0 0 400 74" width="100%" height="74">
+            <line x1="4" y1="66" x2="396" y2="66" stroke="#e7e5e4" stroke-width="1"></line>
+            <sc-for list="{{series}}" as="s" hint-placeholder-count="4">
+              <polyline points="{{s.points}}" fill="none" stroke="{{s.color}}" stroke-width="2" stroke-linejoin="round"></polyline>
+            </sc-for>
+            <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+              <text x="200" y="38" font-size="11" fill="#a8a29e" text-anchor="middle">Nothing selected</text>
+            </sc-if>
+          </svg>
+        </div>
+
+        <div style="background:#fff;border-radius:6px;padding:13px 15px;flex:1;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:11px;font-weight:700;color:{{ verdictInk }};letter-spacing:.06em;text-transform:uppercase">{{ verdictHead }}</span>
+          <span style="font-size:11px;color:#44403c;line-height:1.7">{{ verdictBody }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'pair', picked: ['Union Station|A', '7th Street / Metro Center|A'] };
+  }
+
+  stops() {
+    return [
+      { name: 'Union Station', short: 'Union Stn', cx: 390, cy: 44, r: 15,
+        lines: [['A', 10125], ['B', 4820], ['D', 3960]] },
+      { name: '7th Street / Metro Center', short: '7th St', cx: 300, cy: 96, r: 13,
+        lines: [['A', 6750], ['B', 5210], ['D', 4480], ['E', 3120]] },
+      { name: 'Wilshire / Vermont', short: 'Wilshire/Vermont', cx: 240, cy: 60, r: 11,
+        lines: [['B', 5480], ['D', 2870]] },
+      { name: 'Willowbrook / Rosa Parks', short: 'Willowbrook', cx: 200, cy: 140, r: 10,
+        lines: [['A', 4320], ['C', 1740]] },
+      { name: 'Pico', short: 'Pico', cx: 330, cy: 150, r: 8,
+        lines: [['A', 2940], ['E', 1505]] },
+    ];
+  }
+
+  lineColor(id) {
+    const map = { A: '#0072bc', B: '#eb131b', C: '#0fada8', D: '#a05da5', E: '#e5a512' };
+    return map[id] || '#78716c';
+  }
+
+  toggleKeys(keys) {
+    const picked = this.state.picked.slice();
+    const allOn = keys.every((k) => picked.indexOf(k) !== -1);
+    const next = allOn
+      ? picked.filter((k) => keys.indexOf(k) === -1)
+      : picked.concat(keys.filter((k) => picked.indexOf(k) === -1));
+    this.setState({ picked: next });
+  }
+
+  renderVals() {
+    const self = this;
+    const mode = this.state.mode;
+    const picked = this.state.picked;
+    const stops = this.stops();
+
+    const grid = [];
+    for (let i = 1; i < 7; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 266 });
+    for (let i = 1; i < 4; i++) grid.push({ x1: 0, y1: i * 70, x2: 480, y2: i * 70 });
+
+    const keysOf = (s) => s.lines.map((l) => s.name + '|' + l[0]);
+
+    const rows = [];
+    stops.forEach((s) => {
+      const keys = keysOf(s);
+      const on = keys.filter((k) => picked.indexOf(k) !== -1).length;
+      const total = s.lines.reduce((acc, l) => acc + l[1], 0);
+      rows.push({
+        name: s.name,
+        value: total.toLocaleString('en-US'),
+        pick: () => self.toggleKeys(keys),
+        pad: '7px 8px',
+        indent: '0px',
+        size: '12px',
+        weight: '700',
+        ink: '#44403c',
+        lineColor: 'transparent',
+        fill: on > 0 ? '#ece9e2' : 'transparent',
+        boxFill: on === keys.length && on > 0 ? '#033056' : '#ffffff',
+        boxEdge: on > 0 ? '#033056' : '#d6d3d1',
+        boxDot: on > 0 && on < keys.length ? '#033056' : 'transparent',
+      });
+      if (mode === 'pair') {
+        s.lines.forEach((l) => {
+          const key = s.name + '|' + l[0];
+          const isOn = picked.indexOf(key) !== -1;
+          rows.push({
+            name: l[0] + ' Line',
+            value: l[1].toLocaleString('en-US'),
+            pick: () => self.toggleKeys([key]),
+            pad: '4px 8px',
+            indent: '22px',
+            size: '11px',
+            weight: '400',
+            ink: '#78716c',
+            lineColor: self.lineColor(l[0]),
+            fill: isOn ? '#f0ede6' : 'transparent',
+            boxFill: isOn ? '#033056' : '#ffffff',
+            boxEdge: isOn ? '#033056' : '#d6d3d1',
+            boxDot: 'transparent',
+          });
+        });
+      }
+    });
+
+    const pins = stops.map((s) => {
+      const keys = keysOf(s);
+      const on = keys.filter((k) => picked.indexOf(k) !== -1).length;
+      return {
+        cx: s.cx, cy: s.cy, r: s.r, ring: s.r + 5,
+        short: s.short,
+        lx: s.cx + s.r + 8, ly: s.cy + 3,
+        pick: () => self.toggleKeys(keys),
+        full: on === keys.length && on > 0,
+        partial: on > 0 && on < keys.length,
+      };
+    });
+
+    const chosen = [];
+    stops.forEach((s) => {
+      s.lines.forEach((l) => {
+        if (picked.indexOf(s.name + '|' + l[0]) !== -1) chosen.push({ stop: s.name, line: l[0], value: l[1] });
+      });
+    });
+    const stopCount = chosen.reduce((acc, c) => (acc.indexOf(c.stop) === -1 ? acc.concat([c.stop]) : acc), []).length;
+
+    const caption = chosen.length === 0
+      ? 'Nothing selected'
+      : stopCount === chosen.length
+        ? String(stopCount) + (stopCount === 1 ? ' stop' : ' stops')
+        : String(stopCount) + (stopCount === 1 ? ' stop' : ' stops') + ' · ' + String(chosen.length) + ' series';
+
+    const peak = 10125;
+    const series = chosen.slice(0, 8).map((c, i) => {
+      const base = 62 - (c.value / peak) * 52;
+      const pts = [];
+      for (let m = 0; m < 6; m++) {
+        const wobble = Math.sin(m * 1.1 + i * 0.9) * 4;
+        pts.push(String(8 + m * 76) + ',' + String(Math.round((base + wobble) * 10) / 10));
+      }
+      return { points: pts.join(' '), color: self.lineColor(c.line) };
+    });
+
+    const verdict = mode === 'pair'
+      ? {
+          head: 'Selecting the pair keeps the grain, and pays for it in the caption',
+          ink: '#033056',
+          body: 'Every checkbox matches one row of data, so the chart draws exactly what was ticked and nothing is inferred. The price shows up on the map, where a stop is one circle serving several lines: it can only report that some of its lines are chosen, never which. That is what the dashed ring is doing, and it is why the caption has to count stops and series separately whenever the two differ.',
+        }
+      : {
+          head: 'Selecting the stop reads better, and quietly invents an aggregate',
+          ink: '#9a3412',
+          body: 'One tick, one circle, one ring, and a caption that only ever counts stops. But a tick on Union Station turns on three series a reader never asked for, and there is no way to ask about the A Line there alone. Since CONTEXT.md rules out a stop-total-across-lines rollup, this mode has to keep drawing every line separately even though the control implies one number.',
+        };
+
+    return {
+      rows: rows,
+      pins: pins,
+      grid: grid,
+      series: series,
+      empty: chosen.length === 0,
+      caption: caption,
+      listCaption: mode === 'pair' ? 'Tick a line under a stop, or the stop to take all of them' : 'Tick a stop',
+      pickStop: () => self.setState({ mode: 'stop' }),
+      pickPair: () => self.setState({ mode: 'pair' }),
+      clearAll: () => self.setState({ picked: [] }),
+      stopChipBg: mode === 'stop' ? '#033056' : '#ffffff',
+      stopChipInk: mode === 'stop' ? '#ffffff' : '#44403c',
+      pairChipBg: mode === 'pair' ? '#033056' : '#ffffff',
+      pairChipInk: mode === 'pair' ? '#ffffff' : '#44403c',
+      verdictHead: verdict.head,
+      verdictInk: verdict.ink,
+      verdictBody: verdict.body,
+    };
+  }
+}
+</script>
+</body>
+</html>

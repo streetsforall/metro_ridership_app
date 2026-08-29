@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">Q</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Wedge sweep &mdash; share of line, not size</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">It answers a question the map has never answered, at a channel that decodes worse.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership &middot; map</span>
+      <span style="font-size:11px;color:#a8a29e">Sweep is this stop&rsquo;s share of its own line, so every line&rsquo;s wedges sum to a full turn</span>
+    </div>
+
+    <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+      <svg viewBox="0 0 900 560" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map where each station draws a donut whose sweep is its share of the line's boardings">
+        <rect x="0" y="0" width="900" height="560" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="20">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+        <polyline points="760,140 760,210 680,265 610,265 560,300 560,492" fill="none" stroke="#0072bc" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <polyline points="560,300 470,255 360,215 250,190" fill="none" stroke="#eb131b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <sc-for list="{{wedges}}" as="w" hint-placeholder-count="12">
+          <g>
+            <circle cx="{{w.cx}}" cy="{{w.cy}}" r="15" fill="#f8f6f1" fill-opacity=".85"></circle>
+            <circle cx="{{w.cx}}" cy="{{w.cy}}" r="11.5" fill="none" stroke="#d6d3d1" stroke-width="7"></circle>
+            <sc-if value="{{w.reported}}" hint-placeholder-val="{{ true }}">
+              <path d="{{w.path}}" fill="{{w.color}}"></path>
+            </sc-if>
+            <sc-if value="{{w.missing}}" hint-placeholder-val="{{ false }}">
+              <circle cx="{{w.cx}}" cy="{{w.cy}}" r="11.5" fill="none" stroke="#78716c" stroke-width="1.6" stroke-dasharray="3 2.5"></circle>
+            </sc-if>
+          </g>
+        </sc-for>
+      </svg>
+
+      <div style="position:absolute;left:14px;bottom:14px;background:#f8f6f1;border-radius:5px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Sweep &mdash; share of line</span>
+        <svg width="250" height="56" viewBox="0 0 250 56">
+          <sc-for list="{{legend}}" as="l" hint-placeholder-count="4">
+            <g>
+              <circle cx="{{l.cx}}" cy="22" r="11.5" fill="none" stroke="#d6d3d1" stroke-width="7"></circle>
+              <path d="{{l.path}}" fill="#0072bc"></path>
+              <text x="{{l.cx}}" y="50" font-size="9" fill="#78716c" text-anchor="middle">{{l.label}}</text>
+            </g>
+          </sc-for>
+        </svg>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:#78716c;letter-spacing:.06em;text-transform:uppercase">A different question, deliberately</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.7">Every other draft here encodes how many riders a stop carries; this one encodes what fraction of its line it carries, which is the <span style="color:#78716c">shareOfLine</span> column the table already computes and the map has never shown. Because the shares of one line sum to a whole turn, a reader can see at a glance whether a line is one dominant station or a dozen even ones. The cost is that angle decodes worse than length or area, and that every wedge is the same overall size, so a busy bus line and a quiet one look alike until you read the legend.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const grid = [];
+    for (let i = 1; i < 13; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 560 });
+    for (let i = 1; i < 8; i++) grid.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+
+    const Ro = 15;
+    const Ri = 8;
+    const arc = (cx, cy, share) => {
+      const theta = Math.min(359.9, share * 360) * (Math.PI / 180);
+      const large = theta > Math.PI ? 1 : 0;
+      const ox = cx + Ro * Math.sin(theta);
+      const oy = cy - Ro * Math.cos(theta);
+      const ix = cx + Ri * Math.sin(theta);
+      const iy = cy - Ri * Math.cos(theta);
+      return (
+        'M ' + String(cx) + ' ' + String(cy - Ro) +
+        ' A ' + String(Ro) + ' ' + String(Ro) + ' 0 ' + String(large) + ' 1 ' + String(ox) + ' ' + String(oy) +
+        ' L ' + String(ix) + ' ' + String(iy) +
+        ' A ' + String(Ri) + ' ' + String(Ri) + ' 0 ' + String(large) + ' 0 ' + String(cx) + ' ' + String(cy - Ri) +
+        ' Z'
+      );
+    };
+
+    const stations = [
+      [760, 140, 0.305, 'a'], [760, 210, 0.097, 'a'], [680, 265, 0.079, 'a'],
+      [560, 300, 0.203, 'a'], [560, 338, null, 'a'], [560, 378, 0.058, 'a'],
+      [560, 418, 0.034, 'a'], [560, 455, 0.067, 'a'], [560, 492, 0.130, 'a'],
+      [470, 255, 0.377, 'b'], [360, 215, 0.197, 'b'], [250, 190, 0.113, 'b'],
+    ];
+
+    return {
+      grid: grid,
+      wedges: stations.map((s) => ({
+        cx: s[0], cy: s[1],
+        path: s[2] === null ? '' : arc(s[0], s[1], s[2]),
+        color: s[3] === 'a' ? '#0072bc' : '#eb131b',
+        reported: s[2] !== null,
+        missing: s[2] === null,
+      })),
+      legend: [
+        { cx: 24, label: '5%', path: arc(24, 22, 0.05) },
+        { cx: 90, label: '15%', path: arc(90, 22, 0.15) },
+        { cx: 156, label: '30%', path: arc(156, 22, 0.3) },
+        { cx: 222, label: '50%', path: arc(222, 22, 0.5) },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.98); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">Y</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">The layer picker, and what it does to the URL</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Tick the layers. The address bar below is live.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:22px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">Draft J drew the shelf and left the state question open. Every control in this app is URL state, so nine layers are not nine checkboxes &mdash; they are one sparse list that names only what is switched on, because a parameter per layer would put eight <span style="color:#033056;font-weight:700">=0</span> pairs in every link a reader shares.</span>
+
+    <div style="display:flex;gap:16px;flex:1;min-height:0">
+
+      <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+        <svg viewBox="0 0 560 430" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="A map that gains and loses layers as they are ticked">
+          <rect x="0" y="0" width="560" height="430" fill="#e8e6e1"></rect>
+
+          <sc-for list="{{density}}" as="d" hint-placeholder-count="4">
+            <ellipse cx="{{d.cx}}" cy="{{d.cy}}" rx="{{d.rx}}" ry="{{d.ry}}" fill="#7c3aed" fill-opacity="{{d.op}}"></ellipse>
+          </sc-for>
+
+          <g stroke="#dcd9d3" stroke-width="1">
+            <sc-for list="{{grid}}" as="g" hint-placeholder-count="14">
+              <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+            </sc-for>
+          </g>
+
+          <sc-for list="{{iso}}" as="b" hint-placeholder-count="3">
+            <path d="{{b.path}}" fill="{{b.fill}}" fill-opacity=".5" stroke="{{b.stroke}}" stroke-width="1.2"></path>
+          </sc-for>
+
+          <sc-for list="{{operators}}" as="o" hint-placeholder-count="3">
+            <polyline points="{{o.points}}" fill="none" stroke="#78716c" stroke-width="2" stroke-dasharray="5 4" stroke-linecap="round"></polyline>
+          </sc-for>
+
+          <sc-for list="{{paths}}" as="p" hint-placeholder-count="4">
+            <polyline points="{{p.points}}" fill="none" stroke="{{p.color}}" stroke-width="{{p.width}}" stroke-linejoin="round" stroke-linecap="round" stroke-opacity=".7"></polyline>
+          </sc-for>
+
+          <sc-for list="{{grade}}" as="g" hint-placeholder-count="2">
+            <polyline points="{{g.points}}" fill="none" stroke="#033056" stroke-width="1.4" stroke-dasharray="{{g.dash}}" stroke-linecap="round"></polyline>
+          </sc-for>
+
+          <sc-for list="{{pois}}" as="p" hint-placeholder-count="8">
+            <rect x="{{p.x}}" y="{{p.y}}" width="7" height="7" rx="1.5" fill="{{p.fill}}" stroke="#f8f6f1" stroke-width="1"></rect>
+          </sc-for>
+
+          <sc-for list="{{stations}}" as="s" hint-placeholder-count="10">
+            <g>
+              <circle cx="{{s.cx}}" cy="{{s.cy}}" r="{{s.r}}" fill="{{s.fill}}" fill-opacity=".75" stroke="#f8f6f1" stroke-width="1"></circle>
+              <sc-if value="{{s.badge}}" hint-placeholder-val="{{ false }}">
+                <circle cx="{{s.bx}}" cy="{{s.by}}" r="5.6" fill="#f8f6f1" stroke="#a8a29e" stroke-width="1.3" stroke-dasharray="2.2 1.8"></circle>
+              </sc-if>
+            </g>
+          </sc-for>
+
+          <text x="280" y="416" font-size="9.5" fill="#78716c" text-anchor="middle">{{ mapCaption }}</text>
+        </svg>
+      </div>
+
+      <div style="width:352px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Layers</span>
+        <sc-for list="{{layers}}" as="l" hint-placeholder-count="10">
+          <div class="hit" onClick="{{l.toggle}}" style="background:{{l.bg}};border-radius:5px;padding:7px 10px;display:flex;align-items:center;gap:9px">
+            <span style="width:13px;height:13px;border-radius:3px;border:1.6px solid {{l.boxInk}};background:{{l.boxFill}};flex:none;display:flex;align-items:center;justify-content:center">
+              <sc-if value="{{l.on}}" hint-placeholder-val="{{ false }}">
+                <span style="width:5px;height:5px;border-radius:1px;background:#ffffff"></span>
+              </sc-if>
+            </span>
+            <span style="font-size:11px;color:#44403c;flex:1">{{l.name}}</span>
+            <span style="font-size:9px;color:{{l.tagInk}};font-weight:700">{{l.tag}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background:#033056;border-radius:6px;padding:11px 14px;display:flex;flex-direction:column;gap:5px">
+      <span style="font-size:9.5px;color:#8fb6d4;text-transform:uppercase;letter-spacing:.06em">Address bar</span>
+      <span style="font-size:11.5px;color:#ffffff;word-break:break-all;line-height:1.6">{{ url }}</span>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { on: { iso: false, density: false, poi: false, operators: false, grade: false, access: false, delay: false } };
+  }
+
+  renderVals() {
+    const self = this;
+    const on = this.state.on;
+
+    const grid = [];
+    for (let i = 1; i < 8; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 430 });
+    for (let i = 1; i < 7; i++) grid.push({ x1: 0, y1: i * 70, x2: 560, y2: i * 70 });
+
+    const color = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#fdb913' };
+    const stationSpec = [
+      ['Chinatown', 430, 44, 'A', 10.2],
+      ['Union Station', 400, 92, 'A', 14.4],
+      ['Civic Center', 344, 92, 'B', 10.2],
+      ['Pershing Square', 312, 146, 'B', 12.1],
+      ['Little Tokyo', 430, 146, 'E', 11.3],
+      ['Historic Broadway', 400, 196, 'A', 8.9],
+      ['7th St / Metro Center', 300, 258, 'B', 15.9],
+      ['Pico', 300, 320, 'A', 12.0],
+      ['Westlake', 208, 216, 'B', 12.5],
+      ['Wilshire / Vermont', 118, 180, 'B', 12.8],
+    ];
+    const stations = stationSpec.map((s) => ({
+      cx: s[1], cy: s[2], r: s[4], fill: color[s[3]],
+      bx: s[1] + s[4] * 0.78 + 3.5, by: s[2] - s[4] * 0.78 - 2.5,
+      badge: on.access,
+    }));
+
+    // Travel-time bands out of 7th Street, drawn as smooth blobs rather than a route result.
+    const blob = (cx, cy, r, squash) => {
+      const pts = [];
+      const wobble = [1, 0.86, 1.12, 0.78, 1.06, 0.9, 1.18, 0.82];
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * 2 * Math.PI;
+        const rr = r * wobble[i];
+        pts.push([cx + rr * Math.cos(a) * 1.25, cy + rr * Math.sin(a) * squash]);
+      }
+      const n = (v) => String(Math.round(v * 10) / 10);
+      let d = 'M ' + n(pts[0][0]) + ' ' + n(pts[0][1]);
+      for (let i = 0; i < 8; i++) {
+        const p = pts[(i + 1) % 8];
+        const c = pts[i];
+        d += ' Q ' + n(c[0] * 1.02) + ' ' + n(c[1] * 1.02) + ' ' + n(p[0]) + ' ' + n(p[1]);
+      }
+      return d + ' Z';
+    };
+    const iso = on.iso
+      ? [
+          { path: blob(300, 258, 132, 0.86), fill: '#ccfbf1', stroke: '#5eead4' },
+          { path: blob(300, 258, 88, 0.86), fill: '#5eead4', stroke: '#14b8a6' },
+          { path: blob(300, 258, 46, 0.86), fill: '#14b8a6', stroke: '#0f766e' },
+        ]
+      : [];
+
+    const density = on.density
+      ? [
+          { cx: 300, cy: 190, rx: 150, ry: 96, op: '.16' },
+          { cx: 250, cy: 150, rx: 92, ry: 62, op: '.16' },
+          { cx: 150, cy: 200, rx: 76, ry: 52, op: '.12' },
+          { cx: 420, cy: 130, rx: 68, ry: 46, op: '.10' },
+        ]
+      : [];
+
+    const operators = on.operators
+      ? [
+          { points: '40,240 130,232 220,246 300,258' },
+          { points: '80,60 170,96 250,86 344,92' },
+          { points: '460,300 400,330 330,318 300,320' },
+        ]
+      : [];
+
+    const grade = on.grade
+      ? [
+          { points: '400,92 344,92 312,146 300,258', dash: 'none' },
+          { points: '300,258 300,320 300,364', dash: '4 3' },
+        ]
+      : [];
+
+    const pois = on.poi
+      ? [
+          [268, 120, '#c2410c'], [352, 176, '#c2410c'], [186, 168, '#c2410c'],
+          [332, 236, '#0891b2'], [246, 286, '#0891b2'], [430, 96, '#0891b2'],
+          [140, 232, '#7c3aed'], [368, 300, '#7c3aed'],
+        ].map((p) => ({ x: p[0], y: p[1], fill: p[2] }))
+      : [];
+
+    const specs = [
+      { id: 'lines', name: 'Metro lines', tag: 'ships', tagInk: '#166534', fixed: true },
+      { id: 'stops', name: 'Stop ridership', tag: 'ships', tagInk: '#166534', fixed: true },
+      { id: 'operators', name: 'Other operators’ transit', tag: 'a GTFS fetch', tagInk: '#78716c' },
+      { id: 'poi', name: 'Hospitals, schools, venues', tag: 'an OSM fetch', tagInk: '#78716c' },
+      { id: 'grade', name: 'Grade separation', tag: 'an OSM fetch', tagInk: '#78716c' },
+      { id: 'density', name: 'Population density', tag: 'needs tiles', tagInk: '#b45309' },
+      { id: 'access', name: 'Accessibility', tag: 'needs a source', tagInk: '#9a3412' },
+      { id: 'iso', name: 'Isochrones · 15 min', tag: 'needs a precompute', tagInk: '#b45309' },
+      { id: 'delay', name: 'Line delay', tag: 'no such data', tagInk: '#9a3412' },
+    ];
+
+    const layers = specs.map((s) => {
+      const isOn = s.fixed ? true : !!on[s.id];
+      return {
+        name: s.name,
+        tag: s.tag,
+        tagInk: s.tagInk,
+        on: isOn,
+        bg: isOn ? '#eef4f4' : '#ffffff',
+        boxInk: isOn ? '#0fada8' : '#c9c4bb',
+        boxFill: isOn ? '#0fada8' : '#ffffff',
+        toggle: s.fixed
+          ? () => {}
+          : () => {
+              const next = {};
+              for (const k of Object.keys(on)) next[k] = on[k];
+              next[s.id] = !next[s.id];
+              self.setState({ on: next });
+            },
+      };
+    });
+
+    // Only what is switched on reaches the URL, in a fixed order so one view has one link.
+    const order = ['operators', 'poi', 'grade', 'density', 'access', 'iso', 'delay'];
+    const token = { operators: 'transit', poi: 'places', grade: 'grade', density: 'density', access: 'access', iso: 'iso', delay: 'delay' };
+    const active = order.filter((k) => on[k]);
+    const base = '?stops=1&measure=ons&lines=801,802,804,805';
+    const url = 'metro-ridership.app/' + base +
+      (active.length ? '&layers=' + active.map((k) => token[k]).join(',') : '') +
+      (on.iso ? '&iso=15' : '');
+
+    const caption = active.length === 0
+      ? 'Nothing ticked — the map the app draws today'
+      : active.length + (active.length === 1 ? ' layer on' : ' layers on') + ', over the same stops and lines';
+
+    const note = on.iso
+      ? {
+          ink: '#b45309',
+          head: 'A layer with a setting of its own needs a second parameter',
+          body: 'Isochrones are the case that breaks a plain list: a reader who shares a fifteen-minute view and a reader who shares a thirty-minute view are not sharing the same map, so the band has to travel in the link as well. One extra key per parametrised layer stays readable; a second and a third do not, and at that point the layers deserve their own nested value rather than a growing set of top-level keys.',
+        }
+      : active.length > 3
+      ? {
+          ink: '#9a3412',
+          head: 'Four layers at once is past what the map can say',
+          body: 'The state survives the URL perfectly well — it is the reader who does not. Density under isochrones under places under stop circles puts four quantities in overlapping paint, and the two that lose are always the ones the app is actually about. A picker that lets a reader tick everything should probably not; one background layer plus the stops is the honest cap, and the control that enforces it is a radio rather than a set of checkboxes.',
+        }
+      : {
+          ink: '#166534',
+          head: 'One sparse list, and a view that round-trips',
+          body: 'Naming only what is on keeps a default view’s link exactly as short as it is today, which matters because every link this app produces is meant to be pasted into an email. The list needs a fixed order rather than click order, or two readers looking at the same map would produce two different links; and it needs both halves of useUserDashboardInput, since a parameter that writes but does not read is a view that quietly resets on reload.',
+        };
+
+    return {
+      grid: grid,
+      paths: [
+        { color: '#0072bc', width: 2.6, points: '430,44 400,92 430,146 400,196 300,258 300,320 300,364' },
+        { color: '#fdb913', width: 2.6, points: '500,146 430,146 400,196 300,258 300,320 230,352' },
+        { color: '#eb131b', width: 2.6, points: '400,92 344,92 312,146 300,258 208,216 118,180 96,130' },
+        { color: '#a05da5', width: 2.6, points: '400,92 344,92 312,146 300,258 208,216 118,180 40,180' },
+      ],
+      stations: stations,
+      iso: iso,
+      density: density,
+      operators: operators,
+      grade: grade,
+      pois: pois,
+      layers: layers,
+      url: url,
+      mapCaption: caption,
+      noteInk: note.ink,
+      noteHead: note.head,
+      noteBody: note.body,
+    };
+  }
+}
+</script>
+</body>
+</html>

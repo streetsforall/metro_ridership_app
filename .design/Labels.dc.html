@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">N</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Decluttered labels &mdash; the only lossless option</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Not an encoding at all, which is the point: it gives the figure rather than a comparison.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <span style="font-size:12px;color:#78716c">MapLibre&rsquo;s own collision detection decides what fits. Ranking the labels by ridership means the busiest stops keep theirs and the rest appear as a reader zooms in.</span>
+
+    <div style="flex:1;display:flex;flex-direction:column;gap:10px;min-height:0">
+
+      <div style="flex:1;display:flex;flex-direction:column;gap:5px;min-height:0">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Zoom 11 &mdash; four labels survive</span>
+        <div style="flex:1;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+          <svg viewBox="0 0 900 300" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+            <rect x="0" y="0" width="900" height="300" fill="#e8e6e1"></rect>
+            <g stroke="#dcd9d3" stroke-width="1">
+              <sc-for list="{{gridA}}" as="g" hint-placeholder-count="14">
+                <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+              </sc-for>
+            </g>
+            <polyline points="760,40 760,86 680,120 610,120 560,150 560,270" fill="none" stroke="#0072bc" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+            <polyline points="560,150 470,120 360,92 250,74" fill="none" stroke="#eb131b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+            <sc-for list="{{far}}" as="s" hint-placeholder-count="12">
+              <circle cx="{{s.cx}}" cy="{{s.cy}}" r="{{s.r}}" fill="{{s.color}}" fill-opacity=".5" stroke="#fff" stroke-width="1.5"></circle>
+            </sc-for>
+            <sc-for list="{{farLabels}}" as="l" hint-placeholder-count="4">
+              <g>
+                <rect x="{{l.x}}" y="{{l.y}}" width="{{l.w}}" height="18" rx="4" fill="#f8f6f1" fill-opacity=".92"></rect>
+                <text x="{{l.tx}}" y="{{l.ty}}" font-size="11" fill="#033056" font-weight="700">{{l.text}}</text>
+              </g>
+            </sc-for>
+          </svg>
+        </div>
+      </div>
+
+      <div style="flex:1;display:flex;flex-direction:column;gap:5px;min-height:0">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Zoom 14 &mdash; the rest come back, including the gap</span>
+        <div style="flex:1;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+          <svg viewBox="0 0 900 300" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+            <rect x="0" y="0" width="900" height="300" fill="#e8e6e1"></rect>
+            <g stroke="#dcd9d3" stroke-width="1">
+              <sc-for list="{{gridA}}" as="g" hint-placeholder-count="14">
+                <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+              </sc-for>
+            </g>
+            <polyline points="760,40 760,86 680,120 610,120 560,150 560,270" fill="none" stroke="#0072bc" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+            <polyline points="560,150 470,120 360,92 250,74" fill="none" stroke="#eb131b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+            <sc-for list="{{far}}" as="s" hint-placeholder-count="12">
+              <circle cx="{{s.cx}}" cy="{{s.cy}}" r="{{s.r}}" fill="{{s.color}}" fill-opacity=".5" stroke="#fff" stroke-width="1.5"></circle>
+            </sc-for>
+            <sc-for list="{{nearLabels}}" as="l" hint-placeholder-count="12">
+              <g>
+                <rect x="{{l.x}}" y="{{l.y}}" width="{{l.w}}" height="18" rx="4" fill="{{l.bg}}" fill-opacity=".92"></rect>
+                <text x="{{l.tx}}" y="{{l.ty}}" font-size="11" fill="{{l.ink}}" font-weight="700">{{l.text}}</text>
+              </g>
+            </sc-for>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:#166534;letter-spacing:.06em;text-transform:uppercase">Cheap, and it composes with everything else</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.7">This is a symbol layer with <span style="color:#78716c">symbol-sort-key</span> set to the measure and collision left switched on, so MapLibre does the decluttering and nothing has to be computed per zoom level. It answers the question circles cannot &mdash; how many, exactly &mdash; and it sits on top of any of the other drafts rather than competing with them. Its own limit is that a reader compares numerals slowly, so labels tell you a value but never show you a pattern.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const gridA = [];
+    for (let i = 1; i < 13; i++) gridA.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 300 });
+    for (let i = 1; i < 5; i++) gridA.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+
+    const stations = [
+      [760, 40, 10125, 'a', '10,125'], [760, 86, 3210, 'a', '3,210'], [680, 120, 2640, 'a', '2,640'],
+      [560, 150, 6750, 'a', '6,750'], [560, 178, null, 'a', 'no report'], [560, 205, 1910, 'a', '1,910'],
+      [560, 228, 1142, 'a', '1,142'], [560, 250, 2210, 'a', '2,210'], [560, 270, 4320, 'a', '4,320'],
+      [470, 120, 5480, 'b', '5,480'], [360, 92, 2870, 'b', '2,870'], [250, 74, 1640, 'b', '1,640'],
+    ];
+    const peak = 10125;
+
+    const label = (s) => {
+      const w = s[4].length * 7 + 12;
+      return {
+        x: s[0] + 12, y: s[1] - 9, w: w,
+        tx: s[0] + 18, ty: s[1] + 4,
+        text: s[4],
+        bg: s[2] === null ? '#e7e5e4' : '#f8f6f1',
+        ink: s[2] === null ? '#78716c' : '#033056',
+      };
+    };
+
+    return {
+      gridA: gridA,
+      far: stations.map((s) => ({
+        cx: s[0], cy: s[1],
+        r: s[2] === null ? 4 : 4 + Math.sqrt(s[2] / peak) * 11,
+        color: s[2] === null ? '#a8a29e' : s[3] === 'a' ? '#0072bc' : '#eb131b',
+      })),
+      farLabels: [stations[0], stations[3], stations[9], stations[8]].map(label),
+      nearLabels: stations.map(label),
+    };
+  }
+}
+</script>
+</body>
+</html>

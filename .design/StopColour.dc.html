@@ -1,0 +1,127 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">G</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Colour ramp in the fill, line hue in the stroke</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Size still reads at a glance; the ramp separates stops that size cannot.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership &middot; map</span>
+      <div style="display:flex;gap:2px">
+        <span style="background:#033056;color:#fff;font-size:12px;font-weight:700;padding:8px 12px;border-radius:4px 0 0 4px">Boardings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px">Alightings</span>
+        <span style="background:#fff;color:#44403c;font-size:12px;font-weight:700;padding:8px 12px;border-radius:0 4px 4px 0">Both</span>
+      </div>
+    </div>
+
+    <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+      <svg viewBox="0 0 900 520" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map with a circle at each station, shaded by average boardings and outlined in its line colour">
+        <rect x="0" y="0" width="900" height="520" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="20">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+        <polyline points="700,50 700,130 610,190 545,190 512,225 512,470" fill="none" stroke="#0072bc" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <polyline points="512,225 430,180 330,140 240,118" fill="none" stroke="#eb131b" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <sc-for list="{{stops}}" as="s" hint-placeholder-count="12">
+          <circle cx="{{s.cx}}" cy="{{s.cy}}" r="{{s.r}}" fill="{{s.fill}}" stroke="{{s.stroke}}" stroke-width="2.5"></circle>
+        </sc-for>
+      </svg>
+
+      <div style="position:absolute;left:14px;bottom:14px;background:#f8f6f1;border-radius:5px;padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Fill &mdash; avg. boardings</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:10px;color:#78716c">0</span>
+            <sc-for list="{{ramp}}" as="step" hint-placeholder-count="6">
+              <span style="width:26px;height:12px;background:{{step.fill}}"></span>
+            </sc-for>
+            <span style="font-size:10px;color:#78716c">10,000</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Stroke &mdash; which line</span>
+          <div style="display:flex;gap:12px">
+            <div style="display:flex;align-items:center;gap:5px">
+              <span style="width:12px;height:12px;border-radius:50%;background:#f8f6f1;border:2.5px solid #0072bc"></span>
+              <span style="font-size:10px;color:#78716c">A Line</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px">
+              <span style="width:12px;height:12px;border-radius:50%;background:#f8f6f1;border:2.5px solid #eb131b"></span>
+              <span style="font-size:10px;color:#78716c">B Line</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:#9a3412;letter-spacing:.06em;text-transform:uppercase">What this has to argue with</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.7">CONTEXT.md says the Stop Measure is carried on the map "by fill and stroke, never by a second colour ramp: colour already means which line." This draft does not remove that rule so much as invert it &mdash; identity moves to the stroke and magnitude takes the fill. It works while two or three lines are selected. At five it asks a reader to tell five thin rings apart at a four-pixel radius, which is the case the rule was written for.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const grid = [];
+    for (let i = 1; i < 13; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 520 });
+    for (let i = 1; i < 8; i++) grid.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+    const ramp = ['#e2e6ea', '#b9c7d4', '#8aa3ba', '#5a7f9f', '#2d5c81', '#033056'];
+    const peak = 10500;
+    const raw = [
+      [700, 50, 10125, '#0072bc'],
+      [700, 130, 3210, '#0072bc'],
+      [610, 190, 2640, '#0072bc'],
+      [512, 225, 6750, '#0072bc'],
+      [512, 300, 1910, '#0072bc'],
+      [512, 360, 1142, '#0072bc'],
+      [512, 415, 2210, '#0072bc'],
+      [512, 470, 4320, '#0072bc'],
+      [430, 180, 5480, '#eb131b'],
+      [330, 140, 2870, '#eb131b'],
+      [240, 118, 1640, '#eb131b'],
+    ];
+    return {
+      grid: grid,
+      ramp: ramp.map((f) => ({ fill: f })),
+      stops: raw.map((s) => {
+        const i = Math.min(ramp.length - 1, Math.floor((s[2] / peak) * ramp.length));
+        return {
+          cx: s[0],
+          cy: s[1],
+          r: 6 + Math.sqrt(s[2] / peak) * 16,
+          fill: ramp[i],
+          stroke: s[3],
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>
