@@ -1,0 +1,344 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">OO</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Frequency on the segment, in four textures</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click a texture. Every figure is a counted weekday departure.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:20px 22px;box-sizing:border-box;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+      <span style="font-size:11px;color:#a8a29e;margin-right:4px">The segment is drawn as</span>
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="4">
+        <span class="hit" onClick="{{m.pick}}" style="background:{{m.bg}};color:{{m.ink}};font-size:12px;font-weight:700;padding:8px 13px;border-radius:4px">{{m.label}}</span>
+      </sc-for>
+    </div>
+
+    <span style="font-size:12px;color:#78716c;line-height:1.65">{{ blurb }}</span>
+
+    <div style="background:#e8e6e1;border-radius:6px;padding:12px 14px 8px">
+      <svg viewBox="0 0 904 236" width="100%" height="236" role="img" aria-label="The Wilshire corridor drawn with the selected frequency texture, over the D Line drawn flat beneath it">
+        <defs>
+          <sc-for list="{{patterns}}" as="p" hint-placeholder-count="4">
+            <pattern id="{{p.id}}" patternUnits="userSpaceOnUse" width="{{p.step}}" height="{{p.step}}" patternTransform="rotate(45)">
+              <rect width="{{p.step}}" height="{{p.step}}" fill="#e8e6e1"></rect>
+              <line x1="0" y1="0" x2="0" y2="{{p.step}}" stroke="{{p.stroke}}" stroke-width="{{p.weight}}"></line>
+              <line x1="0" y1="0" x2="{{p.step}}" y2="0" stroke="{{p.stroke}}" stroke-width="{{p.weight}}"></line>
+            </pattern>
+          </sc-for>
+        </defs>
+
+        <rect x="0" y="0" width="904" height="236" fill="#e8e6e1"></rect>
+
+        <text x="18" y="26" font-size="10" fill="#78716c">Line 720 along Wilshire — 11 segments, 98 to 339 weekday departures</text>
+
+        <sc-for list="{{casings}}" as="s" hint-placeholder-count="11">
+          <line x1="{{s.x1}}" y1="{{s.y1}}" x2="{{s.x2}}" y2="{{s.y2}}" stroke="{{s.stroke}}" stroke-width="{{s.width}}" stroke-dasharray="{{s.dash}}" stroke-linecap="butt"></line>
+        </sc-for>
+
+        <sc-for list="{{nodes}}" as="n" hint-placeholder-count="12">
+          <g>
+            <circle cx="{{n.cx}}" cy="{{n.cy}}" r="3.4" fill="#f8f6f1" stroke="#57534e" stroke-width="1.1"></circle>
+            <text x="{{n.cx}}" y="{{n.ly}}" font-size="8" fill="#78716c" text-anchor="{{n.anchor}}" transform="{{n.rotate}}">{{n.name}}</text>
+          </g>
+        </sc-for>
+
+        <sc-for list="{{counts}}" as="c" hint-placeholder-count="11">
+          <text x="{{c.x}}" y="{{c.y}}" font-size="8.5" font-weight="700" fill="#57534e" text-anchor="middle">{{c.text}}</text>
+        </sc-for>
+
+        <text x="18" y="176" font-size="10" fill="#78716c">D Line under the same street — every segment 204, whatever the texture</text>
+        <line x1="150" y1="200" x2="780" y2="200" stroke="#a05da5" stroke-width="{{railWidth}}" stroke-dasharray="{{railDash}}" stroke-opacity=".85"></line>
+        <sc-for list="{{railTicks}}" as="t" hint-placeholder-count="8">
+          <circle cx="{{t.cx}}" cy="200" r="3" fill="#f8f6f1" stroke="#a05da5" stroke-width="1.2"></circle>
+        </sc-for>
+        <text x="792" y="204" font-size="9" fill="#78716c">204</text>
+
+        <sc-for list="{{keySwatches}}" as="k" hint-placeholder-count="4">
+          <g>
+            <line x1="{{k.x1}}" y1="228" x2="{{k.x2}}" y2="228" stroke="{{k.stroke}}" stroke-width="{{k.width}}" stroke-dasharray="{{k.dash}}"></line>
+            <text x="{{k.tx}}" y="231" font-size="8.5" fill="#78716c">{{k.text}}</text>
+          </g>
+        </sc-for>
+      </svg>
+    </div>
+
+    <div style="display:flex;gap:16px;flex:1;min-height:0">
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What this texture keeps and what it spends</span>
+        <sc-for list="{{tests}}" as="t" hint-placeholder-count="5">
+          <div style="display:flex;align-items:flex-start;gap:9px;padding:2px 0">
+            <span style="width:15px;height:15px;border-radius:3px;background:{{t.chipBg}};color:{{t.chipInk}};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px">{{t.glyph}}</span>
+            <span style="font-size:11px;color:#44403c;line-height:1.55">{{t.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="width:340px;display:flex;flex-direction:column;gap:9px">
+        <div style="background:#fff;border-radius:6px;padding:11px 13px;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Segments that vary, by mode</span>
+          <sc-for list="{{spread}}" as="s" hint-placeholder-count="7">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="width:10px;height:10px;border-radius:2px;background:{{s.color}};flex:none"></span>
+              <span style="font-size:10.5px;color:#78716c;width:54px">{{s.label}}</span>
+              <span style="height:7px;border-radius:2px;background:{{s.color}};width:{{s.bar}}px"></span>
+              <span style="font-size:10.5px;color:#44403c">{{s.value}}</span>
+            </div>
+          </sc-for>
+          <span style="font-size:10px;color:#a8a29e;line-height:1.55">Weekday 9 September 2026, both directions, every consecutive stop pair. Run <span style="color:#033056">python scripts/count_segment_frequency.py</span>.</span>
+        </div>
+        <div style="background:#fff;border-radius:6px;padding:11px 13px;display:flex;flex-direction:column;gap:5px;flex:1">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What it would take to build</span>
+          <span style="font-size:11px;color:#44403c;line-height:1.6">{{ build }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:5px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.65">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'width' };
+  }
+
+  renderVals() {
+    const self = this;
+    const mode = this.state.mode;
+
+    // Line 720 west to east, with the weekday departures counted on each segment between
+    // the stop before it and the stop named. The 339 core and the 167 stretches either
+    // side of it are the limited-stop patterns, not a data error.
+    const chain = [
+      ['5th / Colorado', null],
+      ['Wilshire / 14th', 98],
+      ['Wilshire / 26th', 194],
+      ['Wilshire / Barrington', 194],
+      ['Wilshire / Veteran', 194],
+      ['Wilshire / Westwood', 159],
+      ['Wilshire / Beverly Glen', 167],
+      ['Wilshire / Santa Monica', 339],
+      ['Wilshire / Western', 339],
+      ['Wilshire / Alvarado', 339],
+      ['6th / Grand', 167],
+      ['6th / Central', 167],
+    ];
+
+    const X0 = 60, X1 = 856, Y = 92;
+    const nodes = chain.map((c, i) => ({
+      name: c[0],
+      cx: X0 + (i / (chain.length - 1)) * (X1 - X0),
+      cy: Y,
+    }));
+
+    // Four bands over the corridor's own range, which is what a dash or a hatch can carry.
+    // A continuous measure has to become ordinal here; the width mode is the one that
+    // does not, and that difference is the whole comparison.
+    const band = (v) => (v >= 260 ? 3 : v >= 180 ? 2 : v >= 120 ? 1 : 0);
+    const BAND_LABELS = ['under 120 a day', '120 to 180', '180 to 260', '260 and over'];
+    const HATCH = ['hatch-a', 'hatch-b', 'hatch-c', 'hatch-d'];
+    const DASH = ['2 7', '4 5', '9 4', 'none'];
+
+    const casings = [], counts = [];
+    for (let i = 1; i < chain.length; i++) {
+      const v = chain[i][1];
+      const a = nodes[i - 1], b = nodes[i];
+      const k = band(v);
+
+      if (mode === 'width') {
+        casings.push({
+          x1: a.cx, y1: a.cy, x2: b.cx, y2: b.cy,
+          stroke: '#fc4c02', width: String(2 + (v / 339) * 15), dash: 'none',
+        });
+      } else if (mode === 'hatch') {
+        casings.push({
+          x1: a.cx, y1: a.cy, x2: b.cx, y2: b.cy,
+          stroke: 'url(#' + HATCH[k] + ')', width: '17', dash: 'none',
+        });
+      } else if (mode === 'dash') {
+        casings.push({
+          x1: a.cx, y1: a.cy, x2: b.cx, y2: b.cy,
+          stroke: '#fc4c02', width: '5', dash: DASH[k],
+        });
+      } else {
+        // One hairline per band, offset along the segment normal. On a corridor this
+        // reads as a bundle; the artboard's own point is that it stops reading as one.
+        for (let n = 0; n <= k; n++) {
+          const off = (n - k / 2) * 4.6;
+          casings.push({
+            x1: a.cx, y1: a.cy + off, x2: b.cx, y2: b.cy + off,
+            stroke: '#fc4c02', width: '2', dash: 'none',
+          });
+        }
+      }
+
+      counts.push({ x: (a.cx + b.cx) / 2, y: Y - 16, text: String(v) });
+    }
+
+    const drawnNodes = nodes.map((n) => ({
+      cx: n.cx, cy: n.cy,
+      name: n.name,
+      ly: Y + 14,
+      anchor: 'end',
+      rotate: 'rotate(-38 ' + String(Math.round(n.cx)) + ' ' + String(Y + 14) + ')',
+    }));
+
+    const railTicks = [];
+    for (let i = 0; i < 8; i++) railTicks.push({ cx: 150 + i * 90 });
+
+    const keySwatches = BAND_LABELS.map((label, k) => {
+      const x1 = 150 + k * 190;
+      return {
+        x1: x1, x2: x1 + 30, tx: x1 + 37, text: label,
+        stroke: mode === 'hatch' ? 'url(#' + HATCH[k] + ')' : '#fc4c02',
+        width: mode === 'hatch' ? '11' : mode === 'width' ? String(3 + k * 4) : '4',
+        dash: mode === 'dash' ? DASH[k] : 'none',
+      };
+    });
+
+    const yes = { glyph: '✓', chipBg: '#dcf0e2', chipInk: '#166534' };
+    const no = { glyph: '✕', chipBg: '#f7e0d4', chipInk: '#9a3412' };
+    const part = { glyph: '~', chipBg: '#efece6', chipInk: '#78716c' };
+
+    const table = {
+      width: {
+        label: 'width',
+        blurb: 'The segment thickens with the departures counted on it. The measure stays continuous, so 339 and 194 are different by as much as they actually differ rather than by one band.',
+        tests: [
+          [yes, 'It is the only texture here that carries a number rather than a band'],
+          [yes, 'One line-width expression, which is the same mechanism draft I already uses'],
+          [no, 'Width is spoken for: I encodes segment load in exactly this channel'],
+          [no, 'A thick segment covers the stop marks at its ends, which are the other encoding'],
+          [part, 'It reads as importance, and a reader has to be told which quantity it means'],
+        ],
+        build: 'A line-width expression over a segment table the ingest emits — one row per consecutive stop pair per route. The layer is trivial; the table is the work, and it is the same table all four textures need.',
+        noteHead: 'The honest one, and the channel is already claimed',
+        noteInk: '#78716c',
+        noteBody: 'Width is the strongest channel a line has and the only one that survives being read as a quantity rather than a category. That is why draft I spent it on segment load. Two quantities cannot both have it, so choosing width here is choosing to drop I, and the map then answers how often rather than how full. Worth doing only if frequency is the question the map is for.',
+      },
+      hatch: {
+        label: 'cross-hatch',
+        blurb: 'The segment keeps one width and fills with a cross-hatch that tightens as service gets more frequent. Density is read against the segment beside it rather than against a scale.',
+        tests: [
+          [yes, 'It leaves width free, so segment load and frequency can both be drawn'],
+          [yes, 'It survives colourblindness completely, being a texture and not a hue'],
+          [no, 'MapLibre line layers take no pattern fill — this is drawn here and cannot be styled there'],
+          [no, 'It needs a wide casing to show at all, which is space a dense corridor has not got'],
+          [part, 'Four densities is the most a reader can rank, so the measure goes ordinal'],
+        ],
+        build: 'Either a generated sprite per band and a fill layer over segment polygons, or a second geometry pass that buffers each segment into an area. Both are real builds. Page two says the same of circles: hatch is the cheapest thing to reason about and the dearest to draw.',
+        noteHead: 'The clearest to read and the one the renderer will not do',
+        noteInk: '#9a3412',
+        noteBody: 'Cross-hatch is the texture this canvas keeps reaching for, because it separates without spending colour or width and because it already means "not reported" here. That second point is the problem as much as the renderer is: if a hatch means frequency, the hatch that means a gap needs its own unmistakable pattern, and the two will be compared at a glance by readers who were told about neither.',
+      },
+      dash: {
+        label: 'dash pattern',
+        blurb: 'One width, one colour, four dash patterns from dotted to solid. It is the cheapest thing on this artboard to build and the one that collides hardest with what the app already draws.',
+        tests: [
+          [yes, 'A single MapLibre line-dasharray expression, styled at read time, no new geometry'],
+          [yes, 'Dash is genuinely unspent on the line layers today'],
+          [no, 'A broken line already means a gap in the data, so a dashed segment is ambiguous'],
+          [no, 'Dash patterns do not scale with zoom in MapLibre, so the bands shift as a reader zooms'],
+          [part, 'Four bands at most, and the two middle ones are hard to tell apart in motion'],
+        ],
+        build: 'A line-dasharray expression keyed to a band, and nothing else. If the segment table exists this is an afternoon.',
+        noteHead: 'Cheapest to build, and it overloads the gap',
+        noteInk: '#9a3412',
+        noteBody: 'Every draft on this canvas holds one constant: a null is a gap, drawn as a break or a hatch, never a zero. Dashing for frequency spends that convention on something else, and a reader who sees a broken segment can no longer tell whether service is thin or the month went unreported. If dash is used at all, one pattern has to be reserved and named in the key — which leaves three bands for the measure.',
+      },
+      parallel: {
+        label: 'parallel lines',
+        blurb: 'One hairline per band, offset along the segment normal, so a frequent segment is drawn as a bundle. Counting strokes is the most literal reading of frequency on this artboard.',
+        tests: [
+          [yes, 'Count is decoded exactly rather than judged, up to about four'],
+          [yes, 'It degrades to a single line, which is a sensible unknown state'],
+          [no, 'It wants the same offset geometry draft NN needs for shared corridors, meaning two things at once'],
+          [no, 'Offsets pull the line off its own coordinate, which every other draft here refuses to do'],
+          [part, 'Four strokes at a curve overlap each other, and Wilshire is the easy case'],
+        ],
+        build: 'A line-offset expression per band, drawn as several layers, or offset geometry precomputed in the ingest. The second is what draft NN would need anyway, which is exactly why the two cannot both have it.',
+        noteHead: 'Literal to read, and it wants geometry another draft has claimed',
+        noteInk: '#9a3412',
+        noteBody: 'Parallel strokes are the one texture a reader decodes by counting rather than by comparing, which makes them the most precise ordinal option here. They are also the second draft on this canvas to ask for offset line geometry, after NN asks for it to draw the B and D Lines side by side through the Wilshire tunnel. Whichever ships first sets what an offset means, and the other has to find another channel.',
+      },
+    };
+
+    const cur = table[mode];
+    const order = [
+      ['width', 'segment width'],
+      ['hatch', 'cross-hatch density'],
+      ['dash', 'dash pattern'],
+      ['parallel', 'parallel lines'],
+    ];
+
+    return {
+      modes: order.map((o) => ({
+        label: o[1],
+        pick: () => self.setState({ mode: o[0] }),
+        bg: mode === o[0] ? '#033056' : '#ffffff',
+        ink: mode === o[0] ? '#ffffff' : '#44403c',
+      })),
+      patterns: [
+        { id: 'hatch-a', step: '9', stroke: '#fc4c02', weight: '1' },
+        { id: 'hatch-b', step: '6', stroke: '#fc4c02', weight: '1.1' },
+        { id: 'hatch-c', step: '4', stroke: '#fc4c02', weight: '1.2' },
+        { id: 'hatch-d', step: '2.6', stroke: '#fc4c02', weight: '1.3' },
+      ],
+      casings: casings,
+      nodes: drawnNodes,
+      counts: counts,
+      railTicks: railTicks,
+      railWidth: mode === 'width' ? '11' : '5',
+      railDash: mode === 'dash' ? '9 4' : 'none',
+      keySwatches: keySwatches,
+      blurb: cur.blurb,
+      tests: cur.tests.map((t) => ({ glyph: t[0].glyph, chipBg: t[0].chipBg, chipInk: t[0].chipInk, text: t[1] })),
+      build: cur.build,
+      noteHead: cur.noteHead,
+      noteInk: cur.noteInk,
+      noteBody: cur.noteBody,
+      // Counted, not assumed: three of the six rail lines have one value on every segment
+      // they run, and 107 of the 110 bus routes do not.
+      spread: [
+        { label: 'Bus', color: '#fc4c02', value: '107 of 110', bar: 104 },
+        { label: 'A Line', color: '#0072bc', value: '114 to 240', bar: 78 },
+        { label: 'E Line', color: '#fdb913', value: '234 to 240', bar: 12 },
+        { label: 'C Line', color: '#58a738', value: '172 to 179', bar: 14 },
+        { label: 'B Line', color: '#eb131b', value: 'flat 208', bar: 3 },
+        { label: 'D Line', color: '#a05da5', value: 'flat 204', bar: 3 },
+        { label: 'K Line', color: '#e56db1', value: 'flat 176', bar: 3 },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

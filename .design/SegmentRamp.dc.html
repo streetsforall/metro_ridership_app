@@ -1,0 +1,265 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">PP</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Frequency in the colour, and what then carries the line</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click a state. Colour can hold identity or magnitude, never both.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:20px 22px;box-sizing:border-box;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+      <span style="font-size:11px;color:#a8a29e;margin-right:4px">Colour holds</span>
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="3">
+        <span class="hit" onClick="{{m.pick}}" style="background:{{m.bg}};color:{{m.ink}};font-size:12px;font-weight:700;padding:8px 13px;border-radius:4px">{{m.label}}</span>
+      </sc-for>
+    </div>
+
+    <span style="font-size:12px;color:#78716c;line-height:1.65">{{ blurb }}</span>
+
+    <div style="background:#e8e6e1;border-radius:6px;padding:12px 14px 8px">
+      <svg viewBox="0 0 904 250" width="100%" height="250" role="img" aria-label="A downtown schematic with four rail lines and one bus corridor, coloured by the selected state">
+        <rect x="0" y="0" width="904" height="250" fill="#e8e6e1"></rect>
+
+        <sc-for list="{{segments}}" as="s" hint-placeholder-count="30">
+          <line x1="{{s.x1}}" y1="{{s.y1}}" x2="{{s.x2}}" y2="{{s.y2}}" stroke="{{s.stroke}}" stroke-width="{{s.width}}" stroke-dasharray="{{s.dash}}" stroke-linecap="round"></line>
+        </sc-for>
+
+        <sc-for list="{{letters}}" as="l" hint-placeholder-count="12">
+          <g>
+            <rect x="{{l.x}}" y="{{l.y}}" width="13" height="13" rx="2.5" fill="{{l.bg}}" stroke="{{l.stroke}}" stroke-width="1"></rect>
+            <text x="{{l.tx}}" y="{{l.ty}}" font-size="9" font-weight="700" fill="{{l.ink}}" text-anchor="middle">{{l.text}}</text>
+          </g>
+        </sc-for>
+
+        <sc-for list="{{stations}}" as="s" hint-placeholder-count="8">
+          <g>
+            <circle cx="{{s.cx}}" cy="{{s.cy}}" r="{{s.r}}" fill="#f8f6f1" stroke="#57534e" stroke-width="1.3"></circle>
+            <text x="{{s.lx}}" y="{{s.ly}}" font-size="8.5" fill="#57534e" text-anchor="{{s.anchor}}">{{s.name}}</text>
+          </g>
+        </sc-for>
+
+        <sc-for list="{{key}}" as="k" hint-placeholder-count="6">
+          <g>
+            <rect x="{{k.x}}" y="222" width="{{k.w}}" height="10" fill="{{k.fill}}" stroke="{{k.stroke}}" stroke-width="{{k.strokeWidth}}"></rect>
+            <text x="{{k.tx}}" y="244" font-size="8.5" fill="#78716c" text-anchor="middle">{{k.text}}</text>
+          </g>
+        </sc-for>
+        <text x="18" y="230" font-size="9" fill="#78716c">{{ keyTitle }}</text>
+      </svg>
+    </div>
+
+    <div style="display:flex;gap:16px;flex:1;min-height:0">
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What this state keeps and what it spends</span>
+        <sc-for list="{{tests}}" as="t" hint-placeholder-count="5">
+          <div style="display:flex;align-items:flex-start;gap:9px;padding:2px 0">
+            <span style="width:15px;height:15px;border-radius:3px;background:{{t.chipBg}};color:{{t.chipInk}};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px">{{t.glyph}}</span>
+            <span style="font-size:11px;color:#44403c;line-height:1.55">{{t.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="width:344px;background:#fff;border-radius:6px;padding:11px 13px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">The ramp against the map it sits on</span>
+        <sc-for list="{{ramp}}" as="r" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:22px;height:11px;border-radius:2px;background:{{r.color}};flex:none"></span>
+            <span style="font-size:10.5px;color:#78716c;width:74px">{{r.band}}</span>
+            <span style="font-size:10.5px;color:{{r.ink}};width:44px">{{r.ratio}}</span>
+            <span style="font-size:10px;color:#a8a29e;line-height:1.5">{{r.verdict}}</span>
+          </div>
+        </sc-for>
+        <span style="font-size:10px;color:#a8a29e;line-height:1.6">Ratios are against the map surface. The delta E floors the canvas quotes elsewhere are for a categorical palette and do not apply here: a reader ranks a ramp against its key rather than telling two steps apart out of context.</span>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:5px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.65">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'identity' };
+  }
+
+  renderVals() {
+    const self = this;
+    const mode = this.state.mode;
+
+    const LINE_COLOR = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#fdb913', '720': '#fc4c02' };
+    const ON_DARK = { A: '#ffffff', B: '#ffffff', D: '#ffffff', E: '#44403c', '720': '#ffffff' };
+
+    // Five steps, dark end last. The two lightest fall under three to one against the map,
+    // which is the same failure the C, E and K Lines have and the reason a ramp cannot
+    // simply start pale.
+    const RAMP = ['#a8d3cf', '#57b3b0', '#0c8b87', '#0a6f6d', '#053f52'];
+    const RAMP_BANDS = ['under 120', '120 to 180', '180 to 240', '240 to 300', '300 and over'];
+    const rampStep = (v) => (v >= 300 ? 4 : v >= 240 ? 3 : v >= 180 ? 2 : v >= 120 ? 1 : 0);
+
+    // Rail is flat per line, counted; the 720 varies along its own length. Both figures
+    // come from scripts/count_segment_frequency.py on 9 September 2026.
+    const chains = [
+      { line: 'A', freq: [240, 240, 240, 240], pts: [[742, 40], [700, 84], [742, 126], [700, 168], [648, 206]] },
+      { line: 'B', freq: [208, 208, 208, 208], pts: [[700, 84], [620, 84], [570, 126], [548, 206], [400, 166]] },
+      { line: 'D', freq: [204, 204, 204], pts: [[548, 206], [400, 166], [268, 140], [140, 140]] },
+      { line: 'E', freq: [239, 239, 239], pts: [[846, 126], [742, 126], [700, 168], [648, 206]] },
+      { line: '720', freq: [167, 339, 339, 194, 98], pts: [[620, 40], [470, 58], [330, 76], [230, 94], [140, 100], [60, 108]] },
+    ];
+
+    const segments = [], letters = [];
+    chains.forEach((c) => {
+      for (let i = 0; i < c.pts.length - 1; i++) {
+        const a = c.pts[i], b = c.pts[i + 1];
+        const v = c.freq[i];
+        const stroke =
+          mode === 'identity' ? LINE_COLOR[c.line] : RAMP[rampStep(v)];
+        segments.push({
+          x1: a[0], y1: a[1], x2: b[0], y2: b[1],
+          stroke: stroke, width: '6', dash: 'none',
+        });
+
+        // A letter on every second segment in the labelled state, which is the density
+        // draft N's decluttering would settle rather than this one.
+        if (mode === 'labelled' && i % 2 === 0) {
+          const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+          letters.push({
+            x: mx - 6.5, y: my - 6.5, tx: mx, ty: my + 3.2,
+            text: c.line === '720' ? '720' : c.line,
+            bg: LINE_COLOR[c.line], stroke: '#e8e6e1', ink: ON_DARK[c.line],
+          });
+        }
+      }
+    });
+
+    const stations = [
+      { name: 'Union Station', cx: 700, cy: 84, r: 5, anchor: 'start', lx: 712, ly: 78 },
+      { name: '7th St / Metro Center', cx: 548, cy: 206, r: 6, anchor: 'start', lx: 560, ly: 214 },
+      { name: 'Wilshire / Vermont', cx: 268, cy: 140, r: 4.5, anchor: 'middle', lx: 268, ly: 158 },
+      { name: 'Wilshire / Western', cx: 140, cy: 140, r: 4.5, anchor: 'start', lx: 148, ly: 156 },
+    ];
+
+    const key =
+      mode === 'identity'
+        ? ['A', 'B', 'D', 'E', '720'].map((l, i) => ({
+            x: 190 + i * 92, w: 26, fill: LINE_COLOR[l], stroke: 'none', strokeWidth: '0',
+            tx: 203 + i * 92, text: l === '720' ? 'Line 720' : l + ' Line',
+          }))
+        : RAMP.map((c, i) => ({
+            x: 190 + i * 92, w: 60, fill: c,
+            stroke: i < 2 ? '#9a3412' : 'none', strokeWidth: i < 2 ? '1.2' : '0',
+            tx: 220 + i * 92, text: RAMP_BANDS[i],
+          }));
+
+    const yes = { glyph: '✓', chipBg: '#dcf0e2', chipInk: '#166534' };
+    const no = { glyph: '✕', chipBg: '#f7e0d4', chipInk: '#9a3412' };
+    const part = { glyph: '~', chipBg: '#efece6', chipInk: '#78716c' };
+
+    const table = {
+      identity: {
+        label: 'the line it belongs to',
+        blurb: 'What the map draws today. Every segment takes its line’s brand colour, and frequency is not on the map at all — the 720’s three-and-a-half-fold spread along Wilshire is invisible here.',
+        tests: [
+          [yes, 'Colour is identity, which is the rule ADR-0014 states and every other draft holds'],
+          [yes, 'A reader who knows the network needs no key at all'],
+          [no, 'Frequency has nowhere to go, so the busiest and thinnest segments look alike'],
+          [no, 'Three of the six brand hues fall under three to one against this surface'],
+          [part, 'Bus lines get a generated hue, and at 110 routes those stop being distinguishable'],
+        ],
+        noteHead: 'The state every other draft on this canvas assumes',
+        noteInk: '#78716c',
+        noteBody: 'This is the baseline, and it is worth clicking away from and back to. Nothing here is wrong; the point is what it cannot say. The 720 runs 339 weekday departures through the Wilshire core and 98 at the Santa Monica end, and this map draws both in the same orange. Meanwhile the D Line beneath it is flat at 204 on every segment, so the thing a frequency ramp would reveal on the bus line it would draw as one solid colour on the rail line.',
+      },
+      ramp: {
+        label: 'how often service runs',
+        blurb: 'Colour becomes a sequential ramp over counted departures. The 720 now reads as a corridor that thins westward — and every line on the map has lost its name.',
+        tests: [
+          [yes, 'The one channel a reader ranks without being taught now carries the measure'],
+          [yes, 'The 720’s taper is legible at a glance, which is the whole reason to do this'],
+          [no, 'Identity is gone: at 7th Street four lines meet and none of them can be told apart'],
+          [no, 'The two palest bands sit at 1.3 and 2.0 to 1 on the map, under the three to one floor'],
+          [part, 'On rail it draws four flat colours, because rail frequency does not vary by segment'],
+        ],
+        noteHead: 'It spends the channel identity was using, and pays for it immediately',
+        noteInk: '#9a3412',
+        noteBody: 'A sequential ramp is the right encoding for a counted quantity and there is only one colour channel to put it in. Taking it means the map can no longer answer which line this is, which is the question a transit map exists to answer first. It also inherits a contrast problem by construction: a ramp needs a pale end to have range, and a pale end on a light basemap is unreadable. Starting the ramp at its third step fixes the contrast and leaves three usable bands, which is a dash pattern with extra steps.',
+      },
+      labelled: {
+        label: 'frequency, with the letter restored',
+        blurb: 'The ramp stays and identity moves to a letter on the segment, which is draft JJ’s answer applied to a line rather than to a station mark. Colour carries the measure; the glyph carries the name.',
+        tests: [
+          [yes, 'Both questions are answerable: the letter names the line, the ramp ranks the service'],
+          [yes, 'It is the same fix JJ already argues for, so the map has one rule rather than two'],
+          [yes, 'It survives colourblindness outright, since nothing depends on telling two hues apart'],
+          [no, 'Letters need room, and the spacing here is drawn at a zoom the real map rarely sits at'],
+          [part, 'A bus route label is three digits, not one letter, so the badge is wider on the mode that needs this most'],
+        ],
+        noteHead: 'The only state that answers both questions, and the letters are the cost',
+        noteInk: '#166534',
+        noteBody: 'JJ settled that a mark showing several lines at one point needs a letter, because Metro’s hues cannot be told apart and cannot be changed. A frequency ramp makes that true of every segment rather than only of multi-line stations, so the same rule scales up: a letter where it fits, a badge where it does not. What the arithmetic has to be re-run for is a line rather than a sector — a label needs a run of segment long enough to hold it, and draft N’s decluttering is the mechanism that would choose which runs get one. The honest verdict is that this earns its cost on bus and not on rail, where the ramp has four values to show at four lines.',
+      },
+    };
+
+    const cur = table[mode];
+    const order = [
+      ['identity', 'the line'],
+      ['ramp', 'the frequency'],
+      ['labelled', 'the frequency, letters restored'],
+    ];
+
+    return {
+      modes: order.map((o) => ({
+        label: o[1],
+        pick: () => self.setState({ mode: o[0] }),
+        bg: mode === o[0] ? '#033056' : '#ffffff',
+        ink: mode === o[0] ? '#ffffff' : '#44403c',
+      })),
+      segments: segments,
+      letters: letters,
+      stations: stations,
+      key: key,
+      keyTitle: mode === 'identity' ? 'Line' : 'Weekday departures',
+      blurb: cur.blurb,
+      tests: cur.tests.map((t) => ({ glyph: t[0].glyph, chipBg: t[0].chipBg, chipInk: t[0].chipInk, text: t[1] })),
+      noteHead: cur.noteHead,
+      noteInk: cur.noteInk,
+      noteBody: cur.noteBody,
+      ramp: [
+        { color: RAMP[0], band: RAMP_BANDS[0], ratio: '1.3 to 1', ink: '#9a3412', verdict: 'needs a casing' },
+        { color: RAMP[1], band: RAMP_BANDS[1], ratio: '2.0 to 1', ink: '#9a3412', verdict: 'needs a casing' },
+        { color: RAMP[2], band: RAMP_BANDS[2], ratio: '3.3 to 1', ink: '#166534', verdict: 'clears the floor' },
+        { color: RAMP[3], band: RAMP_BANDS[3], ratio: '4.8 to 1', ink: '#166534', verdict: 'clears the floor' },
+        { color: RAMP[4], band: RAMP_BANDS[4], ratio: '9.2 to 1', ink: '#166534', verdict: 'clears the floor' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

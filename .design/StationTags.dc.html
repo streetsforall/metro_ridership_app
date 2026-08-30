@@ -1,0 +1,198 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">QQ</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Station tags, and what would source each one</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Nine tags drawn. Two are in hand, one is unpublished, six need a fetch.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:20px 22px;box-sizing:border-box;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+
+    <span style="font-size:12px;color:#78716c;line-height:1.65">A tag is a glyph, not a fill, for the reason artboard X gives about the accessibility badge: the fill channel is line identity and cannot be borrowed. Every glyph below is drawn to be told apart in monochrome, because a reader who cannot separate two hues must still be able to separate two tags.</span>
+
+    <div style="background:#e8e6e1;border-radius:6px;padding:14px 16px 10px">
+      <svg viewBox="0 0 904 200" width="100%" height="200" role="img" aria-label="The tag strip drawn at map size and at twice map size, and the three states a tag can be in">
+        <rect x="0" y="0" width="904" height="200" fill="#e8e6e1"></rect>
+
+        <text x="16" y="20" font-size="9.5" fill="#78716c">at map size</text>
+        <text x="16" y="104" font-size="9.5" fill="#78716c">at twice map size</text>
+
+        <sc-for list="{{marks}}" as="m" hint-placeholder-count="6">
+          <g>
+            <circle cx="{{m.cx}}" cy="{{m.cy}}" r="{{m.r}}" fill="{{m.fill}}" fill-opacity=".75" stroke="#e8e6e1" stroke-width="1.2"></circle>
+            <sc-for list="{{m.chips}}" as="c" hint-placeholder-count="4">
+              <g>
+                <rect x="{{c.x}}" y="{{c.y}}" width="{{c.size}}" height="{{c.size}}" rx="2" fill="#f8f6f1" stroke="{{c.ink}}" stroke-width="{{c.weight}}" stroke-dasharray="{{c.dash}}"></rect>
+                <text x="{{c.tx}}" y="{{c.ty}}" font-size="{{c.glyphSize}}" font-weight="700" fill="{{c.ink}}" text-anchor="middle">{{c.glyph}}</text>
+              </g>
+            </sc-for>
+            <text x="{{m.cx}}" y="{{m.ly}}" font-size="8.5" fill="#57534e" text-anchor="middle">{{m.name}}</text>
+          </g>
+        </sc-for>
+
+        <line x1="596" y1="14" x2="596" y2="186" stroke="#dcd9d3" stroke-width="1"></line>
+        <text x="616" y="20" font-size="9.5" fill="#78716c">the three states a tag can be in</text>
+        <sc-for list="{{states}}" as="s" hint-placeholder-count="3">
+          <g>
+            <rect x="{{s.x}}" y="36" width="20" height="20" rx="3" fill="#f8f6f1" stroke="{{s.ink}}" stroke-width="{{s.weight}}" stroke-dasharray="{{s.dash}}"></rect>
+            <text x="{{s.tx}}" y="51" font-size="12" font-weight="700" fill="{{s.ink}}" text-anchor="middle">{{s.glyph}}</text>
+            <text x="{{s.tx}}" y="74" font-size="9" font-weight="700" fill="#44403c" text-anchor="middle">{{s.head}}</text>
+            <text x="{{s.tx}}" y="88" font-size="8" fill="#78716c" text-anchor="middle">{{s.sub}}</text>
+          </g>
+        </sc-for>
+        <text x="616" y="118" font-size="9.5" fill="#78716c">when a station shows them</text>
+        <sc-for list="{{rules}}" as="r" hint-placeholder-count="3">
+          <text x="616" y="{{r.y}}" font-size="9" fill="#44403c">{{r.text}}</text>
+        </sc-for>
+      </svg>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:5px;flex:1;min-height:0">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em;flex:1">Every tag on the checklist, against what would source it</span>
+        <span style="font-size:10px;color:#a8a29e">verdict</span>
+      </div>
+      <sc-for list="{{tags}}" as="t" hint-placeholder-count="9">
+        <div style="background:#fff;border-radius:5px;padding:7px 11px;display:flex;align-items:center;gap:10px">
+          <span style="width:17px;height:17px;border-radius:3px;border:1.4px solid {{t.ink}};color:{{t.ink}};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none">{{t.glyph}}</span>
+          <span style="font-size:11px;font-weight:700;color:#033056;width:150px;flex:none">{{t.name}}</span>
+          <span style="font-size:10.5px;color:#78716c;flex:1;line-height:1.45">{{t.body}}</span>
+          <span style="font-size:9.5px;font-weight:700;color:{{t.ink}};width:104px;flex:none;text-align:right">{{t.verdict}}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:5px">
+      <span style="font-size:11px;font-weight:700;color:#9a3412;letter-spacing:.06em;text-transform:uppercase">Two tags are free, and the tag row is what makes the other seven worth arguing about</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.65">Lines calling here and terminus are already in the committed data, and neither needs a fetch. Everything else is a bet on a source that has to be found, which is the same shape artboard X found for accessibility and artboard Y answered by building the shelf before the layers. The tag row is that shelf for the station mark: settle the glyph, the three states and the decluttering rule against the two tags that exist, and each later source becomes a row rather than a redesign. The order to build in is lines, terminus, airport, then whichever of parking and restroom Metro turns out to publish as data rather than as a page.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    // The five stations are real, and so is what each one is tagged with. 7th Street and
+    // Union Station are the two multi-line cases the committed payload records; LAX/Metro
+    // Transit Center is the only airport station in it; Atlantic and Downtown Long Beach
+    // are termini in the timetable.
+    const specs = [
+      { name: '7th St / Metro Center', line: '#eb131b', v: 8430, tags: ['4', 'P', 'W'] },
+      { name: 'Union Station', line: '#0072bc', v: 4818, tags: ['3', 'R', 'P', 'W'] },
+      { name: 'LAX / Metro Transit Center', line: '#58a738', v: 1240, tags: ['1', '✈', 'T'] },
+      { name: 'Atlantic', line: '#fdb913', v: 1798, tags: ['1', 'T'] },
+      { name: 'Downtown Long Beach', line: '#0072bc', v: 1305, tags: ['1', 'T', 'B'] },
+    ];
+
+    const VMAX = 8430;
+    const radius = (v, s) => (3 + 9 * Math.sqrt(v / VMAX)) * s;
+    const marks = [];
+
+    [1, 2].forEach((scale) => {
+      const cy = scale === 1 ? 46 : 130;
+      specs.forEach((spec, i) => {
+        const cx = 80 + i * 106;
+        const r = radius(spec.v, scale);
+        const size = 7 * scale;
+        const gap = 1.6 * scale;
+        const width = spec.tags.length * (size + gap) - gap;
+        const chips = spec.tags.map((glyph, k) => {
+          const x = cx - width / 2 + k * (size + gap);
+          const y = cy + r + 3 * scale;
+          return {
+            x: x, y: y, size: size,
+            tx: x + size / 2, ty: y + size * 0.74,
+            glyphSize: String(size * 0.72),
+            glyph: glyph, ink: '#44403c', weight: '1', dash: 'none',
+          };
+        });
+        marks.push({
+          cx: cx, cy: cy, r: r, fill: spec.line, chips: chips,
+          name: scale === 1 ? '' : spec.name,
+          ly: cy + r + 3 * scale + 7 * scale + 12,
+        });
+      });
+    });
+
+    // The same three-state discipline artboard X sets for the accessibility badge: an
+    // absent answer and an unknown answer are different things and never collapse.
+    const states = [
+      { x: 626, tx: 636, glyph: '✓', head: 'present', sub: 'the source says yes', ink: '#0891b2', weight: '1.6', dash: 'none' },
+      { x: 706, tx: 716, glyph: '–', head: 'absent', sub: 'the source says no', ink: '#c2410c', weight: '1.6', dash: 'none' },
+      { x: 786, tx: 796, glyph: '?', head: 'no information', sub: 'nothing was asked', ink: '#a8a29e', weight: '1.4', dash: '2.4 2' },
+    ];
+
+    const rules = [
+      { y: 138, text: 'the selected station always, however many tags it has' },
+      { y: 154, text: 'every station from zoom 13 up, where the marks stop touching' },
+      { y: 170, text: 'below that, only tags a reader filtered the map by' },
+    ];
+
+    const ok = '#166534';
+    const warn = '#78716c';
+    const bad = '#9a3412';
+
+    const tags = [
+      {
+        glyph: '4', name: 'Lines calling here', ink: ok, verdict: 'in hand',
+        body: 'stop_ridership.rail.json records it directly: 96 stations on one line, 12 on two, Union Station on three, 7th Street on four.',
+      },
+      {
+        glyph: 'T', name: 'Terminus', ink: warn, verdict: 'in hand, with a join',
+        body: 'The first and last stop of every trip gives 22 terminus keys, of which 19 join the ridership payload. Three do not, because GTFS names them per line and the payload collapses them — the alias table has to be extended first.',
+      },
+      {
+        glyph: '✈', name: 'Airport', ink: ok, verdict: 'a list of one',
+        body: 'LAX / Metro Transit Center is the only airport station in the committed payload. A hand-kept list of one is honest here and cheaper than any derivation.',
+      },
+      {
+        glyph: 'W', name: 'Accessibility', ink: bad, verdict: 'not published',
+        body: 'Re-checked against both feeds: a ten-column stops.txt with no wheelchair_boarding, no pathways.txt, no levels.txt, no wheelchair_accessible in trips.txt. Artboard X has the full account and the candidate sources.',
+      },
+      {
+        glyph: 'R', name: 'Regional rail transfer', ink: bad, verdict: 'another agency',
+        body: 'Metrolink is a separate operator, so nothing in Metro’s feed names the interchange. It needs Metrolink’s own GTFS and a join by distance rather than by name, which is the one join this pipeline has never had to make.',
+      },
+      {
+        glyph: 'B', name: 'Restroom', ink: warn, verdict: 'a page, not a feed',
+        body: 'Metro publishes station facilities as web pages rather than as data. Rail only, and it would have to be scraped and dated, which makes it a layer that can go stale silently.',
+      },
+      {
+        glyph: 'P', name: 'Parking', ink: warn, verdict: 'a count, not a flag',
+        body: 'The park-and-ride list is per station and carries a space count, so it is a quantity wearing a tag’s clothes. Rail only, and OpenStreetMap is the fallback.',
+      },
+      {
+        glyph: '🚲', name: 'Bike and bike share', ink: warn, verdict: 'crowd-sourced',
+        body: 'OpenStreetMap has good coverage of LA rail. It is not Metro’s answer, so the layer would have to say whose answer it is rather than presenting it as the operator’s.',
+      },
+      {
+        glyph: '♪', name: 'Venue and event', ink: bad, verdict: 'no source',
+        body: 'Which station serves a concert is editorial and changes by night. It belongs in the context log, where an event already has a date and a category, and not on a mark that is drawn the same every month.',
+      },
+    ];
+
+    return { marks: marks, states: states, rules: rules, tags: tags };
+  }
+}
+</script>
+</body>
+</html>

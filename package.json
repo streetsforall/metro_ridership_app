@@ -18,6 +18,7 @@
     "fetch-lines": "python scripts/fetch_metro_lines.py",
     "fetch-stops": "python scripts/fetch_stop_locations.py",
     "load-ridership": "python scripts/convert_excel_ridership.py",
+    "check-palette": "node scripts/check_palette.mjs",
     "check-transit-events": "python scripts/check_transit_events.py"
   },
   "dependencies": {

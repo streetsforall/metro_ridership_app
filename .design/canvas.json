@@ -320,7 +320,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "DD · Four marks compared · click me",
+      "title": "DD · Six marks compared · click me",
       "page": "page-5",
       "is_interactive": true
     },
@@ -401,6 +401,45 @@
       "h": 880,
       "title": "NN · Side-by-side corridors · click me",
       "page": "page-6",
+      "is_interactive": true
+    },
+    {
+      "file": "SegmentTexture.dc.html",
+      "x": 0,
+      "y": 3180,
+      "w": 1000,
+      "h": 880,
+      "title": "OO · Segment frequency, four textures · click me",
+      "page": "page-4",
+      "is_interactive": true
+    },
+    {
+      "file": "SegmentRamp.dc.html",
+      "x": 1100,
+      "y": 3180,
+      "w": 1000,
+      "h": 880,
+      "title": "PP · Frequency as colour, identity as a letter · click me",
+      "page": "page-4",
+      "is_interactive": true
+    },
+    {
+      "file": "StationTags.dc.html",
+      "x": 2200,
+      "y": 3180,
+      "w": 1000,
+      "h": 880,
+      "title": "QQ · Station tags, and what would source them",
+      "page": "page-4"
+    },
+    {
+      "file": "SquareStation.dc.html",
+      "x": 0,
+      "y": 2760,
+      "w": 1000,
+      "h": 880,
+      "title": "RR · Square station, two readings · click me",
+      "page": "page-5",
       "is_interactive": true
     }
   ],
@@ -483,7 +522,7 @@
       "x": 3300,
       "y": 2160,
       "w": 470,
-      "text": "Colour notes for this page.\n\nThe line hues used in S and Q2 pass a colourblindness check at deuteranope delta-E 10.1, and every ring carries a label or a key because two of them fall under 3:1 against the surface.\n\nU's Change ramp is orange to teal through a grey middle, centred on zero rather than on the data. The red-to-green ramp it replaces separates by too little for a deuteranope, which is the same failure the shipped stop selection palette has at slots 3 and 4."
+      "text": "Colour notes for this page.\n\nThe line hues used in S and Q2 separate by delta-E 9.4 at worst for a deuteranope, which clears the floor of 8. The number that matters is the protanope's 3.7 between A and D, which does not, and it is why every ring carries a label or a key rather than relying on the hue. Two of the hues also fall under 3:1 against the surface. Run npm run check-palette to reproduce all three.\n\nU's Change ramp is orange to teal through a grey middle, centred on zero rather than on the data. The red-to-green ramp it replaces separates by too little for a deuteranope, which is the same failure the shipped stop selection palette has at slots 3 and 4."
     },
     {
       "id": "layers-intro",
@@ -580,11 +619,43 @@
       "y": 560,
       "w": 470,
       "text": "NN covers the most ground, and it is also the harder build.\n\nSide-by-side corridors fix a failure that spans miles rather than pixels, and the station-bar variant answers the corridor and the multi-line station with one idea. What it needs first is geometry the repo does not have: matching segments by identical endpoints finds only the Regional Connector and the C and K Lines, and finds nothing between the B and the D even though 46% of the D Line's vertices lie within ten metres of the B. The pairing has to be computed in the ingest, not in the style.\n\nOf MM's four modes, sized-and-filled is the one to test, because it is the only mark on this canvas that carries two stop-grain quantities without spending colour. Test it on Wilshire rather than downtown: thirty stops in the span these eight occupy is where the fill line becomes one pixel."
+    },
+    {
+      "id": "segment-frequency-verdict",
+      "page": "page-4",
+      "x": 3300,
+      "y": 3180,
+      "w": 470,
+      "text": "Segment frequency was counted before it was drawn, and the count says which mode this is for.\n\nEvery consecutive stop pair on both feeds was read out of stop_times.txt for one weekday. Three of the six rail lines carry one identical figure on every segment they run - the B at 208, the D at 204, the K at 176 - and the E and C vary by six and seven departures across their whole length. Only the A Line spreads, from 114 to 240, and that is the Long Beach loop, which trains pass in one direction. On bus it is the opposite: 9,823 segments across 110 routes, running 1 to 339 with the middle nine tenths between 17 and 212, and only three of the 110 routes flat. Line 720 alone runs 339 through the Wilshire core and 98 at the Santa Monica end.\n\nSo a segment frequency layer draws six flat lines on rail and a real surface on bus. EE put frequency on the width of the whole line and was right to, for rail. OO and PP are the bus answer."
+    },
+    {
+      "id": "segment-frequency-open",
+      "page": "page-4",
+      "x": 3300,
+      "y": 3800,
+      "w": 470,
+      "text": "What OO, PP and QQ leave open.\n\nWidth is claimed twice. Draft I encodes segment load in stroke width and OO's first mode encodes frequency in it. One map cannot have both, so whichever ships decides what a thick line means.\n\nOffset geometry is claimed twice. OO's parallel lines and NN's side-by-side corridors want the same computed offsets for different meanings, and neither can be built in the style alone.\n\nA ramp cannot start pale. PP's two lightest bands sit at 1.3 and 2.0 to 1 against the map surface, under the three to one floor, so an honest sequential ramp on this basemap has three usable bands or it needs a casing on every segment.\n\nSeven of the nine tags have no source yet. QQ draws them anyway, because the empty rows are what the tag row has to be designed around."
+    },
+    {
+      "id": "square-station-verdict",
+      "page": "page-5",
+      "x": 1100,
+      "y": 2760,
+      "w": 470,
+      "text": "RR is BB with a floor under it, drawn on the same thirteen stations and the same figures so the geometry is the only variable.\n\nBB's stated concession is that thickness reads magnitude worse than area does. A column standing on a shared baseline is read by length instead, which is the channel a reader decodes most accurately of any on this canvas, and two lines at one station are compared against each other directly rather than as two arcs at different radii. Everything BB protects survives: colour is line identity, nothing is summed, nothing leaves its coordinate, an unreported line keeps a dashed column of its own.\n\nTwo things it buys that BB cannot. The footprint is fixed, so a four-line station takes the room a one-line station takes and the map's density stops depending on the data. And the frame is a visible hundred per cent, so a column reads as a share of the network's busiest station without a second mark.\n\nThe second reading on the artboard is the square pie: the same box divided by area, so each line takes its share. That one answers composition and nothing else - at Union Station the A Line is 42% of what is counted, the B Line 36%, the D Line 22% - and it buys that by summing a station's lines, which is the rollup every other draft here refuses. It belongs in the panel for a selected station, not on the map, where a full box everywhere says every station is the same size.\n\nWhat the columns pay: squares tile badly against a diagonal, so the four stations on the A Line's downtown dogleg sit closer than their boxes would like, and at low zoom a box degrades worse than a disc."
+    },
+    {
+      "id": "square-station-letters",
+      "page": "page-5",
+      "x": 1100,
+      "y": 3320,
+      "w": 470,
+      "text": "The letter rule needed one correction the ring did not.\n\nJJ's arithmetic is nine pixels of band and nine of arc. Ported straight across it gates on the column's width AND its height - and a column's height is the datum, so a quiet station would lose its label for being quiet. The letter therefore sits at the foot of its column rather than in the middle, and only the width gates it.\n\nThat lands on JJ's own answer: at a 20 pixel box a column is 20 wide on one line and 10 on two, both over the floor, and 6.7 on three and 5 on four, both under. So the one and two-line stations carry letters inside and Union Station and 7th Street carry a badge row - the same two exceptions in the whole network JJ found for the ring.\n\nThe pie loses the letter differently, and worse. A region is sized by its own share, so at a lopsided two-line station the smaller line's area falls under the floor: seven of the thirteen stations drop to badges under the pie against two under the columns. A fixed-width column guarantees a label slot; a proportional region does not, and the line it takes the letter from is the smaller one, which is the one a reader is least able to guess."
     }
   ],
   "launch": {
     "view": "canvas",
-    "page": "page-6"
+    "page": "page-5"
   },
   "pages": [
     {

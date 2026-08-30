@@ -1,0 +1,391 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">RR</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">The square station, in two readings</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">BB&rsquo;s stations, BB&rsquo;s figures. Only the geometry changes.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:20px 22px;box-sizing:border-box;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+      <span style="font-size:11px;color:#a8a29e;margin-right:4px">The box is divided by</span>
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="2">
+        <span class="hit" onClick="{{m.pick}}" style="background:{{m.bg}};color:{{m.ink}};font-size:12px;font-weight:700;padding:8px 13px;border-radius:4px">{{m.label}}</span>
+      </sc-for>
+    </div>
+
+    <span style="font-size:12px;color:#78716c;line-height:1.65">{{ blurb }}</span>
+
+    <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+      <svg viewBox="0 0 900 520" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Downtown Los Angeles rail schematic where every station is one fixed square divided among the lines that call there">
+        <rect x="0" y="0" width="900" height="520" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="18">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+
+        <sc-for list="{{paths}}" as="p" hint-placeholder-count="4">
+          <polyline points="{{p.points}}" fill="none" stroke="{{p.color}}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-opacity=".55"></polyline>
+        </sc-for>
+
+        <sc-for list="{{stations}}" as="s" hint-placeholder-count="13">
+          <g>
+            <rect x="{{s.hx}}" y="{{s.hy}}" width="{{s.hw}}" height="{{s.hh}}" rx="2" fill="#f8f6f1" fill-opacity=".9"></rect>
+            <rect x="{{s.fx}}" y="{{s.fy}}" width="{{s.fw}}" height="{{s.fh}}" fill="none" stroke="#a8a29e" stroke-width=".8"></rect>
+            <sc-for list="{{s.columns}}" as="k" hint-placeholder-count="2">
+              <rect x="{{k.x}}" y="{{k.y}}" width="{{k.w}}" height="{{k.h}}" fill="{{k.fill}}" stroke="#f8f6f1" stroke-width=".7"></rect>
+            </sc-for>
+            <sc-for list="{{s.gaps}}" as="k" hint-placeholder-count="1">
+              <rect x="{{k.x}}" y="{{k.y}}" width="{{k.w}}" height="{{k.h}}" fill="none" stroke="#78716c" stroke-width="1.1" stroke-dasharray="3 2.5"></rect>
+            </sc-for>
+            <sc-for list="{{s.glyphs}}" as="g" hint-placeholder-count="2">
+              <text x="{{g.x}}" y="{{g.y}}" font-size="{{g.size}}" font-weight="700" fill="{{g.fill}}" text-anchor="middle">{{g.text}}</text>
+            </sc-for>
+            <sc-for list="{{s.badges}}" as="b" hint-placeholder-count="4">
+              <g>
+                <rect x="{{b.x}}" y="{{b.y}}" width="{{b.w}}" height="{{b.h}}" rx="1.6" fill="{{b.fill}}"></rect>
+                <text x="{{b.tx}}" y="{{b.ty}}" font-size="{{b.size}}" font-weight="700" fill="#ffffff" text-anchor="middle">{{b.text}}</text>
+              </g>
+            </sc-for>
+            <line x1="{{s.blx}}" y1="{{s.bly}}" x2="{{s.brx}}" y2="{{s.bly}}" stroke="#44403c" stroke-width="{{s.baseWidth}}"></line>
+            <text x="{{s.lx}}" y="{{s.ly}}" font-size="9.5" fill="#44403c" text-anchor="{{s.anchor}}">{{s.name}}</text>
+          </g>
+        </sc-for>
+      </svg>
+
+      <div style="position:absolute;left:14px;bottom:14px;background:#f8f6f1;border-radius:5px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">{{ legendTitle }}</span>
+        <svg width="340" height="70" viewBox="0 0 340 70">
+          <sc-for list="{{legend}}" as="l" hint-placeholder-count="4">
+            <g>
+              <rect x="{{l.fx}}" y="{{l.fy}}" width="{{l.fw}}" height="{{l.fh}}" fill="none" stroke="#a8a29e" stroke-width=".8"></rect>
+              <sc-for list="{{l.columns}}" as="k" hint-placeholder-count="2">
+                <rect x="{{k.x}}" y="{{k.y}}" width="{{k.w}}" height="{{k.h}}" fill="{{k.fill}}" stroke="#f8f6f1" stroke-width=".7"></rect>
+              </sc-for>
+              <sc-for list="{{l.gaps}}" as="k" hint-placeholder-count="1">
+                <rect x="{{k.x}}" y="{{k.y}}" width="{{k.w}}" height="{{k.h}}" fill="none" stroke="#78716c" stroke-width="1.1" stroke-dasharray="3 2.5"></rect>
+              </sc-for>
+              <line x1="{{l.blx}}" y1="{{l.bly}}" x2="{{l.brx}}" y2="{{l.bly}}" stroke="#44403c" stroke-width="{{l.baseWidth}}"></line>
+              <text x="{{l.cx}}" y="64" font-size="8.5" fill="#78716c" text-anchor="middle">{{l.label}}</text>
+            </g>
+          </sc-for>
+        </svg>
+      </div>
+
+      <div style="position:absolute;right:14px;top:14px;background:#f8f6f1;border-radius:5px;padding:11px 13px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Lines</span>
+        <sc-for list="{{lineKey}}" as="k" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:7px">
+            <span style="width:10px;height:10px;border-radius:2px;background:{{k.color}}"></span>
+            <span style="font-size:10px;color:#78716c">{{k.label}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="position:absolute;right:14px;bottom:14px;background:#f8f6f1;border-radius:5px;padding:11px 13px;display:flex;flex-direction:column;gap:5px;width:252px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">{{ variantTitle }}</span>
+        <sc-for list="{{variants}}" as="v" hint-placeholder-count="3">
+          <div style="display:flex;align-items:flex-start;gap:7px">
+            <span style="font-size:10px;color:{{v.ink}};font-weight:700;flex:none;width:9px">{{v.glyph}}</span>
+            <span style="font-size:9.5px;color:#78716c;line-height:1.5">{{v.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:5px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.65">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'columns' };
+  }
+
+  /**
+   * Slice and dice, alternating on the rectangle's longer side, so a share becomes an area
+   * rather than a length. The last item takes whatever is left, which keeps the parts
+   * summing to exactly the box however the fractions round.
+   */
+  mosaic(x, y, w, h, values) {
+    const out = [];
+    let rx = x, ry = y, rw = w, rh = h;
+    let left = values.reduce((s, v) => s + v, 0);
+    values.forEach((v, i) => {
+      if (i === values.length - 1) {
+        out.push({ x: rx, y: ry, w: rw, h: rh });
+        return;
+      }
+      const frac = left > 0 ? v / left : 0;
+      if (rw >= rh) {
+        const cw = rw * frac;
+        out.push({ x: rx, y: ry, w: cw, h: rh });
+        rx += cw; rw -= cw;
+      } else {
+        const ch = rh * frac;
+        out.push({ x: rx, y: ry, w: rw, h: ch });
+        ry += ch; rh -= ch;
+      }
+      left -= v;
+    });
+    return out;
+  }
+
+  renderVals() {
+    const self = this;
+    const mode = this.state.mode;
+
+    // The frame every station is drawn in. Fixed, so a four-line station takes exactly the
+    // room a one-line station does and the map's density never depends on the data.
+    const W = 20, H = 18, VMAX = 8430;
+    const color = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#fdb913' };
+    const onDark = { A: '#ffffff', B: '#ffffff', D: '#ffffff', E: '#44403c' };
+
+    // Length encodes magnitude linearly. BB takes a square root because it is scaling a
+    // thickness against a perceived area; a bar against a baseline needs no such correction.
+    const height = (v) => Math.max(1.5, (v / VMAX) * H);
+
+    const grid = [];
+    for (let i = 1; i < 13; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 520 });
+    for (let i = 1; i < 8; i++) grid.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+
+    // Verbatim from BB, so the two artboards differ in geometry and in nothing else.
+    const stations = [
+      ['Chinatown', 700, 62, [['A', 1305]], 'start', 16, 4],
+      ['Union Station', 655, 128, [['A', 4818], ['B', 4093], ['D', 2571]], 'start', 22, 4, true],
+      ['Civic Center / Grand Park', 588, 128, [['B', 1310], ['D', 851]], 'end', -22, 4],
+      ['Pershing Square', 545, 196, [['B', 2979], ['D', 1505]], 'end', -22, 4],
+      ['Little Tokyo / Arts District', 700, 196, [['A', 2228], ['E', 2333]], 'start', 22, 4],
+      ['Historic Broadway', 655, 262, [['A', 913], ['E', 986]], 'start', 22, 4],
+      ['Grand Arts / Bunker Hill', 610, 318, [['A', 985], ['E', 900]], 'start', 22, 4],
+      ['7th Street / Metro Center', 520, 366, [['A', 6288], ['B', 8430], ['E', 5990], ['D', 4444]], 'start', 26, 5],
+      ['Pico', 520, 448, [['A', 2943], ['E', 2740]], 'start', 22, 4],
+      ['Westlake / MacArthur Park', 396, 310, [['B', 3211], ['D', 1833]], 'middle', 0, 30],
+      ['Wilshire / Vermont', 272, 262, [['B', 3538], ['D', 2087]], 'middle', 0, 30],
+      ['Wilshire / Normandie', 150, 262, [['D', 1516]], 'middle', 0, 30],
+      ['Expo / Crenshaw', 330, 448, [['E', null]], 'middle', 0, 30],
+    ];
+
+    /** One station's box, under whichever division is selected. */
+    const build = (cx, cy, lines, scale) => {
+      const w = W * scale, h = H * scale;
+      const x0 = cx - w / 2, base = cy + h / 2, top = base - h;
+      const columns = [], gaps = [], glyphs = [], badges = [];
+      const letter = (x, y, size, fill, text) =>
+        glyphs.push({ x: x, y: y, size: String(size), fill: fill, text: text });
+
+      let tight = false;
+
+      if (mode === 'columns') {
+        const cw = w / lines.length;
+        tight = cw < 9;
+        lines.forEach((l, i) => {
+          const x = x0 + i * cw;
+          if (l[1] === null) {
+            gaps.push({ x: x, y: top, w: cw, h: h });
+            // A line that reported nothing still calls here, so it keeps its letter.
+            if (!tight) {
+              letter(x + cw / 2, base - 2.4 * scale, Math.max(6, Math.min(9 * scale, cw * 0.66)), '#78716c', l[0]);
+            }
+            return;
+          }
+          const ch = height(l[1]) * scale;
+          columns.push({ x: x, y: base - ch, w: cw, h: ch, fill: color[l[0]] });
+          // JJ's rule, applied to a column, with one correction: the letter sits at the
+          // foot rather than the middle, because a bar's height is the datum and a quiet
+          // station would otherwise lose its label for being quiet. Only width gates it.
+          if (!tight) {
+            letter(
+              x + cw / 2, base - 2.4 * scale,
+              Math.max(6, Math.min(9 * scale, cw * 0.66)),
+              ch >= 9 * scale ? onDark[l[0]] : '#57534e', l[0],
+            );
+          }
+        });
+      } else {
+        // A share needs a numerator, so a line that reported nothing cannot hold area. It
+        // takes a fixed strip at the right instead, and the proportional part divides what
+        // is left — which is why the pie's whole is the lines that reported, not the station.
+        const reported = lines.filter((l) => l[1] !== null);
+        const missing = lines.length - reported.length;
+        const strip = missing > 0 ? Math.min(w * 0.34, 5 * scale * missing) : 0;
+        const pieW = w - strip;
+
+        const rects = self.mosaic(x0, top, pieW, h, reported.map((l) => l[1]));
+        reported.forEach((l, i) => {
+          const r = rects[i];
+          columns.push({ x: r.x, y: r.y, w: r.w, h: r.h, fill: color[l[0]] });
+          // Here the letter is gated by the region, and a region is the datum — so unlike
+          // the columns, a lopsided station loses the letter for its smaller line.
+          if (r.w >= 9 * scale && r.h >= 9 * scale) {
+            letter(r.x + r.w / 2, r.y + r.h / 2 + 3 * scale, Math.max(6, Math.min(9 * scale, r.w * 0.5)), onDark[l[0]], l[0]);
+          } else {
+            tight = true;
+          }
+        });
+        lines.filter((l) => l[1] === null).forEach((l, i) => {
+          const sw = strip / missing;
+          gaps.push({ x: x0 + pieW + i * sw, y: top, w: sw, h: h });
+          tight = true;
+        });
+      }
+
+      // A station too tight for letters gets the badge row instead, and gives its inside
+      // letters up so a reader is never asked to read the same names in two places.
+      if (tight) {
+        glyphs.length = 0;
+        const bw = 8 * scale, bh = 8 * scale, gap = 1.4 * scale;
+        const total = lines.length * (bw + gap) - gap;
+        lines.forEach((l, i) => {
+          const bx = cx - total / 2 + i * (bw + gap);
+          const by = base + 3 * scale;
+          badges.push({
+            x: bx, y: by, w: bw, h: bh, fill: color[l[0]],
+            tx: bx + bw / 2, ty: by + bh * 0.76,
+            size: String(5.6 * scale), text: l[0],
+          });
+        });
+      }
+
+      return {
+        columns: columns, gaps: gaps, glyphs: glyphs, badges: badges,
+        fx: x0, fy: top, fw: w, fh: h,
+        blx: x0, brx: x0 + w, bly: base,
+        hasBadges: badges.length > 0,
+      };
+    };
+
+    const drawn = stations.map((s) => {
+      const b = build(s[1], s[2], s[3], 1);
+      const pad = 2.5;
+      return {
+        name: s[0],
+        columns: b.columns, gaps: b.gaps, glyphs: b.glyphs, badges: b.badges,
+        fx: b.fx, fy: b.fy, fw: b.fw, fh: b.fh,
+        hx: b.fx - pad, hy: b.fy - pad,
+        hw: b.fw + pad * 2, hh: b.fh + pad * 2 + (b.hasBadges ? 11 : 0),
+        blx: b.blx, brx: b.brx, bly: b.bly,
+        // A filled baseline is a line ending here. The pie has no baseline to thicken, so
+        // the terminus distinction is one of the things it gives up.
+        baseWidth: mode === 'columns' ? (s[7] ? '2.4' : '1') : '0',
+        anchor: s[4],
+        lx: s[1] + s[5],
+        ly: s[2] + (s[6] === 30 ? 34 : 4),
+      };
+    });
+
+    const legendSpecs = [
+      { lines: [['A', 1305]], label: 'one line' },
+      { lines: [['B', 3211], ['D', 1833]], label: 'two, uneven' },
+      { lines: [['A', 4818], ['B', 4093], ['D', 2571]], label: 'three' },
+      { lines: [['A', 2228], ['E', null]], label: 'one not reported' },
+    ];
+    const legend = legendSpecs.map((spec, i) => {
+      const cx = 40 + i * 86;
+      const b = build(cx, 28, spec.lines, 1.4);
+      return {
+        cx: cx, label: spec.label,
+        columns: b.columns, gaps: b.gaps,
+        fx: b.fx, fy: b.fy, fw: b.fw, fh: b.fh,
+        blx: b.blx, brx: b.brx, bly: b.bly,
+        baseWidth: mode === 'columns' ? '1.2' : '0',
+      };
+    });
+
+    const table = {
+      columns: {
+        label: 'a column per line',
+        blurb: 'The square is what the ring has not got: a baseline. One fixed box per station, split into a column per line that calls there, and each column rises from the same floor on its own line’s boardings. Nothing is added together, and a line that reported nothing keeps its column and draws it dashed and empty.',
+        legendTitle: 'How to read a square',
+        variantTitle: 'Why columns and not the other two',
+        variants: [
+          { glyph: '✕', ink: '#9a3412', text: 'Nested square bands, the ring redrawn with corners: the corner of an outer band is further from the centre than its edge, so one line looks larger where it happens to sit diagonally.' },
+          { glyph: '✕', ink: '#9a3412', text: 'One line per side of the box: elegant at four lines, which is the rail maximum, and dead at the two bus stops that carry ten.' },
+          { glyph: '✓', ink: '#166534', text: 'Columns on a shared baseline: one channel, read by length, and it takes any number of lines by getting narrower rather than by running out of room.' },
+        ],
+        noteHead: 'It buys back the magnitude BB gives away, and pays in footprint',
+        noteInk: '#166534',
+        noteBody: 'BB’s one real concession is that thickness reads magnitude worse than area does. A column on a shared baseline is read by length, which is the channel people decode most accurately of any on this canvas, and two columns in one mark are compared against each other without a reader having to judge two arcs at different radii. Everything BB protects survives intact: colour is still line identity, nothing is summed, nothing moves off the station’s coordinate, and a line that reported nothing keeps a dashed column of its own. What it costs is a footprint that is square rather than round — squares tile badly against a diagonal, so the four downtown stations on the A Line’s dogleg sit closer than their boxes would like. The letter rule comes out identically to JJ’s: a column is 20 pixels wide on one line and 10 on two, both over the floor, and 6.7 on three and 5 on four, both under, so the same two stations in the network get a badge row.',
+      },
+      pie: {
+        label: 'a share of the area',
+        blurb: 'The same fixed box, divided by area instead: each line takes the fraction of the square that its boardings are of the station’s. The box is always full, so what it shows is composition — which line this interchange mostly belongs to — and absolute size is no longer on the mark at all.',
+        legendTitle: 'How to read a square pie',
+        variantTitle: 'What the division cannot carry',
+        variants: [
+          { glyph: '✕', ink: '#9a3412', text: 'Magnitude: every box is full, so Chinatown at 1,305 boardings and 7th Street at 25,152 are drawn exactly the same size.' },
+          { glyph: '✕', ink: '#9a3412', text: 'A line that reported nothing has no numerator and so no area. It gets a fixed hatched strip outside the division, and the whole becomes the lines that reported.' },
+          { glyph: '~', ink: '#78716c', text: 'The terminus pin: there is no baseline left to thicken, so the one distinction BB and the columns both carry has to find somewhere else to go.' },
+        ],
+        noteHead: 'It answers a question nothing else here answers, by breaking the rule everything else here keeps',
+        noteInk: '#9a3412',
+        noteBody: 'A share is a fraction of a total, and computing it means summing a station’s lines — which is the one thing every draft on this canvas has refused to do since page one, on the ground that Boardings on the A Line and Boardings on the B Line at 7th Street are measurements of different things and adding them counts a transferring rider twice. The square pie does not merely imply that total; it is that total, drawn. In exchange it answers a question no other mark here can: of what is counted at Union Station the A Line is 42%, the B Line 36% and the D Line 22%, and no ring, fan or column says so. It also loses the letter differently — a region is sized by its own share, so at a lopsided two-line station the smaller line’s area falls under the floor and the pair drops to badges, which the fixed-width columns never do. Read it as a composition mark for one selected station in the panel, where the sum is explicit and the reader has asked for it, and keep it off the map, where a full box at every station says every station is the same size.',
+      },
+    };
+
+    const cur = table[mode];
+    const order = [['columns', 'a column per line'], ['pie', 'a share of the area']];
+
+    return {
+      modes: order.map((o) => ({
+        label: o[1],
+        pick: () => self.setState({ mode: o[0] }),
+        bg: mode === o[0] ? '#033056' : '#ffffff',
+        ink: mode === o[0] ? '#ffffff' : '#44403c',
+      })),
+      grid: grid,
+      paths: [
+        { color: '#0072bc', points: '700,62 655,128 700,196 655,262 610,318 520,366 520,448 520,504' },
+        { color: '#fdb913', points: '790,196 700,196 655,262 610,318 520,366 520,448 430,478 330,448' },
+        { color: '#eb131b', points: '655,128 588,128 545,196 520,366 396,310 272,262 240,196 240,120' },
+        { color: '#a05da5', points: '655,128 588,128 545,196 520,366 396,310 272,262 150,262 60,262' },
+      ],
+      stations: drawn,
+      legend: legend,
+      lineKey: [
+        { color: '#0072bc', label: 'A Line' },
+        { color: '#eb131b', label: 'B Line' },
+        { color: '#a05da5', label: 'D Line' },
+        { color: '#fdb913', label: 'E Line' },
+      ],
+      blurb: cur.blurb,
+      legendTitle: cur.legendTitle,
+      variantTitle: cur.variantTitle,
+      variants: cur.variants,
+      noteHead: cur.noteHead,
+      noteInk: cur.noteInk,
+      noteBody: cur.noteBody,
+    };
+  }
+}
+</script>
+</body>
+</html>

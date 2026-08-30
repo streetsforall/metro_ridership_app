@@ -77,14 +77,14 @@
       </div>
       <div style="width:352px;background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:7px">
         <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">Pairs the validator flags</span>
-        <sc-for list="{{pairs}}" as="p" hint-placeholder-count="4">
+        <sc-for list="{{pairs}}" as="p" hint-placeholder-count="5">
           <div style="display:flex;align-items:center;gap:8px">
             <span style="width:13px;height:13px;border-radius:2px;background:{{p.a}};flex:none"></span>
             <span style="width:13px;height:13px;border-radius:2px;background:{{p.b}};flex:none"></span>
             <span style="font-size:10.5px;color:#44403c;line-height:1.5">{{p.text}}</span>
           </div>
         </sc-for>
-        <span style="font-size:10px;color:#a8a29e;line-height:1.6">Delta E is OKLab distance times a hundred. The floor for a categorical palette is 8 under simulated colour vision and 15 under normal vision.</span>
+        <span style="font-size:10px;color:#a8a29e;line-height:1.6">Delta E is OKLab distance times a hundred. The floor for a categorical palette is 8 under simulated colour vision and 15 under normal vision. Colour vision is simulated with Machado 2009 at severity 1.0; <span style="color:#033056">npm run check-palette</span> reproduces every figure on this artboard.</span>
       </div>
     </div>
 
@@ -189,14 +189,14 @@ class Component extends DCLogic {
       none: {
         label: 'colour alone',
         tests: [
-          [no, 'Three of the six brand hues sit under the separation floor against another hue'],
-          [no, 'The failing pairs are A against D and C against B, which share stations'],
+          [no, 'Five of the six brand hues sit in a pair that falls under a separation floor'],
+          [no, 'A against D, C against B, D against K — and each of those pairs shares stations'],
           [yes, 'The mark stays as small as it can be, which matters most at low zoom'],
           [part, 'A hover popup names the line, which helps one reader at a time and no printout'],
         ],
         noteHead: 'The palette cannot be fixed, so the mark has to carry the fix',
         noteInk: '#9a3412',
-        noteBody: 'When the app&rsquo;s own eight-colour stop selection palette failed the same check, the answer was to reorder it, and that worked. These six are Metro&rsquo;s, they are printed on the trains, and changing them would be worse than the failure. The validator also warns that the E Line yellow sits at 1.7 to 1 against a light surface and the C Line green at 2.9 — under three to one, which obliges a visible label whatever else is decided.',
+        noteBody: 'When the app&rsquo;s own eight-colour stop selection palette failed the same check, the answer was to reorder it, and that worked. These six are Metro&rsquo;s, they are printed on the trains, and changing them would be worse than the failure. Against the surface the map actually paints, the validator also puts the E Line yellow at 1.4 to 1, the K Line pink at 2.4 and the C Line green at 2.4 — three of the six under three to one, which obliges a visible label whatever else is decided.',
       },
       inside: {
         label: 'a letter inside every sector',
@@ -261,7 +261,8 @@ class Component extends DCLogic {
         { a: '#a05da5', b: '#0072bc', text: 'D against A — ΔE 3.7 for a protanope, and they share three stations' },
         { a: '#58a738', b: '#eb131b', text: 'C against B — ΔE 4.9 for a deuteranope, under the floor of 8' },
         { a: '#e56db1', b: '#a05da5', text: 'K against D — ΔE 13.5 for normal vision, under the hard floor of 15' },
-        { a: '#fdb913', b: '#f8f6f1', text: 'E against the map surface — 1.7 to 1, so the mark needs its own outline' },
+        { a: '#fdb913', b: '#e8e6e1', text: 'E against the map surface — 1.4 to 1, so the mark needs its own outline' },
+        { a: '#e56db1', b: '#e8e6e1', text: 'K against the map surface — 2.4 to 1, under three to one as the C Line is' },
       ],
     };
   }

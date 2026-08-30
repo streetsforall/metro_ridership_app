@@ -22,7 +22,7 @@
   <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
     <div style="display:flex;align-items:baseline;gap:10px">
       <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">DD</span>
-      <span style="font-size:15px;font-weight:700;color:#033056">Four marks for one station, against the same five stations</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Six marks for one station, against the same five stations</span>
     </div>
     <span style="font-size:11px;color:#a8a29e;text-align:right">Click a mark. The figures never change; only the drawing does.</span>
   </div>
@@ -31,7 +31,7 @@
 
     <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
       <span style="font-size:11px;color:#a8a29e;margin-right:4px">The station mark is</span>
-      <sc-for list="{{modes}}" as="m" hint-placeholder-count="4">
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="6">
         <span class="hit" onClick="{{m.pick}}" style="background:{{m.bg}};color:{{m.ink}};font-size:12px;font-weight:700;padding:8px 13px;border-radius:4px">{{m.label}}</span>
       </sc-for>
     </div>
@@ -51,8 +51,11 @@
             <sc-for list="{{c.sectors}}" as="s" hint-placeholder-count="4">
               <path d="{{s.path}}" fill="{{s.fill}}" stroke="#e8e6e1" stroke-width="1.2"></path>
             </sc-for>
+            <sc-for list="{{c.frames}}" as="f" hint-placeholder-count="1">
+              <rect x="{{f.x}}" y="{{f.y}}" width="{{f.w}}" height="{{f.h}}" fill="none" stroke="#a8a29e" stroke-width="1"></rect>
+            </sc-for>
             <sc-for list="{{c.bars}}" as="b" hint-placeholder-count="4">
-              <rect x="{{b.x}}" y="{{b.y}}" width="{{b.w}}" height="{{b.h}}" rx="2" fill="{{b.fill}}"></rect>
+              <rect x="{{b.x}}" y="{{b.y}}" width="{{b.w}}" height="{{b.h}}" rx="{{b.rx}}" fill="{{b.fill}}" stroke="#e8e6e1" stroke-width="{{b.sw}}"></rect>
             </sc-for>
             <sc-if value="{{c.showPin}}" hint-placeholder-val="{{ true }}">
               <circle cx="{{c.cx}}" cy="{{c.cy}}" r="3" fill="#e8e6e1" stroke="#44403c" stroke-width="1.2"></circle>
@@ -119,6 +122,34 @@ class Component extends DCLogic {
       ' A ' + n(Ri) + ' ' + n(Ri) + ' 0 ' + String(large) + ' 0 ' + n(i0[0]) + ' ' + n(i0[1]) + ' Z';
   }
 
+  /**
+   * Slice and dice, alternating on the rectangle's longer side, so a share becomes an area
+   * rather than a length. The last item takes what is left, so the parts sum to the box.
+   */
+  mosaic(x, y, w, h, values) {
+    const out = [];
+    let rx = x, ry = y, rw = w, rh = h;
+    let left = values.reduce((s, v) => s + v, 0);
+    values.forEach((v, i) => {
+      if (i === values.length - 1) {
+        out.push({ x: rx, y: ry, w: rw, h: rh });
+        return;
+      }
+      const frac = left > 0 ? v / left : 0;
+      if (rw >= rh) {
+        const cw = rw * frac;
+        out.push({ x: rx, y: ry, w: cw, h: rh });
+        rx += cw; rw -= cw;
+      } else {
+        const ch = rh * frac;
+        out.push({ x: rx, y: ry, w: rw, h: ch });
+        ry += ch; rh -= ch;
+      }
+      left -= v;
+    });
+    return out;
+  }
+
   renderVals() {
     const self = this;
     const mode = this.state.mode;
@@ -139,8 +170,12 @@ class Component extends DCLogic {
     const cells = stations.map((s, i) => {
       const cx = 108 + i * 172;
       const cy = 104;
-      const discs = [], leaders = [], sectors = [], bars = [];
+      const discs = [], leaders = [], sectors = [], bars = [], frames = [];
       let showPin = false;
+
+      // The fixed box both square marks are drawn in, so they differ only in the division.
+      const BW = 64, BH = 58;
+      const bx0 = cx - BW / 2, bTop = cy + 28 - BH, bBase = cy + 28;
 
       if (mode === 'today') {
         // Painted in line order at the layer's own opacity, which is what makes the blend.
@@ -168,6 +203,21 @@ class Component extends DCLogic {
           discs.push({ cx: x, cy: y, r: radius(l[1]) * SCALE, fill: color[l[0]], op: '.85', stroke: '#e8e6e1', sw: 1.2 });
         });
         showPin = true;
+      } else if (mode === 'square') {
+        // RR's mark: a fixed box split into a column per line, each rising from one floor.
+        frames.push({ x: bx0, y: bTop, w: BW, h: BH });
+        const cw = BW / s.lines.length;
+        s.lines.forEach((l, k) => {
+          const ch = Math.max(2, (l[1] / VMAX) * BH);
+          bars.push({ x: bx0 + k * cw, y: bBase - ch, w: cw, h: ch, fill: color[l[0]], rx: '0', sw: '.8' });
+        });
+      } else if (mode === 'squarepie') {
+        // RR's other mark: the same box divided by area, so each line takes its share.
+        frames.push({ x: bx0, y: bTop, w: BW, h: BH });
+        const rects = self.mosaic(bx0, bTop, BW, BH, s.lines.map((l) => l[1]));
+        s.lines.forEach((l, k) => {
+          bars.push({ x: rects[k].x, y: rects[k].y, w: rects[k].w, h: rects[k].h, fill: color[l[0]], rx: '0', sw: '.8' });
+        });
       } else {
         // One bar per line, upward from a shared baseline pinned at the coordinate.
         const w = 11, gap = 3;
@@ -180,6 +230,8 @@ class Component extends DCLogic {
             w: w,
             h: h,
             fill: color[l[0]],
+            rx: '2',
+            sw: '0',
           });
         });
         discs.push({ cx: cx, cy: cy + 40, r: 0.01, fill: 'none', op: '0', stroke: 'none', sw: 0 });
@@ -188,7 +240,7 @@ class Component extends DCLogic {
       // Biggest first, so today's mode reproduces the layer's own painting order faithfully.
       return {
         cx: cx, cy: cy, name: s.name, sub: s.sub,
-        discs: discs, leaders: leaders, sectors: sectors, bars: bars,
+        discs: discs, leaders: leaders, sectors: sectors, bars: bars, frames: frames,
         showPin: showPin,
       };
     });
@@ -262,10 +314,49 @@ class Component extends DCLogic {
         noteInk: '#78716c',
         noteBody: 'Length beats both area and angle for reading a quantity, and the design does not get worse as lines are added, which no other option here can say. The price is that a row of bars is a chart rather than a place: it has a footprint that grows sideways, it collides with its neighbours long before the circles would, and at the zoom where the whole network fits it stops reading as stations at all. It belongs to a map-led layout with far fewer stops on screen, which makes it a bet on draft F or W rather than on the map alone.',
       },
+      square: {
+        label: 'a square, by column',
+        blurb: 'A fixed box per station, split into a column per calling line, each rising from one floor. The box never changes size, so the frame behind the columns is a visible hundred per cent and a column reads as a share of the busiest station on the network.',
+        tests: [
+          [yes, 'Colour means which line, with a column each and no overlap at all'],
+          [yes, 'Magnitude reads per line, on length, and against a frame that says what full means'],
+          [yes, 'No rollup — the columns stand side by side and never stack'],
+          [part, 'The box straddles the coordinate; it is exact at the centre and 20 px wide around it'],
+          [yes, 'At four lines it is four columns, narrower but not degraded'],
+          [yes, 'A line that reported nothing keeps its slot and draws it dashed and empty'],
+        ],
+        build: 'The same overlay the bars need, plus a frame rectangle. Nothing here can be expressed as MapLibre paint either, so the two share a cost and the frame is the cheap part.',
+        noteHead: 'The bars, given a fixed footprint and a hundred per cent to read against',
+        noteInk: '#166534',
+        noteBody: 'This is the bar mark with the two things a bare bar has not got: a frame, so a reader knows what full would be, and a fixed width, so a four-line station takes exactly the room a one-line station takes and the density of the map stops depending on the data. Both of those are what let it sit on a map where a row of free bars cannot. It keeps every rule the ring keeps and reads magnitude by length rather than by thickness, which is BB’s one stated concession. What it pays is that a square tiles badly against a diagonal, so a run of closely spaced stations on an angled alignment crowds sooner than discs would.',
+      },
+      squarepie: {
+        label: 'a square, by share',
+        blurb: 'The same fixed box, divided by area: each line takes the fraction of the square its boardings are of the station’s. The box is always full, so the mark carries composition and no longer carries size at all.',
+        tests: [
+          [yes, 'Colour means which line, and the regions tile without overlapping'],
+          [no, 'Magnitude does not read at all — Chinatown and 7th Street are drawn the same size'],
+          [no, 'It is a rollup by construction: a share is a fraction of a station total'],
+          [yes, 'Every mark sits on its own coordinate, in a footprint that never changes'],
+          [part, 'At four lines the regions are readable, but the smallest is a sliver at a lopsided station'],
+          [no, 'A line that reported nothing has no numerator, so it cannot take a share at all'],
+        ],
+        build: 'The same overlay again. The arithmetic is the cheap part and the honest part is the hard part: the sum has to be defined, named and shown, or the mark quietly invents a station total the rest of the app refuses to compute.',
+        noteHead: 'The only mark here that answers composition, and the only one that breaks the no-rollup rule',
+        noteInk: '#9a3412',
+        noteBody: 'Every other mark on this artboard keeps Boardings on each line as its own quantity. This one divides them by their sum, which is precisely the rollup the app has refused since page one, because a rider changing from the A Line to the B Line at 7th Street is counted on both. What it buys is the one question none of the others can answer: at Union Station the A Line is 42% of what is counted, the B Line 36% and the D Line 22%. That belongs in the panel for a station a reader has selected, where the total can be named and caveated, and not on the map, where a full box at every station tells a reader every station is the same size.',
+      },
     };
 
     const cur = table[mode];
-    const order = [['today', 'as built'], ['ring', 'a segmented ring'], ['fan', 'a fan of circles'], ['bars', 'a bar per line']];
+    const order = [
+      ['today', 'as built'],
+      ['ring', 'a segmented ring'],
+      ['fan', 'a fan of circles'],
+      ['bars', 'a bar per line'],
+      ['square', 'a square, by column'],
+      ['squarepie', 'a square, by share'],
+    ];
 
     return {
       modes: order.map((o) => ({
