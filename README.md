@@ -936,6 +936,7 @@ Nothing in CI checks that this README still describes the code. See
 | `data/raw/` | The Excel and CSV files LA Metro returns to a public-records request, compressed. |
 | `scripts/` | The Python data pipeline that turns those into `src/data/`, with a `test_*.py` per script in `scripts/tests/`. |
 | `vite/` | The `ridership-data` and `stop-ridership` plugins, which keep the datasets out of the JS bundle. |
+| `.design/` | Draft artboards for the stop-ridership UI, laid out by `canvas.json`. Nothing here ships; open `StartHere.dc.html` first. |
 
 Some directories sit on a developer machine but deliberately not in git: `e2e/` (Playwright and its
 baselines), `docs/` (ADRs, architecture diagrams, agent notes) and the rendering test suites.
