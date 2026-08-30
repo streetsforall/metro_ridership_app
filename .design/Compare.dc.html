@@ -21,7 +21,7 @@
   <div style="display:flex;flex-direction:column;gap:8px">
     <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">THE DECISION</span>
     <span style="font-size:26px;font-weight:700;color:#033056;line-height:1.2;text-wrap:balance">Six ways to show ridership at a stop, and what each one costs</span>
-    <span style="font-size:13px;color:#78716c;max-width:96ch;line-height:1.6">Each draft answers the same four open questions differently. The grain, the gap rule, the vocabulary and the URL contract hold in all six, so the choice is about which reading the panel makes primary &mdash; not about what the data means.</span>
+    <span style="font-size:13px;color:#78716c;max-width:96ch;line-height:1.6">Each draft answers the same four open questions differently. The grain, the gap rule, the vocabulary and the URL contract hold in all six, so the choice is about which reading the panel makes primary &mdash; not about what the data means. This sheet judges the first round only: B and F have since been superseded and moved to the Superseded page, and the shell questions these six leave open are answered on Round two.</span>
   </div>
 
   <div style="background:#f8f6f1;border-radius:8px;padding:22px 26px;flex:1;overflow:hidden">
@@ -57,7 +57,7 @@
     <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
       <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#0fada8">RECOMMENDATION</span>
       <span style="font-size:14px;font-weight:700;color:#033056;line-height:1.4">D covers the most ground, because it answers two of the four open questions and argues with nothing.</span>
-      <span style="font-size:12px;color:#44403c;line-height:1.7">The flow table stops hiding alightings behind a control and puts Change next to the two figures it is derived from, which is exactly the confusion CONTEXT.md flags. It keeps the ranking, the row budget and the rule that colour means which line, so it needs no new ADR &mdash; only a note that the measure control now chooses a sort. If the panel needs a bigger change than that, E is the next most contained: it argues only about a second colour ramp, and it makes the gap rule visible rather than merely obeyed.</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.7">The flow table stops hiding alightings behind a control and puts Change next to the two figures it is derived from, which is exactly the confusion the glossary flags. It keeps the ranking, the row budget and the rule that colour means which line, so it needs no new ADR &mdash; only a note that the measure control now chooses a sort. If the panel needs a bigger change than that, E is the next most contained: it argues only about a second colour ramp, and it makes the gap rule visible rather than merely obeyed. Round two revisits this: T packs A, B and E into one switchable panel, and W asks how much room the panel gets before any of it matters.</span>
     </div>
     <div style="width:420px;flex-shrink:0;background:#f8f6f1;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
       <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#9a3412">FIX THIS WHICHEVER YOU PICK</span>
@@ -101,9 +101,9 @@ class Component extends DCLogic {
         letter: 'B',
         name: 'Card deck — one stop, one card',
         primary: 'The search. A reader names a stop and gets a card carrying both measures and its own chart.',
-        buys: 'Colour goes back to meaning which line everywhere, so ADR-0014 stops needing its exception.',
-        costs: 'Roughly 14rem of height per stop, which is what forced the cap ADR-0014 rejected small multiples over. Ranking survives only as a shortlist.',
-        argues: 'ADR-0014, from the other side — it withdraws the exception rather than extending it.',
+        buys: 'Colour goes back to meaning which line everywhere, so the colour rule stops needing its exception.',
+        costs: 'Roughly 14rem of height per stop, which is what forced the cap that small multiples were rejected over. Ranking survives only as a shortlist.',
+        argues: 'The colour rule, from the other side — it withdraws the exception rather than extending it.',
       },
       {
         letter: 'C',
@@ -127,7 +127,7 @@ class Component extends DCLogic {
         primary: 'Time, for every row at once, without mounting eight hundred charts.',
         buys: 'A month with no report is visibly a gap rather than merely not a zero, and the row budget drops to plain cells.',
         costs: 'A sequential ramp is a second thing colour means, and a cell carries less precision than a line does.',
-        argues: 'CONTEXT.md on Stop Measure — colour on the map is forbidden a second ramp; this proposes one in the panel.',
+        argues: 'The Stop Measure rule — colour on the map is forbidden a second ramp; this proposes one in the panel.',
       },
       {
         letter: 'F',
@@ -135,7 +135,7 @@ class Component extends DCLogic {
         primary: 'The map. The table shrinks to a rail and the selected stop opens an inspector.',
         buys: 'Corridor and neighbourhood questions answer themselves, and the three views collapse into one.',
         costs: 'The sixteen stops with no coordinate fall out of the primary view, and a rail cannot rank eight hundred rows legibly.',
-        argues: 'ADR-0013 on keeping a stop that GTFS had no geometry for — it stays in the data but loses the frame.',
+        argues: 'The rule that keeps a stop GTFS had no geometry for — it stays in the data but loses the frame.',
       },
     ];
     return {

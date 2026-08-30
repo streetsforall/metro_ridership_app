@@ -82,7 +82,7 @@ class Component extends DCLogic {
         best: false,
       },
       {
-        rank: '2', channel: 'Length — spike height', draft: 'K · Spikes, L · Two-sided',
+        rank: '2', channel: 'Length — spike height', draft: 'L · Two-sided (K superseded)',
         ships: 'A symbol layer with a generated sprite per height, or a canvas overlay. MapLibre draws no bars natively.',
         risk: 'A short bar disappears into the base dot, so the floor has to be about four pixels.',
         best: true,
@@ -94,13 +94,13 @@ class Component extends DCLogic {
         best: true,
       },
       {
-        rank: '2', channel: 'Length — line width', draft: 'I · Segment load',
+        rank: '2', channel: 'Length — line width', draft: 'I₂ · Segment load',
         ships: 'line-width on the existing route layer, but the value it needs does not exist yet — see the draft.',
         risk: 'A thin line and a missing line look alike at low zoom.',
         best: false,
       },
       {
-        rank: '3', channel: 'Angle — wedge sweep', draft: 'Q · Wedge',
+        rank: '3', channel: 'Angle — wedge sweep', draft: 'Q₂ · Wedge sweep',
         ships: 'A symbol layer with sprites, one per rounded share step.',
         risk: 'A near-zero sweep is an empty ring, which is what not-reported looks like in most designs.',
         best: false,
@@ -112,7 +112,7 @@ class Component extends DCLogic {
         best: false,
       },
       {
-        rank: '5', channel: 'Lightness — colour ramp', draft: 'G · Colour ramp',
+        rank: '5', channel: 'Lightness — colour ramp', draft: 'G · Colour ramp (superseded)',
         ships: 'circle-color, one paint expression — but it displaces which line onto the stroke.',
         risk: 'The palest step and an unpainted mark are the same thing to a reader.',
         best: false,
@@ -124,7 +124,7 @@ class Component extends DCLogic {
         best: false,
       },
       {
-        rank: '—', channel: 'Count — rings or dots', draft: 'O · Rings, P · Dot density',
+        rank: '—', channel: 'Count — rings or dots', draft: 'O, P (both superseded)',
         ships: 'Rings are one symbol layer of sprites; dots mean generating a point feature per dot, so roughly sixteen thousand features at full scale.',
         risk: 'Handled well by both: no rings and no dots is visibly a different thing from one ring.',
         best: false,

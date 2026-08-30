@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    table { border-collapse: collapse; width: 100%; }
+  </style>
+</helmet>
+<div style="width:1420px;height:1000px;padding:36px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:18px;background:#f3eee2">
+
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">START HERE</span>
+    <span style="font-size:26px;font-weight:700;color:#033056;line-height:1.2;text-wrap:balance">Forty-seven drafts for showing ridership at a stop, and how to read them</span>
+    <span style="font-size:13px;color:#78716c;max-width:104ch;line-height:1.6">The app ranks Metro stops by how many people board and alight there. These artboards ask what the panel and the map should look like &mdash; nothing here is built. Each page below holds one question, and the drafts on it are alternatives to each other rather than steps in a sequence.</span>
+  </div>
+
+  <div style="display:flex;gap:18px;flex:1;min-height:0">
+
+    <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:10px;min-height:0">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#0fada8">THE EIGHT PAGES</span>
+      <table style="font-size:12px">
+        <thead>
+          <tr style="border-bottom:2px solid #d6d3d1">
+            <th style="width:150px;text-align:left;padding:0 12px 8px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">Page</th>
+            <th style="width:44px;text-align:left;padding:0 10px 8px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">N</th>
+            <th style="text-align:left;padding:0 12px 8px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">The question it asks</th>
+            <th style="width:210px;text-align:left;padding:0 0 8px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">Useful comment</th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{pages}}" as="p" hint-placeholder-count="8">
+            <tr style="border-bottom:1px solid #e7e5e4">
+              <td style="padding:9px 12px 9px 0;vertical-align:top;font-size:12px;font-weight:700;color:#033056;line-height:1.4">{{p.name}}</td>
+              <td style="padding:9px 10px 9px 0;vertical-align:top;color:#78716c">{{p.count}}</td>
+              <td style="padding:9px 12px 9px 0;vertical-align:top;line-height:1.55">{{p.asks}}</td>
+              <td style="padding:9px 0;vertical-align:top;line-height:1.55;color:#78716c">{{p.comment}}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="width:400px;flex-shrink:0;display:flex;flex-direction:column;gap:14px">
+
+      <div style="background:#f8f6f1;border-radius:8px;padding:18px 22px;display:flex;flex-direction:column;gap:7px">
+        <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#9a3412">READ THE FIGURES WITH CARE</span>
+        <span style="font-size:13px;font-weight:700;color:#033056;line-height:1.4">Some numbers are measured and some are illustrative, and the artboards do not always say which.</span>
+        <span style="font-size:12px;color:#44403c;line-height:1.65">The multi-line station drafts carry real weekday boardings from the committed rail payload &mdash; Union Station at A&nbsp;4,818, B&nbsp;4,093 and D&nbsp;2,571, averaged over Jul&nbsp;2025 to Jun&nbsp;2026. The panel drafts use illustrative figures in the same shape. Where the two disagree about a stop, the measured set is the true one. Judge the design, not the data.</span>
+      </div>
+
+      <div style="background:#f8f6f1;border-radius:8px;padding:18px 22px;display:flex;flex-direction:column;gap:7px">
+        <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#9a3412">EVERY MAP HERE IS DRAWN</span>
+        <span style="font-size:13px;font-weight:700;color:#033056;line-height:1.4">No artboard renders a real basemap.</span>
+        <span style="font-size:12px;color:#44403c;line-height:1.65">MapLibre will not paint in this preview, so the basemap, the route geometry and the station positions are hand-drawn stand-ins for the committed line geometry. Station spacing and label collisions are therefore suggestive rather than accurate, which matters most for the decluttering and zoom drafts.</span>
+      </div>
+
+      <div style="background:#f8f6f1;border-radius:8px;padding:18px 22px;display:flex;flex-direction:column;gap:7px;flex:1">
+        <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#0fada8">CONVENTIONS</span>
+        <sc-for list="{{notes}}" as="n" hint-placeholder-count="4">
+          <span style="font-size:12px;color:#44403c;line-height:1.6"><span style="font-weight:700;color:#033056">{{n.head}}</span> {{n.body}}</span>
+        </sc-for>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="background:#f8f6f1;border-radius:8px;padding:16px 22px;display:flex;gap:26px;align-items:flex-start">
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#0fada8">WHAT HOLDS IN EVERY DRAFT</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.65">A row is one stop on one line, never a stop's lines added together. A month with no report is drawn as a gap, never as a zero. The words are always Boardings and Alightings, and Change is boardings less alightings within one month. Every control shown is state that a shared link carries.</span>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#0fada8">HOW TO COMMENT</span>
+      <span style="font-size:12px;color:#44403c;line-height:1.65">Comment on the artboard you are reacting to rather than here, and say which reading it made easy or hard. The most useful reactions name a question a draft stopped you answering. A comparison between two drafts on one page is worth more than a verdict on one, because the drafts on a page are alternatives.</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      pages: [
+        { name: 'Panel layouts', count: '5',
+          asks: 'What shape the stop panel takes: a ranked table, stops in route order, both measures at once, or a month grid.',
+          comment: 'Which one you would arrive at the app wanting.' },
+        { name: 'Map encodings', count: '7',
+          asks: 'What a mark on the map can say beyond circle size — length, texture, a printed numeral, line thickness.',
+          comment: 'Which encoding you can read without the legend.' },
+        { name: 'Round two', count: '7',
+          asks: 'How the shell behaves: what a click selects, how much room the map takes, and whether a reader can rebuild the grid.',
+          comment: 'Six of these respond to a click — try them.' },
+        { name: 'Map layers', count: '4',
+          asks: 'Which non-ridership layers can ship, what each costs, and what a layered map does to a shareable link.',
+          comment: 'Whether the layer you want is on the cost sheet.' },
+        { name: 'Service frequency', count: '6',
+          asks: 'Where frequency belongs — the width of a line, a halo on a stop, a panel strip — and whether it is a layer or a measure.',
+          comment: 'Whether boardings per trip is a number you would trust.' },
+        { name: 'Multi-line stations', count: '8',
+          asks: 'What to draw where several lines call at one point, which today paints four circles into an unreadable bullseye.',
+          comment: 'Which mark still works at four lines.' },
+        { name: 'Marks and corridors', count: '2',
+          asks: 'Whether a square carries a percentage better than a circle, and how to draw two lines sharing one corridor.',
+          comment: 'Whether the side-by-side corridor reads as two lines.' },
+        { name: 'Superseded', count: '8',
+          asks: 'Drafts a later one reproduces, kept so the reasoning stays visible. Nothing here needs a decision.',
+          comment: 'Skip unless you disagree with a retirement.' },
+      ],
+      notes: [
+        { head: 'Letter badges.', body: 'Each draft carries one, in the order it was drawn rather than by merit. The sequence skips HH and II, which never existed. I₂ and Q₂ are revisions of I and Q.' },
+        { head: 'Titles ending "click me".', body: 'That artboard responds to a click, a tick or a drag. Sixteen of the forty-seven do.' },
+        { head: 'The wide sheets.', body: 'Four artboards are reference tables rather than designs — they compare the drafts on their page and end with a recommendation.' },
+        { head: 'The side notes.', body: 'Text blocks to the right of each page record what was measured and what each page left open.' },
+        { head: 'Station names.', body: 'Three forms appear, longest where there is room: "7th Street / Metro Center Station" is the name the data records, "7th St / Metro Center" fits a map label, and "7th St" fits a mark.' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

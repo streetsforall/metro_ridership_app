@@ -52,7 +52,7 @@
         <polyline points="740,90 740,170 660,220 560,270 560,470" fill="none" stroke="#0072bc" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
         <polyline points="740,90 640,320 560,470" fill="none" stroke="#eb131b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
         <polyline points="560,270 420,214 280,178 150,160" fill="none" stroke="#a05da5" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
-        <polyline points="560,270 470,360 340,392" fill="none" stroke="#e5a512" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <polyline points="560,270 470,360 340,392" fill="none" stroke="#fdb913" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
 
         <sc-for list="{{rings}}" as="r" hint-placeholder-count="10">
           <g>
@@ -126,7 +126,7 @@ class Component extends DCLogic {
   }
 
   color(id) {
-    const map = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#e5a512' };
+    const map = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#fdb913' };
     return map[id] || '#78716c';
   }
 
@@ -149,7 +149,7 @@ class Component extends DCLogic {
       ['Grand / LATTC', 560, 410, [['A', 1910, 0.058]]],
       ['Willowbrook', 560, 470, [['A', 4320, 0.130], ['B', 2610, 0.087]]],
       ['Wilshire / Vermont', 420, 214, [['D', 5480, 0.262]]],
-      ['Westlake / MacArthur', 280, 178, [['D', 2870, 0.137]]],
+      ['Westlake / MacArthur Park', 280, 178, [['D', 2870, 0.137]]],
       ['Wilshire / Normandie', 150, 160, [['D', 1640, 0.078]]],
       ['Expo / Crenshaw', 470, 360, [['E', 2510, 0.150]]],
       ['Culver City', 340, 392, [['E', null, null]]],
@@ -224,7 +224,7 @@ class Component extends DCLogic {
       : {
           blurb: 'At a station served by several lines, the ring is divided among them, so the slices show which line brings the riders. A station on one line fills the whole ring, which is why the single-line stops all look alike here.',
           legendTitle: 'Slices — mix of lines here',
-          noteHead: 'The mix mode needs a denominator CONTEXT.md rules out',
+          noteHead: 'The mix mode needs a denominator the rollup rule forbids',
           noteInk: '#9a3412',
           noteBody: 'A pie needs a whole, and the whole here is every line’s boardings at one station added together — exactly the stop-total-across-lines rollup the grain forbids. There are two honest ways out. Either the slices are read as a ratio between the lines a reader has selected, never as a station total, which means the label has to say so and the picture changes when the selection does; or the mode is dropped and the same question is answered in the readout panel, where three numbers side by side make the comparison without implying they sum to anything. The second is cheaper and says less that is untrue.',
         };
@@ -237,7 +237,7 @@ class Component extends DCLogic {
         { color: '#0072bc', label: 'A Line' },
         { color: '#eb131b', label: 'B Line' },
         { color: '#a05da5', label: 'D Line' },
-        { color: '#e5a512', label: 'E Line' },
+        { color: '#fdb913', label: 'E Line' },
       ],
       pickShare: () => self.setState({ mode: 'share' }),
       pickMix: () => self.setState({ mode: 'mix' }),

@@ -105,9 +105,10 @@
 
         <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:6px;flex:1">
           <span style="font-size:11px;font-weight:700;color:#9a3412;letter-spacing:.06em;text-transform:uppercase">What this still needs that the app does not have</span>
-          <span style="font-size:11px;color:#44403c;line-height:1.65">A running sum needs the stops in <b>route order</b>, and a stop&rsquo;s identity is deliberately its normalised name rather than Metro&rsquo;s row order (ADR-0013). Recovering the order means joining <span style="color:#78716c">stop_times.txt</span>, which the roadmap already names as how direction could come back.</span>
+          <span style="font-size:11px;color:#44403c;line-height:1.65">A running sum needs the stops in <b>route order</b>, and a stop&rsquo;s identity is deliberately its normalised name rather than Metro&rsquo;s row order. Recovering the order means joining <span style="color:#78716c">stop_times.txt</span>, which the roadmap already names as how direction could come back.</span>
           <span style="font-size:11px;color:#44403c;line-height:1.65"><b>Direction is collapsed</b>, so one width per segment is both directions added together rather than a train&rsquo;s load. The narrower ramp helps here too: a thin line invites a reader to trace a route, where a thick ribbon invites them to read a volume the data cannot support.</span>
           <span style="font-size:11px;color:#44403c;line-height:1.65"><b>The profile should close at zero and does not.</b> Stop sums miss line totals by a median 0.06% and up to 5.10%, one-sided upward, so the 640 riders still aboard at Long Beach are the accumulated error. Drawing that endpoint rather than trimming it is what makes this chart a data check as well as a picture.</span>
+          <span style="font-size:11px;color:#44403c;line-height:1.65"><b>The figures above are illustrative, and the real ones will not draw this shape.</b> Running the same sum over the committed A Line figures for Jul&nbsp;2025 &ndash; Jun&nbsp;2026 gives a load between &minus;557 and 212, against stop boardings that reach 6,288 &mdash; because collapsing direction leaves boardings and alightings nearly equal at every stop, so the running total is noise rather than a profile. The encoding needs directional counts this pipeline does not produce.</span>
         </div>
       </div>
     </div>
@@ -124,7 +125,7 @@ class Component extends DCLogic {
     const flows = [
       [10125, 2100], [3210, 1480], [2640, 1810], [2980, 2120], [6750, 5075],
       [2940, 3180], [1910, 2845], [1204, 2352], [1688, 2519], [1142, 2205],
-      [1505, 2388], [2210, 3004], [1860, 2932], [1688, 2519], [4320, 5610],
+      [1505, 2388], [2210, 3004], [1860, 2932], [1975, 2660], [4320, 5610],
       [1740, 2690], [1520, 2602], [980, 1544], [860, 1402], [3980, 4875],
     ];
     const loads = [];

@@ -35,7 +35,7 @@
       </div>
     </div>
 
-    <span style="font-size:12px;color:#78716c">Average weekday riders at each stop, Jul 2025 &ndash; Dec 2025, read north to south.</span>
+    <span style="font-size:12px;color:#78716c">Average weekday riders at each stop, Jul 2025 &ndash; Jun 2026, read north to south.</span>
 
     <div style="background:#fff;border-radius:6px;padding:14px 12px 8px 12px">
       <svg viewBox="0 0 900 330" width="100%" height="330" role="img" aria-label="Boardings above and alightings below the line, for every A Line station in route order">
@@ -53,7 +53,7 @@
           <g>
             <rect x="{{s.x}}" width="16" y="{{s.bY}}" height="{{s.bH}}" fill="#0072bc" rx="3"></rect>
             <rect x="{{s.x}}" width="16" y="144" height="{{s.aH}}" fill="#8ec4e6" rx="3"></rect>
-            <text x="{{s.labelX}}" y="{{s.labelY}}" font-size="10" fill="{{s.labelInk}}" text-anchor="end" transform="{{s.labelRotate}}">{{s.name}}</text>
+            <text x="{{s.labelX}}" y="{{s.labelY}}" font-size="10" fill="{{s.labelInk}}" text-anchor="end" transform="{{s.labelRotate}}">{{s.label}}</text>
             <sc-if value="{{s.selected}}" hint-placeholder-val="{{ false }}">
               <rect x="{{s.ringX}}" width="24" y="{{s.ringY}}" height="{{s.ringH}}" fill="none" stroke="#033056" stroke-width="2" rx="5"></rect>
             </sc-if>
@@ -86,15 +86,15 @@
         <div style="display:flex;flex-direction:column;gap:8px">
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
             <span style="font-size:11px;color:#78716c">Avg. Boardings</span>
-            <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">4,320</span>
+            <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">4,276</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
             <span style="font-size:11px;color:#78716c">Avg. Alightings</span>
-            <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">4,610</span>
+            <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">4,325</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
             <span style="font-size:11px;color:#78716c">Change</span>
-            <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:#9a3412">&minus;290</span>
+            <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:#9a3412">&minus;49</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
             <span style="font-size:11px;color:#78716c">Share of Line</span>
@@ -113,29 +113,29 @@
 class Component extends DCLogic {
   renderVals() {
     const data = [
-      ['Union Station', 10125, 9113],
-      ['Little Tokyo / Arts District', 3210, 3480],
-      ['Historic Broadway', 2640, 2810],
-      ['Grand Av Arts / Bunker Hill', 2980, 3120],
-      ['7th Street / Metro Center', 6750, 6075],
-      ['Pico', 2940, 3180],
-      ['Grand / LATTC', 1910, 1845],
-      ['San Pedro Street', 1204, 1352],
-      ['Washington', 1688, 1519],
-      ['Vernon', 1142, 1205],
-      ['Slauson', 1505, 1388],
-      ['Florence', 2210, 2004],
-      ['Firestone', 1860, 1932],
-      ['103rd Street / Watts Towers', 1688, 1519],
-      ['Willowbrook / Rosa Parks', 4320, 4610],
-      ['Compton', 1740, 1690],
-      ['Artesia', 1520, 1602],
-      ['Del Amo', 980, 1044],
-      ['Wardlow', 860, 902],
-      ['Downtown Long Beach', 3980, 3610],
+      ['Union Station', 4818, 4606],
+      ['Little Tokyo / Arts District Station', 2228, 2496],
+      ['Historic Broadway Station', 913, 965],
+      ['Grand Arts / Bunker Hill Station', 985, 1144],
+      ['7th Street / Metro Center Station', 6288, 6457],
+      ['Pico Station', 2943, 2818],
+      ['Grand / LATTC Station', 2197, 2083],
+      ['San Pedro Street Station', 1480, 1514],
+      ['Washington Station', 974, 963],
+      ['Vernon Station', 1621, 1616],
+      ['Slauson Station', 1310, 1354],
+      ['Florence Station', 2404, 2511],
+      ['Firestone Station', 1477, 1601],
+      ['103rd Street / Watts Towers Station', 1882, 1882],
+      ['Willowbrook / Rosa Parks Station', 4276, 4325],
+      ['Compton Station', 1944, 1962],
+      ['Artesia Station', 1643, 1608],
+      ['Del Amo Station', 1421, 1400],
+      ['Wardlow Station', 777, 730],
+      ['Downtown Long Beach Station', 2828, 2192],
     ];
-    const peak = 10500;
-    const selected = 'Willowbrook / Rosa Parks';
+    const peak = 6600;
+    const selected = 'Willowbrook / Rosa Parks Station';
     const stops = data.map((row, i) => {
       const x = 62 + i * 41.5;
       const bH = (row[1] / peak) * 94;
@@ -144,6 +144,7 @@ class Component extends DCLogic {
       const labelY = 246;
       return {
         name: row[0],
+        label: row[0].replace(/ Station$/, ''),
         x: x,
         bY: 139 - bH,
         bH: bH,

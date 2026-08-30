@@ -88,7 +88,7 @@
 
         <div style="background:#fff;border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;flex:1">
           <span style="font-size:11px;font-weight:700;color:#9a3412;letter-spacing:.06em;text-transform:uppercase">What this needs that the app does not have</span>
-          <span style="font-size:11px;color:#44403c;line-height:1.65">A running sum needs the stops in <b>route order</b>, and a stop's identity is deliberately its normalised name rather than Metro's row order (ADR-0013), so nothing in the payload says which stop comes next. Recovering it means joining <span style="color:#78716c">stop_times.txt</span>, which the roadmap already names as the way direction could come back.</span>
+          <span style="font-size:11px;color:#44403c;line-height:1.65">A running sum needs the stops in <b>route order</b>, and a stop's identity is deliberately its normalised name rather than Metro's row order, so nothing in the payload says which stop comes next. Recovering it means joining <span style="color:#78716c">stop_times.txt</span>, which the roadmap already names as the way direction could come back.</span>
           <span style="font-size:11px;color:#44403c;line-height:1.65"><b>Direction is collapsed</b>, so one width per segment is both directions added together, not a train's load. Drawing it as a single band claims more than the data says unless the label says so.</span>
           <span style="font-size:11px;color:#44403c;line-height:1.65"><b>The profile should close at zero</b> and will not. Stop sums miss line totals by a median 0.06% and up to 5.10%, one-sided upward, so whatever the sum has left at the terminus is the accumulated error &mdash; which makes this chart a useful data check as well as a picture.</span>
         </div>
@@ -108,7 +108,7 @@ class Component extends DCLogic {
     const flows = [
       [10125, 2100], [3210, 1480], [2640, 1810], [2980, 2120], [6750, 5075],
       [2940, 3180], [1910, 2845], [1204, 2352], [1688, 2519], [1142, 2205],
-      [1505, 2388], [2210, 3004], [1860, 2932], [1688, 2519], [4320, 5610],
+      [1505, 2388], [2210, 3004], [1860, 2932], [1975, 2660], [4320, 5610],
       [1740, 2690], [1520, 2602], [980, 1544], [860, 1402], [3980, 4875],
     ];
     const loads = [];

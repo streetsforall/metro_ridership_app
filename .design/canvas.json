@@ -1,204 +1,160 @@
 {
   "artboards": [
     {
+      "file": "StartHere.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1420,
+      "h": 1000,
+      "title": "Start here · what this canvas is",
+      "page": "start-here"
+    },
+    {
       "file": "Main.dc.html",
       "x": 0,
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "A · Ranked table (as built)",
-      "page": "page-1"
-    },
-    {
-      "file": "CardDeck.dc.html",
-      "x": 1100,
-      "y": 0,
-      "w": 1000,
-      "h": 880,
-      "title": "B · Card deck",
-      "page": "page-1"
+      "title": "A Â· Ranked table (as built)",
+      "page": "panels"
     },
     {
       "file": "Corridor.dc.html",
+      "x": 1100,
+      "y": 0,
+      "w": 1000,
+      "h": 880,
+      "title": "C Â· Corridor profile",
+      "page": "panels"
+    },
+    {
+      "file": "Flow.dc.html",
       "x": 2200,
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "C · Corridor profile",
-      "page": "page-1"
-    },
-    {
-      "file": "Flow.dc.html",
-      "x": 0,
-      "y": 1040,
-      "w": 1000,
-      "h": 880,
-      "title": "D · Flow table",
-      "page": "page-1"
+      "title": "D Â· Flow table",
+      "page": "panels"
     },
     {
       "file": "Matrix.dc.html",
-      "x": 1100,
-      "y": 1040,
+      "x": 3300,
+      "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "E · Month matrix",
-      "page": "page-1"
-    },
-    {
-      "file": "MapLed.dc.html",
-      "x": 2200,
-      "y": 1040,
-      "w": 1000,
-      "h": 880,
-      "title": "F · Map-led",
-      "page": "page-1"
+      "title": "E Â· Month matrix",
+      "page": "panels"
     },
     {
       "file": "Compare.dc.html",
       "x": 0,
-      "y": 2080,
+      "y": 1040,
       "w": 1420,
       "h": 1000,
       "title": "Comparison sheet",
-      "page": "page-1"
-    },
-    {
-      "file": "StopColour.dc.html",
-      "x": 0,
-      "y": 0,
-      "w": 1000,
-      "h": 880,
-      "title": "G · Colour ramp on the circles",
-      "page": "page-2"
-    },
-    {
-      "file": "Hatch.dc.html",
-      "x": 1100,
-      "y": 0,
-      "w": 1000,
-      "h": 880,
-      "title": "H · Cross-hatch density",
-      "page": "page-2"
-    },
-    {
-      "file": "SegmentLoad.dc.html",
-      "x": 2200,
-      "y": 0,
-      "w": 1000,
-      "h": 880,
-      "title": "I · Segment load by line width",
-      "page": "page-2"
-    },
-    {
-      "file": "LargeMap.dc.html",
-      "x": 3300,
-      "y": 0,
-      "w": 1000,
-      "h": 880,
-      "title": "J · Large map with layer toggles",
-      "page": "page-2"
-    },
-    {
-      "file": "Spikes.dc.html",
-      "x": 0,
-      "y": 1040,
-      "w": 1000,
-      "h": 880,
-      "title": "K · Spike height",
-      "page": "page-2"
+      "page": "panels"
     },
     {
       "file": "TwoSided.dc.html",
-      "x": 1100,
-      "y": 1040,
+      "x": 0,
+      "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "L · Two-sided spikes",
-      "page": "page-2"
-    },
-    {
-      "file": "Extrusion.dc.html",
-      "x": 2200,
-      "y": 1040,
-      "w": 1000,
-      "h": 880,
-      "title": "M · Hex extrusion",
-      "page": "page-2"
+      "title": "L Â· Two-sided spikes",
+      "page": "encodings"
     },
     {
       "file": "Labels.dc.html",
+      "x": 1100,
+      "y": 0,
+      "w": 1000,
+      "h": 880,
+      "title": "N Â· Decluttered labels",
+      "page": "encodings"
+    },
+    {
+      "file": "SegmentNarrow.dc.html",
+      "x": 2200,
+      "y": 0,
+      "w": 1000,
+      "h": 880,
+      "title": "Iâ‚‚ Â· Segment load, narrower",
+      "page": "encodings"
+    },
+    {
+      "file": "Hatch.dc.html",
       "x": 3300,
+      "y": 0,
+      "w": 1000,
+      "h": 880,
+      "title": "H Â· Cross-hatch density",
+      "page": "encodings"
+    },
+    {
+      "file": "Extrusion.dc.html",
+      "x": 0,
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "N · Decluttered labels",
-      "page": "page-2"
+      "title": "M Â· Hex extrusion",
+      "page": "encodings"
     },
     {
-      "file": "Rings.dc.html",
-      "x": 0,
-      "y": 2080,
-      "w": 1000,
-      "h": 880,
-      "title": "O · Concentric rings",
-      "page": "page-2"
-    },
-    {
-      "file": "DotDensity.dc.html",
+      "file": "LargeMap.dc.html",
       "x": 1100,
-      "y": 2080,
+      "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "P · Dot density",
-      "page": "page-2"
-    },
-    {
-      "file": "Wedge.dc.html",
-      "x": 2200,
-      "y": 2080,
-      "w": 1000,
-      "h": 880,
-      "title": "Q · Wedge sweep",
-      "page": "page-2"
+      "title": "J Â· Large map with layer toggles",
+      "page": "encodings"
     },
     {
       "file": "Channels.dc.html",
       "x": 0,
-      "y": 3120,
+      "y": 2080,
       "w": 1420,
       "h": 1000,
       "title": "Channel reference",
-      "page": "page-2"
+      "page": "encodings"
     },
     {
-      "file": "Switcher.dc.html",
+      "file": "Assembled.dc.html",
       "x": 0,
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "T · Layout switcher · click me",
-      "page": "page-3",
-      "is_interactive": true
+      "title": "R Â· Assembled (F + L + N)",
+      "page": "round-two"
     },
     {
-      "file": "Pivot.dc.html",
+      "file": "Switcher.dc.html",
       "x": 1100,
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "U · Pivot sidebar · click me",
-      "page": "page-3",
+      "title": "T Â· Layout switcher Â· click me",
+      "page": "round-two",
       "is_interactive": true
     },
     {
-      "file": "Assembled.dc.html",
+      "file": "Pivot.dc.html",
       "x": 2200,
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "R · Assembled (F + L + N)",
-      "page": "page-3"
+      "title": "U Â· Pivot sidebar Â· click me",
+      "page": "round-two",
+      "is_interactive": true
+    },
+    {
+      "file": "SpaceSplit.dc.html",
+      "x": 3300,
+      "y": 0,
+      "w": 1000,
+      "h": 880,
+      "title": "W Â· Space split Â· drag the handles",
+      "page": "round-two",
+      "is_interactive": true
     },
     {
       "file": "Selection.dc.html",
@@ -206,18 +162,19 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "S · Stop or stop × line · click me",
-      "page": "page-3",
+      "title": "S Â· Stop or stop Ã— line Â· click me",
+      "page": "round-two",
       "is_interactive": true
     },
     {
-      "file": "SegmentNarrow.dc.html",
+      "file": "MapSeries.dc.html",
       "x": 1100,
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "I₂ · Segment load, narrower",
-      "page": "page-3"
+      "title": "V Â· Sparklines on the map Â· click me",
+      "page": "round-two",
+      "is_interactive": true
     },
     {
       "file": "WedgeModes.dc.html",
@@ -225,58 +182,38 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "Q₂ · Wedge sweep, two modes · click me",
-      "page": "page-3",
+      "title": "Qâ‚‚ Â· Wedge sweep, two modes Â· click me",
+      "page": "round-two",
       "is_interactive": true
-    },
-    {
-      "file": "MapSeries.dc.html",
-      "x": 0,
-      "y": 2080,
-      "w": 1000,
-      "h": 880,
-      "title": "V · Sparklines on the map · click me",
-      "page": "page-3",
-      "is_interactive": true
-    },
-    {
-      "file": "SpaceSplit.dc.html",
-      "x": 1100,
-      "y": 2080,
-      "w": 1000,
-      "h": 880,
-      "title": "W · Space split · drag the handles",
-      "page": "page-3",
-      "is_interactive": true
-    },
-    {
-      "file": "Accessibility.dc.html",
-      "x": 0,
-      "y": 0,
-      "w": 1000,
-      "h": 880,
-      "title": "X · Accessibility",
-      "page": "page-4"
     },
     {
       "file": "LayerPicker.dc.html",
-      "x": 1100,
+      "x": 0,
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "Y · Layer picker and its URL · tick me",
-      "page": "page-4",
+      "title": "Y Â· Layer picker and its URL Â· tick me",
+      "page": "layers",
       "is_interactive": true
     },
     {
       "file": "Isochrones.dc.html",
+      "x": 1100,
+      "y": 0,
+      "w": 1000,
+      "h": 880,
+      "title": "Z Â· Isochrones Â· click me",
+      "page": "layers",
+      "is_interactive": true
+    },
+    {
+      "file": "Accessibility.dc.html",
       "x": 2200,
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "Z · Isochrones · click me",
-      "page": "page-4",
-      "is_interactive": true
+      "title": "X Â· Accessibility",
+      "page": "layers"
     },
     {
       "file": "LayerCost.dc.html",
@@ -285,7 +222,66 @@
       "w": 1420,
       "h": 1000,
       "title": "Layer cost sheet",
-      "page": "page-4"
+      "page": "layers"
+    },
+    {
+      "file": "Frequency.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1000,
+      "h": 880,
+      "title": "EE Â· Service frequency Â· click me",
+      "page": "frequency",
+      "is_interactive": true
+    },
+    {
+      "file": "PerTrip.dc.html",
+      "x": 1100,
+      "y": 0,
+      "w": 1000,
+      "h": 880,
+      "title": "FF Â· Boardings per trip Â· click me",
+      "page": "frequency",
+      "is_interactive": true
+    },
+    {
+      "file": "TwoClocks.dc.html",
+      "x": 2200,
+      "y": 0,
+      "w": 1000,
+      "h": 880,
+      "title": "GG Â· Two clocks Â· click me",
+      "page": "frequency",
+      "is_interactive": true
+    },
+    {
+      "file": "SegmentTexture.dc.html",
+      "x": 3300,
+      "y": 0,
+      "w": 1000,
+      "h": 880,
+      "title": "OO Â· Segment frequency, four textures Â· click me",
+      "page": "frequency",
+      "is_interactive": true
+    },
+    {
+      "file": "SegmentRamp.dc.html",
+      "x": 0,
+      "y": 1040,
+      "w": 1000,
+      "h": 880,
+      "title": "PP Â· Frequency as colour, identity as a letter Â· click me",
+      "page": "frequency",
+      "is_interactive": true
+    },
+    {
+      "file": "StationTags.dc.html",
+      "x": 1100,
+      "y": 1040,
+      "w": 1000,
+      "h": 880,
+      "title": "QQ Â· Station tags, and what would source them",
+      "page": "frequency"
     },
     {
       "file": "Occlusion.dc.html",
@@ -293,8 +289,8 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "AA · What the map draws today",
-      "page": "page-5"
+      "title": "AA Â· What the map draws today",
+      "page": "stations"
     },
     {
       "file": "SegmentedRing.dc.html",
@@ -302,86 +298,66 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "BB · Segmented ring",
-      "page": "page-5"
+      "title": "BB Â· Segmented ring",
+      "page": "stations"
     },
     {
-      "file": "FanStack.dc.html",
+      "file": "SquareStation.dc.html",
       "x": 2200,
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "CC · Fan the circles",
-      "page": "page-5"
+      "title": "RR Â· Square station, two readings Â· click me",
+      "page": "stations",
+      "is_interactive": true
     },
     {
-      "file": "MarksCompared.dc.html",
+      "file": "FanStack.dc.html",
       "x": 3300,
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "DD · Six marks compared · click me",
-      "page": "page-5",
-      "is_interactive": true
+      "title": "CC Â· Fan the circles",
+      "page": "stations"
     },
     {
-      "file": "Frequency.dc.html",
+      "file": "MarksCompared.dc.html",
       "x": 0,
-      "y": 2140,
+      "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "EE · Service frequency · click me",
-      "page": "page-4",
-      "is_interactive": true
-    },
-    {
-      "file": "PerTrip.dc.html",
-      "x": 1100,
-      "y": 2140,
-      "w": 1000,
-      "h": 880,
-      "title": "FF · Boardings per trip · click me",
-      "page": "page-4",
-      "is_interactive": true
-    },
-    {
-      "file": "TwoClocks.dc.html",
-      "x": 2200,
-      "y": 2140,
-      "w": 1000,
-      "h": 880,
-      "title": "GG · Two clocks · click me",
-      "page": "page-4",
+      "title": "DD Â· Six marks compared Â· click me",
+      "page": "stations",
       "is_interactive": true
     },
     {
       "file": "Letters.dc.html",
-      "x": 0,
-      "y": 1600,
+      "x": 1100,
+      "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "JJ · The letter in the mark · click me",
-      "page": "page-5",
+      "title": "JJ Â· The letter in the mark Â· click me",
+      "page": "stations",
       "is_interactive": true
     },
     {
       "file": "Zoom.dc.html",
-      "x": 1100,
-      "y": 1600,
+      "x": 2200,
+      "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "KK · The mark at four zooms · click me",
-      "page": "page-5",
+      "title": "KK Â· The mark at four zooms Â· click me",
+      "page": "stations",
       "is_interactive": true
     },
     {
       "file": "BusStops.dc.html",
-      "x": 2200,
-      "y": 1600,
+      "x": 0,
+      "y": 2080,
       "w": 1420,
       "h": 1000,
-      "title": "LL · What a bus stop is",
-      "page": "page-5"
+      "title": "LL Â· What a bus stop is",
+      "page": "stations"
     },
     {
       "file": "Squares.dc.html",
@@ -389,8 +365,8 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "MM · Squares and percentages · click me",
-      "page": "page-6",
+      "title": "MM Â· Squares and percentages Â· click me",
+      "page": "corridors",
       "is_interactive": true
     },
     {
@@ -399,288 +375,325 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "NN · Side-by-side corridors · click me",
-      "page": "page-6",
+      "title": "NN Â· Side-by-side corridors Â· click me",
+      "page": "corridors",
       "is_interactive": true
     },
     {
-      "file": "SegmentTexture.dc.html",
+      "file": "MapLed.dc.html",
       "x": 0,
-      "y": 3180,
+      "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "OO · Segment frequency, four textures · click me",
-      "page": "page-4",
-      "is_interactive": true
+      "title": "F Â· Map-led",
+      "page": "superseded"
     },
     {
-      "file": "SegmentRamp.dc.html",
+      "file": "CardDeck.dc.html",
       "x": 1100,
-      "y": 3180,
+      "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "PP · Frequency as colour, identity as a letter · click me",
-      "page": "page-4",
-      "is_interactive": true
+      "title": "B Â· Card deck",
+      "page": "superseded"
     },
     {
-      "file": "StationTags.dc.html",
+      "file": "SegmentLoad.dc.html",
       "x": 2200,
-      "y": 3180,
+      "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "QQ · Station tags, and what would source them",
-      "page": "page-4"
+      "title": "I Â· Segment load by line width",
+      "page": "superseded"
     },
     {
-      "file": "SquareStation.dc.html",
-      "x": 0,
-      "y": 2760,
+      "file": "Spikes.dc.html",
+      "x": 3300,
+      "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "RR · Square station, two readings · click me",
-      "page": "page-5",
-      "is_interactive": true
+      "title": "K Â· Spike height",
+      "page": "superseded"
+    },
+    {
+      "file": "Wedge.dc.html",
+      "x": 0,
+      "y": 1040,
+      "w": 1000,
+      "h": 880,
+      "title": "Q Â· Wedge sweep",
+      "page": "superseded"
+    },
+    {
+      "file": "StopColour.dc.html",
+      "x": 1100,
+      "y": 1040,
+      "w": 1000,
+      "h": 880,
+      "title": "G Â· Colour ramp on the circles",
+      "page": "superseded"
+    },
+    {
+      "file": "Rings.dc.html",
+      "x": 2200,
+      "y": 1040,
+      "w": 1000,
+      "h": 880,
+      "title": "O Â· Concentric rings",
+      "page": "superseded"
+    },
+    {
+      "file": "DotDensity.dc.html",
+      "x": 3300,
+      "y": 1040,
+      "w": 1000,
+      "h": 880,
+      "title": "P Â· Dot density",
+      "page": "superseded"
     }
   ],
   "annotations": [
     {
       "id": "sample-data",
-      "page": "page-1",
-      "x": 1560,
-      "y": 2120,
+      "page": "panels",
+      "x": 4400,
+      "y": 0,
       "w": 460,
-      "text": "The figures are sample values in the shape of e2e/stop-fixtures.ts, on real A Line station names. Union Station, 7th Street / Metro Center and 103rd Street / Watts Towers carry the fixtures' own numbers; the rest are illustrative and must not be quoted."
+      "text": "The figures are sample values in the shape of the app's test fixtures, on real A Line station names. Union Station, 7th Street / Metro Center Station and 103rd Street / Watts Towers Station carry the fixtures' own numbers; the rest are illustrative and must not be quoted."
     },
     {
       "id": "constraints-held",
-      "page": "page-1",
-      "x": 1560,
-      "y": 2400,
+      "page": "panels",
+      "x": 4400,
+      "y": 260,
       "w": 460,
       "text": "Held constant in all six drafts:\n\n- grain is stop x line, no rollup\n- null is a gap, drawn as a break or a hatch, never a zero\n- Boardings and Alightings, never ons or offs\n- Change is boardings less alightings within a month\n- every control shown is URL state\n- ~800 rows is the working scale"
     },
     {
       "id": "next-step",
-      "page": "page-1",
-      "x": 1560,
-      "y": 2760,
+      "page": "panels",
+      "x": 4400,
+      "y": 520,
       "w": 460,
-      "text": "Once you pick one, /grill-with-docs is where the choice and its ADR should land."
+      "text": "Once one of these is chosen, the choice and the reasoning behind it belong in an architecture decision record, not on this canvas."
     },
     {
       "id": "map-asks",
-      "page": "page-2",
-      "x": 3300,
-      "y": 2080,
+      "page": "encodings",
+      "x": 4400,
+      "y": 0,
       "w": 470,
       "text": "Which draft answers which ask:\n\n- more than circle size -> G, H, K, L, M, N, O, P, Q\n- line width by segment -> I\n- large map with togglable layers -> J, which can hold any of the encodings as a layer\n\nEvery map artboard on this page uses the same stations, the same figures, and the same not-reported stop in the middle of the A Line, so the channels can be compared rather than the data."
     },
     {
       "id": "map-verdict",
-      "page": "page-2",
-      "x": 3300,
-      "y": 2560,
+      "page": "encodings",
+      "x": 4400,
+      "y": 331,
       "w": 470,
       "text": "L and N together cover the most ground.\n\nTwo-sided spikes take the strongest channel still unspent and put Boardings and Alightings on the map at once, so Change becomes something a reader sees rather than something they trust. Decluttered labels cost almost nothing, compose with any other draft, and are the only option that can print an exact figure or the words 'no report'.\n\nH remains the cheapest thing to reason about and the dearest to build, because MapLibre circles take no pattern fill."
     },
     {
-      "id": "map-placeholder",
-      "page": "page-2",
-      "x": 3300,
-      "y": 3040,
-      "w": 470,
-      "text": "The map beneath every draft here is drawn, not rendered. MapLibre will not paint in the Browser pane, so the basemap, the route geometry and the station positions are stand-ins for the committed metro_lines.geojson."
-    },
-    {
       "id": "round-two",
-      "page": "page-3",
-      "x": 3300,
+      "page": "round-two",
+      "x": 4400,
       "y": 0,
       "w": 470,
-      "text": "Round two, drawn from what you named.\n\nSix of these eight respond to a click: T, U, S, Q2, V and W. Pick a view, move a field, tick a row, flip a mode, change a scale, drag a split handle.\n\nT and U are the panel work: one panel that switches density, and one that lets a reader build the grid. W is the layout question you asked second - how much room the map takes from the chart. I2 and Q2 are the two map refinements you asked for by name, and V is the sparkline map. R assembles the map-led shell. S is the state question a still picture cannot settle."
+      "text": "Round two answers the questions the first six drafts left open.\n\nSix of these eight respond to a click: T, U, S, Q2, V and W. Pick a view, move a field, tick a row, flip a mode, change a scale, drag a split handle.\n\nT and U are the panel work: one panel that switches density, and one that lets a reader build the grid. W is the layout question - how much room the map takes from the chart. I2 and Q2 refine two map drafts, and V is the sparkline map. R assembles the map-led shell. S is the state question a still picture cannot settle."
     },
     {
       "id": "round-two-verdict",
-      "page": "page-3",
-      "x": 3300,
-      "y": 520,
+      "page": "round-two",
+      "x": 4400,
+      "y": 457,
       "w": 470,
       "text": "W covers the most ground of the eight.\n\nIt is the only artboard that changes how much of the screen each figure gets, so it settles a question every other draft on this canvas inherits rather than asks. Every panel and every encoding here is drawn at whatever size the current layout happens to give it, and three of the four splits change that size enough to change which drafts are still viable.\n\nAmong the panels themselves, U covers the most ground: a pivot sidebar is the only draft that lets a reader change what the grid is about rather than how it looks. T is the cheaper half of the same idea and could ship first."
     },
     {
       "id": "round-two-open",
-      "page": "page-3",
-      "x": 3300,
-      "y": 1560,
+      "page": "round-two",
+      "x": 4400,
+      "y": 964,
       "w": 470,
       "text": "Three things these eight leave open.\n\nDrag and drop. U's sidebar is clicked, not dragged, and W's splits are picked rather than dragged from a handle. Both are larger builds and both need a keyboard path.\n\nRows beyond Stop x Line. Month in Rows would give a small-multiple-per-month layout that none of these draws.\n\nMobile. Every frame here is the lg breakpoint and up. W's splits all collapse to one column below it, which means the space question has a second, unanswered half."
     },
     {
       "id": "round-two-palette",
-      "page": "page-3",
-      "x": 3300,
-      "y": 2160,
+      "page": "round-two",
+      "x": 4400,
+      "y": 1364,
       "w": 470,
       "text": "Colour notes for this page.\n\nThe line hues used in S and Q2 separate by delta-E 9.4 at worst for a deuteranope, which clears the floor of 8. The number that matters is the protanope's 3.7 between A and D, which does not, and it is why every ring carries a label or a key rather than relying on the hue. Two of the hues also fall under 3:1 against the surface. Run npm run check-palette to reproduce all three.\n\nU's Change ramp is orange to teal through a grey middle, centred on zero rather than on the data. The red-to-green ramp it replaces separates by too little for a deuteranope, which is the same failure the shipped stop selection palette has at slots 3 and 4."
     },
     {
       "id": "layers-intro",
-      "page": "page-4",
-      "x": 3300,
+      "page": "layers",
+      "x": 4400,
       "y": 0,
       "w": 470,
-      "text": "The layers you named, drawn against what each actually costs.\n\nX and Z are the two ends of the list. Y is the state question draft J left open, and it is the one to tick through: the address bar under the map rewrites itself as layers go on and off.\n\nThe cost sheet below carries all of them at once, ordered cheapest first, and adds one you did not name."
+      "text": "The candidate map layers, drawn against what each actually costs.\n\nX and Z are the two ends of the list. Y is the state question draft J left open, and it is the one to tick through: the address bar under the map rewrites itself as layers go on and off.\n\nThe cost sheet below carries all of them at once, ordered cheapest first, and adds one nobody asked for."
     },
     {
       "id": "layers-checked",
-      "page": "page-4",
-      "x": 3300,
-      "y": 400,
+      "page": "layers",
+      "x": 4400,
+      "y": 306,
       "w": 470,
       "text": "Two things were checked against the real feeds rather than assumed, and both changed the answer.\n\nAccessibility is not the cheap layer it looks like. Metro's rail and bus GTFS both ship a ten-column stops.txt with no wheelchair_boarding, no pathways.txt, no levels.txt, and no wheelchair_accessible in trips.txt. The field the plan rested on is simply not published.\n\nIsochrones are cheaper than feared for rail and dearer than feared for everything. The stop set is not the ~800 rows of a typical table: the committed payloads name 110 rail stops and 6,785 bus stops. Three bands each is 330 polygons or 20,598."
     },
     {
       "id": "layers-verdict",
-      "page": "page-4",
-      "x": 3300,
-      "y": 1000,
+      "page": "layers",
+      "x": 4400,
+      "y": 805,
       "w": 470,
       "text": "Y covers the most ground of the four.\n\nEvery other layer on this page is a bet on data that has to be found, fetched or computed, and none of them can ship until the shelf they sit on exists. Y is that shelf, it is buildable today against layers the app already has, and it settles the design question the others all inherit: what a layered map does to a shareable link, and how many layers a reader can be allowed to switch on at once.\n\nOf the layers themselves, isochrones for rail only is the one to build first. It is small enough to commit, and it is the only layer here that changes what the map is for rather than what it shows."
     },
     {
-      "id": "stations-brief",
-      "page": "page-5",
-      "x": 0,
-      "y": 940,
-      "w": 470,
-      "text": "The symbol sheet you sent is a checklist, not a source.\n\nIt is copyrighted work by Ing. Stephan F. Steinbach, steinbach.wien, so nothing here reproduces its styling, colours, layout or legend. What it was used for is its list of functional distinctions, tested one by one against this dataset.\n\nTwo survive. A station knows how many lines call there, because that is exactly what stop_ridership.rail.json records. A station also knows whether a line ends there, from stop_times.txt. The rest - shared versus separate platforms, walking interchanges, station pairs treated as one, one-way sections - need data that does not exist here, and two of them collide with ADR-0013 outright."
-    },
-    {
-      "id": "stations-measured",
-      "page": "page-5",
-      "x": 1100,
-      "y": 940,
-      "w": 470,
-      "text": "AA is measured, not sketched.\n\nEvery figure on it comes from the committed rail payload run through buildStopView's own radius scale. 110 rail stops report ridership: 96 on one line, 12 on two, Union Station on three, 7th Street on four.\n\nAt 7th Street the four circles are 22.0, 19.4, 19.0 and 16.8 px at one coordinate, painted in line order at 75% opacity. The four bands a reader sees are #ee4c51, #c03347, #ee9820 and #b36c84, and only the outermost resembles the line that drew it. The A Line's entire contribution is a 0.4 px band."
-    },
-    {
-      "id": "stations-verdict",
-      "page": "page-5",
-      "x": 2200,
-      "y": 940,
-      "w": 470,
-      "text": "DD covers the most ground, because it is the only one that puts all four marks against the same five stations and the same six tests.\n\nOf the marks themselves, BB is the one to build. It is the only design that keeps every rule this app already argues for: colour stays line identity, nothing is summed, nothing moves off its coordinate, and a line that reported nothing keeps a dashed sector of its own. It pays for that by demoting magnitude from area to thickness.\n\nCC is the cheapest and the one to try first if BB looks expensive, because the offset can be precomputed into the feature coordinates and the layer never changes. It cannot survive the four-line case, so it ends up an interaction rather than an encoding."
-    },
-    {
-      "id": "stations-open",
-      "page": "page-5",
-      "x": 3300,
-      "y": 940,
-      "w": 470,
-      "text": "What these four leave open.\n\nThe letter in the mark. The palette validator puts the C Line green and the B Line red at deuteranope delta-E 4.9, under the floor of 8, so at least two Metro line colours cannot be told apart by hue alone. Any mark that shows several lines at one point needs a letter, and none of these four draws one yet.\n\nZoom. Every mark here is drawn at one scale. A segmented ring at zoom 10 is nine pixels across.\n\nBus. All four are drawn on rail, where a station is a station. A bus stop in this app is a name centroided across both sides of a street, and 'how many lines call here' means something different there."
-    },
-    {
       "id": "frequency-measured",
-      "page": "page-4",
-      "x": 3300,
-      "y": 2140,
+      "page": "frequency",
+      "x": 4400,
+      "y": 0,
       "w": 470,
       "text": "Frequency was counted before it was drawn, and the count changed the design.\n\nEvery weekday departure at every rail stop was read out of the same stop_times.txt the terminus rule uses. The A Line runs 240, the E Line 239, the B Line 208, the D Line 204, the C Line 178 and the K Line 176 - and within each line the spread across stops is nil. The only three rail stops that differ are Pacific Ave, 5th Street and 1st Street on the Long Beach loop, which trains pass in one direction, and direction is the thing this pipeline deliberately collapses.\n\nSo on rail, frequency is a property of the line. On bus it is not: across the middle nine tenths of stop-and-line pairs it runs from 18 weekday departures to 243."
     },
     {
       "id": "frequency-verdict",
-      "page": "page-4",
-      "x": 3300,
-      "y": 2740,
+      "page": "frequency",
+      "x": 4400,
+      "y": 574,
       "w": 470,
       "text": "EE covers the most ground of the three, and its answer is the width of the route line.\n\nThat encoding is honest about the grain the measurement found, it spends a channel nothing else uses, and it leaves every stop-mark encoding on this canvas untouched. It is also the cheapest thing anyone has proposed here: one width expression and a six-row table.\n\nFF is the one worth arguing about, because Boardings per trip is a Stop Measure rather than a layer and it reorders the ranked table by a median of 43 places in the top hundred. It needs an exposure floor before it can ship, or it ranks a two-trip school run first.\n\nGG is the caveat both of them inherit. Nearly a tenth of weekday Boardings sit on a stop-and-line pair the current timetable does not serve at all."
     },
     {
-      "id": "stations-round-two",
-      "page": "page-5",
-      "x": 3720,
-      "y": 1600,
-      "w": 470,
-      "text": "The three things page five left open, answered.\n\nJJ is the letter. Metro's six line colours fail three of the validator's checks and cannot be changed, so the mark has to carry the fix. The rule that comes out of it is arithmetic rather than taste: a letter goes inside a sector when the sector has nine pixels of band and nine of arc, and a badge row goes underneath when it does not. On the committed rail data that means two stations in the whole network get badges.\n\nKK is zoom. At zoom 10 the median gap between neighbouring rail stations is 9.8 pixels, so a ring cannot shrink to fit; it has to stop being a ring and become a dot that says only that several lines call here.\n\nLL is bus, and it is the one that unsettles the rest. A bus stop is a name that several kerbside poles were averaged into, 22% of them are multi-line against 13% on rail, and two of them carry ten lines."
-    },
-    {
-      "id": "marks-brief",
-      "page": "page-6",
-      "x": 2200,
-      "y": 0,
-      "w": 470,
-      "text": "The two you asked for on the second pass.\n\nMM takes the square seriously as a percentage carrier. A circle has no edge to read a fraction against; a square has a baseline and two parallel sides, so a fill height is a proportion a reader can actually decode. The shares drawn are real: 7th Street is 19.9% of the D Line's Boardings and 8.9% of the A Line's, on 4,444 and 6,288.\n\nNN draws shared corridors side by side rather than stacked. Where the B and D Lines share the Wilshire tunnel the map currently shows a red railway with purple stubs, which is the station blend stretched along a corridor."
-    },
-    {
-      "id": "marks-verdict",
-      "page": "page-6",
-      "x": 2200,
-      "y": 560,
-      "w": 470,
-      "text": "NN covers the most ground, and it is also the harder build.\n\nSide-by-side corridors fix a failure that spans miles rather than pixels, and the station-bar variant answers the corridor and the multi-line station with one idea. What it needs first is geometry the repo does not have: matching segments by identical endpoints finds only the Regional Connector and the C and K Lines, and finds nothing between the B and the D even though 46% of the D Line's vertices lie within ten metres of the B. The pairing has to be computed in the ingest, not in the style.\n\nOf MM's four modes, sized-and-filled is the one to test, because it is the only mark on this canvas that carries two stop-grain quantities without spending colour. Test it on Wilshire rather than downtown: thirty stops in the span these eight occupy is where the fill line becomes one pixel."
-    },
-    {
       "id": "segment-frequency-verdict",
-      "page": "page-4",
-      "x": 3300,
-      "y": 3180,
+      "page": "frequency",
+      "x": 4400,
+      "y": 1190,
       "w": 470,
       "text": "Segment frequency was counted before it was drawn, and the count says which mode this is for.\n\nEvery consecutive stop pair on both feeds was read out of stop_times.txt for one weekday. Three of the six rail lines carry one identical figure on every segment they run - the B at 208, the D at 204, the K at 176 - and the E and C vary by six and seven departures across their whole length. Only the A Line spreads, from 114 to 240, and that is the Long Beach loop, which trains pass in one direction. On bus it is the opposite: 9,823 segments across 110 routes, running 1 to 339 with the middle nine tenths between 17 and 212, and only three of the 110 routes flat. Line 720 alone runs 339 through the Wilshire core and 98 at the Santa Monica end.\n\nSo a segment frequency layer draws six flat lines on rail and a real surface on bus. EE put frequency on the width of the whole line and was right to, for rail. OO and PP are the bus answer."
     },
     {
       "id": "segment-frequency-open",
-      "page": "page-4",
-      "x": 3300,
-      "y": 3800,
+      "page": "frequency",
+      "x": 4400,
+      "y": 1932,
       "w": 470,
       "text": "What OO, PP and QQ leave open.\n\nWidth is claimed twice. Draft I encodes segment load in stroke width and OO's first mode encodes frequency in it. One map cannot have both, so whichever ships decides what a thick line means.\n\nOffset geometry is claimed twice. OO's parallel lines and NN's side-by-side corridors want the same computed offsets for different meanings, and neither can be built in the style alone.\n\nA ramp cannot start pale. PP's two lightest bands sit at 1.3 and 2.0 to 1 against the map surface, under the three to one floor, so an honest sequential ramp on this basemap has three usable bands or it needs a casing on every segment.\n\nSeven of the nine tags have no source yet. QQ draws them anyway, because the empty rows are what the tag row has to be designed around."
     },
     {
+      "id": "stations-brief",
+      "page": "stations",
+      "x": 4400,
+      "y": 0,
+      "w": 470,
+      "text": "A published transit symbol sheet was used as a checklist here, not as a source.\n\nIt is copyrighted work by Ing. Stephan F. Steinbach, steinbach.wien, so nothing here reproduces its styling, colours, layout or legend. What it was used for is its list of functional distinctions, tested one by one against this dataset.\n\nTwo survive. A station knows how many lines call there, because that is exactly what the committed rail payload records. A station also knows whether a line ends there, from the timetable feed. The rest - shared versus separate platforms, walking interchanges, station pairs treated as one, one-way sections - need data that does not exist here, and two of them collide outright with the rule that a stop is identified by its name."
+    },
+    {
+      "id": "stations-measured",
+      "page": "stations",
+      "x": 4400,
+      "y": 551,
+      "w": 470,
+      "text": "AA is measured, not sketched.\n\nEvery figure on it comes from the committed rail payload run through buildStopView's own radius scale. 110 rail stops report ridership: 96 on one line, 12 on two, Union Station on three, 7th Street on four.\n\nAt 7th Street the four circles are 22.0, 19.4, 19.0 and 16.8 px at one coordinate, painted in line order at 75% opacity. The four bands a reader sees are #ee4c51, #c03347, #ee9820 and #b36c84, and only the outermost resembles the line that drew it. The A Line's entire contribution is a 0.4 px band."
+    },
+    {
+      "id": "stations-verdict",
+      "page": "stations",
+      "x": 4400,
+      "y": 994,
+      "w": 470,
+      "text": "DD covers the most ground, because it is the only one that puts all four marks against the same five stations and the same six tests.\n\nOf the marks themselves, BB is the one to build. It is the only design that keeps every rule this app already argues for: colour stays line identity, nothing is summed, nothing moves off its coordinate, and a line that reported nothing keeps a dashed sector of its own. It pays for that by demoting magnitude from area to thickness.\n\nCC is the cheapest and the one to try first if BB looks expensive, because the offset can be precomputed into the feature coordinates and the layer never changes. It cannot survive the four-line case, so it ends up an interaction rather than an encoding."
+    },
+    {
+      "id": "stations-open",
+      "page": "stations",
+      "x": 4400,
+      "y": 1576,
+      "w": 470,
+      "text": "What these four leave open.\n\nThe letter in the mark. The palette validator puts the C Line green and the B Line red at deuteranope delta-E 4.9, under the floor of 8, so at least two Metro line colours cannot be told apart by hue alone. Any mark that shows several lines at one point needs a letter, and none of these four draws one yet.\n\nZoom. Every mark here is drawn at one scale. A segmented ring at zoom 10 is nine pixels across.\n\nBus. All four are drawn on rail, where a station is a station. A bus stop in this app is a name centroided across both sides of a street, and 'how many lines call here' means something different there."
+    },
+    {
+      "id": "stations-round-two",
+      "page": "stations",
+      "x": 4400,
+      "y": 2093,
+      "w": 470,
+      "text": "The three things page five left open, answered.\n\nJJ is the letter. Metro's six line colours fail three of the validator's checks and cannot be changed, so the mark has to carry the fix. The rule that comes out of it is arithmetic rather than taste: a letter goes inside a sector when the sector has nine pixels of band and nine of arc, and a badge row goes underneath when it does not. On the committed rail data that means two stations in the whole network get badges.\n\nKK is zoom. At zoom 10 the median gap between neighbouring rail stations is 9.8 pixels, so a ring cannot shrink to fit; it has to stop being a ring and become a dot that says only that several lines call here.\n\nLL is bus, and it is the one that unsettles the rest. A bus stop is a name that several kerbside poles were averaged into, 22% of them are multi-line against 13% on rail, and two of them carry ten lines."
+    },
+    {
       "id": "square-station-verdict",
-      "page": "page-5",
-      "x": 1100,
-      "y": 2760,
+      "page": "stations",
+      "x": 4400,
+      "y": 2796,
       "w": 470,
       "text": "RR is BB with a floor under it, drawn on the same thirteen stations and the same figures so the geometry is the only variable.\n\nBB's stated concession is that thickness reads magnitude worse than area does. A column standing on a shared baseline is read by length instead, which is the channel a reader decodes most accurately of any on this canvas, and two lines at one station are compared against each other directly rather than as two arcs at different radii. Everything BB protects survives: colour is line identity, nothing is summed, nothing leaves its coordinate, an unreported line keeps a dashed column of its own.\n\nTwo things it buys that BB cannot. The footprint is fixed, so a four-line station takes the room a one-line station takes and the map's density stops depending on the data. And the frame is a visible hundred per cent, so a column reads as a share of the network's busiest station without a second mark.\n\nThe second reading on the artboard is the square pie: the same box divided by area, so each line takes its share. That one answers composition and nothing else - at Union Station the A Line is 42% of what is counted, the B Line 36%, the D Line 22% - and it buys that by summing a station's lines, which is the rollup every other draft here refuses. It belongs in the panel for a selected station, not on the map, where a full box everywhere says every station is the same size.\n\nWhat the columns pay: squares tile badly against a diagonal, so the four stations on the A Line's downtown dogleg sit closer than their boxes would like, and at low zoom a box degrades worse than a disc."
     },
     {
       "id": "square-station-letters",
-      "page": "page-5",
-      "x": 1100,
-      "y": 3320,
+      "page": "stations",
+      "x": 4400,
+      "y": 4045,
       "w": 470,
       "text": "The letter rule needed one correction the ring did not.\n\nJJ's arithmetic is nine pixels of band and nine of arc. Ported straight across it gates on the column's width AND its height - and a column's height is the datum, so a quiet station would lose its label for being quiet. The letter therefore sits at the foot of its column rather than in the middle, and only the width gates it.\n\nThat lands on JJ's own answer: at a 20 pixel box a column is 20 wide on one line and 10 on two, both over the floor, and 6.7 on three and 5 on four, both under. So the one and two-line stations carry letters inside and Union Station and 7th Street carry a badge row - the same two exceptions in the whole network JJ found for the ring.\n\nThe pie loses the letter differently, and worse. A region is sized by its own share, so at a lopsided two-line station the smaller line's area falls under the floor: seven of the thirteen stations drop to badges under the pie against two under the columns. A fixed-width column guarantees a label slot; a proportional region does not, and the line it takes the letter from is the smaller one, which is the one a reader is least able to guess."
+    },
+    {
+      "id": "marks-brief",
+      "page": "corridors",
+      "x": 4400,
+      "y": 0,
+      "w": 470,
+      "text": "Two marks drawn on a second pass, after the ring and the fan.\n\nMM takes the square seriously as a percentage carrier. A circle has no edge to read a fraction against; a square has a baseline and two parallel sides, so a fill height is a proportion a reader can actually decode. The shares drawn are real: 7th Street is 19.9% of the D Line's Boardings and 8.9% of the A Line's, on 4,444 and 6,288.\n\nNN draws shared corridors side by side rather than stacked. Where the B and D Lines share the Wilshire tunnel the map currently shows a red railway with purple stubs, which is the station blend stretched along a corridor."
+    },
+    {
+      "id": "marks-verdict",
+      "page": "corridors",
+      "x": 4400,
+      "y": 489,
+      "w": 470,
+      "text": "NN covers the most ground, and it is also the harder build.\n\nSide-by-side corridors fix a failure that spans miles rather than pixels, and the station-bar variant answers the corridor and the multi-line station with one idea. What it needs first is geometry the repo does not have: matching segments by identical endpoints finds only the Regional Connector and the C and K Lines, and finds nothing between the B and the D even though 46% of the D Line's vertices lie within ten metres of the B. The pairing has to be computed in the ingest, not in the style.\n\nOf MM's four modes, sized-and-filled is the one to test, because it is the only mark on this canvas that carries two stop-grain quantities without spending colour. Test it on Wilshire rather than downtown: thirty stops in the span these eight occupy is where the fill line becomes one pixel."
     }
   ],
   "launch": {
     "view": "canvas",
-    "page": "page-5"
+    "page": "start-here"
   },
   "pages": [
     {
-      "id": "page-1",
+      "id": "start-here",
+      "name": "Start here"
+    },
+    {
+      "id": "panels",
       "name": "Panel layouts"
     },
     {
-      "id": "page-2",
+      "id": "encodings",
       "name": "Map encodings"
     },
     {
-      "id": "page-3",
+      "id": "round-two",
       "name": "Round two"
     },
     {
-      "id": "page-4",
+      "id": "layers",
       "name": "Map layers"
     },
     {
-      "id": "page-5",
+      "id": "frequency",
+      "name": "Service frequency"
+    },
+    {
+      "id": "stations",
       "name": "Multi-line stations"
     },
     {
-      "id": "page-6",
+      "id": "corridors",
       "name": "Marks and corridors"
+    },
+    {
+      "id": "superseded",
+      "name": "Superseded"
     }
   ]
 }
