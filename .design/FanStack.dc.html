@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
   </style>
 </helmet>
 <div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
@@ -57,7 +62,7 @@
         <sc-for list="{{pins}}" as="p" hint-placeholder-count="13">
           <g>
             <circle cx="{{p.cx}}" cy="{{p.cy}}" r="2.6" fill="#f8f6f1" stroke="#44403c" stroke-width="1.2"></circle>
-            <text x="{{p.lx}}" y="{{p.ly}}" font-size="9.5" fill="#44403c" text-anchor="{{p.anchor}}">{{p.name}}</text>
+            <foreignObject x="{{p.lx}}" y="{{p.ly}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-{{p.anchor}}" style="font-size:9.5px;color:#44403c">{{p.name}}</div></foreignObject>
           </g>
         </sc-for>
       </svg>

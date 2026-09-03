@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
     .hit { cursor: pointer; user-select: none; }
     .hit:hover { background: #f0ede6 !important; }
   </style>
@@ -80,7 +85,7 @@
                 <sc-if value="{{p.partial}}" hint-placeholder-val="{{ false }}">
                   <circle cx="{{p.cx}}" cy="{{p.cy}}" r="{{p.ring}}" fill="none" stroke="#033056" stroke-width="2.5" stroke-dasharray="5 4"></circle>
                 </sc-if>
-                <text x="{{p.lx}}" y="{{p.ly}}" font-size="9" fill="#44403c">{{p.short}}</text>
+                <foreignObject x="{{p.lx}}" y="{{p.ly}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-start" style="font-size:9px;color:#44403c">{{p.short}}</div></foreignObject>
               </g>
             </sc-for>
           </svg>

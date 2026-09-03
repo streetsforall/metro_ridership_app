@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
   </style>
 </helmet>
 <div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
@@ -63,7 +68,7 @@
             <g>
               <circle cx="{{l.cx}}" cy="22" r="11.5" fill="none" stroke="#d6d3d1" stroke-width="7"></circle>
               <path d="{{l.path}}" fill="#0072bc"></path>
-              <text x="{{l.cx}}" y="50" font-size="9" fill="#78716c" text-anchor="middle">{{l.label}}</text>
+              <foreignObject x="{{l.cx}}" y="50" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:9px;color:#78716c">{{l.label}}</div></foreignObject>
             </g>
           </sc-for>
         </svg>

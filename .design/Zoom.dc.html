@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
     .hit { cursor: pointer; user-select: none; }
     .hit:hover { filter: brightness(0.97); }
   </style>
@@ -43,10 +48,10 @@
         <sc-for list="{{panels}}" as="p" hint-placeholder-count="4">
           <g>
             <rect x="{{p.x}}" y="26" width="204" height="238" rx="4" fill="#f8f6f1"></rect>
-            <text x="{{p.tx}}" y="18" font-size="11" font-weight="700" fill="#033056" text-anchor="middle">{{p.title}}</text>
-            <text x="{{p.tx}}" y="284" font-size="9.5" fill="#78716c" text-anchor="middle">{{p.scale}}</text>
-            <text x="{{p.tx}}" y="298" font-size="9.5" fill="#a8a29e" text-anchor="middle">{{p.gap}}</text>
-            <text x="{{p.tx}}" y="316" font-size="9.5" fill="{{p.verdictInk}}" text-anchor="middle">{{p.verdict}}</text>
+            <foreignObject x="{{p.tx}}" y="18" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:11px;font-weight:700;color:#033056">{{p.title}}</div></foreignObject>
+            <foreignObject x="{{p.tx}}" y="284" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:9.5px;color:#78716c">{{p.scale}}</div></foreignObject>
+            <foreignObject x="{{p.tx}}" y="298" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:9.5px;color:#a8a29e">{{p.gap}}</div></foreignObject>
+            <foreignObject x="{{p.tx}}" y="316" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:9.5px;color:{{p.verdictInk}}">{{p.verdict}}</div></foreignObject>
 
             <sc-for list="{{p.links}}" as="l" hint-placeholder-count="5">
               <line x1="{{l.x1}}" y1="{{l.y1}}" x2="{{l.x2}}" y2="{{l.y2}}" stroke="#c9c5be" stroke-width="1.4"></line>
@@ -60,7 +65,7 @@
                   <circle cx="{{m.cx}}" cy="{{m.cy}}" r="{{m.dotR}}" fill="{{m.dotFill}}" stroke="#f8f6f1" stroke-width="{{m.dotStroke}}"></circle>
                 </sc-if>
                 <sc-if value="{{m.count}}" hint-placeholder-val="{{ true }}">
-                  <text x="{{m.cx}}" y="{{m.ty}}" font-size="9" font-weight="700" fill="#f8f6f1" text-anchor="middle">{{m.label}}</text>
+                  <foreignObject x="{{m.cx}}" y="{{m.ty}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:9px;font-weight:700;color:#f8f6f1">{{m.label}}</div></foreignObject>
                 </sc-if>
               </g>
             </sc-for>

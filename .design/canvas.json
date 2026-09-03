@@ -15,7 +15,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "A Â· Ranked table (as built)",
+      "title": "A · Ranked table (as built)",
       "page": "panels"
     },
     {
@@ -24,7 +24,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "C Â· Corridor profile",
+      "title": "C · Corridor profile",
       "page": "panels"
     },
     {
@@ -33,7 +33,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "D Â· Flow table",
+      "title": "D · Flow table",
       "page": "panels"
     },
     {
@@ -42,7 +42,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "E Â· Month matrix",
+      "title": "E · Month matrix",
       "page": "panels"
     },
     {
@@ -60,7 +60,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "L Â· Two-sided spikes",
+      "title": "L · Two-sided spikes",
       "page": "encodings"
     },
     {
@@ -69,7 +69,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "N Â· Decluttered labels",
+      "title": "N · Decluttered labels",
       "page": "encodings"
     },
     {
@@ -78,7 +78,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "Iâ‚‚ Â· Segment load, narrower",
+      "title": "Iâ‚‚ · Segment load, narrower",
       "page": "encodings"
     },
     {
@@ -87,7 +87,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "H Â· Cross-hatch density",
+      "title": "H · Cross-hatch density",
       "page": "encodings"
     },
     {
@@ -96,7 +96,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "M Â· Hex extrusion",
+      "title": "M · Hex extrusion",
       "page": "encodings"
     },
     {
@@ -105,7 +105,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "J Â· Large map with layer toggles",
+      "title": "J · Large map with layer toggles",
       "page": "encodings"
     },
     {
@@ -123,7 +123,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "R Â· Assembled (F + L + N)",
+      "title": "R · Assembled (F + L + N)",
       "page": "round-two"
     },
     {
@@ -132,7 +132,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "T Â· Layout switcher Â· click me",
+      "title": "T · Layout switcher · click me",
       "page": "round-two",
       "is_interactive": true
     },
@@ -142,7 +142,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "U Â· Pivot sidebar Â· click me",
+      "title": "U · Pivot sidebar · click me",
       "page": "round-two",
       "is_interactive": true
     },
@@ -152,7 +152,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "W Â· Space split Â· drag the handles",
+      "title": "W · Space split · drag the handles",
       "page": "round-two",
       "is_interactive": true
     },
@@ -162,7 +162,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "S Â· Stop or stop Ã— line Â· click me",
+      "title": "S · Stop or stop Ã— line · click me",
       "page": "round-two",
       "is_interactive": true
     },
@@ -172,7 +172,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "V Â· Sparklines on the map Â· click me",
+      "title": "V · Sparklines on the map · click me",
       "page": "round-two",
       "is_interactive": true
     },
@@ -182,7 +182,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "Qâ‚‚ Â· Wedge sweep, two modes Â· click me",
+      "title": "Qâ‚‚ · Wedge sweep, two modes · click me",
       "page": "round-two",
       "is_interactive": true
     },
@@ -192,7 +192,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "Y Â· Layer picker and its URL Â· tick me",
+      "title": "Y · Layer picker and its URL · tick me",
       "page": "layers",
       "is_interactive": true
     },
@@ -202,7 +202,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "Z Â· Isochrones Â· click me",
+      "title": "Z · Isochrones · click me",
       "page": "layers",
       "is_interactive": true
     },
@@ -212,7 +212,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "X Â· Accessibility",
+      "title": "X · Accessibility",
       "page": "layers"
     },
     {
@@ -230,7 +230,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "EE Â· Service frequency Â· click me",
+      "title": "EE · Service frequency · click me",
       "page": "frequency",
       "is_interactive": true
     },
@@ -240,7 +240,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "FF Â· Boardings per trip Â· click me",
+      "title": "FF · Boardings per trip · click me",
       "page": "frequency",
       "is_interactive": true
     },
@@ -250,7 +250,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "GG Â· Two clocks Â· click me",
+      "title": "GG · Two clocks · click me",
       "page": "frequency",
       "is_interactive": true
     },
@@ -260,7 +260,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "OO Â· Segment frequency, four textures Â· click me",
+      "title": "OO · Segment frequency, four textures · click me",
       "page": "frequency",
       "is_interactive": true
     },
@@ -270,7 +270,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "PP Â· Frequency as colour, identity as a letter Â· click me",
+      "title": "PP · Frequency as colour, identity as a letter · click me",
       "page": "frequency",
       "is_interactive": true
     },
@@ -280,7 +280,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "QQ Â· Station tags, and what would source them",
+      "title": "QQ · Station tags, and what would source them",
       "page": "frequency"
     },
     {
@@ -289,7 +289,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "AA Â· What the map draws today",
+      "title": "AA · What the map draws today",
       "page": "stations"
     },
     {
@@ -298,7 +298,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "BB Â· Segmented ring",
+      "title": "BB · Segmented ring",
       "page": "stations"
     },
     {
@@ -307,7 +307,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "RR Â· Square station, two readings Â· click me",
+      "title": "RR · Square station, two readings · click me",
       "page": "stations",
       "is_interactive": true
     },
@@ -317,7 +317,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "CC Â· Fan the circles",
+      "title": "CC · Fan the circles",
       "page": "stations"
     },
     {
@@ -326,7 +326,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "DD Â· Six marks compared Â· click me",
+      "title": "DD · Six marks compared · click me",
       "page": "stations",
       "is_interactive": true
     },
@@ -336,7 +336,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "JJ Â· The letter in the mark Â· click me",
+      "title": "JJ · The letter in the mark · click me",
       "page": "stations",
       "is_interactive": true
     },
@@ -346,7 +346,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "KK Â· The mark at four zooms Â· click me",
+      "title": "KK · The mark at four zooms · click me",
       "page": "stations",
       "is_interactive": true
     },
@@ -356,7 +356,7 @@
       "y": 2080,
       "w": 1420,
       "h": 1000,
-      "title": "LL Â· What a bus stop is",
+      "title": "LL · What a bus stop is",
       "page": "stations"
     },
     {
@@ -365,7 +365,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "MM Â· Squares and percentages Â· click me",
+      "title": "MM · Squares and percentages · click me",
       "page": "corridors",
       "is_interactive": true
     },
@@ -375,7 +375,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "NN Â· Side-by-side corridors Â· click me",
+      "title": "NN · Side-by-side corridors · click me",
       "page": "corridors",
       "is_interactive": true
     },
@@ -443,7 +443,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "B Â· Card deck",
+      "title": "B · Card deck",
       "page": "superseded"
     },
     {
@@ -452,7 +452,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "I Â· Segment load by line width",
+      "title": "I · Segment load by line width",
       "page": "superseded"
     },
     {
@@ -461,7 +461,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "K Â· Spike height",
+      "title": "K · Spike height",
       "page": "superseded"
     },
     {
@@ -470,7 +470,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "Q Â· Wedge sweep",
+      "title": "Q · Wedge sweep",
       "page": "superseded"
     },
     {
@@ -479,7 +479,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "G Â· Colour ramp on the circles",
+      "title": "G · Colour ramp on the circles",
       "page": "superseded"
     },
     {
@@ -488,7 +488,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "O Â· Concentric rings",
+      "title": "O · Concentric rings",
       "page": "superseded"
     },
     {
@@ -497,7 +497,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "P Â· Dot density",
+      "title": "P · Dot density",
       "page": "superseded"
     }
   ],

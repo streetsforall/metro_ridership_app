@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
   </style>
 </helmet>
 <div style="width:1420px;height:1000px;padding:30px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;background:#f3eee2">
@@ -42,7 +47,7 @@
           <sc-for list="{{poles}}" as="p" hint-placeholder-count="4">
             <g>
               <circle cx="{{p.x}}" cy="{{p.y}}" r="5" fill="{{p.fill}}"></circle>
-              <text x="{{p.tx}}" y="{{p.ty}}" font-size="9" fill="#57534e" text-anchor="{{p.anchor}}">{{p.label}}</text>
+              <foreignObject x="{{p.tx}}" y="{{p.ty}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-{{p.anchor}}" style="font-size:9px;color:#57534e">{{p.label}}</div></foreignObject>
             </g>
           </sc-for>
 
@@ -71,8 +76,8 @@
           <sc-for list="{{bars}}" as="b" hint-placeholder-count="10">
             <g>
               <rect x="58" y="{{b.y}}" width="{{b.w}}" height="16" rx="2" fill="{{b.fill}}"></rect>
-              <text x="50" y="{{b.ty}}" font-size="10" fill="#57534e" text-anchor="end">{{b.label}}</text>
-              <text x="{{b.vx}}" y="{{b.ty}}" font-size="9.5" fill="#78716c" text-anchor="start">{{b.value}}</text>
+              <foreignObject x="50" y="{{b.ty}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-end" style="font-size:10px;color:#57534e">{{b.label}}</div></foreignObject>
+              <foreignObject x="{{b.vx}}" y="{{b.ty}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-start" style="font-size:9.5px;color:#78716c">{{b.value}}</div></foreignObject>
             </g>
           </sc-for>
           <text x="58" y="292" font-size="9.5" fill="#a8a29e">Bus Stop Places by the number of lines calling, log-scaled bars</text>

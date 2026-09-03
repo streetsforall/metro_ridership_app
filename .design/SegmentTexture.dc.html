@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
     .hit { cursor: pointer; user-select: none; }
     .hit:hover { filter: brightness(0.97); }
   </style>
@@ -61,12 +66,12 @@
         <sc-for list="{{nodes}}" as="n" hint-placeholder-count="12">
           <g>
             <circle cx="{{n.cx}}" cy="{{n.cy}}" r="3.4" fill="#f8f6f1" stroke="#57534e" stroke-width="1.1"></circle>
-            <text x="{{n.cx}}" y="{{n.ly}}" font-size="8" fill="#78716c" text-anchor="{{n.anchor}}" transform="{{n.rotate}}">{{n.name}}</text>
+            <foreignObject x="{{n.cx}}" y="{{n.ly}}" width="1" height="1" style="overflow:visible" transform="{{n.rotate}}"><div class="lbl lbl-{{n.anchor}}" style="font-size:8px;color:#78716c">{{n.name}}</div></foreignObject>
           </g>
         </sc-for>
 
         <sc-for list="{{counts}}" as="c" hint-placeholder-count="11">
-          <text x="{{c.x}}" y="{{c.y}}" font-size="8.5" font-weight="700" fill="#57534e" text-anchor="middle">{{c.text}}</text>
+          <foreignObject x="{{c.x}}" y="{{c.y}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:8.5px;font-weight:700;color:#57534e">{{c.text}}</div></foreignObject>
         </sc-for>
 
         <text x="18" y="176" font-size="10" fill="#78716c">D Line under the same street — every segment 204, whatever the texture</text>
@@ -79,7 +84,7 @@
         <sc-for list="{{keySwatches}}" as="k" hint-placeholder-count="4">
           <g>
             <line x1="{{k.x1}}" y1="228" x2="{{k.x2}}" y2="228" stroke="{{k.stroke}}" stroke-width="{{k.width}}" stroke-dasharray="{{k.dash}}"></line>
-            <text x="{{k.tx}}" y="231" font-size="8.5" fill="#78716c">{{k.text}}</text>
+            <foreignObject x="{{k.tx}}" y="231" width="1" height="1" style="overflow:visible"><div class="lbl lbl-start" style="font-size:8.5px;color:#78716c">{{k.text}}</div></foreignObject>
           </g>
         </sc-for>
       </svg>

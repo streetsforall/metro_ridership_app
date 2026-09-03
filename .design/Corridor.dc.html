@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
   </style>
 </helmet>
 <div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
@@ -53,7 +58,7 @@
           <g>
             <rect x="{{s.x}}" width="16" y="{{s.bY}}" height="{{s.bH}}" fill="#0072bc" rx="3"></rect>
             <rect x="{{s.x}}" width="16" y="144" height="{{s.aH}}" fill="#8ec4e6" rx="3"></rect>
-            <text x="{{s.labelX}}" y="{{s.labelY}}" font-size="10" fill="{{s.labelInk}}" text-anchor="end" transform="{{s.labelRotate}}">{{s.label}}</text>
+            <foreignObject x="{{s.labelX}}" y="{{s.labelY}}" width="1" height="1" style="overflow:visible" transform="{{s.labelRotate}}"><div class="lbl lbl-end" style="font-size:10px;color:{{s.labelInk}}">{{s.label}}</div></foreignObject>
             <sc-if value="{{s.selected}}" hint-placeholder-val="{{ false }}">
               <rect x="{{s.ringX}}" width="24" y="{{s.ringY}}" height="{{s.ringH}}" fill="none" stroke="#033056" stroke-width="2" rx="5"></rect>
             </sc-if>

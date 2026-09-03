@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
     .hit { cursor: pointer; user-select: none; }
     .hit:hover { filter: brightness(0.97); }
   </style>
@@ -58,11 +63,11 @@
         <sc-for list="{{stations}}" as="s" hint-placeholder-count="10">
           <g>
             <circle cx="{{s.cx}}" cy="{{s.cy}}" r="{{s.r}}" fill="#f8f6f1" stroke="#44403c" stroke-width="{{s.sw}}"></circle>
-            <text x="{{s.lx}}" y="{{s.ly}}" font-size="10" fill="#44403c" text-anchor="{{s.anchor}}">{{s.name}}</text>
+            <foreignObject x="{{s.lx}}" y="{{s.ly}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-{{s.anchor}}" style="font-size:10px;color:#44403c">{{s.name}}</div></foreignObject>
           </g>
         </sc-for>
 
-        <text x="{{ callX }}" y="{{ callY }}" font-size="10.5" fill="#7c3aed" text-anchor="middle">{{ callout }}</text>
+        <foreignObject x="{{ callX }}" y="{{ callY }}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:10.5px;color:#7c3aed">{{ callout }}</div></foreignObject>
       </svg>
 
       <div style="position:absolute;right:14px;top:14px;background:#f8f6f1;border-radius:5px;padding:11px 13px;display:flex;flex-direction:column;gap:6px">

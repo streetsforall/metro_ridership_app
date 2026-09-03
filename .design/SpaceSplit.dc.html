@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
     .hit { cursor: pointer; user-select: none; }
     .grip { touch-action: none; display: flex; align-items: center; justify-content: center; }
     .grip > span { border-radius: 2px; background: #ddd9d2; transition: background .12s; }
@@ -45,7 +50,7 @@
           <sc-for list="{{o.thumb}}" as="b" hint-placeholder-count="5">
             <g>
               <rect x="{{b.x}}" y="{{b.y}}" width="{{b.w}}" height="{{b.h}}" rx="2" fill="{{b.fill}}"></rect>
-              <text x="{{b.tx}}" y="{{b.ty}}" font-size="7" fill="{{b.ink}}" text-anchor="middle">{{b.label}}</text>
+              <foreignObject x="{{b.tx}}" y="{{b.ty}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:7px;color:{{b.ink}}">{{b.label}}</div></foreignObject>
             </g>
           </sc-for>
         </svg>

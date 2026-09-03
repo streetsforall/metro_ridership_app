@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
     .hit { cursor: pointer; user-select: none; }
   </style>
 </helmet>
@@ -67,7 +72,7 @@
             <sc-if value="{{r.interchange}}" hint-placeholder-val="{{ false }}">
               <circle cx="{{r.cx}}" cy="{{r.cy}}" r="4" fill="#f8f6f1" stroke="#78716c" stroke-width="1"></circle>
             </sc-if>
-            <text x="{{r.lx}}" y="{{r.ly}}" font-size="9.5" fill="#44403c">{{r.name}}</text>
+            <foreignObject x="{{r.lx}}" y="{{r.ly}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-start" style="font-size:9.5px;color:#44403c">{{r.name}}</div></foreignObject>
           </g>
         </sc-for>
       </svg>
@@ -81,7 +86,7 @@
               <sc-for list="{{l.arcs}}" as="a" hint-placeholder-count="2">
                 <path d="{{a.path}}" fill="{{a.color}}"></path>
               </sc-for>
-              <text x="{{l.cx}}" y="52" font-size="9" fill="#78716c" text-anchor="middle">{{l.label}}</text>
+              <foreignObject x="{{l.cx}}" y="52" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:9px;color:#78716c">{{l.label}}</div></foreignObject>
             </g>
           </sc-for>
         </svg>

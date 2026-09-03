@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
     .hit { cursor: pointer; user-select: none; }
     .hit:hover { filter: brightness(0.97); }
   </style>
@@ -62,16 +67,16 @@
               <rect x="{{k.x}}" y="{{k.y}}" width="{{k.w}}" height="{{k.h}}" fill="none" stroke="#78716c" stroke-width="1.1" stroke-dasharray="3 2.5"></rect>
             </sc-for>
             <sc-for list="{{s.glyphs}}" as="g" hint-placeholder-count="2">
-              <text x="{{g.x}}" y="{{g.y}}" font-size="{{g.size}}" font-weight="700" fill="{{g.fill}}" text-anchor="middle">{{g.text}}</text>
+              <foreignObject x="{{g.x}}" y="{{g.y}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:{{g.size}}px;font-weight:700;color:{{g.fill}}">{{g.text}}</div></foreignObject>
             </sc-for>
             <sc-for list="{{s.badges}}" as="b" hint-placeholder-count="4">
               <g>
                 <rect x="{{b.x}}" y="{{b.y}}" width="{{b.w}}" height="{{b.h}}" rx="1.6" fill="{{b.fill}}"></rect>
-                <text x="{{b.tx}}" y="{{b.ty}}" font-size="{{b.size}}" font-weight="700" fill="#ffffff" text-anchor="middle">{{b.text}}</text>
+                <foreignObject x="{{b.tx}}" y="{{b.ty}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:{{b.size}}px;font-weight:700;color:#ffffff">{{b.text}}</div></foreignObject>
               </g>
             </sc-for>
             <line x1="{{s.blx}}" y1="{{s.bly}}" x2="{{s.brx}}" y2="{{s.bly}}" stroke="#44403c" stroke-width="{{s.baseWidth}}"></line>
-            <text x="{{s.lx}}" y="{{s.ly}}" font-size="9.5" fill="#44403c" text-anchor="{{s.anchor}}">{{s.name}}</text>
+            <foreignObject x="{{s.lx}}" y="{{s.ly}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-{{s.anchor}}" style="font-size:9.5px;color:#44403c">{{s.name}}</div></foreignObject>
           </g>
         </sc-for>
       </svg>
@@ -89,7 +94,7 @@
                 <rect x="{{k.x}}" y="{{k.y}}" width="{{k.w}}" height="{{k.h}}" fill="none" stroke="#78716c" stroke-width="1.1" stroke-dasharray="3 2.5"></rect>
               </sc-for>
               <line x1="{{l.blx}}" y1="{{l.bly}}" x2="{{l.brx}}" y2="{{l.bly}}" stroke="#44403c" stroke-width="{{l.baseWidth}}"></line>
-              <text x="{{l.cx}}" y="64" font-size="8.5" fill="#78716c" text-anchor="middle">{{l.label}}</text>
+              <foreignObject x="{{l.cx}}" y="64" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:8.5px;color:#78716c">{{l.label}}</div></foreignObject>
             </g>
           </sc-for>
         </svg>

@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
   </style>
 </helmet>
 <div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
@@ -99,7 +104,7 @@
             <line x1="{{peakX}}" y1="20" x2="{{peakX}}" y2="158" stroke="#78716c" stroke-width="1" stroke-dasharray="3 3"></line>
             <text x="{{peakLabelX}}" y="28" font-size="9" fill="#44403c">peak 13,120 after 7th St / Metro Center</text>
             <circle cx="552" cy="{{endY}}" r="3" fill="#9a3412"></circle>
-            <text x="546" y="{{endLabelY}}" font-size="9" fill="#9a3412" text-anchor="end">closes at {{endValue}}, not zero</text>
+            <foreignObject x="546" y="{{endLabelY}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-end" style="font-size:9px;color:#9a3412">closes at {{endValue}}, not zero</div></foreignObject>
           </svg>
         </div>
 

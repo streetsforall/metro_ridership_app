@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
   </style>
 </helmet>
 <div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
@@ -95,7 +100,7 @@
           <sc-for list="{{labels}}" as="l" hint-placeholder-count="4">
             <g>
               <rect x="{{l.x}}" y="{{l.y}}" width="{{l.w}}" height="17" rx="4" fill="#f8f6f1" fill-opacity=".93"></rect>
-              <text x="{{l.tx}}" y="{{l.ty}}" font-size="10" fill="#033056" font-weight="700">{{l.text}}</text>
+              <foreignObject x="{{l.tx}}" y="{{l.ty}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-start" style="font-size:10px;font-weight:700;color:#033056">{{l.text}}</div></foreignObject>
             </g>
           </sc-for>
         </svg>

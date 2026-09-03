@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
   </style>
 </helmet>
 <div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;background:#f3eee2">
@@ -42,10 +47,10 @@
             <sc-for list="{{m.chips}}" as="c" hint-placeholder-count="4">
               <g>
                 <rect x="{{c.x}}" y="{{c.y}}" width="{{c.size}}" height="{{c.size}}" rx="2" fill="#f8f6f1" stroke="{{c.ink}}" stroke-width="{{c.weight}}" stroke-dasharray="{{c.dash}}"></rect>
-                <text x="{{c.tx}}" y="{{c.ty}}" font-size="{{c.glyphSize}}" font-weight="700" fill="{{c.ink}}" text-anchor="middle">{{c.glyph}}</text>
+                <foreignObject x="{{c.tx}}" y="{{c.ty}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:{{c.glyphSize}}px;font-weight:700;color:{{c.ink}}">{{c.glyph}}</div></foreignObject>
               </g>
             </sc-for>
-            <text x="{{m.cx}}" y="{{m.ly}}" font-size="8.5" fill="#57534e" text-anchor="middle">{{m.name}}</text>
+            <foreignObject x="{{m.cx}}" y="{{m.ly}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:8.5px;color:#57534e">{{m.name}}</div></foreignObject>
           </g>
         </sc-for>
 
@@ -54,14 +59,14 @@
         <sc-for list="{{states}}" as="s" hint-placeholder-count="3">
           <g>
             <rect x="{{s.x}}" y="36" width="20" height="20" rx="3" fill="#f8f6f1" stroke="{{s.ink}}" stroke-width="{{s.weight}}" stroke-dasharray="{{s.dash}}"></rect>
-            <text x="{{s.tx}}" y="51" font-size="12" font-weight="700" fill="{{s.ink}}" text-anchor="middle">{{s.glyph}}</text>
-            <text x="{{s.tx}}" y="74" font-size="9" font-weight="700" fill="#44403c" text-anchor="middle">{{s.head}}</text>
-            <text x="{{s.tx}}" y="88" font-size="8" fill="#78716c" text-anchor="middle">{{s.sub}}</text>
+            <foreignObject x="{{s.tx}}" y="51" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:12px;font-weight:700;color:{{s.ink}}">{{s.glyph}}</div></foreignObject>
+            <foreignObject x="{{s.tx}}" y="74" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:9px;font-weight:700;color:#44403c">{{s.head}}</div></foreignObject>
+            <foreignObject x="{{s.tx}}" y="88" width="1" height="1" style="overflow:visible"><div class="lbl lbl-middle" style="font-size:8px;color:#78716c">{{s.sub}}</div></foreignObject>
           </g>
         </sc-for>
         <text x="616" y="118" font-size="9.5" fill="#78716c">when a station shows them</text>
         <sc-for list="{{rules}}" as="r" hint-placeholder-count="3">
-          <text x="616" y="{{r.y}}" font-size="9" fill="#44403c">{{r.text}}</text>
+          <foreignObject x="616" y="{{r.y}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-start" style="font-size:9px;color:#44403c">{{r.text}}</div></foreignObject>
         </sc-for>
       </svg>
     </div>

@@ -13,6 +13,11 @@
            font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
            -webkit-font-smoothing: antialiased; }
     a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .lbl { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap;
+           pointer-events: none; }
+    .lbl-start { transform: translate(0, -0.75em); }
+    .lbl-middle { transform: translate(-50%, -0.75em); }
+    .lbl-end { transform: translate(-100%, -0.75em); }
     .hit { cursor: pointer; user-select: none; }
   </style>
 </helmet>
@@ -58,7 +63,7 @@
             <sc-if value="{{s.charted}}" hint-placeholder-val="{{ true }}">
               <g>
                 <rect x="{{s.boxX}}" y="{{s.boxY}}" width="76" height="34" rx="4" fill="#f8f6f1" fill-opacity=".93"></rect>
-                <text x="{{s.textX}}" y="{{s.textY}}" font-size="8" fill="#78716c">{{s.name}}</text>
+                <foreignObject x="{{s.textX}}" y="{{s.textY}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-start" style="font-size:8px;color:#78716c">{{s.name}}</div></foreignObject>
                 <line x1="{{s.baseX1}}" y1="{{s.baseY}}" x2="{{s.baseX2}}" y2="{{s.baseY}}" stroke="#e0dcd4" stroke-width="1"></line>
                 <sc-for list="{{s.segments}}" as="p" hint-placeholder-count="2">
                   <polyline points="{{p}}" fill="none" stroke="{{s.color}}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></polyline>
@@ -70,7 +75,7 @@
               </g>
             </sc-if>
             <sc-if value="{{s.plain}}" hint-placeholder-val="{{ false }}">
-              <text x="{{s.plainX}}" y="{{s.plainY}}" font-size="8.5" fill="#78716c">{{s.name}}</text>
+              <foreignObject x="{{s.plainX}}" y="{{s.plainY}}" width="1" height="1" style="overflow:visible"><div class="lbl lbl-start" style="font-size:8.5px;color:#78716c">{{s.name}}</div></foreignObject>
             </sc-if>
           </g>
         </sc-for>
