@@ -438,6 +438,16 @@
       "is_interactive": true
     },
     {
+      "file": "StationCombined.dc.html",
+      "x": 2200,
+      "y": 1040,
+      "w": 1000,
+      "h": 880,
+      "title": "F₇ · One mark where several lines call · click me",
+      "page": "hover-card",
+      "is_interactive": true
+    },
+    {
       "file": "CardDeck.dc.html",
       "x": 0,
       "y": 0,
@@ -708,7 +718,7 @@
       "x": 4400,
       "y": 0,
       "w": 470,
-      "text": "F is a live direction again, so it leads this page rather than sitting among the retirements.\n\nThe question these five ask is what the hover card puts under its four figures. F draws a six-month sparkline there with no key, and its numbers are literals in the markup rather than data, so nothing about it can change. F₂ makes the measure control drive it, F₃ swaps the figure in the slot, F₄ asks whether the slot is needed, F₅ makes it something a reader opens, and F₆ moves it out of the card.\n\nAll five extend F's six months to the twelve the payload carries, so the figure types are compared on one series rather than on two window lengths. The figures are illustrative panel values, as F's always were."
+      "text": "F is a live direction again, so it leads this page rather than sitting among the retirements.\n\nFive of the six ask what the hover card puts under its four figures; F₇ asks what the map draws underneath it. F draws a six-month sparkline there with no key, and its numbers are literals in the markup rather than data, so nothing about it can change. F₂ makes the measure control drive it, F₃ swaps the figure in the slot, F₄ asks whether the slot is needed, F₅ makes it something a reader opens, and F₆ moves it out of the card. F₇ leaves the card alone and combines the map's marks instead, so the card becomes the only place line identity survives.\n\nAll five extend F's six months to the twelve the payload carries, so the figure types are compared on one series rather than on two window lengths. The figures are illustrative panel values, as F's always were."
     },
     {
       "id": "hover-card-verdict",
@@ -716,7 +726,7 @@
       "x": 4400,
       "y": 560,
       "w": 470,
-      "text": "F₃ covers the most ground, because it is the only one that puts six candidate figures against the same two stops and the same five tests, and one of those stops is quiet and has two unreported months.\n\nOf the designs themselves, F₂ is the one to build. It is the smallest change that makes F honest — the control it already paints starts working — and it costs one state value and a series chosen in the logic rather than typed into the markup. Everything else on this page assumes that change has been made.\n\nF₆'s docked strip is the one worth arguing about. It is the only placement that gives twelve months the width they need, and it is the only one that takes room from the map, which is the thing F exists to make bigger."
+      "text": "F₃ covers the most ground, because it is the only one that puts six candidate figures against the same two stops and the same five tests, and one of those stops is quiet and has two unreported months.\n\nOf the designs themselves, F₂ is the one to build. It is the smallest change that makes F honest — the control it already paints starts working — and it costs one state value and a series chosen in the logic rather than typed into the markup. Everything else on this page assumes that change has been made.\n\nF₆'s docked strip is the one worth arguing about. It is the only placement that gives twelve months the width they need, and it is the only one that takes room from the map, which is the thing F exists to make bigger.\n\nF₇ is the one to read next to the Multi-line stations page rather than next to these five. It is the only artboard on this canvas that gives up colour as line identity, and it does so on purpose: a single white ringed circle stays legible at four lines where four tinted discs do not. Its two sizings are not a detail. Summing a station's lines raises the network maximum from 8,430 to 25,152, and because the radius scale is normalised against that maximum, every one-line stop on the map shrinks by about a third to pay for it. Sizing on the busiest line instead leaves all 110 stops exactly as they are and changes only the four interchanges."
     },
     {
       "id": "hover-card-open",
@@ -725,6 +735,14 @@
       "y": 1180,
       "w": 470,
       "text": "What these five leave open, and how the page relates to R.\n\nR still folds F in, and it is not retired. R draws both measures on the map always and leaves the control ordering the list; F₂ is the opposite bet, one measure everywhere. Both are live, they cannot both ship, and the choice is about whether the map answers the control or ignores it.\n\nHover has no touch equivalent. F₅'s peek needs a pointer, so a phone collapses three steps into two, and every draft here inherits that.\n\nThe alightings tint is too pale to stroke. The map's #8ec4e6 sits at 1.7 to 1 against the card surface, so the card's series takes a darker step of the same hue at 3.2 to 1. The map keeps the light tint, where it is a fill rather than a two-pixel line.\n\nThe sixteen bus stops with no coordinate still have no card. Nothing on this page gives a reader a way to reach a stop the map cannot draw."
+    },
+    {
+      "id": "stations-and-f7",
+      "page": "stations",
+      "x": 4400,
+      "y": 4900,
+      "w": 470,
+      "text": "F₇, on the hover-card page, argues the opposite trade.\n\nIt draws a station where several lines call as one white circle with a dark ring, which gives up both of the things this page protects: colour as line identity, and the refusal to add a station's lines together. What it buys is a mark that does not degrade at four lines, because there is only ever one of it.\n\nNeither page retires the other, and the choice between them is not a choice about drawing. It is a choice about which question the map answers — which lines call here, or how busy this place is. BB, RR and DD answer the first. F₇ answers the second and sends the first to the panel."
     }
   ],
   "launch": {
