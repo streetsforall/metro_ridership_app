@@ -15,7 +15,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "A Â· Ranked table (as built)",
+      "title": "A · Ranked table (as built)",
       "page": "panels"
     },
     {
@@ -24,7 +24,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "C Â· Corridor profile",
+      "title": "C · Corridor profile",
       "page": "panels"
     },
     {
@@ -33,7 +33,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "D Â· Flow table",
+      "title": "D · Flow table",
       "page": "panels"
     },
     {
@@ -42,7 +42,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "E Â· Month matrix",
+      "title": "E · Month matrix",
       "page": "panels"
     },
     {
@@ -60,7 +60,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "L Â· Two-sided spikes",
+      "title": "L · Two-sided spikes",
       "page": "encodings"
     },
     {
@@ -69,7 +69,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "N Â· Decluttered labels",
+      "title": "N · Decluttered labels",
       "page": "encodings"
     },
     {
@@ -78,7 +78,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "Iâ‚‚ Â· Segment load, narrower",
+      "title": "Iâ‚‚ · Segment load, narrower",
       "page": "encodings"
     },
     {
@@ -87,7 +87,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "H Â· Cross-hatch density",
+      "title": "H · Cross-hatch density",
       "page": "encodings"
     },
     {
@@ -96,7 +96,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "M Â· Hex extrusion",
+      "title": "M · Hex extrusion",
       "page": "encodings"
     },
     {
@@ -105,7 +105,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "J Â· Large map with layer toggles",
+      "title": "J · Large map with layer toggles",
       "page": "encodings"
     },
     {
@@ -123,7 +123,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "R Â· Assembled (F + L + N)",
+      "title": "R · Assembled (F + L + N)",
       "page": "round-two"
     },
     {
@@ -132,7 +132,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "T Â· Layout switcher Â· click me",
+      "title": "T · Layout switcher · click me",
       "page": "round-two",
       "is_interactive": true
     },
@@ -142,7 +142,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "U Â· Pivot sidebar Â· click me",
+      "title": "U · Pivot sidebar · click me",
       "page": "round-two",
       "is_interactive": true
     },
@@ -152,7 +152,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "W Â· Space split Â· drag the handles",
+      "title": "W · Space split · drag the handles",
       "page": "round-two",
       "is_interactive": true
     },
@@ -162,7 +162,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "S Â· Stop or stop Ã— line Â· click me",
+      "title": "S · Stop or stop Ã— line · click me",
       "page": "round-two",
       "is_interactive": true
     },
@@ -172,7 +172,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "V Â· Sparklines on the map Â· click me",
+      "title": "V · Sparklines on the map · click me",
       "page": "round-two",
       "is_interactive": true
     },
@@ -182,7 +182,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "Qâ‚‚ Â· Wedge sweep, two modes Â· click me",
+      "title": "Qâ‚‚ · Wedge sweep, two modes · click me",
       "page": "round-two",
       "is_interactive": true
     },
@@ -192,7 +192,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "Y Â· Layer picker and its URL Â· tick me",
+      "title": "Y · Layer picker and its URL · tick me",
       "page": "layers",
       "is_interactive": true
     },
@@ -202,7 +202,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "Z Â· Isochrones Â· click me",
+      "title": "Z · Isochrones · click me",
       "page": "layers",
       "is_interactive": true
     },
@@ -212,7 +212,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "X Â· Accessibility",
+      "title": "X · Accessibility",
       "page": "layers"
     },
     {
@@ -230,7 +230,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "EE Â· Service frequency Â· click me",
+      "title": "EE · Service frequency · click me",
       "page": "frequency",
       "is_interactive": true
     },
@@ -240,7 +240,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "FF Â· Boardings per trip Â· click me",
+      "title": "FF · Boardings per trip · click me",
       "page": "frequency",
       "is_interactive": true
     },
@@ -250,7 +250,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "GG Â· Two clocks Â· click me",
+      "title": "GG · Two clocks · click me",
       "page": "frequency",
       "is_interactive": true
     },
@@ -260,7 +260,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "OO Â· Segment frequency, four textures Â· click me",
+      "title": "OO · Segment frequency, four textures · click me",
       "page": "frequency",
       "is_interactive": true
     },
@@ -270,7 +270,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "PP Â· Frequency as colour, identity as a letter Â· click me",
+      "title": "PP · Frequency as colour, identity as a letter · click me",
       "page": "frequency",
       "is_interactive": true
     },
@@ -280,7 +280,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "QQ Â· Station tags, and what would source them",
+      "title": "QQ · Station tags, and what would source them",
       "page": "frequency"
     },
     {
@@ -289,7 +289,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "AA Â· What the map draws today",
+      "title": "AA · What the map draws today",
       "page": "stations"
     },
     {
@@ -298,7 +298,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "BB Â· Segmented ring",
+      "title": "BB · Segmented ring",
       "page": "stations"
     },
     {
@@ -307,7 +307,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "RR Â· Square station, two readings Â· click me",
+      "title": "RR · Square station, two readings · click me",
       "page": "stations",
       "is_interactive": true
     },
@@ -317,7 +317,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "CC Â· Fan the circles",
+      "title": "CC · Fan the circles",
       "page": "stations"
     },
     {
@@ -326,7 +326,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "DD Â· Six marks compared Â· click me",
+      "title": "DD · Six marks compared · click me",
       "page": "stations",
       "is_interactive": true
     },
@@ -336,7 +336,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "JJ Â· The letter in the mark Â· click me",
+      "title": "JJ · The letter in the mark · click me",
       "page": "stations",
       "is_interactive": true
     },
@@ -346,7 +346,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "KK Â· The mark at four zooms Â· click me",
+      "title": "KK · The mark at four zooms · click me",
       "page": "stations",
       "is_interactive": true
     },
@@ -356,7 +356,7 @@
       "y": 2080,
       "w": 1420,
       "h": 1000,
-      "title": "LL Â· What a bus stop is",
+      "title": "LL · What a bus stop is",
       "page": "stations"
     },
     {
@@ -365,7 +365,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "MM Â· Squares and percentages Â· click me",
+      "title": "MM · Squares and percentages · click me",
       "page": "corridors",
       "is_interactive": true
     },
@@ -375,7 +375,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "NN Â· Side-by-side corridors Â· click me",
+      "title": "NN · Side-by-side corridors · click me",
       "page": "corridors",
       "is_interactive": true
     },
@@ -438,12 +438,22 @@
       "is_interactive": true
     },
     {
+      "file": "StationCombined.dc.html",
+      "x": 2200,
+      "y": 1040,
+      "w": 1000,
+      "h": 880,
+      "title": "F₇ · One mark where several lines call · click me",
+      "page": "hover-card",
+      "is_interactive": true
+    },
+    {
       "file": "CardDeck.dc.html",
       "x": 0,
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "B Â· Card deck",
+      "title": "B · Card deck",
       "page": "superseded"
     },
     {
@@ -452,7 +462,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "I Â· Segment load by line width",
+      "title": "I · Segment load by line width",
       "page": "superseded"
     },
     {
@@ -461,7 +471,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "K Â· Spike height",
+      "title": "K · Spike height",
       "page": "superseded"
     },
     {
@@ -470,7 +480,7 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "Q Â· Wedge sweep",
+      "title": "Q · Wedge sweep",
       "page": "superseded"
     },
     {
@@ -479,7 +489,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "G Â· Colour ramp on the circles",
+      "title": "G · Colour ramp on the circles",
       "page": "superseded"
     },
     {
@@ -488,7 +498,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "O Â· Concentric rings",
+      "title": "O · Concentric rings",
       "page": "superseded"
     },
     {
@@ -497,7 +507,7 @@
       "y": 1040,
       "w": 1000,
       "h": 880,
-      "title": "P Â· Dot density",
+      "title": "P · Dot density",
       "page": "superseded"
     }
   ],
@@ -708,7 +718,7 @@
       "x": 4400,
       "y": 0,
       "w": 470,
-      "text": "F is a live direction again, so it leads this page rather than sitting among the retirements.\n\nThe question these five ask is what the hover card puts under its four figures. F draws a six-month sparkline there with no key, and its numbers are literals in the markup rather than data, so nothing about it can change. F₂ makes the measure control drive it, F₃ swaps the figure in the slot, F₄ asks whether the slot is needed, F₅ makes it something a reader opens, and F₆ moves it out of the card.\n\nAll five extend F's six months to the twelve the payload carries, so the figure types are compared on one series rather than on two window lengths. The figures are illustrative panel values, as F's always were."
+      "text": "F is a live direction again, so it leads this page rather than sitting among the retirements.\n\nFive of the six ask what the hover card puts under its four figures; F₇ asks what the map draws underneath it. F draws a six-month sparkline there with no key, and its numbers are literals in the markup rather than data, so nothing about it can change. F₂ makes the measure control drive it, F₃ swaps the figure in the slot, F₄ asks whether the slot is needed, F₅ makes it something a reader opens, and F₆ moves it out of the card. F₇ leaves the card alone and combines the map's marks instead, so the card becomes the only place line identity survives.\n\nAll five extend F's six months to the twelve the payload carries, so the figure types are compared on one series rather than on two window lengths. The figures are illustrative panel values, as F's always were."
     },
     {
       "id": "hover-card-verdict",
@@ -716,7 +726,7 @@
       "x": 4400,
       "y": 560,
       "w": 470,
-      "text": "F₃ covers the most ground, because it is the only one that puts six candidate figures against the same two stops and the same five tests, and one of those stops is quiet and has two unreported months.\n\nOf the designs themselves, F₂ is the one to build. It is the smallest change that makes F honest — the control it already paints starts working — and it costs one state value and a series chosen in the logic rather than typed into the markup. Everything else on this page assumes that change has been made.\n\nF₆'s docked strip is the one worth arguing about. It is the only placement that gives twelve months the width they need, and it is the only one that takes room from the map, which is the thing F exists to make bigger."
+      "text": "F₃ covers the most ground, because it is the only one that puts six candidate figures against the same two stops and the same five tests, and one of those stops is quiet and has two unreported months.\n\nOf the designs themselves, F₂ is the one to build. It is the smallest change that makes F honest — the control it already paints starts working — and it costs one state value and a series chosen in the logic rather than typed into the markup. Everything else on this page assumes that change has been made.\n\nF₆'s docked strip is the one worth arguing about. It is the only placement that gives twelve months the width they need, and it is the only one that takes room from the map, which is the thing F exists to make bigger.\n\nF₇ is the one to read next to the Multi-line stations page rather than next to these five. It is the only artboard on this canvas that gives up colour as line identity, and it does so on purpose: a single white ringed circle stays legible at four lines where four tinted discs do not. Its two sizings are not a detail. Summing a station's lines raises the network maximum from 8,430 to 25,152, and because the radius scale is normalised against that maximum, every one-line stop on the map shrinks by about a third to pay for it. Sizing on the busiest line instead leaves all 110 stops exactly as they are and changes only the four interchanges."
     },
     {
       "id": "hover-card-open",
@@ -725,6 +735,14 @@
       "y": 1180,
       "w": 470,
       "text": "What these five leave open, and how the page relates to R.\n\nR still folds F in, and it is not retired. R draws both measures on the map always and leaves the control ordering the list; F₂ is the opposite bet, one measure everywhere. Both are live, they cannot both ship, and the choice is about whether the map answers the control or ignores it.\n\nHover has no touch equivalent. F₅'s peek needs a pointer, so a phone collapses three steps into two, and every draft here inherits that.\n\nThe alightings tint is too pale to stroke. The map's #8ec4e6 sits at 1.7 to 1 against the card surface, so the card's series takes a darker step of the same hue at 3.2 to 1. The map keeps the light tint, where it is a fill rather than a two-pixel line.\n\nThe sixteen bus stops with no coordinate still have no card. Nothing on this page gives a reader a way to reach a stop the map cannot draw."
+    },
+    {
+      "id": "stations-and-f7",
+      "page": "stations",
+      "x": 4400,
+      "y": 4900,
+      "w": 470,
+      "text": "F₇, on the hover-card page, argues the opposite trade.\n\nIt draws a station where several lines call as one white circle with a dark ring, which gives up both of the things this page protects: colour as line identity, and the refusal to add a station's lines together. What it buys is a mark that does not degrade at four lines, because there is only ever one of it.\n\nNeither page retires the other, and the choice between them is not a choice about drawing. It is a choice about which question the map answers — which lines call here, or how busy this place is. BB, RR and DD answer the first. F₇ answers the second and sends the first to the panel."
     }
   ],
   "launch": {

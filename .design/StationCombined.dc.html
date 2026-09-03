@@ -1,0 +1,357 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+    table { border-collapse: collapse; width: 100%; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">F&#8327;</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">One mark where several lines call</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click a mode. Every circle is drawn at the radius the app&rsquo;s own scale would give it.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:11px;color:#a8a29e">A station where two or more selected lines call is drawn</span>
+      <div style="display:flex;gap:2px">
+        <sc-for list="{{modes}}" as="m" hint-placeholder-count="3">
+          <span class="hit" onClick="{{m.pick}}" style="background:{{m.bg}};color:{{m.ink}};font-size:12px;font-weight:700;padding:8px 12px;border-radius:{{m.radius}}">{{m.label}}</span>
+        </sc-for>
+      </div>
+    </div>
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">{{ blurb }}</span>
+
+    <div style="display:flex;gap:16px;flex:1;min-height:0">
+
+      <div style="flex-grow:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-width:0">
+        <svg viewBox="0 0 620 500" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="{{ mapAlt }}">
+          <rect x="0" y="0" width="620" height="500" fill="#e8e6e1"></rect>
+          <g stroke="#dcd9d3" stroke-width="1">
+            <sc-for list="{{grid}}" as="g" hint-placeholder-count="14">
+              <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+            </sc-for>
+          </g>
+
+          <g fill="none" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+            <polyline points="455,60 455,150 455,242 396,286 330,296 330,410" stroke="#0072bc"></polyline>
+            <polyline points="326,292 326,186 382,152 451,146" stroke="#eb131b"></polyline>
+            <polyline points="334,300 334,194 390,164 459,158" stroke="#a05da5"></polyline>
+            <polyline points="334,194 236,152 146,126" stroke="#a05da5"></polyline>
+            <polyline points="455,242 398,278 336,300 238,344 150,384" stroke="#fdb913"></polyline>
+          </g>
+
+          <sc-for list="{{marks}}" as="s" hint-placeholder-count="5">
+            <g>
+              <sc-for list="{{s.discs}}" as="d" hint-placeholder-count="4">
+                <circle cx="{{s.cx}}" cy="{{s.cy}}" r="{{d.r}}" fill="{{d.fill}}" fill-opacity="{{d.op}}" stroke="{{d.stroke}}" stroke-width="{{d.sw}}"></circle>
+              </sc-for>
+            </g>
+          </sc-for>
+
+          <g font-size="10" fill="#44403c" text-anchor="start">
+            <text x="478" y="63">Chinatown</text>
+            <text x="480" y="153">Union Station</text>
+            <text x="480" y="245">Little Tokyo</text>
+            <text x="352" y="176">Pershing Square</text>
+            <text x="352" y="326">7th St / Metro Center</text>
+          </g>
+        </svg>
+
+        <div style="position:absolute;left:12px;bottom:12px;background:#f8f6f1;border-radius:5px;padding:9px 11px;display:flex;align-items:center;gap:10px">
+          <svg width="58" height="30" viewBox="0 0 58 30">
+            <circle cx="13" cy="15" r="9" fill="#0072bc" fill-opacity=".75" stroke="none"></circle>
+            <circle cx="41" cy="15" r="12" fill="{{ keyFill }}" fill-opacity="{{ keyOp }}" stroke="{{ keyStroke }}" stroke-width="2.5"></circle>
+          </svg>
+          <span style="font-size:10px;color:#78716c;line-height:1.5">One line, then<br>{{ keyLabel }}</span>
+        </div>
+
+        <div style="position:absolute;right:12px;top:12px;width:238px;background:#f8f6f1;border-radius:5px;padding:13px;display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:700;color:#033056;line-height:1.3">7th St / Metro Center</span>
+          <span style="font-size:10px;color:#78716c">Four lines call here</span>
+
+          <sc-if value="{{ hasTotal }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:1px">
+              <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em">{{ totalLabel }}</span>
+              <span style="font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ totalInk }}">{{ totalValue }}</span>
+            </div>
+          </sc-if>
+
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <span style="font-size:9px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What the mark no longer says</span>
+            <sc-for list="{{cardLines}}" as="l" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:7px">
+                <span style="width:9px;height:9px;border-radius:2px;background:{{l.color}}"></span>
+                <span style="font-size:10px;color:#44403c;flex-grow:1">{{l.label}}</span>
+                <span style="font-size:10px;color:#78716c;font-variant-numeric:tabular-nums">{{l.value}}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <span style="font-size:9px;color:#a8a29e;line-height:1.5">{{ cardNote }}</span>
+        </div>
+      </div>
+
+      <div style="width:322px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;min-height:0">
+
+        <div style="background:#fff;border-radius:6px;padding:11px 13px;display:flex;flex-direction:column;gap:7px">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">The five stations, and the radius each gets</span>
+          <table style="font-size:10.5px">
+            <thead>
+              <tr style="border-bottom:1.5px solid #e7e5e4">
+                <th style="text-align:left;padding:0 6px 5px 0;font-weight:700;color:#78716c">Station</th>
+                <th style="width:34px;text-align:right;padding:0 6px 5px 0;font-weight:700;color:#78716c">Ln</th>
+                <th style="width:56px;text-align:right;padding:0 6px 5px 0;font-weight:700;color:#78716c">Value</th>
+                <th style="width:44px;text-align:right;padding:0 0 5px 0;font-weight:700;color:#78716c">Px</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
+                <tr style="border-bottom:1px solid #f0eeea">
+                  <td style="padding:4px 6px 4px 0;color:{{r.ink}};line-height:1.4">{{r.name}}</td>
+                  <td style="padding:4px 6px 4px 0;text-align:right;color:#78716c">{{r.lines}}</td>
+                  <td style="padding:4px 6px 4px 0;text-align:right;font-variant-numeric:tabular-nums;color:{{r.ink}}">{{r.value}}</td>
+                  <td style="padding:4px 0;text-align:right;font-variant-numeric:tabular-nums;color:#78716c">{{r.px}}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+          <span style="font-size:9px;color:#a8a29e;line-height:1.5">{{ scaleNote }}</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-height:0">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What this mode keeps and what it spends</span>
+          <sc-for list="{{tests}}" as="t" hint-placeholder-count="5">
+            <div style="display:flex;align-items:flex-start;gap:8px;padding:2px 0">
+              <span style="width:15px;height:15px;border-radius:3px;background:{{t.chipBg}};color:{{t.chipInk}};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px">{{t.glyph}}</span>
+              <span style="font-size:10.5px;color:#44403c;line-height:1.55">{{t.text}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:12px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+      <span style="font-size:11px;color:#44403c;line-height:1.7"><b>BB, RR and DD argue the other way, and both readings are now on the canvas.</b> Those drafts keep colour as line identity and refuse to sum, and they pay for it with marks that get harder to read as lines are added. This one buys a single legible circle and pays with both. Nothing on the Multi-line stations page is retired by it; the choice between them has not been made.</span>
+      <span style="font-size:11px;color:#a8a29e;line-height:1.6">Drawn on the same five stations as DD, with the same measured weekday boardings, so only the mark differs. The map is a placeholder; the real one is MapLibre with the committed route geometry. Every rail stop has a coordinate &mdash; the 29 stops that do not are all bus.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'built' };
+  }
+
+  // buildStopView's own scale, so a mark here is the size the app would draw.
+  radius(value, max) {
+    return max > 0 ? 3 + 19 * Math.sqrt(value / max) : 3;
+  }
+
+  renderVals() {
+    const self = this;
+    const mode = this.state.mode;
+    const combined = mode !== 'built';
+    const bySum = mode === 'sum';
+
+    const color = { A: '#0072bc', B: '#eb131b', D: '#a05da5', E: '#fdb913' };
+    const WHITE = '#ffffff';
+    const RING = '#1c1917';
+
+    // Weekday boardings averaged over the twelve months the rail payload carries, as DD draws them.
+    const stations = [
+      { name: 'Chinatown', cx: 455, cy: 60, lines: [['A', 1305]] },
+      { name: 'Union Station', cx: 455, cy: 150, lines: [['A', 4818], ['B', 4093], ['D', 2571]] },
+      { name: 'Little Tokyo', cx: 455, cy: 242, lines: [['A', 2228], ['E', 2333]] },
+      { name: 'Pershing Square', cx: 330, cy: 190, lines: [['B', 2979], ['D', 1505]] },
+      { name: '7th St / Metro Center', cx: 330, cy: 300, lines: [['A', 6288], ['B', 8430], ['E', 5990], ['D', 4444]] },
+    ];
+
+    const sum = (s) => s.lines.reduce((t, l) => t + l[1], 0);
+    const busiest = (s) => Math.max.apply(null, s.lines.map((l) => l[1]));
+
+    // The domain the scale is normalised against, which is the thing that moves when the
+    // measure moves - and every radius on the map is recomputed against it.
+    const sized = (s) => (combined && s.lines.length > 1 ? (bySum ? sum(s) : busiest(s)) : busiest(s));
+    const domain = Math.max.apply(null, stations.map(sized));
+
+    const grid = [];
+    for (let i = 1; i < 7; i++) grid.push({ x1: 0, y1: i * 70, x2: 620, y2: i * 70 });
+    for (let i = 1; i < 9; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 500 });
+
+    const SCALE = 1.55;
+    const marks = stations.map((s) => {
+      const discs = [];
+      if (!combined || s.lines.length === 1) {
+        // Painted in the order the lines are defined, which is what makes the blend.
+        s.lines.forEach((l) => {
+          discs.push({
+            r: self.radius(l[1], domain) * SCALE,
+            fill: color[l[0]], op: '.75', stroke: 'none', sw: 0,
+          });
+        });
+      } else {
+        discs.push({
+          r: self.radius(sized(s), domain) * SCALE,
+          fill: WHITE, op: '1', stroke: RING, sw: 2.5,
+        });
+      }
+      return { cx: s.cx, cy: s.cy, discs: discs };
+    });
+
+    const rows = stations.map((s) => {
+      const v = sized(s);
+      return {
+        name: s.name,
+        lines: String(s.lines.length),
+        value: v.toLocaleString('en-US'),
+        px: (Math.round(self.radius(v, domain) * 10) / 10).toFixed(1),
+        ink: s.lines.length === 1 ? '#78716c' : '#44403c',
+      };
+    });
+
+    const yes = { glyph: '✓', chipBg: '#dcf0e2', chipInk: '#166534' };
+    const no = { glyph: '✕', chipBg: '#f7e0d4', chipInk: '#9a3412' };
+    const part = { glyph: '~', chipBg: '#efece6', chipInk: '#78716c' };
+
+    const table = {
+      built: {
+        label: 'as built',
+        blurb: 'What the layer would draw today: one circle per calling line, all at the one coordinate the stop key carries, painted in line order at 75% opacity.',
+        mapAlt: 'Five stations, each drawing one circle per calling line at the same coordinate',
+        keyLabel: 'four circles at one point',
+        keyFill: '#eb131b', keyOp: '.75', keyStroke: 'none',
+        hasTotal: false,
+        totalLabel: '', totalValue: '', totalInk: '#44403c',
+        cardNote: 'Each line keeps its own figure. The map shows all four and reads as none of them.',
+        scaleNote: 'Value is the biggest circle drawn at each station. Radius is 3 + 19·√(v/8,430) — buildStopView’s own scale, at the network’s per-line maximum.',
+        tests: [
+          [no, 'Colour means which line — at four lines the core is a blend that matches none of them'],
+          [no, 'Magnitude reads per line — three of the four circles never show their own edge'],
+          [yes, 'Nothing is summed, so no station total is invented'],
+          [yes, 'Every mark sits on the coordinate the stop key carries'],
+          [part, 'A one-line stop is perfectly clear; the failure is only at the twelve stations that matter most'],
+        ],
+        noteHead: 'The baseline, and the reason for the other two',
+        noteInk: '#9a3412',
+        noteBody: 'A reader comparing the B and D Lines sees Pershing Square as one mark whose colour is neither red nor purple, and has no way to tell that two lines call there. This is measured, not sketched: at 7th Street the four circles are 22.0, 19.4, 19.0 and 16.8 pixels at one coordinate, and the A Line’s whole contribution is a 0.4 pixel band.',
+      },
+      sum: {
+        label: 'one circle, sized on the sum',
+        blurb: 'Two or more selected lines collapse into a single white circle with a dark ring, sized on the station’s lines added together. One line still draws in its own colour.',
+        mapAlt: 'Five stations, where interchanges draw one white ringed circle sized on the sum of their lines',
+        keyLabel: 'one ring for an interchange',
+        keyFill: '#ffffff', keyOp: '1', keyStroke: '#1c1917',
+        hasTotal: true,
+        totalLabel: 'Station total',
+        totalValue: '25,152',
+        totalInk: '#9a3412',
+        cardNote: 'The total is boardings, not people: a rider changing from the A Line to the B counts on both.',
+        scaleNote: 'The domain moves with the measure. Summing raises the network maximum from 8,430 to 25,152, so every radius on the map is recomputed against it.',
+        tests: [
+          [no, 'Colour stops meaning which line, at exactly the stations a reader is most likely to be asking about'],
+          [yes, 'One mark, one size, legible at every zoom this map uses — which is the whole point'],
+          [no, 'It is a rollup by construction, and the app refuses to compute a station total for a reason'],
+          [yes, 'The mark stays on the station’s own coordinate, which the fan and the offset marks give up'],
+          [no, 'The domain nearly triples, so every one-line stop shrinks — Chinatown falls from 10.5 px to 7.3'],
+        ],
+        noteHead: 'The sum makes the interchange biggest by making everything else smaller',
+        noteInk: '#9a3412',
+        noteBody: 'Adding a station’s lines pushes the network maximum from 8,430 to 25,152, and the radius scale is normalised against that maximum — so 7th Street becomes the largest mark on the network and every ordinary stop loses about a third of its radius to pay for it. That is a real cost the arithmetic hides: the change a reader sees is not only at the four interchanges, it is at all 110 stops. The total is also boardings rather than people, because a transferring rider is counted on the line they leave and the line they join.',
+      },
+      busiest: {
+        label: 'one circle, sized on its busiest line',
+        blurb: 'The same white ringed mark, sized on the station’s largest single line instead of the sum. The mark says at least this many, and nothing is added together.',
+        mapAlt: 'Five stations, where interchanges draw one white ringed circle sized on their busiest line',
+        keyLabel: 'one ring for an interchange',
+        keyFill: '#ffffff', keyOp: '1', keyStroke: '#1c1917',
+        hasTotal: true,
+        totalLabel: 'Busiest line · B',
+        totalValue: '8,430',
+        totalInk: '#44403c',
+        cardNote: 'Nothing is summed. The mark understates the place, and the rows below say by how much.',
+        scaleNote: 'The busiest line at each station, so the network maximum stays 8,430 and no radius on the map changes except at the four interchanges.',
+        tests: [
+          [no, 'Colour stops meaning which line, the same cost the sum pays'],
+          [yes, 'One mark, one size, legible at every zoom this map uses'],
+          [yes, 'No rollup — the figure is one line’s own, and no rider is counted twice'],
+          [yes, 'Every one-line stop keeps exactly the size it has today, because the domain does not move'],
+          [part, 'A four-line interchange draws no larger than its busiest line, so 7th Street and a busy one-line stop look alike'],
+        ],
+        noteHead: 'The cheaper half of the same idea, and the one that breaks no existing rule',
+        noteInk: '#166534',
+        noteBody: 'Sizing on the busiest line keeps the network maximum at 8,430, so the scale never moves and every stop that is not an interchange draws exactly as it does today — the change is confined to the four stations the design is about. It buys the legible single mark without the rollup, and what it pays is understatement: 7th Street is drawn at 8,430 when 25,152 boardings are counted there. Whether that understatement is worse than the double count is the question this artboard exists to put in front of the team.',
+      },
+    };
+
+    const order = [
+      ['built', 'as built', '4px 0 0 4px'],
+      ['sum', 'combined, by sum', '0'],
+      ['busiest', 'combined, by busiest', '0 4px 4px 0'],
+    ];
+    const cur = table[mode];
+
+    return {
+      grid: grid,
+      marks: marks,
+      rows: rows,
+      modes: order.map((o) => ({
+        label: o[1],
+        radius: o[2],
+        pick: () => self.setState({ mode: o[0] }),
+        bg: mode === o[0] ? '#033056' : '#ffffff',
+        ink: mode === o[0] ? '#ffffff' : '#44403c',
+      })),
+      blurb: cur.blurb,
+      mapAlt: cur.mapAlt,
+      keyLabel: cur.keyLabel,
+      keyFill: cur.keyFill,
+      keyOp: cur.keyOp,
+      keyStroke: cur.keyStroke,
+      hasTotal: cur.hasTotal,
+      totalLabel: cur.totalLabel,
+      totalValue: cur.totalValue,
+      totalInk: cur.totalInk,
+      cardNote: cur.cardNote,
+      scaleNote: cur.scaleNote,
+      cardLines: [
+        { color: '#eb131b', label: 'B Line', value: '8,430' },
+        { color: '#0072bc', label: 'A Line', value: '6,288' },
+        { color: '#fdb913', label: 'E Line', value: '5,990' },
+        { color: '#a05da5', label: 'D Line', value: '4,444' },
+      ],
+      tests: cur.tests.map((t) => ({
+        glyph: t[0].glyph, chipBg: t[0].chipBg, chipInk: t[0].chipInk, text: t[1],
+      })),
+      noteHead: cur.noteHead,
+      noteInk: cur.noteInk,
+      noteBody: cur.noteBody,
+    };
+  }
+}
+</script>
+</body>
+</html>
