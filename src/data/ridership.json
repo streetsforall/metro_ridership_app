@@ -1562,7 +1562,7 @@
   {
     "year":2009,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":22543.0,
     "est_sat_ridership":15569.0,
     "est_sun_ridership":12661.0
@@ -1570,7 +1570,7 @@
   {
     "year":2009,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -3242,7 +3242,7 @@
   {
     "year":2009,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":22271.0,
     "est_sat_ridership":14064.0,
     "est_sun_ridership":11113.0
@@ -3250,7 +3250,7 @@
   {
     "year":2009,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -4922,7 +4922,7 @@
   {
     "year":2009,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":24293.0,
     "est_sat_ridership":15015.0,
     "est_sun_ridership":12374.0
@@ -4930,7 +4930,7 @@
   {
     "year":2009,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -6602,7 +6602,7 @@
   {
     "year":2009,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":24060.0,
     "est_sat_ridership":16527.0,
     "est_sun_ridership":12984.0
@@ -6610,7 +6610,7 @@
   {
     "year":2009,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -8282,7 +8282,7 @@
   {
     "year":2009,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":24550.0,
     "est_sat_ridership":15696.0,
     "est_sun_ridership":13744.0
@@ -8290,7 +8290,7 @@
   {
     "year":2009,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -9962,7 +9962,7 @@
   {
     "year":2009,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":24219.0,
     "est_sat_ridership":14281.0,
     "est_sun_ridership":11408.0
@@ -9970,7 +9970,7 @@
   {
     "year":2009,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -11642,7 +11642,7 @@
   {
     "year":2009,
     "month":7,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":21065.0,
     "est_sat_ridership":10896.0,
     "est_sun_ridership":8622.0
@@ -11650,7 +11650,7 @@
   {
     "year":2009,
     "month":7,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -13322,7 +13322,7 @@
   {
     "year":2009,
     "month":8,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":24175.0,
     "est_sat_ridership":15701.0,
     "est_sun_ridership":11673.0
@@ -13330,7 +13330,7 @@
   {
     "year":2009,
     "month":8,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -15002,7 +15002,7 @@
   {
     "year":2009,
     "month":9,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":22476.0,
     "est_sat_ridership":16130.0,
     "est_sun_ridership":10740.0
@@ -15010,7 +15010,7 @@
   {
     "year":2009,
     "month":9,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -16682,7 +16682,7 @@
   {
     "year":2009,
     "month":10,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":21322.0,
     "est_sat_ridership":14083.0,
     "est_sun_ridership":12226.0
@@ -16690,7 +16690,7 @@
   {
     "year":2009,
     "month":10,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -18362,7 +18362,7 @@
   {
     "year":2009,
     "month":11,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":28478.0,
     "est_sat_ridership":13155.0,
     "est_sun_ridership":10507.0
@@ -18370,7 +18370,7 @@
   {
     "year":2009,
     "month":11,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -20042,7 +20042,7 @@
   {
     "year":2009,
     "month":12,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":28621.0,
     "est_sat_ridership":19330.0,
     "est_sun_ridership":20345.0
@@ -20050,7 +20050,7 @@
   {
     "year":2009,
     "month":12,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -21722,7 +21722,7 @@
   {
     "year":2010,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":28227.0,
     "est_sat_ridership":22974.0,
     "est_sun_ridership":22668.0
@@ -21730,7 +21730,7 @@
   {
     "year":2010,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -23402,7 +23402,7 @@
   {
     "year":2010,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":30512.0,
     "est_sat_ridership":21359.0,
     "est_sun_ridership":20735.0
@@ -23410,7 +23410,7 @@
   {
     "year":2010,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -25082,7 +25082,7 @@
   {
     "year":2010,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":31544.0,
     "est_sat_ridership":21583.0,
     "est_sun_ridership":20447.0
@@ -25090,7 +25090,7 @@
   {
     "year":2010,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -26762,7 +26762,7 @@
   {
     "year":2010,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":32315.0,
     "est_sat_ridership":25453.0,
     "est_sun_ridership":19844.0
@@ -26770,7 +26770,7 @@
   {
     "year":2010,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -28442,7 +28442,7 @@
   {
     "year":2010,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":32434.0,
     "est_sat_ridership":27516.0,
     "est_sun_ridership":19545.0
@@ -28450,7 +28450,7 @@
   {
     "year":2010,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -30122,7 +30122,7 @@
   {
     "year":2010,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":37270.0,
     "est_sat_ridership":22933.0,
     "est_sun_ridership":19661.0
@@ -30130,7 +30130,7 @@
   {
     "year":2010,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -31802,7 +31802,7 @@
   {
     "year":2010,
     "month":7,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":34285.0,
     "est_sat_ridership":25371.0,
     "est_sun_ridership":22970.0
@@ -31810,7 +31810,7 @@
   {
     "year":2010,
     "month":7,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -33482,7 +33482,7 @@
   {
     "year":2010,
     "month":8,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":35247.0,
     "est_sat_ridership":24269.0,
     "est_sun_ridership":21157.0
@@ -33490,7 +33490,7 @@
   {
     "year":2010,
     "month":8,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -35162,7 +35162,7 @@
   {
     "year":2010,
     "month":9,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":35649.0,
     "est_sat_ridership":24195.0,
     "est_sun_ridership":19507.0
@@ -35170,7 +35170,7 @@
   {
     "year":2010,
     "month":9,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -36842,7 +36842,7 @@
   {
     "year":2010,
     "month":10,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":34440.0,
     "est_sat_ridership":21960.0,
     "est_sun_ridership":18495.0
@@ -36850,7 +36850,7 @@
   {
     "year":2010,
     "month":10,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -38522,7 +38522,7 @@
   {
     "year":2010,
     "month":11,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":33121.0,
     "est_sat_ridership":20816.0,
     "est_sun_ridership":17512.0
@@ -38530,7 +38530,7 @@
   {
     "year":2010,
     "month":11,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -40202,7 +40202,7 @@
   {
     "year":2010,
     "month":12,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":30804.0,
     "est_sat_ridership":19675.0,
     "est_sun_ridership":16834.0
@@ -40210,7 +40210,7 @@
   {
     "year":2010,
     "month":12,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -41882,7 +41882,7 @@
   {
     "year":2011,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":33947.0,
     "est_sat_ridership":22705.0,
     "est_sun_ridership":22633.0
@@ -41890,7 +41890,7 @@
   {
     "year":2011,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -43562,7 +43562,7 @@
   {
     "year":2011,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":33829.0,
     "est_sat_ridership":25995.0,
     "est_sun_ridership":18621.0
@@ -43570,7 +43570,7 @@
   {
     "year":2011,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -45242,7 +45242,7 @@
   {
     "year":2011,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":34544.0,
     "est_sat_ridership":24687.0,
     "est_sun_ridership":16330.0
@@ -45250,7 +45250,7 @@
   {
     "year":2011,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -46922,7 +46922,7 @@
   {
     "year":2011,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":38485.0,
     "est_sat_ridership":24475.0,
     "est_sun_ridership":19662.0
@@ -46930,7 +46930,7 @@
   {
     "year":2011,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -48602,7 +48602,7 @@
   {
     "year":2011,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":36623.0,
     "est_sat_ridership":25421.0,
     "est_sun_ridership":18553.0
@@ -48610,7 +48610,7 @@
   {
     "year":2011,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -50282,7 +50282,7 @@
   {
     "year":2011,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":39112.0,
     "est_sat_ridership":25708.0,
     "est_sun_ridership":18030.0
@@ -50290,7 +50290,7 @@
   {
     "year":2011,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -51962,7 +51962,7 @@
   {
     "year":2011,
     "month":7,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":42900.0,
     "est_sat_ridership":26029.0,
     "est_sun_ridership":21452.0
@@ -51970,7 +51970,7 @@
   {
     "year":2011,
     "month":7,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -53642,7 +53642,7 @@
   {
     "year":2011,
     "month":8,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":39598.0,
     "est_sat_ridership":24460.0,
     "est_sun_ridership":20868.0
@@ -53650,7 +53650,7 @@
   {
     "year":2011,
     "month":8,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -55322,7 +55322,7 @@
   {
     "year":2011,
     "month":9,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":37938.0,
     "est_sat_ridership":24050.0,
     "est_sun_ridership":18959.0
@@ -55330,7 +55330,7 @@
   {
     "year":2011,
     "month":9,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -57002,7 +57002,7 @@
   {
     "year":2011,
     "month":10,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":36784.0,
     "est_sat_ridership":23688.0,
     "est_sun_ridership":21833.0
@@ -57010,7 +57010,7 @@
   {
     "year":2011,
     "month":10,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -58682,7 +58682,7 @@
   {
     "year":2011,
     "month":11,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":37843.0,
     "est_sat_ridership":20697.0,
     "est_sun_ridership":13936.0
@@ -58690,7 +58690,7 @@
   {
     "year":2011,
     "month":11,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -60362,7 +60362,7 @@
   {
     "year":2011,
     "month":12,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":39660.0,
     "est_sat_ridership":20130.0,
     "est_sun_ridership":15703.0
@@ -60370,7 +60370,7 @@
   {
     "year":2011,
     "month":12,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -62042,7 +62042,7 @@
   {
     "year":2012,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":41129.0,
     "est_sat_ridership":25893.0,
     "est_sun_ridership":23426.0
@@ -62050,7 +62050,7 @@
   {
     "year":2012,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -63722,7 +63722,7 @@
   {
     "year":2012,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":41147.0,
     "est_sat_ridership":22070.0,
     "est_sun_ridership":16133.0
@@ -63730,7 +63730,7 @@
   {
     "year":2012,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -65402,7 +65402,7 @@
   {
     "year":2012,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":43136.0,
     "est_sat_ridership":20934.0,
     "est_sun_ridership":14384.0
@@ -65410,7 +65410,7 @@
   {
     "year":2012,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -67082,7 +67082,7 @@
   {
     "year":2012,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":42170.0,
     "est_sat_ridership":22230.0,
     "est_sun_ridership":19418.0
@@ -67090,7 +67090,7 @@
   {
     "year":2012,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":0.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":0.0
@@ -68762,7 +68762,7 @@
   {
     "year":2012,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":43614.0,
     "est_sat_ridership":23478.0,
     "est_sun_ridership":18583.0
@@ -68770,7 +68770,7 @@
   {
     "year":2012,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":11347.0,
     "est_sat_ridership":9000.0,
     "est_sun_ridership":7000.0
@@ -70442,7 +70442,7 @@
   {
     "year":2012,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":47025.0,
     "est_sat_ridership":21837.0,
     "est_sun_ridership":16293.0
@@ -70450,7 +70450,7 @@
   {
     "year":2012,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":16569.0,
     "est_sat_ridership":10612.0,
     "est_sun_ridership":8674.0
@@ -72122,7 +72122,7 @@
   {
     "year":2012,
     "month":7,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":45694.0,
     "est_sat_ridership":22729.0,
     "est_sun_ridership":18363.0
@@ -72130,7 +72130,7 @@
   {
     "year":2012,
     "month":7,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":18181.0,
     "est_sat_ridership":11930.0,
     "est_sun_ridership":11322.0
@@ -73802,7 +73802,7 @@
   {
     "year":2012,
     "month":8,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":42125.0,
     "est_sat_ridership":21050.0,
     "est_sun_ridership":17075.0
@@ -73810,7 +73810,7 @@
   {
     "year":2012,
     "month":8,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":19776.0,
     "est_sat_ridership":12569.0,
     "est_sun_ridership":10722.0
@@ -75482,7 +75482,7 @@
   {
     "year":2012,
     "month":9,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":41987.0,
     "est_sat_ridership":23115.0,
     "est_sun_ridership":16835.0
@@ -75490,7 +75490,7 @@
   {
     "year":2012,
     "month":9,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":20656.0,
     "est_sat_ridership":12953.0,
     "est_sun_ridership":12142.0
@@ -77162,7 +77162,7 @@
   {
     "year":2012,
     "month":10,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":42417.0,
     "est_sat_ridership":23743.0,
     "est_sun_ridership":14859.0
@@ -77170,7 +77170,7 @@
   {
     "year":2012,
     "month":10,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":21382.0,
     "est_sat_ridership":13279.0,
     "est_sun_ridership":13146.0
@@ -78842,7 +78842,7 @@
   {
     "year":2012,
     "month":11,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":42175.0,
     "est_sat_ridership":22418.0,
     "est_sun_ridership":15587.0
@@ -78850,7 +78850,7 @@
   {
     "year":2012,
     "month":11,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":22066.0,
     "est_sat_ridership":13401.0,
     "est_sun_ridership":13622.0
@@ -80522,7 +80522,7 @@
   {
     "year":2012,
     "month":12,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":42295.0,
     "est_sat_ridership":22170.0,
     "est_sun_ridership":15101.0
@@ -80530,7 +80530,7 @@
   {
     "year":2012,
     "month":12,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":23193.0,
     "est_sat_ridership":15654.0,
     "est_sun_ridership":14141.0
@@ -82202,7 +82202,7 @@
   {
     "year":2013,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":42476.0,
     "est_sat_ridership":22286.0,
     "est_sun_ridership":15077.0
@@ -82210,7 +82210,7 @@
   {
     "year":2013,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":24175.0,
     "est_sat_ridership":17534.0,
     "est_sun_ridership":14501.0
@@ -83882,7 +83882,7 @@
   {
     "year":2013,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":43091.0,
     "est_sat_ridership":23333.0,
     "est_sun_ridership":16901.0
@@ -83890,7 +83890,7 @@
   {
     "year":2013,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":25295.0,
     "est_sat_ridership":19200.0,
     "est_sun_ridership":14801.0
@@ -85562,7 +85562,7 @@
   {
     "year":2013,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":43564.0,
     "est_sat_ridership":22314.0,
     "est_sun_ridership":17379.0
@@ -85570,7 +85570,7 @@
   {
     "year":2013,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":25983.0,
     "est_sat_ridership":19848.0,
     "est_sun_ridership":14782.0
@@ -87242,7 +87242,7 @@
   {
     "year":2013,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":43439.0,
     "est_sat_ridership":21968.0,
     "est_sun_ridership":17268.0
@@ -87250,7 +87250,7 @@
   {
     "year":2013,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":25731.0,
     "est_sat_ridership":19154.0,
     "est_sun_ridership":14631.0
@@ -88922,7 +88922,7 @@
   {
     "year":2013,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":43173.0,
     "est_sat_ridership":21225.0,
     "est_sun_ridership":16641.0
@@ -88930,7 +88930,7 @@
   {
     "year":2013,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":26663.0,
     "est_sat_ridership":18604.0,
     "est_sun_ridership":14299.0
@@ -90602,7 +90602,7 @@
   {
     "year":2013,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":44116.0,
     "est_sat_ridership":19747.0,
     "est_sun_ridership":16849.0
@@ -90610,7 +90610,7 @@
   {
     "year":2013,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":26894.0,
     "est_sat_ridership":19161.0,
     "est_sun_ridership":13904.0
@@ -92282,7 +92282,7 @@
   {
     "year":2013,
     "month":7,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":44267.0,
     "est_sat_ridership":20532.0,
     "est_sun_ridership":18002.0
@@ -92290,7 +92290,7 @@
   {
     "year":2013,
     "month":7,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":26908.0,
     "est_sat_ridership":19265.0,
     "est_sun_ridership":14470.0
@@ -93962,7 +93962,7 @@
   {
     "year":2013,
     "month":8,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":44451.0,
     "est_sat_ridership":21506.0,
     "est_sun_ridership":19033.0
@@ -93970,7 +93970,7 @@
   {
     "year":2013,
     "month":8,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":27280.0,
     "est_sat_ridership":20063.0,
     "est_sun_ridership":15014.0
@@ -95642,7 +95642,7 @@
   {
     "year":2013,
     "month":9,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":44374.0,
     "est_sat_ridership":22387.0,
     "est_sun_ridership":20684.0
@@ -95650,7 +95650,7 @@
   {
     "year":2013,
     "month":9,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":27269.0,
     "est_sat_ridership":19634.0,
     "est_sun_ridership":15036.0
@@ -97322,7 +97322,7 @@
   {
     "year":2013,
     "month":10,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":43923.0,
     "est_sat_ridership":24171.0,
     "est_sun_ridership":20531.0
@@ -97330,7 +97330,7 @@
   {
     "year":2013,
     "month":10,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":27603.0,
     "est_sat_ridership":19727.0,
     "est_sun_ridership":14322.0
@@ -99002,7 +99002,7 @@
   {
     "year":2013,
     "month":11,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":43831.0,
     "est_sat_ridership":27326.0,
     "est_sun_ridership":22781.0
@@ -99010,7 +99010,7 @@
   {
     "year":2013,
     "month":11,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":27679.0,
     "est_sat_ridership":21936.0,
     "est_sun_ridership":16244.0
@@ -100682,7 +100682,7 @@
   {
     "year":2013,
     "month":12,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":42107.0,
     "est_sat_ridership":30150.0,
     "est_sun_ridership":25740.0
@@ -100690,7 +100690,7 @@
   {
     "year":2013,
     "month":12,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":27360.0,
     "est_sat_ridership":21194.0,
     "est_sun_ridership":16032.0
@@ -102362,7 +102362,7 @@
   {
     "year":2014,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":41802.0,
     "est_sat_ridership":29909.0,
     "est_sun_ridership":25235.0
@@ -102370,7 +102370,7 @@
   {
     "year":2014,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":27155.0,
     "est_sat_ridership":22807.0,
     "est_sun_ridership":15631.0
@@ -104042,7 +104042,7 @@
   {
     "year":2014,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":41624.0,
     "est_sat_ridership":29739.0,
     "est_sun_ridership":23729.0
@@ -104050,7 +104050,7 @@
   {
     "year":2014,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":28152.0,
     "est_sat_ridership":22902.0,
     "est_sun_ridership":15645.0
@@ -105722,7 +105722,7 @@
   {
     "year":2014,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":41390.0,
     "est_sat_ridership":28583.0,
     "est_sun_ridership":23659.0
@@ -105730,7 +105730,7 @@
   {
     "year":2014,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":28462.0,
     "est_sat_ridership":23151.0,
     "est_sun_ridership":15469.0
@@ -107402,7 +107402,7 @@
   {
     "year":2014,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":41246.0,
     "est_sat_ridership":28682.0,
     "est_sun_ridership":24698.0
@@ -107410,7 +107410,7 @@
   {
     "year":2014,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":29623.0,
     "est_sat_ridership":23719.0,
     "est_sun_ridership":15298.0
@@ -109082,7 +109082,7 @@
   {
     "year":2014,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":41196.0,
     "est_sat_ridership":28377.0,
     "est_sun_ridership":24263.0
@@ -109090,7 +109090,7 @@
   {
     "year":2014,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30404.0,
     "est_sat_ridership":23391.0,
     "est_sun_ridership":14686.0
@@ -110762,7 +110762,7 @@
   {
     "year":2014,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":41839.0,
     "est_sat_ridership":28219.0,
     "est_sun_ridership":24336.0
@@ -110770,7 +110770,7 @@
   {
     "year":2014,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":31031.0,
     "est_sat_ridership":23752.0,
     "est_sun_ridership":14597.0
@@ -112442,7 +112442,7 @@
   {
     "year":2014,
     "month":7,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":42695.0,
     "est_sat_ridership":28374.0,
     "est_sun_ridership":24029.0
@@ -112450,7 +112450,7 @@
   {
     "year":2014,
     "month":7,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":31710.0,
     "est_sat_ridership":22828.0,
     "est_sun_ridership":14996.0
@@ -114122,7 +114122,7 @@
   {
     "year":2014,
     "month":8,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":43032.0,
     "est_sat_ridership":28853.0,
     "est_sun_ridership":24402.0
@@ -114130,7 +114130,7 @@
   {
     "year":2014,
     "month":8,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":31549.0,
     "est_sat_ridership":22612.0,
     "est_sun_ridership":16112.0
@@ -115802,7 +115802,7 @@
   {
     "year":2014,
     "month":9,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":44149.0,
     "est_sat_ridership":28880.0,
     "est_sun_ridership":24548.0
@@ -115810,7 +115810,7 @@
   {
     "year":2014,
     "month":9,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":31850.0,
     "est_sat_ridership":23278.0,
     "est_sun_ridership":16563.0
@@ -117482,7 +117482,7 @@
   {
     "year":2014,
     "month":10,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":44891.0,
     "est_sat_ridership":29123.0,
     "est_sun_ridership":24702.0
@@ -117490,7 +117490,7 @@
   {
     "year":2014,
     "month":10,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":31362.0,
     "est_sat_ridership":23752.0,
     "est_sun_ridership":16729.0
@@ -119162,7 +119162,7 @@
   {
     "year":2014,
     "month":11,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":45010.0,
     "est_sat_ridership":29692.0,
     "est_sun_ridership":23954.0
@@ -119170,7 +119170,7 @@
   {
     "year":2014,
     "month":11,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30679.0,
     "est_sat_ridership":22941.0,
     "est_sun_ridership":16578.0
@@ -120842,7 +120842,7 @@
   {
     "year":2014,
     "month":12,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":44707.0,
     "est_sat_ridership":29550.0,
     "est_sun_ridership":23696.0
@@ -120850,7 +120850,7 @@
   {
     "year":2014,
     "month":12,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30262.0,
     "est_sat_ridership":22751.0,
     "est_sun_ridership":16997.0
@@ -122522,7 +122522,7 @@
   {
     "year":2015,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":44312.0,
     "est_sat_ridership":29933.0,
     "est_sun_ridership":23523.0
@@ -122530,7 +122530,7 @@
   {
     "year":2015,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30137.0,
     "est_sat_ridership":22513.0,
     "est_sun_ridership":16489.0
@@ -124202,7 +124202,7 @@
   {
     "year":2015,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":44362.0,
     "est_sat_ridership":29686.0,
     "est_sun_ridership":23157.0
@@ -124210,7 +124210,7 @@
   {
     "year":2015,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30191.0,
     "est_sat_ridership":22221.0,
     "est_sun_ridership":16055.0
@@ -125882,7 +125882,7 @@
   {
     "year":2015,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":43631.0,
     "est_sat_ridership":29859.0,
     "est_sun_ridership":23050.0
@@ -125890,7 +125890,7 @@
   {
     "year":2015,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30000.0,
     "est_sat_ridership":21432.0,
     "est_sun_ridership":16009.0
@@ -127562,7 +127562,7 @@
   {
     "year":2015,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":41962.0,
     "est_sat_ridership":28838.0,
     "est_sun_ridership":23494.0
@@ -127570,7 +127570,7 @@
   {
     "year":2015,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":29917.0,
     "est_sat_ridership":20628.0,
     "est_sun_ridership":16254.0
@@ -129242,7 +129242,7 @@
   {
     "year":2015,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":41248.0,
     "est_sat_ridership":28305.0,
     "est_sun_ridership":24345.0
@@ -129250,7 +129250,7 @@
   {
     "year":2015,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":29801.0,
     "est_sat_ridership":20767.0,
     "est_sun_ridership":16169.0
@@ -130922,7 +130922,7 @@
   {
     "year":2015,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":43087.0,
     "est_sat_ridership":29406.0,
     "est_sun_ridership":24794.0
@@ -130930,7 +130930,7 @@
   {
     "year":2015,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30507.0,
     "est_sat_ridership":21864.0,
     "est_sun_ridership":16185.0
@@ -132602,7 +132602,7 @@
   {
     "year":2015,
     "month":7,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":44211.0,
     "est_sat_ridership":29010.0,
     "est_sun_ridership":25559.0
@@ -132610,7 +132610,7 @@
   {
     "year":2015,
     "month":7,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30685.0,
     "est_sat_ridership":22321.0,
     "est_sun_ridership":16729.0
@@ -134282,7 +134282,7 @@
   {
     "year":2015,
     "month":8,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":43829.0,
     "est_sat_ridership":29933.0,
     "est_sun_ridership":25744.0
@@ -134290,7 +134290,7 @@
   {
     "year":2015,
     "month":8,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30221.0,
     "est_sat_ridership":22974.0,
     "est_sun_ridership":17027.0
@@ -135962,7 +135962,7 @@
   {
     "year":2015,
     "month":9,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":44931.0,
     "est_sat_ridership":29261.0,
     "est_sun_ridership":26060.0
@@ -135970,7 +135970,7 @@
   {
     "year":2015,
     "month":9,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30163.0,
     "est_sat_ridership":23287.0,
     "est_sun_ridership":16999.0
@@ -137642,7 +137642,7 @@
   {
     "year":2015,
     "month":10,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":45984.0,
     "est_sat_ridership":29729.0,
     "est_sun_ridership":25419.0
@@ -137650,7 +137650,7 @@
   {
     "year":2015,
     "month":10,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30315.0,
     "est_sat_ridership":22398.0,
     "est_sun_ridership":17066.0
@@ -139322,7 +139322,7 @@
   {
     "year":2015,
     "month":11,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":46520.0,
     "est_sat_ridership":30225.0,
     "est_sun_ridership":25957.0
@@ -139330,7 +139330,7 @@
   {
     "year":2015,
     "month":11,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30830.0,
     "est_sat_ridership":22364.0,
     "est_sun_ridership":17318.0
@@ -141002,7 +141002,7 @@
   {
     "year":2015,
     "month":12,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":46673.0,
     "est_sat_ridership":29762.0,
     "est_sun_ridership":26058.0
@@ -141010,7 +141010,7 @@
   {
     "year":2015,
     "month":12,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30371.0,
     "est_sat_ridership":22142.0,
     "est_sun_ridership":16321.0
@@ -142682,7 +142682,7 @@
   {
     "year":2016,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":46608.0,
     "est_sat_ridership":30012.0,
     "est_sun_ridership":25799.0
@@ -142690,7 +142690,7 @@
   {
     "year":2016,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30510.0,
     "est_sat_ridership":21156.0,
     "est_sun_ridership":15464.0
@@ -144362,7 +144362,7 @@
   {
     "year":2016,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":47931.0,
     "est_sat_ridership":27945.0,
     "est_sun_ridership":26377.0
@@ -144370,7 +144370,7 @@
   {
     "year":2016,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30785.0,
     "est_sat_ridership":21671.0,
     "est_sun_ridership":15701.0
@@ -146042,7 +146042,7 @@
   {
     "year":2016,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":52672.0,
     "est_sat_ridership":32988.0,
     "est_sun_ridership":32013.0
@@ -146050,7 +146050,7 @@
   {
     "year":2016,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":30386.0,
     "est_sat_ridership":21074.0,
     "est_sun_ridership":15144.0
@@ -147722,7 +147722,7 @@
   {
     "year":2016,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":50219.0,
     "est_sat_ridership":36793.0,
     "est_sun_ridership":31208.0
@@ -147730,7 +147730,7 @@
   {
     "year":2016,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":29047.0,
     "est_sat_ridership":21945.0,
     "est_sun_ridership":15965.0
@@ -149402,7 +149402,7 @@
   {
     "year":2016,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":49238.0,
     "est_sat_ridership":36001.0,
     "est_sun_ridership":31625.0
@@ -149410,7 +149410,7 @@
   {
     "year":2016,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":39237.0,
     "est_sat_ridership":31759.0,
     "est_sun_ridership":34055.0
@@ -151082,7 +151082,7 @@
   {
     "year":2016,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":50722.0,
     "est_sat_ridership":38817.0,
     "est_sun_ridership":33100.0
@@ -151090,7 +151090,7 @@
   {
     "year":2016,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":45876.0,
     "est_sat_ridership":34844.0,
     "est_sun_ridership":35995.0
@@ -152762,7 +152762,7 @@
   {
     "year":2016,
     "month":7,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":50087.0,
     "est_sat_ridership":36760.0,
     "est_sun_ridership":31840.0
@@ -152770,7 +152770,7 @@
   {
     "year":2016,
     "month":7,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":43199.0,
     "est_sat_ridership":34440.0,
     "est_sun_ridership":31617.0
@@ -154442,7 +154442,7 @@
   {
     "year":2016,
     "month":8,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":50744.0,
     "est_sat_ridership":36435.0,
     "est_sun_ridership":32455.0
@@ -154450,7 +154450,7 @@
   {
     "year":2016,
     "month":8,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":43015.0,
     "est_sat_ridership":35560.0,
     "est_sun_ridership":32503.0
@@ -156122,7 +156122,7 @@
   {
     "year":2016,
     "month":9,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":52018.0,
     "est_sat_ridership":36099.0,
     "est_sun_ridership":32240.0
@@ -156130,7 +156130,7 @@
   {
     "year":2016,
     "month":9,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":41518.0,
     "est_sat_ridership":34361.0,
     "est_sun_ridership":31784.0
@@ -157802,7 +157802,7 @@
   {
     "year":2016,
     "month":10,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":52143.0,
     "est_sat_ridership":35211.0,
     "est_sun_ridership":31630.0
@@ -157810,7 +157810,7 @@
   {
     "year":2016,
     "month":10,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":42344.0,
     "est_sat_ridership":33266.0,
     "est_sun_ridership":30838.0
@@ -159482,7 +159482,7 @@
   {
     "year":2016,
     "month":11,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":52916.0,
     "est_sat_ridership":34091.0,
     "est_sun_ridership":29765.0
@@ -159490,7 +159490,7 @@
   {
     "year":2016,
     "month":11,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":47544.0,
     "est_sat_ridership":33074.0,
     "est_sun_ridership":34374.0
@@ -161162,7 +161162,7 @@
   {
     "year":2016,
     "month":12,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":51311.0,
     "est_sat_ridership":31050.0,
     "est_sun_ridership":28179.0
@@ -161170,7 +161170,7 @@
   {
     "year":2016,
     "month":12,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":54073.0,
     "est_sat_ridership":34742.0,
     "est_sun_ridership":43819.0
@@ -162842,7 +162842,7 @@
   {
     "year":2017,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":53648.0,
     "est_sat_ridership":31720.0,
     "est_sun_ridership":27033.0
@@ -162850,7 +162850,7 @@
   {
     "year":2017,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":53473.0,
     "est_sat_ridership":32177.0,
     "est_sun_ridership":44252.0
@@ -164522,7 +164522,7 @@
   {
     "year":2017,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":50599.0,
     "est_sat_ridership":32057.0,
     "est_sun_ridership":27652.0
@@ -164530,7 +164530,7 @@
   {
     "year":2017,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":55388.0,
     "est_sat_ridership":31018.0,
     "est_sun_ridership":38625.0
@@ -166202,7 +166202,7 @@
   {
     "year":2017,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":51195.0,
     "est_sat_ridership":32034.0,
     "est_sun_ridership":26991.0
@@ -166210,7 +166210,7 @@
   {
     "year":2017,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":59931.0,
     "est_sat_ridership":32212.0,
     "est_sun_ridership":40340.0
@@ -167882,7 +167882,7 @@
   {
     "year":2017,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":51442.0,
     "est_sat_ridership":31987.0,
     "est_sun_ridership":26349.0
@@ -167890,7 +167890,7 @@
   {
     "year":2017,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":57176.0,
     "est_sat_ridership":33992.0,
     "est_sun_ridership":38822.0
@@ -169562,7 +169562,7 @@
   {
     "year":2017,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":52355.0,
     "est_sat_ridership":32269.0,
     "est_sun_ridership":26248.0
@@ -169570,7 +169570,7 @@
   {
     "year":2017,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":60972.0,
     "est_sat_ridership":34763.0,
     "est_sun_ridership":32198.0
@@ -171242,7 +171242,7 @@
   {
     "year":2017,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":53766.0,
     "est_sat_ridership":34146.0,
     "est_sun_ridership":25189.0
@@ -171250,7 +171250,7 @@
   {
     "year":2017,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":64164.0,
     "est_sat_ridership":35513.0,
     "est_sun_ridership":31706.0
@@ -172922,7 +172922,7 @@
   {
     "year":2017,
     "month":7,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":54228.0,
     "est_sat_ridership":32565.0,
     "est_sun_ridership":24701.0
@@ -172930,7 +172930,7 @@
   {
     "year":2017,
     "month":7,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":63385.0,
     "est_sat_ridership":35844.0,
     "est_sun_ridership":31675.0
@@ -174602,7 +174602,7 @@
   {
     "year":2017,
     "month":8,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":54036.0,
     "est_sat_ridership":32861.0,
     "est_sun_ridership":23602.0
@@ -174610,7 +174610,7 @@
   {
     "year":2017,
     "month":8,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":60578.0,
     "est_sat_ridership":38837.0,
     "est_sun_ridership":31718.0
@@ -176282,7 +176282,7 @@
   {
     "year":2017,
     "month":9,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":53157.0,
     "est_sat_ridership":31877.0,
     "est_sun_ridership":23898.0
@@ -176290,7 +176290,7 @@
   {
     "year":2017,
     "month":9,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":58975.0,
     "est_sat_ridership":39211.0,
     "est_sun_ridership":30879.0
@@ -177962,7 +177962,7 @@
   {
     "year":2017,
     "month":10,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":52635.0,
     "est_sat_ridership":34704.0,
     "est_sun_ridership":24749.0
@@ -177970,7 +177970,7 @@
   {
     "year":2017,
     "month":10,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":58803.0,
     "est_sat_ridership":35735.0,
     "est_sun_ridership":31658.0
@@ -179642,7 +179642,7 @@
   {
     "year":2017,
     "month":11,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":52589.0,
     "est_sat_ridership":33292.0,
     "est_sun_ridership":24468.0
@@ -179650,7 +179650,7 @@
   {
     "year":2017,
     "month":11,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":61202.0,
     "est_sat_ridership":39215.0,
     "est_sun_ridership":29166.0
@@ -181322,7 +181322,7 @@
   {
     "year":2017,
     "month":12,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":51158.0,
     "est_sat_ridership":32091.0,
     "est_sun_ridership":23827.0
@@ -181330,7 +181330,7 @@
   {
     "year":2017,
     "month":12,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":61420.0,
     "est_sat_ridership":38535.0,
     "est_sun_ridership":30381.0
@@ -183002,7 +183002,7 @@
   {
     "year":2018,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":50411.0,
     "est_sat_ridership":32858.0,
     "est_sun_ridership":24772.0
@@ -183010,7 +183010,7 @@
   {
     "year":2018,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":60564.0,
     "est_sat_ridership":35923.0,
     "est_sun_ridership":28805.0
@@ -184682,7 +184682,7 @@
   {
     "year":2018,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":48909.0,
     "est_sat_ridership":32643.0,
     "est_sun_ridership":25574.0
@@ -184690,7 +184690,7 @@
   {
     "year":2018,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":61201.0,
     "est_sat_ridership":36631.0,
     "est_sun_ridership":31356.0
@@ -186362,7 +186362,7 @@
   {
     "year":2018,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":48744.0,
     "est_sat_ridership":32542.0,
     "est_sun_ridership":24211.0
@@ -186370,7 +186370,7 @@
   {
     "year":2018,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":60625.0,
     "est_sat_ridership":37172.0,
     "est_sun_ridership":30255.0
@@ -187578,7 +187578,7 @@
   {
     "year":2018,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":48306.0,
     "est_sat_ridership":31715.0,
     "est_sun_ridership":24509.0
@@ -187586,7 +187586,7 @@
   {
     "year":2018,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":60635.0,
     "est_sat_ridership":38424.0,
     "est_sun_ridership":33237.0
@@ -188706,7 +188706,7 @@
   {
     "year":2018,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":50934.0,
     "est_sat_ridership":31928.0,
     "est_sun_ridership":24323.0
@@ -188714,7 +188714,7 @@
   {
     "year":2018,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":59524.0,
     "est_sat_ridership":37407.0,
     "est_sun_ridership":33744.0
@@ -189834,7 +189834,7 @@
   {
     "year":2018,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":52072.0,
     "est_sat_ridership":33011.0,
     "est_sun_ridership":24395.0
@@ -189842,7 +189842,7 @@
   {
     "year":2018,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":59877.0,
     "est_sat_ridership":37709.0,
     "est_sun_ridership":33895.0
@@ -191426,7 +191426,7 @@
   {
     "year":2018,
     "month":7,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":50552.0,
     "est_sat_ridership":32712.0,
     "est_sun_ridership":24292.0
@@ -191434,7 +191434,7 @@
   {
     "year":2018,
     "month":7,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":60432.0,
     "est_sat_ridership":37499.0,
     "est_sun_ridership":34203.0
@@ -193106,7 +193106,7 @@
   {
     "year":2018,
     "month":8,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":49643.0,
     "est_sat_ridership":33050.0,
     "est_sun_ridership":23379.0
@@ -193114,7 +193114,7 @@
   {
     "year":2018,
     "month":8,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":60936.0,
     "est_sat_ridership":37815.0,
     "est_sun_ridership":34543.0
@@ -194786,7 +194786,7 @@
   {
     "year":2018,
     "month":9,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":49521.0,
     "est_sat_ridership":29736.0,
     "est_sun_ridership":24900.0
@@ -194794,7 +194794,7 @@
   {
     "year":2018,
     "month":9,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":61356.0,
     "est_sat_ridership":38158.0,
     "est_sun_ridership":36388.0
@@ -196466,7 +196466,7 @@
   {
     "year":2018,
     "month":10,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":50663.0,
     "est_sat_ridership":29432.0,
     "est_sun_ridership":25424.0
@@ -196474,7 +196474,7 @@
   {
     "year":2018,
     "month":10,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":61957.0,
     "est_sat_ridership":36986.0,
     "est_sun_ridership":34422.0
@@ -198146,7 +198146,7 @@
   {
     "year":2018,
     "month":11,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":51673.0,
     "est_sat_ridership":28644.0,
     "est_sun_ridership":26510.0
@@ -198154,7 +198154,7 @@
   {
     "year":2018,
     "month":11,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":62935.0,
     "est_sat_ridership":37687.0,
     "est_sun_ridership":32468.0
@@ -199826,7 +199826,7 @@
   {
     "year":2018,
     "month":12,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":55028.0,
     "est_sat_ridership":27639.0,
     "est_sun_ridership":26449.0
@@ -199834,7 +199834,7 @@
   {
     "year":2018,
     "month":12,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":62383.0,
     "est_sat_ridership":36405.0,
     "est_sun_ridership":31558.0
@@ -201506,7 +201506,7 @@
   {
     "year":2019,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":54907.0,
     "est_sat_ridership":27194.0,
     "est_sun_ridership":26004.0
@@ -201514,7 +201514,7 @@
   {
     "year":2019,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":61572.0,
     "est_sat_ridership":34958.0,
     "est_sun_ridership":29833.0
@@ -203186,7 +203186,7 @@
   {
     "year":2019,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":54130.0,
     "est_sat_ridership":28121.0,
     "est_sun_ridership":25650.0
@@ -203194,7 +203194,7 @@
   {
     "year":2019,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":61104.0,
     "est_sat_ridership":34209.0,
     "est_sun_ridership":30366.0
@@ -204866,7 +204866,7 @@
   {
     "year":2019,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":52632.0,
     "est_sat_ridership":27422.0,
     "est_sun_ridership":25952.0
@@ -204874,7 +204874,7 @@
   {
     "year":2019,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":61828.0,
     "est_sat_ridership":34302.0,
     "est_sun_ridership":31231.0
@@ -206546,7 +206546,7 @@
   {
     "year":2019,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":50463.0,
     "est_sat_ridership":28110.0,
     "est_sun_ridership":25029.0
@@ -206554,7 +206554,7 @@
   {
     "year":2019,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":62135.0,
     "est_sat_ridership":33631.0,
     "est_sun_ridership":30619.0
@@ -208226,7 +208226,7 @@
   {
     "year":2019,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":48563.0,
     "est_sat_ridership":30184.0,
     "est_sun_ridership":24368.0
@@ -208234,7 +208234,7 @@
   {
     "year":2019,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":61372.0,
     "est_sat_ridership":33841.0,
     "est_sun_ridership":30530.0
@@ -209906,7 +209906,7 @@
   {
     "year":2019,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":47884.0,
     "est_sat_ridership":29931.0,
     "est_sun_ridership":23769.0
@@ -209914,7 +209914,7 @@
   {
     "year":2019,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":61045.0,
     "est_sat_ridership":33387.0,
     "est_sun_ridership":30197.0
@@ -211586,7 +211586,7 @@
   {
     "year":2019,
     "month":7,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":44686.0,
     "est_sat_ridership":29943.0,
     "est_sun_ridership":24573.0
@@ -211594,7 +211594,7 @@
   {
     "year":2019,
     "month":7,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":58521.0,
     "est_sat_ridership":33855.0,
     "est_sun_ridership":29800.0
@@ -213266,7 +213266,7 @@
   {
     "year":2019,
     "month":8,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":43027.0,
     "est_sat_ridership":29883.0,
     "est_sun_ridership":24456.0
@@ -213274,7 +213274,7 @@
   {
     "year":2019,
     "month":8,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":56147.0,
     "est_sat_ridership":33385.0,
     "est_sun_ridership":29045.0
@@ -214946,7 +214946,7 @@
   {
     "year":2019,
     "month":9,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":42108.0,
     "est_sat_ridership":30640.0,
     "est_sun_ridership":23813.0
@@ -214954,7 +214954,7 @@
   {
     "year":2019,
     "month":9,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":54030.0,
     "est_sat_ridership":33474.0,
     "est_sun_ridership":28902.0
@@ -216626,7 +216626,7 @@
   {
     "year":2019,
     "month":10,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":42505.0,
     "est_sat_ridership":30305.0,
     "est_sun_ridership":23691.0
@@ -216634,7 +216634,7 @@
   {
     "year":2019,
     "month":10,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":53242.0,
     "est_sat_ridership":33743.0,
     "est_sun_ridership":28664.0
@@ -218306,7 +218306,7 @@
   {
     "year":2019,
     "month":11,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":43838.0,
     "est_sat_ridership":29352.0,
     "est_sun_ridership":22926.0
@@ -218314,7 +218314,7 @@
   {
     "year":2019,
     "month":11,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":51833.0,
     "est_sat_ridership":33694.0,
     "est_sun_ridership":28768.0
@@ -219986,7 +219986,7 @@
   {
     "year":2019,
     "month":12,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":47329.0,
     "est_sat_ridership":30896.0,
     "est_sun_ridership":22922.0
@@ -219994,7 +219994,7 @@
   {
     "year":2019,
     "month":12,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":52995.0,
     "est_sat_ridership":32888.0,
     "est_sun_ridership":28721.0
@@ -221666,7 +221666,7 @@
   {
     "year":2020,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":47962.0,
     "est_sat_ridership":30836.0,
     "est_sun_ridership":22788.0
@@ -221674,7 +221674,7 @@
   {
     "year":2020,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":55117.0,
     "est_sat_ridership":33544.0,
     "est_sun_ridership":29873.0
@@ -223346,7 +223346,7 @@
   {
     "year":2020,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":47697.0,
     "est_sat_ridership":30393.0,
     "est_sun_ridership":22757.0
@@ -223354,7 +223354,7 @@
   {
     "year":2020,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":57659.0,
     "est_sat_ridership":35859.0,
     "est_sun_ridership":31611.0
@@ -225026,7 +225026,7 @@
   {
     "year":2020,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":26926.0,
     "est_sat_ridership":13317.0,
     "est_sun_ridership":13603.0
@@ -225034,7 +225034,7 @@
   {
     "year":2020,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":32030.0,
     "est_sat_ridership":17505.0,
     "est_sun_ridership":25548.0
@@ -226706,7 +226706,7 @@
   {
     "year":2020,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":12847.0,
     "est_sat_ridership":10019.0,
     "est_sun_ridership":7705.0
@@ -226714,7 +226714,7 @@
   {
     "year":2020,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":12848.0,
     "est_sat_ridership":10179.0,
     "est_sun_ridership":10049.0
@@ -228386,7 +228386,7 @@
   {
     "year":2020,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":15420.0,
     "est_sat_ridership":12126.0,
     "est_sun_ridership":9063.0
@@ -228394,7 +228394,7 @@
   {
     "year":2020,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":15261.0,
     "est_sat_ridership":12140.0,
     "est_sun_ridership":11330.0
@@ -230066,7 +230066,7 @@
   {
     "year":2020,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":19444.0,
     "est_sat_ridership":16049.0,
     "est_sun_ridership":13273.0
@@ -230074,7 +230074,7 @@
   {
     "year":2020,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":18357.0,
     "est_sat_ridership":15827.0,
     "est_sun_ridership":15699.0
@@ -231746,7 +231746,7 @@
   {
     "year":2020,
     "month":7,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":13636.0,
     "est_sat_ridership":11081.0,
     "est_sun_ridership":9753.0
@@ -231754,7 +231754,7 @@
   {
     "year":2020,
     "month":7,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":18132.0,
     "est_sat_ridership":15318.0,
     "est_sun_ridership":13346.0
@@ -233426,7 +233426,7 @@
   {
     "year":2020,
     "month":8,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":13566.0,
     "est_sat_ridership":10785.0,
     "est_sun_ridership":9592.0
@@ -233434,7 +233434,7 @@
   {
     "year":2020,
     "month":8,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":18553.0,
     "est_sat_ridership":16409.0,
     "est_sun_ridership":13766.0
@@ -235106,7 +235106,7 @@
   {
     "year":2020,
     "month":9,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":14446.0,
     "est_sat_ridership":11248.0,
     "est_sun_ridership":9662.0
@@ -235114,7 +235114,7 @@
   {
     "year":2020,
     "month":9,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":18667.0,
     "est_sat_ridership":16830.0,
     "est_sun_ridership":14803.0
@@ -236786,7 +236786,7 @@
   {
     "year":2020,
     "month":10,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":14545.0,
     "est_sat_ridership":11771.0,
     "est_sun_ridership":11336.0
@@ -236794,7 +236794,7 @@
   {
     "year":2020,
     "month":10,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":18983.0,
     "est_sat_ridership":16470.0,
     "est_sun_ridership":14171.0
@@ -238466,7 +238466,7 @@
   {
     "year":2020,
     "month":11,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":12873.0,
     "est_sat_ridership":10104.0,
     "est_sun_ridership":7849.0
@@ -238474,7 +238474,7 @@
   {
     "year":2020,
     "month":11,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":18129.0,
     "est_sat_ridership":14778.0,
     "est_sun_ridership":12736.0
@@ -240146,7 +240146,7 @@
   {
     "year":2020,
     "month":12,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":11240.0,
     "est_sat_ridership":8571.0,
     "est_sun_ridership":7560.0
@@ -240154,7 +240154,7 @@
   {
     "year":2020,
     "month":12,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":16333.0,
     "est_sat_ridership":13597.0,
     "est_sun_ridership":10778.0
@@ -241826,7 +241826,7 @@
   {
     "year":2021,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":10880.0,
     "est_sat_ridership":8787.0,
     "est_sun_ridership":7707.0
@@ -241834,7 +241834,7 @@
   {
     "year":2021,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":15999.0,
     "est_sat_ridership":12491.0,
     "est_sun_ridership":11525.0
@@ -243506,7 +243506,7 @@
   {
     "year":2021,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":11814.0,
     "est_sat_ridership":9792.0,
     "est_sun_ridership":8849.0
@@ -243514,7 +243514,7 @@
   {
     "year":2021,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":17641.0,
     "est_sat_ridership":15930.0,
     "est_sun_ridership":13543.0
@@ -245186,7 +245186,7 @@
   {
     "year":2021,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":12083.0,
     "est_sat_ridership":11263.0,
     "est_sun_ridership":9006.0
@@ -245194,7 +245194,7 @@
   {
     "year":2021,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":18521.0,
     "est_sat_ridership":16881.0,
     "est_sun_ridership":13751.0
@@ -246866,7 +246866,7 @@
   {
     "year":2021,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":12810.0,
     "est_sat_ridership":10984.0,
     "est_sun_ridership":9206.0
@@ -246874,7 +246874,7 @@
   {
     "year":2021,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":19397.0,
     "est_sat_ridership":16947.0,
     "est_sun_ridership":13974.0
@@ -248546,7 +248546,7 @@
   {
     "year":2021,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":13697.0,
     "est_sat_ridership":11720.0,
     "est_sun_ridership":9427.0
@@ -248554,7 +248554,7 @@
   {
     "year":2021,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":21080.0,
     "est_sat_ridership":19128.0,
     "est_sun_ridership":14804.0
@@ -250226,7 +250226,7 @@
   {
     "year":2021,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":14948.0,
     "est_sat_ridership":12125.0,
     "est_sun_ridership":10737.0
@@ -250234,7 +250234,7 @@
   {
     "year":2021,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":24803.0,
     "est_sat_ridership":21677.0,
     "est_sun_ridership":17939.0
@@ -251906,7 +251906,7 @@
   {
     "year":2021,
     "month":7,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":15292.0,
     "est_sat_ridership":12276.0,
     "est_sun_ridership":10749.0
@@ -251914,7 +251914,7 @@
   {
     "year":2021,
     "month":7,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":24903.0,
     "est_sat_ridership":22676.0,
     "est_sun_ridership":17962.0
@@ -253586,7 +253586,7 @@
   {
     "year":2021,
     "month":8,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":16665.0,
     "est_sat_ridership":12522.0,
     "est_sun_ridership":11100.0
@@ -253594,7 +253594,7 @@
   {
     "year":2021,
     "month":8,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":26264.0,
     "est_sat_ridership":18094.0,
     "est_sun_ridership":14532.0
@@ -255266,7 +255266,7 @@
   {
     "year":2021,
     "month":9,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":17505.0,
     "est_sat_ridership":13598.0,
     "est_sun_ridership":10848.0
@@ -255274,7 +255274,7 @@
   {
     "year":2021,
     "month":9,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":29153.0,
     "est_sat_ridership":24191.0,
     "est_sun_ridership":17753.0
@@ -256946,7 +256946,7 @@
   {
     "year":2021,
     "month":10,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":18053.0,
     "est_sat_ridership":15182.0,
     "est_sun_ridership":11919.0
@@ -256954,7 +256954,7 @@
   {
     "year":2021,
     "month":10,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":29788.0,
     "est_sat_ridership":23055.0,
     "est_sun_ridership":17872.0
@@ -258626,7 +258626,7 @@
   {
     "year":2021,
     "month":11,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":18450.0,
     "est_sat_ridership":14030.0,
     "est_sun_ridership":11087.0
@@ -258634,7 +258634,7 @@
   {
     "year":2021,
     "month":11,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":29861.0,
     "est_sat_ridership":24164.0,
     "est_sun_ridership":17982.0
@@ -260306,7 +260306,7 @@
   {
     "year":2021,
     "month":12,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":15674.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":10497.0
@@ -260314,7 +260314,7 @@
   {
     "year":2021,
     "month":12,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":24794.0,
     "est_sat_ridership":0.0,
     "est_sun_ridership":14542.0
@@ -261986,7 +261986,7 @@
   {
     "year":2022,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":15872.0,
     "est_sat_ridership":12681.0,
     "est_sun_ridership":13380.0
@@ -261994,7 +261994,7 @@
   {
     "year":2022,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":26165.0,
     "est_sat_ridership":19060.0,
     "est_sun_ridership":16448.0
@@ -263666,7 +263666,7 @@
   {
     "year":2022,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":18520.0,
     "est_sat_ridership":14230.0,
     "est_sun_ridership":12108.0
@@ -263674,7 +263674,7 @@
   {
     "year":2022,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":32308.0,
     "est_sat_ridership":25745.0,
     "est_sun_ridership":22175.0
@@ -265346,7 +265346,7 @@
   {
     "year":2022,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":19631.0,
     "est_sat_ridership":17201.0,
     "est_sun_ridership":13251.0
@@ -265354,7 +265354,7 @@
   {
     "year":2022,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":33490.0,
     "est_sat_ridership":24150.0,
     "est_sun_ridership":20526.0
@@ -267026,7 +267026,7 @@
   {
     "year":2022,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":20121.0,
     "est_sat_ridership":15244.0,
     "est_sun_ridership":12454.0
@@ -267034,7 +267034,7 @@
   {
     "year":2022,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":31537.0,
     "est_sat_ridership":24339.0,
     "est_sun_ridership":20247.0
@@ -268706,7 +268706,7 @@
   {
     "year":2022,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":20378.0,
     "est_sat_ridership":15476.0,
     "est_sun_ridership":13156.0
@@ -268714,7 +268714,7 @@
   {
     "year":2022,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":32056.0,
     "est_sat_ridership":24806.0,
     "est_sun_ridership":21034.0
@@ -270386,7 +270386,7 @@
   {
     "year":2022,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":19611.0,
     "est_sat_ridership":15827.0,
     "est_sun_ridership":12813.0
@@ -270394,7 +270394,7 @@
   {
     "year":2022,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":32249.0,
     "est_sat_ridership":24419.0,
     "est_sun_ridership":22295.0
@@ -272066,7 +272066,7 @@
   {
     "year":2022,
     "month":7,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":19337.0,
     "est_sat_ridership":15489.0,
     "est_sun_ridership":11924.0
@@ -272074,7 +272074,7 @@
   {
     "year":2022,
     "month":7,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":31874.0,
     "est_sat_ridership":24943.0,
     "est_sun_ridership":22718.0
@@ -273746,7 +273746,7 @@
   {
     "year":2022,
     "month":8,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":19517.0,
     "est_sat_ridership":13735.0,
     "est_sun_ridership":13314.0
@@ -273754,7 +273754,7 @@
   {
     "year":2022,
     "month":8,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":34213.0,
     "est_sat_ridership":25869.0,
     "est_sun_ridership":23019.0
@@ -275426,7 +275426,7 @@
   {
     "year":2022,
     "month":9,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":21529.0,
     "est_sat_ridership":15977.0,
     "est_sun_ridership":13044.0
@@ -275434,7 +275434,7 @@
   {
     "year":2022,
     "month":9,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":36705.0,
     "est_sat_ridership":28040.0,
     "est_sun_ridership":23034.0
@@ -277106,7 +277106,7 @@
   {
     "year":2022,
     "month":10,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":21588.0,
     "est_sat_ridership":15751.0,
     "est_sun_ridership":14417.0
@@ -277114,7 +277114,7 @@
   {
     "year":2022,
     "month":10,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":37789.0,
     "est_sat_ridership":29085.0,
     "est_sun_ridership":24396.0
@@ -278786,7 +278786,7 @@
   {
     "year":2022,
     "month":11,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":19772.0,
     "est_sat_ridership":15735.0,
     "est_sun_ridership":12210.0
@@ -278794,7 +278794,7 @@
   {
     "year":2022,
     "month":11,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":36481.0,
     "est_sat_ridership":32029.0,
     "est_sun_ridership":22137.0
@@ -280466,7 +280466,7 @@
   {
     "year":2022,
     "month":12,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":18701.0,
     "est_sat_ridership":14270.0,
     "est_sun_ridership":11455.0
@@ -280474,7 +280474,7 @@
   {
     "year":2022,
     "month":12,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":32280.0,
     "est_sat_ridership":23179.0,
     "est_sun_ridership":18893.0
@@ -282146,7 +282146,7 @@
   {
     "year":2023,
     "month":1,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":19365.0,
     "est_sat_ridership":14401.0,
     "est_sun_ridership":14434.0
@@ -282154,7 +282154,7 @@
   {
     "year":2023,
     "month":1,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":32564.0,
     "est_sat_ridership":22718.0,
     "est_sun_ridership":19428.0
@@ -283826,7 +283826,7 @@
   {
     "year":2023,
     "month":2,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":19966.0,
     "est_sat_ridership":14026.0,
     "est_sun_ridership":13172.0
@@ -283834,7 +283834,7 @@
   {
     "year":2023,
     "month":2,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":36360.0,
     "est_sat_ridership":23066.0,
     "est_sun_ridership":22992.0
@@ -285506,7 +285506,7 @@
   {
     "year":2023,
     "month":3,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":20412.0,
     "est_sat_ridership":15151.0,
     "est_sun_ridership":13485.0
@@ -285514,7 +285514,7 @@
   {
     "year":2023,
     "month":3,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":35142.0,
     "est_sat_ridership":26064.0,
     "est_sun_ridership":21513.0
@@ -287186,7 +287186,7 @@
   {
     "year":2023,
     "month":4,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":20863.0,
     "est_sat_ridership":14048.0,
     "est_sun_ridership":15466.0
@@ -287194,7 +287194,7 @@
   {
     "year":2023,
     "month":4,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":33176.0,
     "est_sat_ridership":29180.0,
     "est_sun_ridership":21159.0
@@ -288866,7 +288866,7 @@
   {
     "year":2023,
     "month":5,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":20860.0,
     "est_sat_ridership":14833.0,
     "est_sun_ridership":12517.0
@@ -288874,7 +288874,7 @@
   {
     "year":2023,
     "month":5,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":34304.0,
     "est_sat_ridership":26185.0,
     "est_sun_ridership":21355.0
@@ -290546,7 +290546,7 @@
   {
     "year":2023,
     "month":6,
-    "line_name":804,
+    "line_name":806,
     "est_wkday_ridership":20078.0,
     "est_sat_ridership":16814.0,
     "est_sun_ridership":13877.0
@@ -290554,7 +290554,7 @@
   {
     "year":2023,
     "month":6,
-    "line_name":806,
+    "line_name":804,
     "est_wkday_ridership":33621.0,
     "est_sat_ridership":23574.0,
     "est_sun_ridership":21022.0
