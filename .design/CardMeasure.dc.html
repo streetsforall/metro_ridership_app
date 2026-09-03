@@ -1,0 +1,293 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">F&#8322;</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">The chart follows the measure control</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click the control. F paints it; here it drives the map, the rail and the card at once.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:.08em">Stop Ridership</span>
+      <div style="display:flex;gap:2px">
+        <sc-for list="{{measures}}" as="m" hint-placeholder-count="3">
+          <span class="hit" onClick="{{m.pick}}" style="background:{{m.bg}};color:{{m.ink}};font-size:12px;font-weight:700;padding:8px 12px;border-radius:{{m.radius}}">{{m.label}}</span>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:16px;flex:1;min-height:0">
+
+      <div style="width:230px;flex-shrink:0;display:flex;flex-direction:column;gap:7px;min-height:0">
+        <div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:4px;padding:8px 10px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a8a29e" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16" y1="16" x2="21" y2="21"></line></svg>
+          <span style="font-size:12px;color:#a8a29e">Search stops</span>
+        </div>
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">47 stops &middot; ranked by {{ rankBy }}</span>
+        <div style="flex:1;display:flex;flex-direction:column;gap:1px;overflow:hidden">
+          <sc-for list="{{rank}}" as="r" hint-placeholder-count="12">
+            <div style="display:flex;align-items:center;gap:7px;padding:4px 6px;border-radius:3px;background:{{r.rowFill}}">
+              <div style="width:12px;height:12px;border-radius:3px;background:{{r.boxFill}};border:1px solid {{r.boxEdge}};flex-shrink:0"></div>
+              <div style="flex-grow:1;display:flex;flex-direction:column;gap:3px;min-width:0">
+                <span style="font-size:10px;color:#44403c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{r.name}}</span>
+                <svg viewBox="0 0 120 5" width="100%" height="5" preserveAspectRatio="none">
+                  <rect x="0" y="0" width="{{r.aW}}" height="5" rx="2" fill="#8ec4e6"></rect>
+                  <rect x="0" y="0" width="{{r.bW}}" height="5" rx="2" fill="#0072bc"></rect>
+                </svg>
+              </div>
+              <span style="font-size:10px;color:#78716c;font-variant-numeric:tabular-nums">{{r.value}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex-grow:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-width:0">
+        <svg viewBox="0 0 620 620" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Placeholder map of the A Line, each station drawn under the selected measure">
+          <rect x="0" y="0" width="620" height="620" fill="#e8e6e1"></rect>
+          <g stroke="#dcd9d3" stroke-width="1">
+            <sc-for list="{{grid}}" as="g" hint-placeholder-count="16">
+              <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+            </sc-for>
+          </g>
+          <polyline points="470,60 470,150 390,215 330,215 300,250 300,560" fill="none" stroke="#0072bc" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"></polyline>
+          <sc-for list="{{circles}}" as="c" hint-placeholder-count="9">
+            <g>
+              <circle cx="{{c.cx}}" cy="{{c.cy}}" r="{{c.r}}" fill="{{c.fill}}" fill-opacity=".55" stroke="#ffffff" stroke-width="2"></circle>
+              <sc-if value="{{c.pair}}" hint-placeholder-val="{{ false }}">
+                <circle cx="{{c.cx}}" cy="{{c.cy}}" r="{{c.r2}}" fill="none" stroke="#033056" stroke-width="1.6"></circle>
+              </sc-if>
+              <sc-if value="{{c.selected}}" hint-placeholder-val="{{ false }}">
+                <circle cx="{{c.cx}}" cy="{{c.cy}}" r="{{c.ring}}" fill="none" stroke="#033056" stroke-width="2.5"></circle>
+              </sc-if>
+            </g>
+          </sc-for>
+        </svg>
+
+        <div style="position:absolute;left:12px;bottom:12px;background:#f8f6f1;border-radius:5px;padding:9px 11px;display:flex;align-items:center;gap:10px">
+          <svg width="66" height="30" viewBox="0 0 66 30">
+            <circle cx="10" cy="20" r="5" fill="{{ mapFill }}" fill-opacity=".55" stroke="#fff" stroke-width="1.5"></circle>
+            <circle cx="30" cy="17" r="8" fill="{{ mapFill }}" fill-opacity=".55" stroke="#fff" stroke-width="1.5"></circle>
+            <circle cx="53" cy="14" r="12" fill="{{ mapFill }}" fill-opacity=".55" stroke="#fff" stroke-width="1.5"></circle>
+          </svg>
+          <span style="font-size:10px;color:#78716c;line-height:1.5">{{ legendTop }}<br>{{ legendBottom }}</span>
+        </div>
+
+        <div style="position:absolute;right:12px;top:12px;width:246px;background:#f8f6f1;border-radius:5px;padding:14px;display:flex;flex-direction:column;gap:9px">
+          <span style="font-size:12px;font-weight:700;color:#033056;line-height:1.3">Union Station</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="width:9px;height:9px;border-radius:2px;background:#0072bc"></span>
+            <span style="font-size:10px;color:#78716c">A Line &middot; also served by B, D</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:8px">
+            <sc-for list="{{figures}}" as="f" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:1px">
+                <span style="font-size:9px;color:{{f.labelInk}};text-transform:uppercase;letter-spacing:.06em">{{f.label}}</span>
+                <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:{{f.ink}}">{{f.value}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <svg viewBox="0 0 218 64" width="100%" height="60" role="img" aria-label="{{ chartAlt }}">
+            <line x1="4" y1="52" x2="214" y2="52" stroke="#e7e5e4" stroke-width="1"></line>
+            <sc-for list="{{series}}" as="s" hint-placeholder-count="2">
+              <polyline points="{{s.points}}" fill="none" stroke="{{s.stroke}}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+            </sc-for>
+            <sc-for list="{{series}}" as="s" hint-placeholder-count="2">
+              <circle cx="{{s.endX}}" cy="{{s.endY}}" r="2.6" fill="{{s.stroke}}" stroke="#f8f6f1" stroke-width="1.4"></circle>
+            </sc-for>
+            <text x="4" y="63" font-size="9" fill="#a8a29e">Jul 2025</text>
+            <text x="214" y="63" font-size="9" fill="#a8a29e" text-anchor="end">Jun 2026</text>
+          </svg>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <sc-for list="{{series}}" as="s" hint-placeholder-count="2">
+              <div style="display:flex;align-items:center;gap:5px">
+                <span style="width:12px;height:2px;background:{{s.stroke}}"></span>
+                <span style="font-size:9px;color:#78716c">{{s.label}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:12px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:#166534;letter-spacing:.06em;text-transform:uppercase">One control reaches three places, and that is the whole variation</span>
+      <span style="font-size:11px;color:#44403c;line-height:1.7"><b>The card&rsquo;s chart is the third consumer.</b> F paints this control and wires nothing to it. Here it sizes the circles, ranks the rail and chooses the series in the card, so a reader who wants the alightings picture gets all three views of it rather than one.</span>
+      <span style="font-size:11px;color:#44403c;line-height:1.7"><b>R makes the same control mean less, and both readings are defensible.</b> Draft R draws boardings and alightings on the map always, which leaves the control ordering the list and nothing else. F&#8322; is the opposite bet: one measure everywhere, and Both is a mode a reader asks for rather than the default.</span>
+      <span style="font-size:11px;color:#a8a29e;line-height:1.6">16 bus stops have no coordinate, so the map cannot show them &mdash; the rail lists them and marks them as off-map. The map is drawn here as a placeholder; the real one is MapLibre with the committed route geometry.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { measure: 'boardings' };
+  }
+
+  // Twelve monthly values across the plot box, as one polyline point list.
+  poly(values, lo, hi, x0, y0, w, h) {
+    const n = (v) => String(Math.round(v * 10) / 10);
+    return values.map((v, i) => {
+      const t = (v - lo) / (hi - lo || 1);
+      return n(x0 + (i / (values.length - 1)) * w) + ',' + n(y0 + h - t * h);
+    }).join(' ');
+  }
+
+  renderVals() {
+    const self = this;
+    const measure = this.state.measure;
+
+    const BOARD = '#0072bc';
+    // The alightings tint the map uses is 1.7 to 1 on this surface, so a stroked mark
+    // takes a darker step of the same hue and the fills keep the light one.
+    const ALIGHT_LINE = '#4a90c8';
+    const ALIGHT_FILL = '#8ec4e6';
+
+    const boardings = [9280, 9410, 9605, 9540, 9790, 9880, 10040, 9960, 10180, 10260, 10310, 10125];
+    const alightings = [8360, 8480, 8650, 8590, 8810, 8900, 9040, 8970, 9160, 9230, 9280, 9113];
+
+    const grid = [];
+    for (let i = 1; i < 9; i++) {
+      grid.push({ x1: 0, y1: i * 70, x2: 620, y2: i * 70 });
+      grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 620 });
+    }
+
+    // name, x, y, boardings, alightings
+    const stations = [
+      ['Union Station', 470, 60, 10125, 9113],
+      ['Little Tokyo / Arts District', 470, 150, 3210, 3480],
+      ['Historic Broadway', 390, 215, 2640, 2810],
+      ['7th Street / Metro Center', 300, 250, 6750, 6075],
+      ['Grand / LATTC', 300, 320, 1910, 1845],
+      ['Vernon', 300, 385, 1142, 1205],
+      ['Florence', 300, 440, 2210, 2004],
+      ['Willowbrook / Rosa Parks', 300, 500, 4320, 4610],
+      ['Downtown Long Beach', 300, 560, 3980, 3610],
+    ];
+
+    const both = measure === 'both';
+    const useAlight = measure === 'alightings';
+    const peak = 10125;
+    const mapFill = useAlight ? ALIGHT_FILL : BOARD;
+
+    const circles = stations.map((s) => {
+      const primary = useAlight ? s[4] : s[3];
+      const r = 5 + Math.sqrt(primary / peak) * 17;
+      const r2 = 5 + Math.sqrt(s[4] / peak) * 17;
+      return {
+        cx: s[1], cy: s[2], r: r, r2: r2, ring: Math.max(r, r2) + 5,
+        fill: mapFill, pair: both, selected: s[0] === 'Union Station',
+      };
+    });
+
+    // name, boardings, alightings
+    const listed = [
+      ['Union Station', 10125, 9113],
+      ['7th Street / Metro Center', 6750, 6075],
+      ['Willowbrook / Rosa Parks', 4320, 4610],
+      ['Downtown Long Beach', 3980, 3610],
+      ['Little Tokyo / Arts District', 3210, 3480],
+      ['Pico', 2940, 3105],
+      ['Historic Broadway', 2640, 2810],
+      ['Florence', 2210, 2004],
+      ['Grand / LATTC', 1910, 1845],
+      ['Firestone', 1860, 1790],
+      ['Compton', 1740, 1826],
+      ['Vernon', 1142, 1205],
+    ];
+    const sortKey = (r) => (useAlight ? r[2] : r[1]);
+    const ranked = [].concat(listed).sort((a, b) => sortKey(b) - sortKey(a));
+    const rankPeak = sortKey(ranked[0]);
+
+    const order = [
+      ['boardings', 'Boardings', '4px 0 0 4px'],
+      ['alightings', 'Alightings', '0'],
+      ['both', 'Both', '0 4px 4px 0'],
+    ];
+
+    const series = [];
+    if (measure !== 'alightings') {
+      series.push({ key: 'boardings', label: 'Boardings', stroke: BOARD, values: boardings });
+    }
+    if (measure !== 'boardings') {
+      series.push({ key: 'alightings', label: 'Alightings', stroke: ALIGHT_LINE, values: alightings });
+    }
+    const shown = [];
+    series.forEach((s) => s.values.forEach((v) => shown.push(v)));
+    const lo = Math.min.apply(null, shown) * 0.985;
+    const hi = Math.max.apply(null, shown) * 1.005;
+
+    const figures = [
+      { key: 'boardings', label: 'Boardings', value: '10,125', tint: null },
+      { key: 'alightings', label: 'Alightings', value: '9,113', tint: null },
+      { key: 'change', label: 'Change', value: '+1,012', tint: '#166534' },
+      { key: 'share', label: 'Share', value: '21.4%', tint: null },
+    ];
+    const lit = (k) => both || k === measure || k === 'change' || k === 'share';
+
+    return {
+      grid: grid,
+      circles: circles,
+      mapFill: mapFill,
+      legendTop: 'Circle area is',
+      legendBottom: both ? 'boardings; the outline is alightings' : (useAlight ? 'average alightings' : 'average boardings'),
+      rankBy: useAlight ? 'alightings' : 'boardings',
+      measures: order.map((o) => ({
+        label: o[1],
+        radius: o[2],
+        pick: () => self.setState({ measure: o[0] }),
+        bg: measure === o[0] ? '#033056' : '#ffffff',
+        ink: measure === o[0] ? '#ffffff' : '#44403c',
+      })),
+      rank: ranked.map((r) => ({
+        name: r[0],
+        value: sortKey(r).toLocaleString('en-US'),
+        aW: String(Math.round((r[2] / rankPeak) * 120)),
+        bW: String(Math.round((r[1] / rankPeak) * 120)),
+        rowFill: r[0] === 'Union Station' ? '#ece9e2' : 'transparent',
+        boxFill: r[0] === 'Union Station' ? '#033056' : '#ffffff',
+        boxEdge: r[0] === 'Union Station' ? '#033056' : '#d6d3d1',
+      })),
+      figures: figures.map((f) => ({
+        label: f.label,
+        value: f.value,
+        ink: f.tint ? f.tint : (lit(f.key) ? '#44403c' : '#c8c3ba'),
+        labelInk: lit(f.key) ? '#a8a29e' : '#d3cec4',
+      })),
+      series: series.map((s) => {
+        const pts = self.poly(s.values, lo, hi, 4, 6, 210, 42);
+        const last = pts.split(' ')[s.values.length - 1].split(',');
+        return { label: s.label, stroke: s.stroke, points: pts, endX: last[0], endY: last[1] };
+      }),
+      chartAlt: both
+        ? 'Twelve monthly boardings and alightings at Union Station, drawn as two lines on one scale'
+        : 'Twelve monthly ' + (useAlight ? 'alightings' : 'boardings') + ' at Union Station',
+    };
+  }
+}
+</script>
+</body>
+</html>

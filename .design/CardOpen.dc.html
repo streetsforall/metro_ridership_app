@@ -1,0 +1,251 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">F&#8325;</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">The card opens, so the chart is asked for rather than given</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click the card on the map, or a step on the left. It is one card at three sizes.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">F&#8324; draws four cards and asks which one to build. This draws one card that becomes all of them, and the toggle is the reader&rsquo;s attention rather than a control: a sweep gets the name, a click gets the chart, a second click keeps it.</span>
+
+    <div style="display:flex;gap:18px;flex:1;min-height:0">
+
+      <div style="width:290px;flex-shrink:0;display:flex;flex-direction:column;gap:9px">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">The three steps</span>
+        <sc-for list="{{steps}}" as="s" hint-placeholder-count="3">
+          <div class="hit" onClick="{{s.pick}}" style="background:{{s.bg}};border-left:3px solid {{s.edge}};border-radius:4px;padding:10px 12px;display:flex;flex-direction:column;gap:4px">
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <span style="font-size:11px;font-weight:700;color:{{s.head}}">{{s.title}}</span>
+              <span style="font-size:9px;color:#a8a29e;letter-spacing:.06em;text-transform:uppercase">{{s.trigger}}</span>
+            </div>
+            <span style="font-size:10.5px;color:#57534e;line-height:1.6">{{s.body}}</span>
+          </div>
+        </sc-for>
+
+        <div style="background:#fff;border-radius:5px;padding:11px 13px;display:flex;flex-direction:column;gap:5px;flex:1">
+          <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What this step costs</span>
+          <span style="font-size:11px;color:#44403c;line-height:1.65">{{ cost }}</span>
+        </div>
+      </div>
+
+      <div style="flex-grow:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-width:0">
+        <svg viewBox="0 0 620 560" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Placeholder map of the A Line with one station selected">
+          <rect x="0" y="0" width="620" height="560" fill="#e8e6e1"></rect>
+          <g stroke="#dcd9d3" stroke-width="1">
+            <sc-for list="{{grid}}" as="g" hint-placeholder-count="16">
+              <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+            </sc-for>
+          </g>
+          <polyline points="470,40 470,130 390,195 330,195 300,230 300,530" fill="none" stroke="#0072bc" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"></polyline>
+          <sc-for list="{{circles}}" as="c" hint-placeholder-count="9">
+            <g>
+              <circle cx="{{c.cx}}" cy="{{c.cy}}" r="{{c.r}}" fill="#0072bc" fill-opacity=".55" stroke="#ffffff" stroke-width="2"></circle>
+              <sc-if value="{{c.selected}}" hint-placeholder-val="{{ false }}">
+                <circle cx="{{c.cx}}" cy="{{c.cy}}" r="{{c.ring}}" fill="none" stroke="#033056" stroke-width="2.5"></circle>
+              </sc-if>
+            </g>
+          </sc-for>
+        </svg>
+
+        <div class="hit" onClick="{{ advance }}" style="position:absolute;right:14px;top:14px;width:{{ cardW }};background:#f8f6f1;border-radius:5px;padding:{{ cardPad }};display:flex;flex-direction:column;gap:9px;box-shadow:0 1px 0 rgba(68,64,60,.12)">
+
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+            <span style="font-size:12px;font-weight:700;color:#033056;line-height:1.3">Union Station</span>
+            <span style="font-size:9px;font-weight:700;letter-spacing:.06em;color:{{ badgeInk }}">{{ badge }}</span>
+          </div>
+
+          <sc-if value="{{ isPeek }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:baseline;gap:7px">
+              <span style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums">10,125</span>
+              <span style="font-size:10px;color:#78716c">boardings</span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="width:9px;height:9px;border-radius:2px;background:#0072bc"></span>
+                <span style="font-size:10px;color:#78716c">A Line &middot; also served by B, D</span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:8px">
+                <sc-for list="{{figures}}" as="f" hint-placeholder-count="4">
+                  <div style="display:flex;flex-direction:column;gap:1px">
+                    <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em">{{f.label}}</span>
+                    <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:{{f.ink}}">{{f.value}}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <svg viewBox="0 0 218 64" width="100%" height="60" role="img" aria-label="Twelve monthly boardings and alightings at Union Station">
+                <line x1="4" y1="52" x2="214" y2="52" stroke="#e7e5e4" stroke-width="1"></line>
+                <polyline points="{{ boardLine }}" fill="none" stroke="#0072bc" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+                <polyline points="{{ alightLine }}" fill="none" stroke="#4a90c8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+                <text x="4" y="63" font-size="9" fill="#a8a29e">Jul 2025</text>
+                <text x="214" y="63" font-size="9" fill="#a8a29e" text-anchor="end">Jun 2026</text>
+              </svg>
+              <div style="display:flex;gap:10px">
+                <div style="display:flex;align-items:center;gap:5px">
+                  <span style="width:12px;height:2px;background:#0072bc"></span>
+                  <span style="font-size:9px;color:#78716c">Boardings</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:5px">
+                  <span style="width:12px;height:2px;background:#4a90c8"></span>
+                  <span style="font-size:9px;color:#78716c">Alightings</span>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isPinned }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="font-size:9px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">The other lines here</span>
+              <sc-for list="{{others}}" as="o" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <span style="width:9px;height:9px;border-radius:2px;background:{{o.color}}"></span>
+                  <span style="font-size:10px;color:#44403c;flex-grow:1">{{o.label}}</span>
+                  <span style="font-size:10px;color:#78716c;font-variant-numeric:tabular-nums">{{o.value}}</span>
+                </div>
+              </sc-for>
+              <span style="font-size:10px;color:#0fada8;margin-top:3px">Open this stop in the panel &rarr;</span>
+            </div>
+          </sc-if>
+
+          <span style="font-size:9px;color:#a8a29e">{{ hint }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:12px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:#9a3412;letter-spacing:.06em;text-transform:uppercase">Hover is the step this design cannot have on a touch screen</span>
+      <span style="font-size:11px;color:#44403c;line-height:1.7"><b>Two of the three steps need a pointer.</b> A phone has no hover, so the peek has no trigger and the first tap has to do the work of both. The design that survives the translation is tap for the open card and a second tap on the card to pin it, which means the peek is a desktop refinement rather than the foundation &mdash; and a draft that leans on it is a draft that will need a second design later.</span>
+      <span style="font-size:11px;color:#44403c;line-height:1.7"><b>A card that changes size under the cursor moves the thing being pointed at.</b> The card grows downward and leftward from a fixed top-right corner here, so the circle a reader is hovering never ends up underneath it. Growing from the cursor instead would put the chart where the stop was.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { step: 'peek' };
+  }
+
+  poly(values, lo, hi, x0, y0, w, h) {
+    const n = (v) => String(Math.round(v * 10) / 10);
+    return values.map((v, i) => {
+      const t = (v - lo) / (hi - lo || 1);
+      return n(x0 + (i / (values.length - 1)) * w) + ',' + n(y0 + h - t * h);
+    }).join(' ');
+  }
+
+  renderVals() {
+    const self = this;
+    const step = this.state.step;
+    const next = { peek: 'open', open: 'pinned', pinned: 'peek' };
+
+    const boardings = [9280, 9410, 9605, 9540, 9790, 9880, 10040, 9960, 10180, 10260, 10310, 10125];
+    const alightings = [8360, 8480, 8650, 8590, 8810, 8900, 9040, 8970, 9160, 9230, 9280, 9113];
+
+    const grid = [];
+    for (let i = 1; i < 9; i++) {
+      grid.push({ x1: 0, y1: i * 70, x2: 620, y2: i * 70 });
+      grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 560 });
+    }
+
+    const stations = [
+      [470, 40, 10125, true], [470, 130, 3210, false], [390, 195, 2640, false],
+      [300, 230, 6750, false], [300, 300, 1910, false], [300, 365, 1142, false],
+      [300, 420, 2210, false], [300, 475, 4320, false], [300, 530, 3980, false],
+    ];
+    const peak = 10125;
+    const circles = stations.map((s) => {
+      const r = 5 + Math.sqrt(s[2] / peak) * 17;
+      return { cx: s[0], cy: s[1], r: r, ring: r + 5, selected: s[3] };
+    });
+
+    const table = {
+      peek: {
+        title: 'The peek', trigger: 'on hover', badge: 'HOVERING', badgeInk: '#a8a29e',
+        width: '186px', pad: '11px 13px',
+        hint: 'Click to open',
+        cost: 'Almost nothing. The name and one figure are already in the feature the map draws, so the peek needs no fetch and can follow the cursor at frame rate. It answers which stop this is and refuses everything else.',
+      },
+      open: {
+        title: 'The open card', trigger: 'on click', badge: 'OPEN', badgeInk: '#0fada8',
+        width: '246px', pad: '14px',
+        hint: 'Click again to pin',
+        cost: 'The twelve-month series for one stop, fetched on the click rather than for every stop on screen. That is the whole argument for opening rather than showing: F asks for a series at every stop a cursor crosses, and this asks for one only when a reader has said which.',
+      },
+      pinned: {
+        title: 'The pinned card', trigger: 'on a second click', badge: 'PINNED', badgeInk: '#0fada8',
+        width: '246px', pad: '14px',
+        hint: 'Click to release',
+        cost: 'A selection the app has to carry, which means it belongs in the URL beside the other controls. Pinning is also what makes the card comparable: two pinned cards side by side is the only way this layout compares stops, and the rail is the other.',
+      },
+    };
+
+    const order = ['peek', 'open', 'pinned'];
+    const cur = table[step];
+
+    return {
+      grid: grid,
+      circles: circles,
+      steps: order.map((k) => ({
+        title: table[k].title,
+        trigger: table[k].trigger,
+        body: table[k].cost.split('.')[0] + '.',
+        pick: () => self.setState({ step: k }),
+        bg: step === k ? '#ffffff' : 'transparent',
+        edge: step === k ? '#0fada8' : '#e7e5e4',
+        head: step === k ? '#033056' : '#78716c',
+      })),
+      advance: () => self.setState({ step: next[step] }),
+      isPeek: step === 'peek',
+      isOpen: step === 'open' || step === 'pinned',
+      isPinned: step === 'pinned',
+      badge: cur.badge,
+      badgeInk: cur.badgeInk,
+      cardW: cur.width,
+      cardPad: cur.pad,
+      hint: cur.hint,
+      cost: cur.cost,
+      boardLine: this.poly(boardings, 8360 * 0.985, 10310 * 1.005, 4, 6, 210, 42),
+      alightLine: this.poly(alightings, 8360 * 0.985, 10310 * 1.005, 4, 6, 210, 42),
+      figures: [
+        { label: 'Boardings', value: '10,125', ink: '#44403c' },
+        { label: 'Alightings', value: '9,113', ink: '#44403c' },
+        { label: 'Change', value: '+1,012', ink: '#166534' },
+        { label: 'Share', value: '21.4%', ink: '#44403c' },
+      ],
+      others: [
+        { color: '#eb131b', label: 'B Line', value: '4,093' },
+        { color: '#a05da5', label: 'D Line', value: '2,571' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

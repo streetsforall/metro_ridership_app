@@ -20,14 +20,14 @@
 
   <div style="display:flex;flex-direction:column;gap:8px">
     <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">START HERE</span>
-    <span style="font-size:26px;font-weight:700;color:#033056;line-height:1.2;text-wrap:balance">Forty-seven drafts for showing ridership at a stop, and how to read them</span>
+    <span style="font-size:26px;font-weight:700;color:#033056;line-height:1.2;text-wrap:balance">Fifty-two drafts for showing ridership at a stop, and how to read them</span>
     <span style="font-size:13px;color:#78716c;max-width:104ch;line-height:1.6">The app ranks Metro stops by how many people board and alight there. These artboards ask what the panel and the map should look like &mdash; nothing here is built. Each page below holds one question, and the drafts on it are alternatives to each other rather than steps in a sequence.</span>
   </div>
 
   <div style="display:flex;gap:18px;flex:1;min-height:0">
 
     <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:10px;min-height:0">
-      <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#0fada8">THE EIGHT PAGES</span>
+      <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#0fada8">THE NINE PAGES</span>
       <table style="font-size:12px">
         <thead>
           <tr style="border-bottom:2px solid #d6d3d1">
@@ -38,7 +38,7 @@
           </tr>
         </thead>
         <tbody>
-          <sc-for list="{{pages}}" as="p" hint-placeholder-count="8">
+          <sc-for list="{{pages}}" as="p" hint-placeholder-count="9">
             <tr style="border-bottom:1px solid #e7e5e4">
               <td style="padding:9px 12px 9px 0;vertical-align:top;font-size:12px;font-weight:700;color:#033056;line-height:1.4">{{p.name}}</td>
               <td style="padding:9px 10px 9px 0;vertical-align:top;color:#78716c">{{p.count}}</td>
@@ -113,13 +113,16 @@ class Component extends DCLogic {
         { name: 'Marks and corridors', count: '2',
           asks: 'Whether a square carries a percentage better than a circle, and how to draw two lines sharing one corridor.',
           comment: 'Whether the side-by-side corridor reads as two lines.' },
-        { name: 'Superseded', count: '8',
+        { name: 'What the hover card shows', count: '6',
+          asks: 'What sits under the four figures in the map-led hover card — a chart, a different chart, or nothing.',
+          comment: 'Whether you would read a sparkline that appears on hover.' },
+        { name: 'Superseded', count: '7',
           asks: 'Drafts a later one reproduces, kept so the reasoning stays visible. Nothing here needs a decision.',
           comment: 'Skip unless you disagree with a retirement.' },
       ],
       notes: [
-        { head: 'Letter badges.', body: 'Each draft carries one, in the order it was drawn rather than by merit. The sequence skips HH and II, which never existed. I₂ and Q₂ are revisions of I and Q.' },
-        { head: 'Titles ending "click me".', body: 'That artboard responds to a click, a tick or a drag. Sixteen of the forty-seven do.' },
+        { head: 'Letter badges.', body: 'Each draft carries one, in the order it was drawn rather than by merit. The sequence skips HH and II, which never existed. I₂ and Q₂ are revisions of I and Q, and F₂ to F₆ are variations on F.' },
+        { head: 'Titles ending "click me".', body: 'That artboard responds to a click, a tick or a drag. Twenty-three of the fifty-two do.' },
         { head: 'The wide sheets.', body: 'Four artboards are reference tables rather than designs — they compare the drafts on their page and end with a recommendation.' },
         { head: 'The side notes.', body: 'Text blocks to the right of each page record what was measured and what each page left open.' },
         { head: 'Station names.', body: 'Three forms appear, longest where there is room: "7th Street / Metro Center Station" is the name the data records, "7th St / Metro Center" fits a map label, and "7th St" fits a mark.' },

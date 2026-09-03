@@ -1,0 +1,422 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">F&#8323;</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Six things the chart slot could be</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click a slot. Both cards are drawn at delivered size, on the busiest stop and a quiet one.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+      <span style="font-size:11px;color:#a8a29e;margin-right:4px">The slot under the figures is</span>
+      <sc-for list="{{slots}}" as="s" hint-placeholder-count="6">
+        <span class="hit" onClick="{{s.pick}}" style="background:{{s.bg}};color:{{s.ink}};font-size:12px;font-weight:700;padding:8px 13px;border-radius:4px">{{s.label}}</span>
+      </sc-for>
+    </div>
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">{{ blurb }}</span>
+
+    <div style="display:flex;gap:18px;flex:1;min-height:0">
+
+      <div style="width:566px;flex-shrink:0;background:#e8e6e1;border-radius:6px;padding:18px;display:flex;gap:20px;align-items:center;justify-content:center">
+        <sc-for list="{{cards}}" as="c" hint-placeholder-count="2">
+          <div style="width:246px;background:#f8f6f1;border-radius:5px;padding:14px;display:flex;flex-direction:column;gap:9px">
+            <span style="font-size:12px;font-weight:700;color:#033056;line-height:1.3">{{c.name}}</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="width:9px;height:9px;border-radius:2px;background:#0072bc"></span>
+              <span style="font-size:10px;color:#78716c">{{c.lines}}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:8px">
+              <sc-for list="{{c.figures}}" as="f" hint-placeholder-count="4">
+                <div style="display:flex;flex-direction:column;gap:1px">
+                  <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em">{{f.label}}</span>
+                  <span style="font-size:{{c.figSize}};font-weight:700;font-variant-numeric:tabular-nums;color:{{f.ink}}">{{f.value}}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{c.hasPlot}}" hint-placeholder-val="{{ true }}">
+              <svg viewBox="0 0 218 {{c.plotH}}" width="100%" height="{{c.plotPx}}" role="img" aria-label="{{c.alt}}">
+                <sc-for list="{{c.rules}}" as="u" hint-placeholder-count="2">
+                  <line x1="{{u.x1}}" y1="{{u.y}}" x2="{{u.x2}}" y2="{{u.y}}" stroke="#e7e5e4" stroke-width="1"></line>
+                </sc-for>
+                <sc-for list="{{c.cells}}" as="q" hint-placeholder-count="12">
+                  <rect x="{{q.x}}" y="{{q.y}}" width="{{q.w}}" height="{{q.h}}" rx="{{q.rx}}" fill="{{q.fill}}" stroke="{{q.stroke}}" stroke-width="{{q.sw}}" stroke-dasharray="{{q.dash}}"></rect>
+                </sc-for>
+                <sc-for list="{{c.runs}}" as="p" hint-placeholder-count="2">
+                  <polyline points="{{p.points}}" fill="none" stroke="{{p.stroke}}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+                </sc-for>
+                <sc-for list="{{c.dots}}" as="d" hint-placeholder-count="2">
+                  <circle cx="{{d.cx}}" cy="{{d.cy}}" r="{{d.r}}" fill="{{d.fill}}" stroke="#f8f6f1" stroke-width="1.4"></circle>
+                </sc-for>
+              </svg>
+            </sc-if>
+
+            <sc-if value="{{c.hasAxis}}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+                <span style="font-size:9px;color:#a8a29e">{{c.axisLeft}}</span>
+                <span style="font-size:9.5px;font-weight:700;color:#033056">{{c.axisMid}}</span>
+                <span style="font-size:9px;color:#a8a29e">{{c.axisRight}}</span>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{c.hasWords}}" hint-placeholder-val="{{ false }}">
+              <span style="font-size:10.5px;color:#44403c;line-height:1.6">{{c.words}}</span>
+            </sc-if>
+
+            <sc-for list="{{c.keys}}" as="k" hint-placeholder-count="2">
+              <div style="display:flex;flex-wrap:wrap;gap:10px">
+                <sc-for list="{{k.items}}" as="i" hint-placeholder-count="2">
+                  <div style="display:flex;align-items:center;gap:5px">
+                    <span style="width:12px;height:{{i.h}};background:{{i.color}};border:{{i.border}}"></span>
+                    <span style="font-size:9px;color:#78716c">{{i.label}}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">What this slot answers and what it spends</span>
+        <sc-for list="{{tests}}" as="t" hint-placeholder-count="5">
+          <div style="display:flex;align-items:flex-start;gap:9px;padding:2px 0">
+            <span style="width:15px;height:15px;border-radius:3px;background:{{t.chipBg}};color:{{t.chipInk}};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px">{{t.glyph}}</span>
+            <span style="font-size:11px;color:#44403c;line-height:1.6">{{t.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:12px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11.5px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { slot: 'line' };
+  }
+
+  // 1st, 2nd, 3rd, 41st - the suffix the rank strip prints under its tick.
+  ordinal(n) {
+    const tens = n % 100;
+    if (tens >= 11 && tens <= 13) return String(n) + 'th';
+    const ones = n % 10;
+    return String(n) + (ones === 1 ? 'st' : ones === 2 ? 'nd' : ones === 3 ? 'rd' : 'th');
+  }
+
+  // One point list per unbroken run, so a month with no report stays a break.
+  runs(values, lo, hi, x0, y0, w, h) {
+    const out = [];
+    let cur = [];
+    const n = (v) => String(Math.round(v * 10) / 10);
+    values.forEach((v, i) => {
+      if (v === null) { if (cur.length > 1) out.push(cur.join(' ')); cur = []; return; }
+      const t = (v - lo) / (hi - lo || 1);
+      cur.push(n(x0 + (i / (values.length - 1)) * w) + ',' + n(y0 + h - t * h));
+    });
+    if (cur.length > 1) out.push(cur.join(' '));
+    return out;
+  }
+
+  renderVals() {
+    const self = this;
+    const slot = this.state.slot;
+
+    const BOARD = '#0072bc';
+    // The map's alightings tint is 1.7 to 1 on this surface, so a stroked series takes a
+    // darker step of the same hue and only the filled marks keep the light one.
+    const ALIGHT = '#4a90c8';
+    const RAMP = ['#dceaf5', '#a9cee8', '#6da9d1', '#2f83bd', '#005a95'];
+
+    const stops = [
+      {
+        name: 'Union Station',
+        lines: 'A Line · also served by B, D',
+        rank: 1, of: 47,
+        boardings: [9280, 9410, 9605, 9540, 9790, 9880, 10040, 9960, 10180, 10260, 10310, 10125],
+        alightings: [8360, 8480, 8650, 8590, 8810, 8900, 9040, 8970, 9160, 9230, 9280, 9113],
+        figures: [['Boardings', '10,125', null], ['Alightings', '9,113', null],
+                  ['Change', '+1,012', '#166534'], ['Share', '21.4%', null]],
+        words: 'Boardings ran 9% above July by June, and every month reported. It is the busiest stop on the A Line and has been all year.',
+      },
+      {
+        name: 'Vernon',
+        lines: 'A Line',
+        rank: 41, of: 47,
+        boardings: [1210, 1188, 1175, 1160, 1152, 1140, 1132, null, null, 1128, 1136, 1142],
+        alightings: [1268, 1250, 1240, 1228, 1220, 1210, 1200, null, null, 1192, 1198, 1205],
+        figures: [['Boardings', '1,142', null], ['Alightings', '1,205', null],
+                  ['Change', '−63', '#9a3412'], ['Share', '2.4%', null]],
+        words: 'Boardings drifted down 6% across the year and February and March were never reported. More people leave here than join.',
+      },
+    ];
+
+    const table = {
+      line: {
+        label: 'a twelve-month line',
+        blurb: 'F draws six months of boardings and alightings as a solid line and a dashed one with no key. This is the same figure extended to the twelve months the payload carries, with each series named beside it.',
+        tests: [
+          ['yes', 'Shape over time reads immediately, which is the one thing the four figures cannot say'],
+          ['yes', 'A month with no report stays a break in the line, never a zero'],
+          ['part', 'Two series in 42 pixels of height cross and touch at a stop whose figures are close'],
+          ['no', 'No month can be named — a reader sees a rise but not which month it happened in'],
+          ['yes', 'Cheapest of the six: one polyline per series, and the series are already fetched'],
+        ],
+        noteHead: 'The default, and the one to beat',
+        noteInk: '#78716c',
+        noteBody: 'A line is the right default because trend is the question a reader brings to a stop they have already picked. What it does not survive is the quiet stop: at Vernon the whole twelve months move 7% and the line reads as noise at this height. Every other slot here is an answer to that.',
+      },
+      bars: {
+        label: 'twelve monthly bars',
+        blurb: 'One column per month rising from a shared floor, so each month is a thing a reader can point at rather than a bend in a line.',
+        tests: [
+          ['yes', 'Length from a common baseline is the channel a reader decodes most accurately'],
+          ['yes', 'A month with no report draws as an empty dashed slot, which a gap in a line cannot do as clearly'],
+          ['yes', 'Individual months are nameable, so a hover or a tap can carry the figure'],
+          ['no', 'It carries one series — the second measure needs a second row and doubles the slot'],
+          ['no', 'A bar is read from its baseline, so it has to start at zero — and from zero a year that moves a tenth is nearly flat'],
+        ],
+        noteHead: 'The slot that makes a month addressable',
+        noteInk: '#166534',
+        noteBody: 'Bars buy precision and pay for it twice: with the second series, and with the zero baseline a bar cannot honestly leave. The line above is drawn to the range of the data and so shows the shape of a 10% year; these bars are drawn from zero and show that a 10% year is, in fact, almost nothing. Both are true, and which one belongs in the card depends on whether the reader is checking a month or judging a trend.',
+      },
+      pair: {
+        label: 'the two series, stacked',
+        blurb: 'Boardings and alightings as two small plots, one above the other, on one shared scale. Two panels rather than two lines in one box.',
+        tests: [
+          ['yes', 'Neither series can hide under the other, whatever the stop'],
+          ['yes', 'One shared scale, so the two panels are comparable rather than two arbitrary zooms'],
+          ['no', 'Change is not legible: the panels sit at different offsets, so at Vernon the smaller series appears to be the larger one'],
+          ['part', 'Each panel gets 20 pixels of height, so only the large moves survive'],
+          ['no', 'It costs the whole slot twice over and pushes the card past the map edge on a short screen'],
+        ],
+        noteHead: 'The honest way to draw two series in a card this narrow',
+        noteInk: '#166534',
+        noteBody: 'Two lines in one box is what F does, and at a stop where boardings and alightings sit within a few per cent the lines overlap for most of the year. Small multiples solve that without inventing a second axis, which is the one thing a card must never do. The price is height, and height is the scarcest thing in a card floating over a map.',
+      },
+      strip: {
+        label: 'a month strip',
+        blurb: 'Twelve cells, one per month, shaded light to dark on boardings. No axis, no baseline — a reader looks for the dark end rather than reading a value.',
+        tests: [
+          ['yes', 'It is the shortest slot here at 26 pixels, so the card can shrink around it'],
+          ['yes', 'A month with no report is a hatched cell, plainly different from a pale one'],
+          ['part', 'Colour carries magnitude, which decodes worse than length but survives at this size'],
+          ['no', 'Each stop is binned over its own range, so Vernon\u2019s 7% drift reads as dramatically as Union Station\u2019s real climb'],
+          ['part', 'The two palest steps sit at 1.4 and 2.2 to 1 against the card, so the strip needs its frame'],
+        ],
+        noteHead: 'The slot for a card that has to get smaller',
+        noteInk: '#78716c',
+        noteBody: 'This is the only slot that would let the hover card fit on a phone without scrolling, and it is the only one that gives up reading a value entirely. It answers "when was this stop busy" and refuses "how busy". The scale question draft V settled for sparklines on the map returns here and is sharper: binned to its own range a quiet stop looks as eventful as a busy one, and binned to the network\u2019s range every stop but the top few is one pale block.',
+      },
+      rank: {
+        label: 'where this stop ranks',
+        blurb: 'No time at all. A strip of 47 ticks with this stop marked, so the card answers where the stop sits among the others rather than what it did last year.',
+        tests: [
+          ['yes', 'It answers the question the map is already asking, which is comparison rather than trend'],
+          ['yes', 'It reads at a glance and at any size, and it needs no scale'],
+          ['yes', 'The strip is the same 47 stops the rail lists, so the card and the list agree by construction'],
+          ['no', 'Trend disappears — a stop that halved this year looks identical to one that held steady'],
+          ['part', 'Rank depends on the measure control, so this slot changes meaning when the control moves'],
+        ],
+        noteHead: 'The only slot that answers the map rather than the calendar',
+        noteInk: '#166534',
+        noteBody: 'Every other slot here puts time in the card. This one argues that a reader hovering a circle on a map is asking "is this one of the big ones", and the fastest answer is a position rather than a series. It is the natural pair to F₂: rank is defined by whatever the measure control selects, so the two variations compose rather than compete.',
+      },
+      none: {
+        label: 'no chart at all',
+        blurb: 'The slot goes away. The four figures grow, and one written sentence says what the chart was for.',
+        tests: [
+          ['yes', 'The card halves in height, which is what lets it sit beside a stop rather than over the map'],
+          ['yes', 'A sentence states the trend in words, which no reader has to decode'],
+          ['yes', 'Nothing to build, and nothing to keep honest when a month goes unreported'],
+          ['no', 'The sentence is written by a rule, so it says less than a chart and can be wrong in ways a chart cannot'],
+          ['no', 'A reader who wants the shape has nowhere to go from here'],
+        ],
+        noteHead: 'The variation that asks whether the chart was earning its space',
+        noteInk: '#9a3412',
+        noteBody: 'This is on the artboard as a control, not as a proposal. A 56-pixel sparkline in a card that appears on hover is read for about a second, and it is fair to ask whether anyone reads it at all. If the answer is that they do not, the honest design is this one plus a way to open the full series — which is exactly what F₅ draws.',
+      },
+    };
+
+    const order = [
+      ['line', 'a twelve-month line'],
+      ['bars', 'twelve monthly bars'],
+      ['pair', 'the two series, stacked'],
+      ['strip', 'a month strip'],
+      ['rank', 'where this stop ranks'],
+      ['none', 'no chart at all'],
+    ];
+
+    const glyphs = {
+      yes: { glyph: '✓', chipBg: '#dcf0e2', chipInk: '#166534' },
+      no: { glyph: '✕', chipBg: '#f7e0d4', chipInk: '#9a3412' },
+      part: { glyph: '~', chipBg: '#efece6', chipInk: '#78716c' },
+    };
+
+    const cards = stops.map((s) => {
+      const present = s.boardings.concat(s.alightings).filter((v) => v !== null);
+      const lo = Math.min.apply(null, present) * 0.985;
+      const hi = Math.max.apply(null, present) * 1.005;
+
+      const rules = [], cells = [], polys = [], dots = [], keys = [];
+      let plotH = 56, hasPlot = true, hasWords = false, figSize = '15px';
+      let alt = '', axisLeft = '', axisMid = '', axisRight = '';
+
+      if (slot === 'line') {
+        rules.push({ x1: 4, x2: 214, y: 52 });
+        self.runs(s.boardings, lo, hi, 4, 6, 210, 42).forEach((p) => polys.push({ points: p, stroke: BOARD }));
+        self.runs(s.alightings, lo, hi, 4, 6, 210, 42).forEach((p) => polys.push({ points: p, stroke: ALIGHT }));
+        keys.push({ items: [
+          { label: 'Boardings', color: BOARD, h: '2px', border: 'none' },
+          { label: 'Alightings', color: ALIGHT, h: '2px', border: 'none' },
+        ] });
+        axisLeft = 'Jul 2025';
+        axisRight = 'Jun 2026';
+        alt = 'Twelve monthly boardings and alightings at ' + s.name + ', drawn as two lines on one scale';
+      } else if (slot === 'bars') {
+        const w = 13, step = 210 / 12;
+        const top = Math.max.apply(null, s.boardings.filter((v) => v !== null)) * 1.06;
+        rules.push({ x1: 4, x2: 214, y: 52 });
+        s.boardings.forEach((v, i) => {
+          const x = 4 + i * step + (step - w) / 2;
+          if (v === null) {
+            cells.push({ x: x, y: 40, w: w, h: 12, rx: 2, fill: 'none', stroke: '#a8a29e', sw: 1, dash: '2 2' });
+            return;
+          }
+          const h = Math.max(2, (v / top) * 46);
+          cells.push({ x: x, y: 52 - h, w: w, h: h, rx: 2, fill: BOARD, stroke: 'none', sw: 0, dash: 'none' });
+        });
+        keys.push({ items: [
+          { label: 'Boardings', color: BOARD, h: '9px', border: 'none' },
+          { label: 'No report', color: 'transparent', h: '9px', border: '1px dashed #a8a29e' },
+        ] });
+        axisLeft = 'Jul 2025';
+        axisRight = 'Jun 2026';
+        alt = 'Twelve monthly boardings at ' + s.name + ' as columns, with unreported months drawn as empty slots';
+      } else if (slot === 'pair') {
+        plotH = 70;
+        rules.push({ x1: 4, x2: 214, y: 26 });
+        rules.push({ x1: 4, x2: 214, y: 64 });
+        self.runs(s.boardings, lo, hi, 4, 4, 210, 22).forEach((p) => polys.push({ points: p, stroke: BOARD }));
+        self.runs(s.alightings, lo, hi, 4, 42, 210, 22).forEach((p) => polys.push({ points: p, stroke: ALIGHT }));
+        keys.push({ items: [
+          { label: 'Boardings above', color: BOARD, h: '2px', border: 'none' },
+          { label: 'Alightings below', color: ALIGHT, h: '2px', border: 'none' },
+        ] });
+        axisLeft = 'Jul 2025';
+        axisRight = 'Jun 2026';
+        alt = 'Boardings and alightings at ' + s.name + ' as two stacked plots on one shared scale';
+      } else if (slot === 'strip') {
+        plotH = 30;
+        const w = 210 / 12;
+        s.boardings.forEach((v, i) => {
+          const x = 4 + i * w;
+          if (v === null) {
+            cells.push({ x: x + 1, y: 4, w: w - 2, h: 22, rx: 2, fill: '#efece6', stroke: '#a8a29e', sw: 1, dash: '2 2' });
+            return;
+          }
+          const t = (v - lo) / (hi - lo);
+          const bin = Math.min(4, Math.floor(t * 5));
+          cells.push({ x: x + 1, y: 4, w: w - 2, h: 22, rx: 2, fill: RAMP[bin], stroke: 'none', sw: 0, dash: 'none' });
+        });
+        keys.push({ items: [
+          { label: 'quiet', color: RAMP[0], h: '9px', border: '1px solid #d6d3d1' },
+          { label: 'busy', color: RAMP[4], h: '9px', border: 'none' },
+          { label: 'no report', color: '#efece6', h: '9px', border: '1px dashed #a8a29e' },
+        ] });
+        axisLeft = 'Jul 2025';
+        axisRight = 'Jun 2026';
+        alt = 'Twelve monthly boardings at ' + s.name + ' as a shaded strip, one cell per month';
+      } else if (slot === 'rank') {
+        plotH = 32;
+        const at = 4 + ((s.rank - 1) / (s.of - 1)) * 210;
+        for (let i = 0; i < s.of; i++) {
+          const x = 4 + (i / (s.of - 1)) * 210;
+          cells.push({ x: x, y: 8, w: 1.4, h: 12, rx: 0, fill: '#d6d3d1', stroke: 'none', sw: 0, dash: 'none' });
+        }
+        cells.push({ x: at - 1.5, y: 4, w: 3, h: 20, rx: 1.5, fill: '#033056', stroke: 'none', sw: 0, dash: 'none' });
+        axisLeft = 'busiest';
+        axisMid = self.ordinal(s.rank) + ' of ' + String(s.of);
+        axisRight = 'quietest';
+        alt = s.name + ' ranks ' + self.ordinal(s.rank) + ' of ' + String(s.of) + ' stops by boardings';
+      } else {
+        hasPlot = false;
+        hasWords = true;
+        figSize = '19px';
+      }
+
+      return {
+        name: s.name,
+        lines: s.lines,
+        figSize: figSize,
+        figures: s.figures.map((f) => ({ label: f[0], value: f[1], ink: f[2] ? f[2] : '#44403c' })),
+        hasPlot: hasPlot,
+        hasAxis: hasPlot,
+        axisLeft: axisLeft,
+        axisMid: axisMid,
+        axisRight: axisRight,
+        hasWords: hasWords,
+        words: s.words,
+        plotH: String(plotH),
+        plotPx: String(plotH - 4),
+        alt: alt,
+        rules: rules,
+        cells: cells,
+        runs: polys,
+        dots: dots,
+        keys: keys,
+      };
+    });
+
+    const cur = table[slot];
+
+    return {
+      slots: order.map((o) => ({
+        label: o[1],
+        pick: () => self.setState({ slot: o[0] }),
+        bg: slot === o[0] ? '#033056' : '#ffffff',
+        ink: slot === o[0] ? '#ffffff' : '#44403c',
+      })),
+      blurb: cur.blurb,
+      cards: cards,
+      tests: cur.tests.map((t) => ({
+        glyph: glyphs[t[0]].glyph, chipBg: glyphs[t[0]].chipBg, chipInk: glyphs[t[0]].chipInk, text: t[1],
+      })),
+      noteHead: cur.noteHead,
+      noteInk: cur.noteInk,
+      noteBody: cur.noteBody,
+    };
+  }
+}
+</script>
+</body>
+</html>

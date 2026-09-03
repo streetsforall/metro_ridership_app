@@ -1,0 +1,231 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    table { border-collapse: collapse; width: 100%; }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">F&#8324;</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">Four hover cards, of which only two have a chart</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">The chart is one row of a card, not the card. All four are drawn at delivered size.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">F&#8323; asks what fills the chart slot. This one asks whether the card needs the slot at all, by drawing the same stop as four cards that differ in how much they claim of the map.</span>
+
+    <div style="flex:1;position:relative;border-radius:6px;background:#e8e6e1;padding:18px;box-sizing:border-box;min-height:0;overflow:hidden">
+      <svg viewBox="0 0 900 430" width="100%" height="100%" preserveAspectRatio="none" style="position:absolute;left:0;top:0" role="img" aria-label="Placeholder map behind the four cards">
+        <rect x="0" y="0" width="900" height="430" fill="#e8e6e1"></rect>
+        <g stroke="#dcd9d3" stroke-width="1">
+          <sc-for list="{{grid}}" as="g" hint-placeholder-count="18">
+            <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+          </sc-for>
+        </g>
+        <polyline points="60,400 60,250 150,180 330,180 420,120 860,120" fill="none" stroke="#0072bc" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <circle cx="420" cy="120" r="17" fill="#0072bc" fill-opacity=".55" stroke="#ffffff" stroke-width="2"></circle>
+        <circle cx="420" cy="120" r="22" fill="none" stroke="#033056" stroke-width="2.5"></circle>
+      </svg>
+
+      <div style="position:relative;display:flex;gap:18px;align-items:flex-start">
+
+        <div style="display:flex;flex-direction:column;gap:14px;width:214px">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="background:#f8f6f1;border-radius:5px;padding:11px 13px;display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:12px;font-weight:700;color:#033056">Union Station</span>
+              <div style="display:flex;align-items:baseline;gap:7px">
+                <span style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums">10,125</span>
+                <span style="font-size:10px;color:#78716c">boardings</span>
+              </div>
+            </div>
+            <span style="font-size:10px;color:#57534e;line-height:1.5"><b style="color:#033056">The peek.</b> Name and the ranked measure, nothing else. 66&nbsp;px tall.</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="background:#f8f6f1;border-radius:5px;padding:13px;display:flex;flex-direction:column;gap:8px">
+              <span style="font-size:12px;font-weight:700;color:#033056">Union Station</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="width:9px;height:9px;border-radius:2px;background:#0072bc"></span>
+                <span style="font-size:10px;color:#78716c">A Line &middot; also served by B, D</span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:8px">
+                <sc-for list="{{figures}}" as="f" hint-placeholder-count="4">
+                  <div style="display:flex;flex-direction:column;gap:1px">
+                    <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em">{{f.label}}</span>
+                    <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:{{f.ink}}">{{f.value}}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <span style="font-size:10px;color:#57534e;line-height:1.5"><b style="color:#033056">The figures.</b> F&rsquo;s card with the sparkline row deleted. 132&nbsp;px tall.</span>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;width:246px">
+          <div style="background:#f8f6f1;border-radius:5px;padding:14px;display:flex;flex-direction:column;gap:9px">
+            <span style="font-size:12px;font-weight:700;color:#033056">Union Station</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="width:9px;height:9px;border-radius:2px;background:#0072bc"></span>
+              <span style="font-size:10px;color:#78716c">A Line &middot; also served by B, D</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:8px">
+              <sc-for list="{{figures}}" as="f" hint-placeholder-count="4">
+                <div style="display:flex;flex-direction:column;gap:1px">
+                  <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em">{{f.label}}</span>
+                  <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:{{f.ink}}">{{f.value}}</span>
+                </div>
+              </sc-for>
+            </div>
+            <svg viewBox="0 0 218 64" width="100%" height="60" role="img" aria-label="Twelve monthly boardings and alightings at Union Station">
+              <line x1="4" y1="52" x2="214" y2="52" stroke="#e7e5e4" stroke-width="1"></line>
+              <polyline points="{{ boardLine }}" fill="none" stroke="#0072bc" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+              <polyline points="{{ alightLine }}" fill="none" stroke="#4a90c8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+              <text x="4" y="63" font-size="9" fill="#a8a29e">Jul 2025</text>
+              <text x="214" y="63" font-size="9" fill="#a8a29e" text-anchor="end">Jun 2026</text>
+            </svg>
+            <div style="display:flex;gap:10px">
+              <div style="display:flex;align-items:center;gap:5px">
+                <span style="width:12px;height:2px;background:#0072bc"></span>
+                <span style="font-size:9px;color:#78716c">Boardings</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:5px">
+                <span style="width:12px;height:2px;background:#4a90c8"></span>
+                <span style="font-size:9px;color:#78716c">Alightings</span>
+              </div>
+            </div>
+          </div>
+          <span style="font-size:10px;color:#57534e;line-height:1.5"><b style="color:#033056">The chart card.</b> F today, with the twelve months and a key the original lacks. 236&nbsp;px tall.</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;width:246px">
+          <div style="background:#f8f6f1;border-radius:5px;padding:14px;display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+              <span style="font-size:12px;font-weight:700;color:#033056">Union Station</span>
+              <span style="font-size:9px;color:#0fada8;font-weight:700;letter-spacing:.06em">PINNED</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="width:9px;height:9px;border-radius:2px;background:#0072bc"></span>
+              <span style="font-size:10px;color:#78716c">A Line &middot; also served by B, D</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:8px">
+              <sc-for list="{{figures}}" as="f" hint-placeholder-count="4">
+                <div style="display:flex;flex-direction:column;gap:1px">
+                  <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em">{{f.label}}</span>
+                  <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:{{f.ink}}">{{f.value}}</span>
+                </div>
+              </sc-for>
+            </div>
+            <svg viewBox="0 0 218 64" width="100%" height="60" role="img" aria-label="Twelve monthly boardings and alightings at Union Station">
+              <line x1="4" y1="52" x2="214" y2="52" stroke="#e7e5e4" stroke-width="1"></line>
+              <polyline points="{{ boardLine }}" fill="none" stroke="#0072bc" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+              <polyline points="{{ alightLine }}" fill="none" stroke="#4a90c8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+              <text x="4" y="63" font-size="9" fill="#a8a29e">Jul 2025</text>
+              <text x="214" y="63" font-size="9" fill="#a8a29e" text-anchor="end">Jun 2026</text>
+            </svg>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <span style="font-size:9px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">The other lines here</span>
+              <sc-for list="{{others}}" as="o" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <span style="width:9px;height:9px;border-radius:2px;background:{{o.color}}"></span>
+                  <span style="font-size:10px;color:#44403c;flex-grow:1">{{o.label}}</span>
+                  <span style="font-size:10px;color:#78716c;font-variant-numeric:tabular-nums">{{o.value}}</span>
+                </div>
+              </sc-for>
+            </div>
+            <span style="font-size:10px;color:#0fada8">Open this stop in the panel &rarr;</span>
+          </div>
+          <span style="font-size:10px;color:#57534e;line-height:1.5"><b style="color:#033056">The pinned card.</b> What a click leaves behind: the other calling lines, and a way out. 322&nbsp;px tall.</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:13px 15px;display:flex;flex-direction:column;gap:7px">
+      <span style="font-size:11px;font-weight:700;color:#166534;letter-spacing:.06em;text-transform:uppercase">The card has to be four sizes, and the chart only belongs in two of them</span>
+      <table style="font-size:11px">
+        <thead>
+          <tr style="border-bottom:1.5px solid #e7e5e4">
+            <th style="width:118px;text-align:left;padding:0 10px 6px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">Card</th>
+            <th style="width:74px;text-align:left;padding:0 10px 6px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">Appears</th>
+            <th style="text-align:left;padding:0 0 6px 0;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#78716c">What it has to answer, and why the chart is or is not part of that</th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+            <tr style="border-bottom:1px solid #f0eeea">
+              <td style="padding:6px 10px 6px 0;vertical-align:top;font-weight:700;color:#033056;line-height:1.5">{{r.card}}</td>
+              <td style="padding:6px 10px 6px 0;vertical-align:top;color:#78716c;line-height:1.5">{{r.when}}</td>
+              <td style="padding:6px 0;vertical-align:top;line-height:1.55">{{r.why}}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  poly(values, lo, hi, x0, y0, w, h) {
+    const n = (v) => String(Math.round(v * 10) / 10);
+    return values.map((v, i) => {
+      const t = (v - lo) / (hi - lo || 1);
+      return n(x0 + (i / (values.length - 1)) * w) + ',' + n(y0 + h - t * h);
+    }).join(' ');
+  }
+
+  renderVals() {
+    const boardings = [9280, 9410, 9605, 9540, 9790, 9880, 10040, 9960, 10180, 10260, 10310, 10125];
+    const alightings = [8360, 8480, 8650, 8590, 8810, 8900, 9040, 8970, 9160, 9230, 9280, 9113];
+    const lo = 8360 * 0.985;
+    const hi = 10310 * 1.005;
+
+    const grid = [];
+    for (let i = 1; i < 13; i++) grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 430 });
+    for (let i = 1; i < 7; i++) grid.push({ x1: 0, y1: i * 70, x2: 900, y2: i * 70 });
+
+    return {
+      grid: grid,
+      boardLine: this.poly(boardings, lo, hi, 4, 6, 210, 42),
+      alightLine: this.poly(alightings, lo, hi, 4, 6, 210, 42),
+      figures: [
+        { label: 'Boardings', value: '10,125', ink: '#44403c' },
+        { label: 'Alightings', value: '9,113', ink: '#44403c' },
+        { label: 'Change', value: '+1,012', ink: '#166534' },
+        { label: 'Share', value: '21.4%', ink: '#44403c' },
+      ],
+      others: [
+        { color: '#eb131b', label: 'B Line', value: '4,093' },
+        { color: '#a05da5', label: 'D Line', value: '2,571' },
+      ],
+      rows: [
+        { card: 'The peek', when: 'on hover',
+          why: 'Which stop is this, and how big. A reader sweeping the map wants the name under the cursor and nothing that takes a second to read, so a chart here is ink nobody looks at.' },
+        { card: 'The figures', when: 'on hover',
+          why: 'The same question with the numbers behind it. This is the smallest card that could replace what F draws, and the only one where deleting the chart is a straight saving rather than a loss.' },
+        { card: 'The chart card', when: 'on hover',
+          why: 'Whether the stop is rising or falling. The chart is the whole reason this size exists — if it is not read, this card should not exist either and the figures card should.' },
+        { card: 'The pinned card', when: 'on click',
+          why: 'Everything a reader asked for by clicking, including the other lines calling here, which the hover card has never had room for. The chart is affordable here because the card is no longer competing with the cursor.' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

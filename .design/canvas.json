@@ -385,12 +385,61 @@
       "y": 0,
       "w": 1000,
       "h": 880,
-      "title": "F Â· Map-led",
-      "page": "superseded"
+      "title": "F · Map-led · the card as it stands",
+      "page": "hover-card"
+    },
+    {
+      "file": "CardMeasure.dc.html",
+      "x": 1100,
+      "y": 0,
+      "w": 1000,
+      "h": 880,
+      "title": "F₂ · The chart follows the measure control · click me",
+      "page": "hover-card",
+      "is_interactive": true
+    },
+    {
+      "file": "CardChart.dc.html",
+      "x": 2200,
+      "y": 0,
+      "w": 1000,
+      "h": 880,
+      "title": "F₃ · Six things the chart slot could be · click me",
+      "page": "hover-card",
+      "is_interactive": true
+    },
+    {
+      "file": "CardBodies.dc.html",
+      "x": 3300,
+      "y": 0,
+      "w": 1000,
+      "h": 880,
+      "title": "F₄ · Four hover cards, two with a chart",
+      "page": "hover-card"
+    },
+    {
+      "file": "CardOpen.dc.html",
+      "x": 0,
+      "y": 1040,
+      "w": 1000,
+      "h": 880,
+      "title": "F₅ · The card opens on a click · click me",
+      "page": "hover-card",
+      "is_interactive": true
+    },
+    {
+      "file": "CardElsewhere.dc.html",
+      "x": 1100,
+      "y": 1040,
+      "w": 1000,
+      "h": 880,
+      "title": "F₆ · The chart leaves the card · click me",
+      "page": "hover-card",
+      "is_interactive": true
     },
     {
       "file": "CardDeck.dc.html",
-      "x": 1100,
+      "x": 0,
       "y": 0,
       "w": 1000,
       "h": 880,
@@ -399,7 +448,7 @@
     },
     {
       "file": "SegmentLoad.dc.html",
-      "x": 2200,
+      "x": 1100,
       "y": 0,
       "w": 1000,
       "h": 880,
@@ -408,7 +457,7 @@
     },
     {
       "file": "Spikes.dc.html",
-      "x": 3300,
+      "x": 2200,
       "y": 0,
       "w": 1000,
       "h": 880,
@@ -417,8 +466,8 @@
     },
     {
       "file": "Wedge.dc.html",
-      "x": 0,
-      "y": 1040,
+      "x": 3300,
+      "y": 0,
       "w": 1000,
       "h": 880,
       "title": "Q Â· Wedge sweep",
@@ -426,7 +475,7 @@
     },
     {
       "file": "StopColour.dc.html",
-      "x": 1100,
+      "x": 0,
       "y": 1040,
       "w": 1000,
       "h": 880,
@@ -435,7 +484,7 @@
     },
     {
       "file": "Rings.dc.html",
-      "x": 2200,
+      "x": 1100,
       "y": 1040,
       "w": 1000,
       "h": 880,
@@ -444,7 +493,7 @@
     },
     {
       "file": "DotDensity.dc.html",
-      "x": 3300,
+      "x": 2200,
       "y": 1040,
       "w": 1000,
       "h": 880,
@@ -652,6 +701,30 @@
       "y": 489,
       "w": 470,
       "text": "NN covers the most ground, and it is also the harder build.\n\nSide-by-side corridors fix a failure that spans miles rather than pixels, and the station-bar variant answers the corridor and the multi-line station with one idea. What it needs first is geometry the repo does not have: matching segments by identical endpoints finds only the Regional Connector and the C and K Lines, and finds nothing between the B and the D even though 46% of the D Line's vertices lie within ten metres of the B. The pairing has to be computed in the ingest, not in the style.\n\nOf MM's four modes, sized-and-filled is the one to test, because it is the only mark on this canvas that carries two stop-grain quantities without spending colour. Test it on Wilshire rather than downtown: thirty stops in the span these eight occupy is where the fill line becomes one pixel."
+    },
+    {
+      "id": "hover-card-brief",
+      "page": "hover-card",
+      "x": 4400,
+      "y": 0,
+      "w": 470,
+      "text": "F is a live direction again, so it leads this page rather than sitting among the retirements.\n\nThe question these five ask is what the hover card puts under its four figures. F draws a six-month sparkline there with no key, and its numbers are literals in the markup rather than data, so nothing about it can change. F₂ makes the measure control drive it, F₃ swaps the figure in the slot, F₄ asks whether the slot is needed, F₅ makes it something a reader opens, and F₆ moves it out of the card.\n\nAll five extend F's six months to the twelve the payload carries, so the figure types are compared on one series rather than on two window lengths. The figures are illustrative panel values, as F's always were."
+    },
+    {
+      "id": "hover-card-verdict",
+      "page": "hover-card",
+      "x": 4400,
+      "y": 560,
+      "w": 470,
+      "text": "F₃ covers the most ground, because it is the only one that puts six candidate figures against the same two stops and the same five tests, and one of those stops is quiet and has two unreported months.\n\nOf the designs themselves, F₂ is the one to build. It is the smallest change that makes F honest — the control it already paints starts working — and it costs one state value and a series chosen in the logic rather than typed into the markup. Everything else on this page assumes that change has been made.\n\nF₆'s docked strip is the one worth arguing about. It is the only placement that gives twelve months the width they need, and it is the only one that takes room from the map, which is the thing F exists to make bigger."
+    },
+    {
+      "id": "hover-card-open",
+      "page": "hover-card",
+      "x": 4400,
+      "y": 1180,
+      "w": 470,
+      "text": "What these five leave open, and how the page relates to R.\n\nR still folds F in, and it is not retired. R draws both measures on the map always and leaves the control ordering the list; F₂ is the opposite bet, one measure everywhere. Both are live, they cannot both ship, and the choice is about whether the map answers the control or ignores it.\n\nHover has no touch equivalent. F₅'s peek needs a pointer, so a phone collapses three steps into two, and every draft here inherits that.\n\nThe alightings tint is too pale to stroke. The map's #8ec4e6 sits at 1.7 to 1 against the card surface, so the card's series takes a darker step of the same hue at 3.2 to 1. The map keeps the light tint, where it is a fill rather than a two-pixel line.\n\nThe sixteen bus stops with no coordinate still have no card. Nothing on this page gives a reader a way to reach a stop the map cannot draw."
     }
   ],
   "launch": {
@@ -690,6 +763,10 @@
     {
       "id": "corridors",
       "name": "Marks and corridors"
+    },
+    {
+      "id": "hover-card",
+      "name": "What the hover card shows"
     },
     {
       "id": "superseded",

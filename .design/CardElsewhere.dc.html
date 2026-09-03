@@ -1,0 +1,334 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f3eee2; color: #44403c;
+           font-family: 'Overpass Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+           -webkit-font-smoothing: antialiased; }
+    a { color: #0fada8; } a:hover { color: #0c8b87; }
+    .hit { cursor: pointer; user-select: none; }
+    .hit:hover { filter: brightness(0.97); }
+  </style>
+</helmet>
+<div style="width:1000px;height:880px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;background:#f3eee2">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#0fada8">F&#8326;</span>
+      <span style="font-size:15px;font-weight:700;color:#033056">The chart leaves the card</span>
+    </div>
+    <span style="font-size:11px;color:#a8a29e;text-align:right">Click a placement. The card, the rail and the map all resize around it.</span>
+  </div>
+
+  <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:11px;color:#a8a29e">The twelve-month series lives</span>
+      <div style="display:flex;gap:2px">
+        <sc-for list="{{places}}" as="p" hint-placeholder-count="3">
+          <span class="hit" onClick="{{p.pick}}" style="background:{{p.bg}};color:{{p.ink}};font-size:12px;font-weight:700;padding:8px 12px;border-radius:{{p.radius}}">{{p.label}}</span>
+        </sc-for>
+      </div>
+    </div>
+
+    <span style="font-size:12px;color:#78716c;line-height:1.7">{{ blurb }}</span>
+
+    <div style="display:flex;gap:16px;flex:1;min-height:0">
+
+      <div style="width:250px;flex-shrink:0;display:flex;flex-direction:column;gap:7px;min-height:0">
+        <span style="font-size:10px;color:#78716c;text-transform:uppercase;letter-spacing:.06em">47 stops &middot; ranked</span>
+        <div style="flex:1;display:flex;flex-direction:column;gap:1px;overflow:hidden">
+          <sc-for list="{{rank}}" as="r" hint-placeholder-count="11">
+            <div style="display:flex;align-items:center;gap:7px;padding:4px 6px;border-radius:3px;background:{{r.rowFill}}">
+              <div style="width:12px;height:12px;border-radius:3px;background:{{r.boxFill}};border:1px solid {{r.boxEdge}};flex-shrink:0"></div>
+              <div style="flex-grow:1;display:flex;flex-direction:column;gap:3px;min-width:0">
+                <span style="font-size:10px;color:#44403c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{r.name}}</span>
+                <sc-if value="{{r.plain}}" hint-placeholder-val="{{ true }}">
+                  <span style="height:4px;border-radius:2px;background:#0072bc;width:{{r.barWidth}}"></span>
+                </sc-if>
+              </div>
+              <sc-if value="{{r.spark}}" hint-placeholder-val="{{ false }}">
+                <svg viewBox="0 0 64 16" width="64" height="16" role="img" aria-label="{{r.alt}}">
+                  <line x1="0" y1="15" x2="64" y2="15" stroke="#e7e5e4" stroke-width="1"></line>
+                  <polyline points="{{r.points}}" fill="none" stroke="#0072bc" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></polyline>
+                </svg>
+              </sc-if>
+              <span style="font-size:10px;color:#78716c;font-variant-numeric:tabular-nums">{{r.value}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex-grow:1;display:flex;flex-direction:column;gap:10px;min-width:0">
+
+        <div style="flex:1;position:relative;border-radius:6px;overflow:hidden;background:#e8e6e1;min-height:0">
+          <svg viewBox="0 0 620 560" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Placeholder map of the A Line with one station selected">
+            <rect x="0" y="0" width="620" height="560" fill="#e8e6e1"></rect>
+            <g stroke="#dcd9d3" stroke-width="1">
+              <sc-for list="{{grid}}" as="g" hint-placeholder-count="16">
+                <line x1="{{g.x1}}" y1="{{g.y1}}" x2="{{g.x2}}" y2="{{g.y2}}"></line>
+              </sc-for>
+            </g>
+            <polyline points="470,40 470,130 390,195 330,195 300,230 300,530" fill="none" stroke="#0072bc" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"></polyline>
+            <sc-for list="{{circles}}" as="c" hint-placeholder-count="9">
+              <g>
+                <circle cx="{{c.cx}}" cy="{{c.cy}}" r="{{c.r}}" fill="#0072bc" fill-opacity=".55" stroke="#ffffff" stroke-width="2"></circle>
+                <sc-if value="{{c.selected}}" hint-placeholder-val="{{ false }}">
+                  <circle cx="{{c.cx}}" cy="{{c.cy}}" r="{{c.ring}}" fill="none" stroke="#033056" stroke-width="2.5"></circle>
+                </sc-if>
+              </g>
+            </sc-for>
+          </svg>
+
+          <div style="position:absolute;right:14px;top:14px;width:{{ cardW }};background:#f8f6f1;border-radius:5px;padding:{{ cardPad }};display:flex;flex-direction:column;gap:9px">
+            <span style="font-size:12px;font-weight:700;color:#033056;line-height:1.3">Union Station</span>
+            <sc-if value="{{ cardShort }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;gap:7px">
+                <span style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums">10,125</span>
+                <span style="font-size:10px;color:#78716c">boardings</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ cardFull }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="width:9px;height:9px;border-radius:2px;background:#0072bc"></span>
+                  <span style="font-size:10px;color:#78716c">A Line &middot; also served by B, D</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:8px">
+                  <sc-for list="{{figures}}" as="f" hint-placeholder-count="4">
+                    <div style="display:flex;flex-direction:column;gap:1px">
+                      <span style="font-size:9px;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em">{{f.label}}</span>
+                      <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:{{f.ink}}">{{f.value}}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <svg viewBox="0 0 218 64" width="100%" height="60" role="img" aria-label="Twelve monthly boardings and alightings at Union Station">
+                  <line x1="4" y1="52" x2="214" y2="52" stroke="#e7e5e4" stroke-width="1"></line>
+                  <polyline points="{{ cardBoard }}" fill="none" stroke="#0072bc" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+                  <polyline points="{{ cardAlight }}" fill="none" stroke="#4a90c8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+                  <text x="4" y="63" font-size="9" fill="#a8a29e">Jul 2025</text>
+                  <text x="214" y="63" font-size="9" fill="#a8a29e" text-anchor="end">Jun 2026</text>
+                </svg>
+                <div style="display:flex;gap:10px">
+                  <div style="display:flex;align-items:center;gap:5px">
+                    <span style="width:12px;height:2px;background:#0072bc"></span>
+                    <span style="font-size:9px;color:#78716c">Boardings</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:5px">
+                    <span style="width:12px;height:2px;background:#4a90c8"></span>
+                    <span style="font-size:9px;color:#78716c">Alightings</span>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+
+        <sc-if value="{{ hasDock }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+              <span style="font-size:11px;font-weight:700;color:#033056">Union Station &middot; A Line</span>
+              <div style="display:flex;gap:12px">
+                <div style="display:flex;align-items:center;gap:5px">
+                  <span style="width:12px;height:2px;background:#0072bc"></span>
+                  <span style="font-size:9px;color:#78716c">Boardings</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:5px">
+                  <span style="width:12px;height:2px;background:#4a90c8"></span>
+                  <span style="font-size:9px;color:#78716c">Alightings</span>
+                </div>
+              </div>
+            </div>
+            <svg viewBox="0 0 682 108" width="100%" height="108" role="img" aria-label="Twelve monthly boardings and alightings at Union Station, drawn full width under the map">
+              <g stroke="#f0eeea" stroke-width="1">
+                <line x1="34" y1="12" x2="620" y2="12"></line>
+                <line x1="34" y1="46" x2="620" y2="46"></line>
+                <line x1="34" y1="80" x2="620" y2="80"></line>
+              </g>
+              <g font-size="9" fill="#a8a29e" text-anchor="end">
+                <text x="28" y="15">10.5k</text>
+                <text x="28" y="49">9.5k</text>
+                <text x="28" y="83">8.5k</text>
+              </g>
+              <polyline points="{{ dockBoard }}" fill="none" stroke="#0072bc" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+              <polyline points="{{ dockAlight }}" fill="none" stroke="#4a90c8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+              <circle cx="{{ dockEndX }}" cy="{{ dockBoardY }}" r="3" fill="#0072bc" stroke="#ffffff" stroke-width="1.4"></circle>
+              <circle cx="{{ dockEndX }}" cy="{{ dockAlightY }}" r="3" fill="#4a90c8" stroke="#ffffff" stroke-width="1.4"></circle>
+              <text x="630" y="{{ dockBoardLabelY }}" font-size="9.5" fill="#44403c">10,125</text>
+              <text x="630" y="{{ dockAlightLabelY }}" font-size="9.5" fill="#78716c">9,113</text>
+              <g font-size="8.5" fill="#a8a29e" text-anchor="middle">
+                <text x="34" y="104">Jul</text>
+                <text x="87" y="104">Aug</text>
+                <text x="141" y="104">Sep</text>
+                <text x="194" y="104">Oct</text>
+                <text x="247" y="104">Nov</text>
+                <text x="300" y="104">Dec</text>
+                <text x="354" y="104">Jan</text>
+                <text x="407" y="104">Feb</text>
+                <text x="460" y="104">Mar</text>
+                <text x="513" y="104">Apr</text>
+                <text x="567" y="104">May</text>
+                <text x="620" y="104">Jun</text>
+              </g>
+            </svg>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:6px;padding:12px 15px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:11px;font-weight:700;color:{{ noteInk }};letter-spacing:.06em;text-transform:uppercase">{{ noteHead }}</span>
+      <span style="font-size:11px;color:#44403c;line-height:1.7">{{ noteBody }}</span>
+      <span style="font-size:11px;color:#a8a29e;line-height:1.6">A fourth placement is already drawn elsewhere on this canvas: V puts a sparkline beside every circle on the map itself. It is not repeated here, and the choice between it and these three is a choice about how much of the map is left.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { place: 'card' };
+  }
+
+  poly(values, lo, hi, x0, y0, w, h) {
+    const n = (v) => String(Math.round(v * 10) / 10);
+    return values.map((v, i) => {
+      const t = (v - lo) / (hi - lo || 1);
+      return n(x0 + (i / (values.length - 1)) * w) + ',' + n(y0 + h - t * h);
+    }).join(' ');
+  }
+
+  renderVals() {
+    const self = this;
+    const place = this.state.place;
+
+    const boardings = [9280, 9410, 9605, 9540, 9790, 9880, 10040, 9960, 10180, 10260, 10310, 10125];
+    const alightings = [8360, 8480, 8650, 8590, 8810, 8900, 9040, 8970, 9160, 9230, 9280, 9113];
+    const lo = 8360 * 0.985;
+    const hi = 10310 * 1.005;
+
+    const grid = [];
+    for (let i = 1; i < 9; i++) {
+      grid.push({ x1: 0, y1: i * 70, x2: 620, y2: i * 70 });
+      grid.push({ x1: i * 70, y1: 0, x2: i * 70, y2: 560 });
+    }
+
+    const stations = [
+      [470, 40, 10125, true], [470, 130, 3210, false], [390, 195, 2640, false],
+      [300, 230, 6750, false], [300, 300, 1910, false], [300, 365, 1142, false],
+      [300, 420, 2210, false], [300, 475, 4320, false], [300, 530, 3980, false],
+    ];
+    const peak = 10125;
+    const circles = stations.map((s) => {
+      const r = 5 + Math.sqrt(s[2] / peak) * 17;
+      return { cx: s[0], cy: s[1], r: r, ring: r + 5, selected: s[3] };
+    });
+
+    // name, boardings, and the shape of its twelve months as a multiplier on the level
+    const listed = [
+      ['Union Station', 10125, [0.92, 0.93, 0.95, 0.94, 0.97, 0.98, 0.99, 0.98, 1.01, 1.01, 1.02, 1.00]],
+      ['7th Street / Metro Center', 6750, [0.90, 0.92, 0.93, 0.95, 0.96, 0.97, 0.98, 0.99, 1.00, 1.01, 1.01, 1.00]],
+      ['Willowbrook / Rosa Parks', 4320, [1.04, 1.03, 1.02, 1.00, 0.99, 0.98, 0.98, 0.97, 0.98, 0.99, 0.99, 1.00]],
+      ['Downtown Long Beach', 3980, [0.96, 0.97, 0.99, 1.02, 1.04, 1.03, 1.01, 0.99, 0.98, 0.98, 0.99, 1.00]],
+      ['Little Tokyo / Arts District', 3210, [0.84, 0.86, 0.89, 0.91, 0.93, 0.95, 0.96, 0.97, 0.98, 0.99, 1.00, 1.00]],
+      ['Pico', 2940, [1.08, 1.05, 1.01, 0.98, 0.97, 0.99, 1.02, 1.04, 1.02, 1.00, 0.99, 1.00]],
+      ['Historic Broadway', 2640, [0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.97, 0.98, 0.99, 1.00, 1.00, 1.00]],
+      ['Florence', 2210, [1.01, 1.00, 1.00, 0.99, 0.99, 1.00, 1.00, 1.01, 1.01, 1.00, 1.00, 1.00]],
+      ['Grand / LATTC', 1910, [1.06, 1.04, 1.03, 1.01, 1.00, 0.99, 0.98, 0.98, 0.99, 0.99, 1.00, 1.00]],
+      ['Firestone', 1860, [0.94, 0.95, 0.96, 0.97, 0.98, 0.99, 1.00, 1.00, 1.01, 1.01, 1.00, 1.00]],
+      ['Vernon', 1142, [1.06, 1.04, 1.03, 1.02, 1.01, 1.00, 0.99, 0.99, 0.99, 0.99, 1.00, 1.00]],
+    ];
+
+    const table = {
+      card: {
+        label: 'in the card',
+        blurb: 'F today. The series appears where the cursor is, for one stop at a time, and disappears with the card.',
+        noteHead: 'The series is where the question is, and nowhere else',
+        noteInk: '#78716c',
+        noteBody: 'Putting the chart in the card is the only placement that costs no layout: the map keeps its full height and the rail keeps its width. It is also the only one where the series is gone the moment the reader looks away, which makes comparing two stops a matter of memory.',
+      },
+      dock: {
+        label: 'in a strip under the map',
+        blurb: 'The card shrinks to a peek and the series moves to a docked strip below the map, where it gets ten times the width and an axis.',
+        noteHead: 'Width is what a twelve-month series actually needs',
+        noteInk: '#166534',
+        noteBody: 'The same twelve points get 586 pixels here instead of 210, which is the difference between a shape and a chart: months can be named on the axis, both series stay apart, and the last value carries its own figure. The strip takes about a fifth of the map, and it stays put when the cursor moves — so a reader can hover a second stop and watch the strip change rather than losing the first one.',
+      },
+      rail: {
+        label: 'on every rail row',
+        blurb: 'The card shrinks to a peek and every stop in the rail carries its own sparkline, so trend becomes something a reader scans down a column rather than asks for one stop at a time.',
+        noteHead: 'The only placement that compares stops rather than describing one',
+        noteInk: '#166534',
+        noteBody: 'Forty-seven sparklines in a column is a small-multiple chart, and it answers a question none of the other placements can: which stops are moving differently from the rest. What it costs is the row bar the rail uses for magnitude, the fetch for every listed stop rather than one, and any hope of reading a value — a 64-pixel spark drawn to its own scale says shape and nothing else.',
+      },
+    };
+
+    const order = [
+      ['card', 'in the card', '4px 0 0 4px'],
+      ['dock', 'in a strip under the map', '0'],
+      ['rail', 'on every rail row', '0 4px 4px 0'],
+    ];
+    const cur = table[place];
+
+    const dockScale = (v) => 80 - ((v - 8500) / 2000) * 68;
+
+    return {
+      grid: grid,
+      circles: circles,
+      places: order.map((o) => ({
+        label: o[1],
+        radius: o[2],
+        pick: () => self.setState({ place: o[0] }),
+        bg: place === o[0] ? '#033056' : '#ffffff',
+        ink: place === o[0] ? '#ffffff' : '#44403c',
+      })),
+      blurb: cur.blurb,
+      rank: listed.map((r) => ({
+        name: r[0],
+        value: r[1].toLocaleString('en-US'),
+        barWidth: String(Math.round((r[1] / peak) * 100)) + '%',
+        plain: place !== 'rail',
+        spark: place === 'rail',
+        points: self.poly(r[2].map((m) => m * r[1]), r[1] * 0.83, r[1] * 1.09, 1, 2, 62, 11),
+        alt: 'Twelve months of boardings at ' + r[0],
+        rowFill: r[0] === 'Union Station' ? '#ece9e2' : 'transparent',
+        boxFill: r[0] === 'Union Station' ? '#033056' : '#ffffff',
+        boxEdge: r[0] === 'Union Station' ? '#033056' : '#d6d3d1',
+      })),
+      cardW: place === 'card' ? '246px' : '186px',
+      cardPad: place === 'card' ? '14px' : '11px 13px',
+      cardFull: place === 'card',
+      cardShort: place !== 'card',
+      cardBoard: this.poly(boardings, lo, hi, 4, 6, 210, 42),
+      cardAlight: this.poly(alightings, lo, hi, 4, 6, 210, 42),
+      hasDock: place === 'dock',
+      dockBoard: boardings.map((v, i) => String(Math.round((34 + (i / 11) * 586) * 10) / 10) + ',' + String(Math.round(dockScale(v) * 10) / 10)).join(' '),
+      dockAlight: alightings.map((v, i) => String(Math.round((34 + (i / 11) * 586) * 10) / 10) + ',' + String(Math.round(dockScale(v) * 10) / 10)).join(' '),
+      dockEndX: 620,
+      dockBoardY: Math.round(dockScale(10125) * 10) / 10,
+      dockAlightY: Math.round(dockScale(9113) * 10) / 10,
+      dockBoardLabelY: Math.round((dockScale(10125) + 3) * 10) / 10,
+      dockAlightLabelY: Math.round((dockScale(9113) + 3) * 10) / 10,
+      noteHead: cur.noteHead,
+      noteInk: cur.noteInk,
+      noteBody: cur.noteBody,
+      figures: [
+        { label: 'Boardings', value: '10,125', ink: '#44403c' },
+        { label: 'Alightings', value: '9,113', ink: '#44403c' },
+        { label: 'Change', value: '+1,012', ink: '#166534' },
+        { label: 'Share', value: '21.4%', ink: '#44403c' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
