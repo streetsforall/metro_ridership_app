@@ -10,12 +10,12 @@ export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    base: env.BASE_PATH,
+    base: env.VITE_BASE_PATH,
     plugins: [
       react(),
       // Ships the ridership dataset as a fetched columnar asset instead of inlining
       // it into the JS bundle; also provides the `virtual:ridership-bounds` module.
-      ridershipDataPlugin(),
+      ridershipDataPlugin({ basePath: env.VITE_BASE_PATH }),
       // Serves the pre-encoded stop payloads as fetched assets and provides
       // `virtual:stop-ridership-manifest`. Tolerates the data files being absent — see
       // the plugin's header.

@@ -59,7 +59,6 @@ interface Encoded {
 
 const VIRTUAL_BOUNDS_ID = 'virtual:ridership-bounds';
 const RESOLVED_BOUNDS_ID = '\0' + VIRTUAL_BOUNDS_ID;
-const DATA_URL = '/ridership.json';
 
 /** Read the canonical records, encode them columnar, and derive the date bounds in one pass. */
 function encode(): Encoded {
@@ -93,7 +92,9 @@ function encode(): Encoded {
   return { json, bounds: { minYear, maxYear, maxMonth } };
 }
 
-export function ridershipDataPlugin(): Plugin {
+export function ridershipDataPlugin({ basePath }): Plugin {
+  const DATA_URL = `${basePath}/ridership.json`;
+
   let cache: Encoded | null = null;
   const get = (): Encoded => (cache ??= encode());
 
