@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react-swc';
 import { ridershipDataPlugin } from './vite/ridership-data-plugin';
 import { stopRidershipPlugin } from './vite/stop-ridership-plugin';
 
+const BASE_PATH = process.env.VITE_BASE_PATH as string;
+
 export default defineConfig({
   // ridershipDataPlugin resolves `virtual:ridership-bounds` (imported by
   // src/utils/dataDateRange.ts) so the module tree loads under the test runner.
@@ -10,7 +12,11 @@ export default defineConfig({
   // vite.config.ts: without it `virtual:stop-ridership-manifest` fails to resolve and
   // every test that reaches the stop panel dies at import time rather than at an
   // assertion. It reads no data file until something imports that module.
-  plugins: [react(), ridershipDataPlugin(), stopRidershipPlugin()],
+  plugins: [
+    react(),
+    ridershipDataPlugin({ basePath: BASE_PATH }),
+    stopRidershipPlugin(),
+  ],
   test: {
     environment: 'jsdom',
     globals: true,
