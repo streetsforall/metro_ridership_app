@@ -67,3 +67,7 @@ src/__tests__/
 src/chart/__tests__/
 src/components/__tests__/
 src/stops/__tests__/
+
+# Local env files
+.env*.local
+.env

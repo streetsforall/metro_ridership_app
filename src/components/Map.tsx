@@ -15,7 +15,6 @@ interface MapProps {
   lines: LineReadout[];
 }
 
-
 export default function Map({ lines }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -48,7 +47,8 @@ export default function Map({ lines }: MapProps) {
 
       map.current!.addSource('metro-lines', {
         type: 'geojson',
-        data: '/metro_lines.geojson',
+        // Variable automatically injected by Vite
+        data: `${import.meta.env.BASE_URL}/metro_lines.geojson`,
         generateId: true,
       });
 
@@ -118,7 +118,9 @@ export default function Map({ lines }: MapProps) {
         const lineData = linesRef.current.find((l) => l.id === lineId);
         popup
           .setLngLat(e.lngLat)
-          .setHTML(buildPopupHTML(e.features[0].properties.name as string, lineData))
+          .setHTML(
+            buildPopupHTML(e.features[0].properties.name as string, lineData),
+          )
           .addTo(map.current!);
       };
 
