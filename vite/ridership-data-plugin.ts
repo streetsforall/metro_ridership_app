@@ -59,13 +59,14 @@ interface Encoded {
 
 const VIRTUAL_BOUNDS_ID = 'virtual:ridership-bounds';
 const RESOLVED_BOUNDS_ID = '\0' + VIRTUAL_BOUNDS_ID;
-const DATA_URL = '/ridership.json';
 
 /** Read the canonical records, encode them columnar, and derive the date bounds in one pass. */
 function encode(): Encoded {
   const records = JSON.parse(readFileSync(SOURCE_URL, 'utf8')) as RawRecord[];
 
-  const rows: (number | null)[][] = new Array<(number | null)[]>(records.length);
+  const rows: (number | null)[][] = new Array<(number | null)[]>(
+    records.length,
+  );
   let minYear = Infinity;
   let maxYear = -Infinity;
   let maxMonth = 1; // 1-based month of the latest record
@@ -93,7 +94,13 @@ function encode(): Encoded {
   return { json, bounds: { minYear, maxYear, maxMonth } };
 }
 
-export function ridershipDataPlugin(): Plugin {
+export function ridershipDataPlugin({
+  basePath,
+}: {
+  basePath: string;
+}): Plugin {
+  const DATA_URL = `${basePath}/ridership.json`;
+
   let cache: Encoded | null = null;
   const get = (): Encoded => (cache ??= encode());
 
@@ -131,7 +138,11 @@ export function ridershipDataPlugin(): Plugin {
     // Build: emit the blob at the output root so it ships as /ridership.json and is
     // served by `vite preview` and any static host.
     generateBundle() {
-      this.emitFile({ type: 'asset', fileName: 'ridership.json', source: get().json });
+      this.emitFile({
+        type: 'asset',
+        fileName: 'ridership.json',
+        source: get().json,
+      });
     },
   };
 }

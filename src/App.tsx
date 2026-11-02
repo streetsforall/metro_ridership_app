@@ -12,6 +12,8 @@ import { decodeRidership, type ColumnarRidership } from './utils/ridershipData';
 import type { RidershipRecord } from './@types/metrics.types';
 import { labelToDate } from './chart/months';
 
+const BASE_PATH = import.meta.env.VITE_BASE_PATH as string;
+
 /**
  * OutputArea pulls in Chart.js and MapLibre GL. Lazy-loading it keeps MapLibre (the
  * single largest dependency) out of the entry chunk, so the header and line selector
@@ -35,7 +37,7 @@ function App() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch('/ridership.json', { signal: controller.signal })
+    fetch(`${BASE_PATH}/ridership.json`, { signal: controller.signal })
       .then((res) => res.json() as Promise<ColumnarRidership>)
       .then((data) => setRidershipRecords(decodeRidership(data)))
       .catch((err) => {
